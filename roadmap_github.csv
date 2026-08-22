@@ -1,0 +1,16 @@
+title,body,labels,milestone
+[S1] Identificar necesidades de actores y redactar historias de usuario (HU01-HU06),**Grupo:** Fase 1\n**Entregable clave:** Historias de usuario documentadas\n**Semana(s):** 1-1,fase-1,Semana 1
+[S2] Priorizar y construir el Product Backlog,**Grupo:** Fase 1\n**Entregable clave:** Product Backlog priorizado\n**Semana(s):** 2-2,fase-1,Semana 2
+"[S3] Modelado UML: actores, casos de uso (UC01-UC18) y clases de dominio",**Grupo:** Fase 2\n**Entregable clave:** Diagramas de casos de uso y clases\n**Semana(s):** 3-3,fase-2,Semana 3
+[S4] Diseño lógico de base de datos (modelo ER) y arquitectura tecnológica,**Grupo:** Fase 2\n**Entregable clave:** Modelo ER + diagrama de componentes\n**Semana(s):** 4-4,fase-2,Semana 4
+[S5] Backend: modelos Usuario/Rol y endpoint POST /auth/login (RF01-RF03),**Grupo:** Incremento 1\n**Entregable clave:** API de autenticación funcional\n**Semana(s):** 5-5,incremento-1,Semana 5
+[S6] Frontend: vistas de login y control de acceso por rol,**Grupo:** Incremento 1\n**Entregable clave:** Login y control de permisos operando\n**Semana(s):** 6-6,incremento-1,Semana 6
+"[S7] Backend: modelo Torneo y endpoints POST /tournaments, POST /tournaments/{id}/players (RF04-RF05)",**Grupo:** Incremento 2\n**Entregable clave:** API de torneo e inscripción\n**Semana(s):** 7-7,incremento-2,Semana 7
+[S8] Frontend: formularios de configuración de torneo e inscripción de jugadores,**Grupo:** Incremento 2\n**Entregable clave:** Formularios funcionales validados\n**Semana(s):** 8-8,incremento-2,Semana 8
+[S9] Implementar algoritmo de emparejamiento suizo (modelo Dutch) sin repetir cruces (RF06),**Grupo:** Incremento 3\n**Entregable clave:** Motor de emparejamiento (UC09)\n**Semana(s):** 9-9,incremento-3,Semana 9
+[S10] Endpoint de generación de rondas y publicación vía Socket.IO (pairing.published),**Grupo:** Incremento 3\n**Entregable clave:** Ronda publicada en tiempo real\n**Semana(s):** 10-10,incremento-3,Semana 10
+[S11] Backend: endpoint POST /matches/{id}/result y validación de catálogo de resultados (RF07),**Grupo:** Incremento 4\n**Entregable clave:** Registro de resultados trazable (UC11)\n**Semana(s):** 11-11,incremento-4,Semana 11
+[S12] Cálculo automático de clasificación tras cada resultado (RF08) y evento standings.updated,**Grupo:** Incremento 4\n**Entregable clave:** Tabla de clasificación en vivo (UC13)\n**Semana(s):** 12-12,incremento-4,Semana 12
+"[S13] Implementar criterios de desempate: Buchholz, Buchholz Cortado, Sonneborn-Berger, ARO (RF09)",**Grupo:** Incremento 5\n**Entregable clave:** Desempates aplicados en orden configurado (UC14)\n**Semana(s):** 13-13,incremento-5,Semana 13
+[S13] Módulo de historial de jugador y estadísticas de torneo (RF10),**Grupo:** Incremento 5\n**Entregable clave:** Consulta de historial (UC16-UC17)\n**Semana(s):** 13-13,incremento-5,Semana 13
+[S14] Ejecutar plan de pruebas P01-P07 y verificar criterios de salida / trazabilidad,**Grupo:** Fase 4\n**Entregable clave:** Prototipo validado y listo para entrega\n**Semana(s):** 14-14,fase-4,Semana 14
