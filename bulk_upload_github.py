@@ -24,6 +24,14 @@ Fechas (para la vista Roadmap del Project):
   Eso da una segunda linea de tiempo nativa en
   github.com/<owner>/<repo>/milestones, independiente del Project.
 
+Jerarquia (sub-issues):
+  Cada Fase/Incremento se crea como un issue "padre" (12 en total), y
+  cada historia de usuario/actividad se crea como sub-issue (hijo) de
+  su Fase/Incremento correspondiente, usando el soporte nativo de GitHub
+  para sub-issues (gh issue create --parent, disponible desde gh v2.94).
+  Si el issue hijo ya existia de una corrida anterior (sin padre), el
+  script lo vincula retroactivamente sin borrarlo ni duplicarlo.
+
 Uso:
   python3 bulk_upload_github.py <owner>/<repo> <numero-del-project>
 
@@ -78,7 +86,8 @@ def main():
 
     # 1. Crear labels
     labels = ["fase-1", "fase-2", "incremento-1", "incremento-2",
-              "incremento-3", "incremento-4", "incremento-5", "fase-4"]
+              "incremento-3", "incremento-4", "incremento-5", "incremento-6",
+              "incremento-7", "incremento-8", "incremento-9", "fase-4"]
     print("\n== Creando labels ==")
     for label in labels:
         run(["gh", "label", "create", label, "--repo", repo,
@@ -159,66 +168,136 @@ def main():
             print("  [ATENCION] no se pudieron crear los campos de fecha; revisa que el "
                   "token tenga el scope 'project' (gh auth refresh -s project,read:project)")
 
-    # 2. Leer CSV y crear issues + milestones
-    print("\n== Creando issues ==")
+    # 2. Definir los 12 grupos (Fases/Incrementos) que seran issues "padre"
+    group_names = {
+        "fase-1": "Fase 1: Levantamiento y priorizacion",
+        "fase-2": "Fase 2: Diseno",
+        "incremento-1": "Incremento 1: Usuarios, autenticacion y permisos",
+        "incremento-2": "Incremento 2: Creacion de torneo e inscripcion",
+        "incremento-3": "Incremento 3: Emparejamiento suizo adaptado",
+        "incremento-4": "Incremento 4: Registro de resultados y clasificacion",
+        "incremento-5": "Incremento 5: Publicacion y consultas competitivas",
+        "incremento-6": "Incremento 6: Cuenta de usuario y cumplimiento normativo",
+        "incremento-7": "Incremento 7: Clubes, entrenadores y torneos",
+        "incremento-8": "Incremento 8: Reglas operativas avanzadas",
+        "incremento-9": "Incremento 9: Exportacion y auditoria",
+        "fase-4": "Fase 4: Validacion",
+    }
+
+    # 2.1 Leer el CSV completo primero para agrupar y calcular rango de fechas por grupo
     with open(csv_path, newline="", encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        count = 0
-        failed = []
-        for row in reader:
-            title = row["title"]
-            body = row["body"].replace("\\n", "\n")
-            label = row["labels"]
-            milestone_title = row["milestone"]
-            start_date = row["start_date"]
-            due_date = row["due_date"]
+        rows = list(csv.DictReader(f))
 
-            print(f"\n--- Issue: {title} ---")
+    group_dates = {}
+    for row in rows:
+        label = row["labels"]
+        s, e = row["start_date"], row["due_date"]
+        if label not in group_dates:
+            group_dates[label] = [s, e]
+        else:
+            group_dates[label][0] = min(group_dates[label][0], s)
+            group_dates[label][1] = max(group_dates[label][1], e)
 
-            # Asegurar que el milestone exista, con su fecha limite real
-            if milestone_title not in milestone_titles:
-                due_on = f"{due_date}T23:59:59Z"
-                ms_result = run(["gh", "api", f"repos/{repo}/milestones", "-X", "POST",
-                                  "-f", f"title={milestone_title}",
-                                  "-f", f"due_on={due_on}"], check=False)
-                if ms_result.returncode == 0:
-                    milestone_titles.add(milestone_title)
+    # 2.2 Crear (o reutilizar) el issue padre de cada grupo, en el orden en que aparecen
+    print("\n== Creando issues 'padre' por Fase/Incremento ==")
+    parent_numbers = {}
+    seen_labels = []
+    for row in rows:
+        if row["labels"] not in seen_labels:
+            seen_labels.append(row["labels"])
 
-            if title in existing_titles:
-                issue_url = existing_titles[title]
-                print(f"  ya existe, se omite creacion -> {issue_url}")
-            else:
-                result = run(["gh", "issue", "create", "--repo", repo,
-                              "--title", title, "--body", body, "--label", label,
-                              "--milestone", milestone_title], check=False)
-                if result.returncode != 0:
-                    failed.append(title)
-                    continue
-                issue_url = result.stdout.strip().splitlines()[-1]
-                print(f"  -> {issue_url}")
+    for label in seen_labels:
+        parent_title = group_names.get(label, label)
+        s, e = group_dates[label]
+        parent_body = f"Agrupa las actividades del rango {s} a {e}. Ver sub-issues para el detalle."
 
-            add_result = run(["gh", "project", "item-add", project_number,
-                               "--owner", owner, "--url", issue_url,
-                               "--format", "json"], check=False)
-            if add_result.returncode != 0:
+        if parent_title in existing_titles:
+            parent_url = existing_titles[parent_title]
+            parent_numbers[label] = parent_url.rstrip("/").split("/")[-1]
+            print(f"  '{parent_title}' ya existe -> #{parent_numbers[label]}")
+            continue
+
+        result = run(["gh", "issue", "create", "--repo", repo, "--title", parent_title,
+                      "--body", parent_body, "--label", label], check=False)
+        if result.returncode != 0:
+            print(f"  [ERROR] no se pudo crear el padre '{parent_title}'")
+            continue
+        parent_url = result.stdout.strip().splitlines()[-1]
+        parent_number = parent_url.rstrip("/").split("/")[-1]
+        parent_numbers[label] = parent_number
+        existing_titles[parent_title] = parent_url
+        print(f"  -> {parent_url}")
+        run(["gh", "project", "item-add", project_number, "--owner", owner,
+             "--url", parent_url], check=False)
+
+    # 3. Leer CSV y crear cada actividad como sub-issue de su padre
+    print("\n== Creando issues hijos (sub-issues) ==")
+    count = 0
+    failed = []
+    for row in rows:
+        title = row["title"]
+        body = row["body"].replace("\\n", "\n")
+        label = row["labels"]
+        milestone_title = row["milestone"]
+        start_date = row["start_date"]
+        due_date = row["due_date"]
+        parent_number = parent_numbers.get(label)
+
+        print(f"\n--- Issue: {title} ---")
+
+        # Asegurar que el milestone exista, con su fecha limite real
+        if milestone_title not in milestone_titles:
+            due_on = f"{due_date}T23:59:59Z"
+            ms_result = run(["gh", "api", f"repos/{repo}/milestones", "-X", "POST",
+                              "-f", f"title={milestone_title}",
+                              "-f", f"due_on={due_on}"], check=False)
+            if ms_result.returncode == 0:
+                milestone_titles.add(milestone_title)
+
+        if title in existing_titles:
+            issue_url = existing_titles[title]
+            issue_number = issue_url.rstrip("/").split("/")[-1]
+            print(f"  ya existe -> {issue_url}")
+            if parent_number:
+                # Vincula retroactivamente como sub-issue si no lo era
+                run(["gh", "issue", "edit", parent_number, "--repo", repo,
+                     "--add-sub-issue", issue_number], check=False)
+        else:
+            cmd = ["gh", "issue", "create", "--repo", repo,
+                   "--title", title, "--body", body, "--label", label,
+                   "--milestone", milestone_title]
+            if parent_number:
+                cmd += ["--parent", parent_number]
+            result = run(cmd, check=False)
+            if result.returncode != 0:
                 failed.append(title)
                 continue
-            count += 1
+            issue_url = result.stdout.strip().splitlines()[-1]
+            print(f"  -> {issue_url}")
 
-            # Llenar Start date / Target date del Project, si existen esos campos
-            if project_id and start_field_id and target_field_id:
-                try:
-                    item_id = json.loads(add_result.stdout)["id"]
-                    run(["gh", "project", "item-edit", "--id", item_id,
-                         "--project-id", project_id, "--field-id", start_field_id,
-                         "--date", start_date], check=False)
-                    run(["gh", "project", "item-edit", "--id", item_id,
-                         "--project-id", project_id, "--field-id", target_field_id,
-                         "--date", due_date], check=False)
-                except (json.JSONDecodeError, KeyError):
-                    pass
+        add_result = run(["gh", "project", "item-add", project_number,
+                           "--owner", owner, "--url", issue_url,
+                           "--format", "json"], check=False)
+        if add_result.returncode != 0:
+            failed.append(title)
+            continue
+        count += 1
+
+        # Llenar Start date / Target date del Project, si existen esos campos
+        if project_id and start_field_id and target_field_id:
+            try:
+                item_id = json.loads(add_result.stdout)["id"]
+                run(["gh", "project", "item-edit", "--id", item_id,
+                     "--project-id", project_id, "--field-id", start_field_id,
+                     "--date", start_date], check=False)
+                run(["gh", "project", "item-edit", "--id", item_id,
+                     "--project-id", project_id, "--field-id", target_field_id,
+                     "--date", due_date], check=False)
+            except (json.JSONDecodeError, KeyError):
+                pass
 
     print(f"\nListo: {count} issues creados/agregados al Project #{project_number}")
+    print(f"Estructura padre-hijo: github.com/{repo}/issues (abre cualquier issue de Fase/Incremento)")
     print(f"Milestones con fecha limite: github.com/{repo}/milestones")
     if failed:
         print(f"\n[ATENCION] {len(failed)} fallaron y hay que revisarlos manualmente:")
