@@ -102,8 +102,8 @@ torre-central-hub/
 ### Instalación
 
 ```bash
-git clone https://github.com/<owner>/torre-central-hub.git
-cd torre-central-hub
+git clone https://github.com/hasttyr/torre.git
+cd torre
 
 # Backend
 cd backend
