@@ -1,8 +1,15 @@
-// Modelo inicial basado en el diccionario de datos y el modelo ER
-// documentados en docs/DOCUMENTACION.md (sección "Modelo de datos").
-// Las restricciones CHECK (p. ej. id_blancas != id_negras, catálogo de
-// resultados) se agregan en una migración SQL manual porque Prisma no
-// las expresa de forma declarativa.
+// Modelo de datos de S4 (Fase 2 — Diseño), fiel a los diagramas ya
+// aprobados en la sustentación: docs/media/image1.png (ER conceptual),
+// docs/media/image7.png (clases de dominio) y docs/media/image8.png
+// (estados de torneo/ronda y ciclo de partida). Ver también
+// docs/diagrama-componentes.md.
+//
+// Alcance deliberado: solo las entidades de Objetivo específico 3
+// (Usuario, Rol, Jugador, Torneo, Ronda, Partida, Resultado,
+// CriterioDesempate, Clasificacion). Club, Federación, EntrenadorJugador,
+// Bitácora, Inscripción y el ajuste manual de emparejamientos pertenecen a
+// incrementos posteriores (S10-S13 del roadmap) y se agregan al esquema
+// cuando se codifique esa semana, no antes.
 
 generator client {
   provider = "prisma-client-js"
@@ -13,144 +20,103 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum RolUsuario {
-  ORGANIZADOR
-  ARBITRO
-  JUGADOR
-  ENTRENADOR
-  ADMINISTRADOR
+// Los diagramas de origen tipan "estado" como string genérico; se refina a
+// enum aquí por integridad a nivel de base de datos, con los mismos valores.
+enum EstadoUsuario {
+  ACTIVO
+  INACTIVO
 }
 
+// Ver docs/media/image8.png. EN_CURSO agrupa el ciclo de rondas
+// (RondaGenerada/ResultadosEnRegistro/ClasificacionActualizada), que se
+// modela con el detalle fino en EstadoRonda.
 enum EstadoTorneo {
-  PRELIMINAR
-  INSCRIPCION_ABIERTA
+  CREADO
+  INSCRIPCIONES_ABIERTAS
+  INSCRIPCIONES_CERRADAS
   EN_CURSO
   FINALIZADO
 }
 
-enum EstadoParticipacion {
-  ACTIVO
-  RETIRADO
+enum EstadoRonda {
+  GENERADA
+  RESULTADOS_EN_REGISTRO
+  CLASIFICACION_ACTUALIZADA
 }
 
-enum TipoPartida {
-  NORMAL
-  BYE
+// Ciclo de partida (docs/media/image8.png, swimlane "Ciclo de Partida").
+enum EstadoPartida {
+  PROGRAMADA
+  EN_JUEGO
+  FINALIZADA
+  CORREGIDA
 }
 
-enum ResultadoPartida {
-  BLANCAS_GANA
-  NEGRAS_GANA
-  TABLAS
-  BYE
-}
+model Rol {
+  id     String @id @default(uuid())
+  nombre String @unique
 
-enum AccionBitacora {
-  CAMBIO_ROL
-  CORRECCION_RESULTADO
-  AJUSTE_EMPAREJAMIENTO
-  RETIRO_JUGADOR
-  CREACION_TORNEO
+  usuarios Usuario[]
+
+  @@map("roles")
 }
 
 model Usuario {
-  id                  String    @id @default(uuid())
-  nombre              String
-  correo              String    @unique
-  passwordHash        String    @map("password_hash")
-  rol                 RolUsuario
-  consentimientoDatos Boolean   @default(false) @map("consentimiento_datos")
-  consentimientoFecha DateTime? @map("consentimiento_fecha")
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @updatedAt @map("updated_at")
+  id           String        @id @default(uuid())
+  nombre       String
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  estado       EstadoUsuario @default(ACTIVO)
+  rolId        String        @map("rol_id")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
 
-  jugador             Jugador?
-  torneosOrganizados  Torneo[]            @relation("TorneoOrganizador")
-  jugadoresACargo     EntrenadorJugador[] @relation("EntrenadorRelacion")
-  accionesBitacora    Bitacora[]
+  rol                Rol      @relation(fields: [rolId], references: [id])
+  jugador            Jugador?
+  torneosOrganizados Torneo[] @relation("TorneoOrganizador")
 
   @@map("usuarios")
 }
 
-model Club {
-  id        String    @id @default(uuid())
-  nombre    String    @unique
-  createdAt DateTime  @default(now()) @map("created_at")
-
-  jugadores Jugador[]
-
-  @@map("clubes")
-}
-
 model Jugador {
-  id                  String  @id @default(uuid())
-  usuarioId           String  @unique @map("usuario_id")
-  codigoUniversitario String? @map("codigo_universitario")
-  clubId              String? @map("club_id")
+  id                  String @id @default(uuid())
+  usuarioId           String @unique @map("usuario_id")
+  codigoUniversitario String @map("codigo_universitario")
+  programa            String
+  semestre            Int
 
-  usuario         Usuario             @relation(fields: [usuarioId], references: [id])
-  club            Club?               @relation(fields: [clubId], references: [id])
-  inscripciones   Inscripcion[]
-  entrenadores    EntrenadorJugador[] @relation("JugadorRelacion")
-  partidasBlancas Partida[]           @relation("PartidaBlancas")
-  partidasNegras  Partida[]           @relation("PartidaNegras")
+  usuario         Usuario         @relation(fields: [usuarioId], references: [id])
+  clasificaciones Clasificacion[]
+  partidasBlancas Partida[]       @relation("PartidaBlancas")
+  partidasNegras  Partida[]       @relation("PartidaNegras")
 
   @@map("jugadores")
-}
-
-model EntrenadorJugador {
-  id           String   @id @default(uuid())
-  entrenadorId String   @map("entrenador_id")
-  jugadorId    String   @map("jugador_id")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  entrenador Usuario @relation("EntrenadorRelacion", fields: [entrenadorId], references: [id])
-  jugador    Jugador @relation("JugadorRelacion", fields: [jugadorId], references: [id])
-
-  @@unique([entrenadorId, jugadorId])
-  @@map("entrenador_jugador")
 }
 
 model Torneo {
   id            String       @id @default(uuid())
   nombre        String
-  formato       String       @default("suizo")
-  estado        EstadoTorneo @default(PRELIMINAR)
-  numeroRondas  Int          @map("numero_rondas")
   fechaInicio   DateTime     @map("fecha_inicio")
   fechaFin      DateTime     @map("fecha_fin")
+  estado        EstadoTorneo @default(CREADO)
+  formato       String       @default("suizo")
   organizadorId String       @map("organizador_id")
   createdAt     DateTime     @default(now()) @map("created_at")
 
   organizador        Usuario             @relation("TorneoOrganizador", fields: [organizadorId], references: [id])
-  inscripciones      Inscripcion[]
   rondas             Ronda[]
   criteriosDesempate CriterioDesempate[]
+  clasificaciones    Clasificacion[]
 
   @@map("torneos")
 }
 
-model Inscripcion {
-  id                  String              @id @default(uuid())
-  torneoId            String              @map("torneo_id")
-  jugadorId           String              @map("jugador_id")
-  estadoParticipacion EstadoParticipacion @default(ACTIVO) @map("estado_participacion")
-  byeRecibido         Boolean             @default(false) @map("bye_recibido")
-  createdAt           DateTime            @default(now()) @map("created_at")
-
-  torneo  Torneo  @relation(fields: [torneoId], references: [id])
-  jugador Jugador @relation(fields: [jugadorId], references: [id])
-
-  @@unique([torneoId, jugadorId])
-  @@map("inscripciones")
-}
-
 model Ronda {
-  id        String   @id @default(uuid())
-  torneoId  String   @map("torneo_id")
+  id        String      @id @default(uuid())
+  torneoId  String      @map("torneo_id")
   numero    Int
-  publicada Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
+  estado    EstadoRonda @default(GENERADA)
+  createdAt DateTime    @default(now()) @map("created_at")
 
   torneo   Torneo    @relation(fields: [torneoId], references: [id])
   partidas Partida[]
@@ -159,22 +125,42 @@ model Ronda {
   @@map("rondas")
 }
 
+// Nombres alineados con el diccionario de datos del documento de
+// sustentación ("Partida.id_blancas", "Partida.id_negras") en vez de
+// "colorBlancas/colorNegras" del diagrama de clases, por ser más explícitos.
+// Un bye es una partida con id_negras (o id_blancas) nulo, sin campo "tipo"
+// propio (docs/media/image7.png no distingue tipo de partida).
 model Partida {
-  id           String            @id @default(uuid())
-  rondaId      String            @map("ronda_id")
-  idBlancas    String?           @map("id_blancas")
-  idNegras     String?           @map("id_negras")
-  tipo         TipoPartida       @default(NORMAL)
-  resultado    ResultadoPartida?
-  ajusteMotivo String?           @map("ajuste_motivo")
-  ajustePorId  String?           @map("ajuste_por_id")
-  createdAt    DateTime          @default(now()) @map("created_at")
+  id        String        @id @default(uuid())
+  rondaId   String        @map("ronda_id")
+  mesa      Int
+  idBlancas String?       @map("id_blancas")
+  idNegras  String?       @map("id_negras")
+  estado    EstadoPartida @default(PROGRAMADA)
+  createdAt DateTime      @default(now()) @map("created_at")
 
-  ronda   Ronda    @relation(fields: [rondaId], references: [id])
-  blancas Jugador? @relation("PartidaBlancas", fields: [idBlancas], references: [id])
-  negras  Jugador? @relation("PartidaNegras", fields: [idNegras], references: [id])
+  ronda     Ronda      @relation(fields: [rondaId], references: [id])
+  blancas   Jugador?   @relation("PartidaBlancas", fields: [idBlancas], references: [id])
+  negras    Jugador?   @relation("PartidaNegras", fields: [idNegras], references: [id])
+  resultado Resultado?
 
   @@map("partidas")
+}
+
+// Registro de resultado por partida (relación 1:1 "registra" en
+// docs/media/image1.png), no un catálogo compartido: cada partida decidida
+// tiene su propia fila con la fecha en que se registró. El catálogo de
+// valores permitidos (RN-03) se aplica con un CHECK, agregado a mano en la
+// migración porque Prisma no expresa CHECK de forma declarativa.
+model Resultado {
+  id            String   @id @default(uuid())
+  partidaId     String   @unique @map("partida_id")
+  valor         String
+  fechaRegistro DateTime @default(now()) @map("fecha_registro")
+
+  partida Partida @relation(fields: [partidaId], references: [id])
+
+  @@map("resultados")
 }
 
 model CriterioDesempate {
@@ -189,16 +175,19 @@ model CriterioDesempate {
   @@map("criterios_desempate")
 }
 
-model Bitacora {
-  id        String         @id @default(uuid())
-  usuarioId String         @map("usuario_id")
-  accion    AccionBitacora
-  entidad   String
-  entidadId String?        @map("entidad_id")
-  detalle   String?
-  createdAt DateTime       @default(now()) @map("created_at")
+model Clasificacion {
+  id              String  @id @default(uuid())
+  torneoId        String  @map("torneo_id")
+  jugadorId       String  @map("jugador_id")
+  puntaje         Decimal @default(0) @db.Decimal(5, 2)
+  buchholz        Decimal @default(0) @db.Decimal(6, 2)
+  buchholzC1      Decimal @default(0) @map("buchholz_c1") @db.Decimal(6, 2)
+  sonnebornBerger Decimal @default(0) @map("sonneborn_berger") @db.Decimal(6, 2)
+  aro             Decimal @default(0) @db.Decimal(6, 2)
 
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
+  torneo  Torneo  @relation(fields: [torneoId], references: [id])
+  jugador Jugador @relation(fields: [jugadorId], references: [id])
 
-  @@map("bitacora")
+  @@unique([torneoId, jugadorId])
+  @@map("clasificacion")
 }
