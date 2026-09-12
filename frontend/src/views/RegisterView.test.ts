@@ -21,6 +21,10 @@ async function fillBaseFields(wrapper: ReturnType<typeof mount>) {
   await wrapper.find('input[type="password"]').setValue("password123");
 }
 
+async function selectRol(wrapper: ReturnType<typeof mount>, rol: string) {
+  await wrapper.find(`input[type="radio"][value="${rol}"]`).setValue();
+}
+
 describe("RegisterView", () => {
   beforeEach(() => {
     registerUserMock.mockReset();
@@ -36,7 +40,7 @@ describe("RegisterView", () => {
   it("oculta los campos de jugador cuando se elige otro rol", async () => {
     const wrapper = mount(RegisterView);
 
-    await wrapper.find("select").setValue("ORGANIZADOR");
+    await selectRol(wrapper, "ORGANIZADOR");
 
     expect(wrapper.find("fieldset").exists()).toBe(false);
   });
@@ -44,7 +48,7 @@ describe("RegisterView", () => {
   it("muestra errores de validación y no llama al backend si el formulario está vacío", async () => {
     const wrapper = mount(RegisterView);
 
-    await wrapper.find("select").setValue("ORGANIZADOR");
+    await selectRol(wrapper, "ORGANIZADOR");
     await wrapper.find("form").trigger("submit.prevent");
 
     expect(wrapper.text()).toContain("El nombre debe tener al menos 2 caracteres");
@@ -109,7 +113,7 @@ describe("RegisterView", () => {
     });
 
     const wrapper = mount(RegisterView);
-    await wrapper.find("select").setValue("ORGANIZADOR");
+    await selectRol(wrapper, "ORGANIZADOR");
     await wrapper.find('input[type="text"]').setValue("Carlos Ruiz");
     await wrapper.find('input[type="email"]').setValue("carlos@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
@@ -132,7 +136,7 @@ describe("RegisterView", () => {
     });
 
     const wrapper = mount(RegisterView);
-    await wrapper.find("select").setValue("ORGANIZADOR");
+    await selectRol(wrapper, "ORGANIZADOR");
     await wrapper.find('input[type="text"]').setValue("Ana Torres");
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
@@ -148,7 +152,7 @@ describe("RegisterView", () => {
     registerUserMock.mockRejectedValue(new Error("Network Error"));
 
     const wrapper = mount(RegisterView);
-    await wrapper.find("select").setValue("ORGANIZADOR");
+    await selectRol(wrapper, "ORGANIZADOR");
     await wrapper.find('input[type="text"]').setValue("Ana Torres");
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
