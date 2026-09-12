@@ -76,8 +76,23 @@ Esta estructura se genera y actualiza con los scripts de [`tools/github-roadmap/
 
 ```
 torre-central-hub/
-├── backend/                    # API REST (Node.js + Express) y lógica de negocio
-├── frontend/                   # Aplicación Vue.js
+├── backend/                    # API REST (Express + TypeScript) y lógica de negocio
+│   ├── prisma/schema.prisma    # Modelo de datos (Prisma + PostgreSQL)
+│   ├── src/
+│   │   ├── config/             # Variables de entorno y cliente Prisma
+│   │   ├── middlewares/        # Manejo de errores, futuros guards de auth
+│   │   ├── routes/             # Routers de dominio (montados bajo /api)
+│   │   ├── sockets/            # Catálogo de eventos y handlers de Socket.IO
+│   │   ├── app.ts              # Configuración de Express
+│   │   └── server.ts           # Punto de entrada (HTTP + Socket.IO)
+│   └── .env.example
+├── frontend/                   # Aplicación Vue 3 + TypeScript (Vite)
+│   ├── src/
+│   │   ├── router/              # Rutas de la SPA (vue-router)
+│   │   ├── stores/               # Estado global (Pinia)
+│   │   ├── services/             # Cliente HTTP (axios) y cliente Socket.IO
+│   │   └── views/                # Vistas de la aplicación
+│   └── .env.example
 ├── docs/                       # Documento de práctica y diagramas del sistema
 ├── tools/
 │   └── github-roadmap/         # Scripts para sincronizar el roadmap con Issues/Milestones/Project
@@ -88,15 +103,13 @@ torre-central-hub/
 └── README.md
 ```
 
-> La estructura interna de `backend/` y `frontend/` se documentará a medida que avance cada incremento. Ver [`tools/github-roadmap/README.md`](./tools/github-roadmap/README.md) para el detalle de cómo sincronizar el roadmap.
+> La estructura interna de `backend/` y `frontend/` crecerá con cada incremento; lo anterior es el esqueleto inicial. Ver [`tools/github-roadmap/README.md`](./tools/github-roadmap/README.md) para el detalle de cómo sincronizar el roadmap.
 
 ## Puesta en marcha
 
-> Instrucciones preliminares — se completan a medida que el proyecto avanza por incrementos.
-
 ### Requisitos previos
 
-- Node.js
+- Node.js 20+
 - PostgreSQL
 
 ### Instalación
@@ -108,12 +121,15 @@ cd torre
 # Backend
 cd backend
 npm install
-npm run dev
+cp .env.example .env      # completar DATABASE_URL, JWT_SECRET, etc.
+npx prisma migrate dev    # crea la base de datos y aplica el esquema inicial
+npm run dev                # http://localhost:4000 (GET /api/health)
 
 # Frontend
 cd ../frontend
 npm install
-npm run dev
+cp .env.example .env
+npm run dev                # http://localhost:5173
 ```
 
 ## Documentación

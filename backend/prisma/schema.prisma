@@ -1,0 +1,204 @@
+// Modelo inicial basado en el diccionario de datos y el modelo ER
+// documentados en docs/DOCUMENTACION.md (sección "Modelo de datos").
+// Las restricciones CHECK (p. ej. id_blancas != id_negras, catálogo de
+// resultados) se agregan en una migración SQL manual porque Prisma no
+// las expresa de forma declarativa.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RolUsuario {
+  ORGANIZADOR
+  ARBITRO
+  JUGADOR
+  ENTRENADOR
+  ADMINISTRADOR
+}
+
+enum EstadoTorneo {
+  PRELIMINAR
+  INSCRIPCION_ABIERTA
+  EN_CURSO
+  FINALIZADO
+}
+
+enum EstadoParticipacion {
+  ACTIVO
+  RETIRADO
+}
+
+enum TipoPartida {
+  NORMAL
+  BYE
+}
+
+enum ResultadoPartida {
+  BLANCAS_GANA
+  NEGRAS_GANA
+  TABLAS
+  BYE
+}
+
+enum AccionBitacora {
+  CAMBIO_ROL
+  CORRECCION_RESULTADO
+  AJUSTE_EMPAREJAMIENTO
+  RETIRO_JUGADOR
+  CREACION_TORNEO
+}
+
+model Usuario {
+  id                  String    @id @default(uuid())
+  nombre              String
+  correo              String    @unique
+  passwordHash        String    @map("password_hash")
+  rol                 RolUsuario
+  consentimientoDatos Boolean   @default(false) @map("consentimiento_datos")
+  consentimientoFecha DateTime? @map("consentimiento_fecha")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  jugador             Jugador?
+  torneosOrganizados  Torneo[]            @relation("TorneoOrganizador")
+  jugadoresACargo     EntrenadorJugador[] @relation("EntrenadorRelacion")
+  accionesBitacora    Bitacora[]
+
+  @@map("usuarios")
+}
+
+model Club {
+  id        String    @id @default(uuid())
+  nombre    String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  jugadores Jugador[]
+
+  @@map("clubes")
+}
+
+model Jugador {
+  id                  String  @id @default(uuid())
+  usuarioId           String  @unique @map("usuario_id")
+  codigoUniversitario String? @map("codigo_universitario")
+  clubId              String? @map("club_id")
+
+  usuario         Usuario             @relation(fields: [usuarioId], references: [id])
+  club            Club?               @relation(fields: [clubId], references: [id])
+  inscripciones   Inscripcion[]
+  entrenadores    EntrenadorJugador[] @relation("JugadorRelacion")
+  partidasBlancas Partida[]           @relation("PartidaBlancas")
+  partidasNegras  Partida[]           @relation("PartidaNegras")
+
+  @@map("jugadores")
+}
+
+model EntrenadorJugador {
+  id           String   @id @default(uuid())
+  entrenadorId String   @map("entrenador_id")
+  jugadorId    String   @map("jugador_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  entrenador Usuario @relation("EntrenadorRelacion", fields: [entrenadorId], references: [id])
+  jugador    Jugador @relation("JugadorRelacion", fields: [jugadorId], references: [id])
+
+  @@unique([entrenadorId, jugadorId])
+  @@map("entrenador_jugador")
+}
+
+model Torneo {
+  id            String       @id @default(uuid())
+  nombre        String
+  formato       String       @default("suizo")
+  estado        EstadoTorneo @default(PRELIMINAR)
+  numeroRondas  Int          @map("numero_rondas")
+  fechaInicio   DateTime     @map("fecha_inicio")
+  fechaFin      DateTime     @map("fecha_fin")
+  organizadorId String       @map("organizador_id")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  organizador        Usuario             @relation("TorneoOrganizador", fields: [organizadorId], references: [id])
+  inscripciones      Inscripcion[]
+  rondas             Ronda[]
+  criteriosDesempate CriterioDesempate[]
+
+  @@map("torneos")
+}
+
+model Inscripcion {
+  id                  String              @id @default(uuid())
+  torneoId            String              @map("torneo_id")
+  jugadorId           String              @map("jugador_id")
+  estadoParticipacion EstadoParticipacion @default(ACTIVO) @map("estado_participacion")
+  byeRecibido         Boolean             @default(false) @map("bye_recibido")
+  createdAt           DateTime            @default(now()) @map("created_at")
+
+  torneo  Torneo  @relation(fields: [torneoId], references: [id])
+  jugador Jugador @relation(fields: [jugadorId], references: [id])
+
+  @@unique([torneoId, jugadorId])
+  @@map("inscripciones")
+}
+
+model Ronda {
+  id        String   @id @default(uuid())
+  torneoId  String   @map("torneo_id")
+  numero    Int
+  publicada Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  torneo   Torneo    @relation(fields: [torneoId], references: [id])
+  partidas Partida[]
+
+  @@unique([torneoId, numero])
+  @@map("rondas")
+}
+
+model Partida {
+  id           String            @id @default(uuid())
+  rondaId      String            @map("ronda_id")
+  idBlancas    String?           @map("id_blancas")
+  idNegras     String?           @map("id_negras")
+  tipo         TipoPartida       @default(NORMAL)
+  resultado    ResultadoPartida?
+  ajusteMotivo String?           @map("ajuste_motivo")
+  ajustePorId  String?           @map("ajuste_por_id")
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  ronda   Ronda    @relation(fields: [rondaId], references: [id])
+  blancas Jugador? @relation("PartidaBlancas", fields: [idBlancas], references: [id])
+  negras  Jugador? @relation("PartidaNegras", fields: [idNegras], references: [id])
+
+  @@map("partidas")
+}
+
+model CriterioDesempate {
+  id       String @id @default(uuid())
+  torneoId String @map("torneo_id")
+  nombre   String
+  orden    Int
+
+  torneo Torneo @relation(fields: [torneoId], references: [id])
+
+  @@unique([torneoId, orden])
+  @@map("criterios_desempate")
+}
+
+model Bitacora {
+  id        String         @id @default(uuid())
+  usuarioId String         @map("usuario_id")
+  accion    AccionBitacora
+  entidad   String
+  entidadId String?        @map("entidad_id")
+  detalle   String?
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("bitacora")
+}
