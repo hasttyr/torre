@@ -19,12 +19,14 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
-  const status = err instanceof HttpError ? err.status : 500;
-  const message = err instanceof Error ? err.message : "Error interno del servidor";
-
-  if (status === 500) {
-    console.error(err);
+  if (err instanceof HttpError) {
+    res.status(err.status).json({ error: err.message });
+    return;
   }
 
-  res.status(status).json({ error: message });
+  // Un error no controlado (p. ej. Postgres caído) puede traer mensajes con
+  // rutas de archivo, stack traces o detalles del driver. Eso se registra
+  // en el servidor, nunca se devuelve al cliente.
+  console.error(err);
+  res.status(500).json({ error: "Error interno del servidor" });
 }
