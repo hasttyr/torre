@@ -40,3 +40,29 @@ export async function registerUser(payload: RegisterPayload): Promise<Registered
   const { data } = await api.post<RegisteredUser>("/auth/register", payload);
   return data;
 }
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+export interface AuthResult {
+  token: string;
+  usuario: RegisteredUser;
+}
+
+export async function loginUser(payload: LoginPayload): Promise<AuthResult> {
+  const { data } = await api.post<AuthResult>("/auth/login", payload);
+  return data;
+}
+
+// Best-effort: el backend no invalida nada (JWT sin estado), así que un
+// fallo acá no debe bloquear el logout del lado del cliente.
+export async function logoutUser(): Promise<void> {
+  await api.post("/auth/logout");
+}
+
+export async function fetchMe(): Promise<RegisteredUser> {
+  const { data } = await api.get<RegisteredUser>("/users/me");
+  return data;
+}

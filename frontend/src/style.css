@@ -220,6 +220,25 @@ a {
   color: #f6b4b6;
 }
 
+.banner svg {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+/* Transición compartida para <Transition name="banner"> (RegisterView, LoginView) */
+.banner-enter-active,
+.banner-leave-active {
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.banner-enter-from,
+.banner-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
 /* Utilidades */
 .visually-hidden {
   position: absolute;

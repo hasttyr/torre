@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppHeader from "../components/AppHeader.vue";
 import AppLogo from "../components/AppLogo.vue";
 
 const FEATURES = [
@@ -44,12 +45,7 @@ const STEPS = [
 
 <template>
   <div class="page">
-    <header class="site-header">
-      <div class="container site-header__inner">
-        <AppLogo />
-        <RouterLink to="/registro" class="btn btn-primary">Crear cuenta</RouterLink>
-      </div>
-    </header>
+    <AppHeader />
 
     <main>
       <section class="hero">
@@ -129,22 +125,6 @@ const STEPS = [
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  backdrop-filter: blur(10px);
-  background: rgba(15, 17, 21, 0.75);
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.site-header__inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-block: 1rem;
 }
 
 .hero {
