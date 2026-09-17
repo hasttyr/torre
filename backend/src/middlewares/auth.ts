@@ -1,0 +1,47 @@
+import type { NextFunction, Request, Response } from "express";
+import jwt from "jsonwebtoken";
+
+import { env } from "../config/env";
+import type { AuthUser } from "../types/express";
+import { HttpError } from "./errorHandler";
+
+function extractToken(req: Request): string | null {
+  const header = req.header("authorization");
+  if (!header?.startsWith("Bearer ")) {
+    return null;
+  }
+  return header.slice("Bearer ".length).trim();
+}
+
+export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
+  const token = extractToken(req);
+  if (!token) {
+    next(new HttpError(401, "No autenticado"));
+    return;
+  }
+
+  try {
+    const payload = jwt.verify(token, env.jwtSecret) as jwt.JwtPayload;
+    if (typeof payload.sub !== "string" || typeof payload.rol !== "string") {
+      throw new Error("token con formato inesperado");
+    }
+    req.user = { id: payload.sub, rol: payload.rol } satisfies AuthUser;
+    next();
+  } catch {
+    next(new HttpError(401, "Token inválido o expirado"));
+  }
+}
+
+export function requireRole(...roles: string[]) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      next(new HttpError(401, "No autenticado"));
+      return;
+    }
+    if (!roles.includes(req.user.rol)) {
+      next(new HttpError(403, "No tenés permiso para esta acción"));
+      return;
+    }
+    next();
+  };
+}

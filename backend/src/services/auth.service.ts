@@ -1,7 +1,10 @@
 import type { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
+import { env } from "../config/env";
 import { HttpError } from "../middlewares/errorHandler";
+import { toUserDto, type UserDto } from "./user.mapper";
 
 const SALT_ROUNDS = 10;
 
@@ -24,23 +27,31 @@ interface RegisterOtroRolInput extends RegisterUserBase {
 
 export type RegisterUserInput = RegisterJugadorInput | RegisterOtroRolInput;
 
-export interface RegisteredUser {
-  id: string;
-  nombre: string;
+export interface LoginUserInput {
   email: string;
-  estado: string;
-  rol: string;
-  createdAt: Date;
+  password: string;
+}
+
+export interface AuthResult {
+  token: string;
+  usuario: UserDto;
 }
 
 function isUniqueConstraintError(error: unknown): boolean {
   return typeof error === "object" && error !== null && (error as { code?: string }).code === "P2002";
 }
 
-export async function registerUser(
-  prisma: PrismaClient,
-  input: RegisterUserInput,
-): Promise<RegisteredUser> {
+function signToken(usuario: { id: string; rol: { nombre: string } }): string {
+  // El rol viaja embebido en el token (no se relee de la BD en cada
+  // request): si un admin cambia el rol de alguien, esa persona lo ve
+  // reflejado recién en su próximo login, no de inmediato. Trade-off
+  // estándar de JWT sin estado, aceptable con expiración corta (1d).
+  return jwt.sign({ sub: usuario.id, rol: usuario.rol.nombre }, env.jwtSecret, {
+    expiresIn: env.jwtExpiresIn,
+  } as jwt.SignOptions);
+}
+
+export async function registerUser(prisma: PrismaClient, input: RegisterUserInput): Promise<UserDto> {
   const email = input.email.trim().toLowerCase();
   const nombre = input.nombre.trim();
 
@@ -78,14 +89,7 @@ export async function registerUser(
       include: { rol: true },
     });
 
-    return {
-      id: usuario.id,
-      nombre: usuario.nombre,
-      email: usuario.email,
-      estado: usuario.estado,
-      rol: usuario.rol.nombre,
-      createdAt: usuario.createdAt,
-    };
+    return toUserDto(usuario);
   } catch (error) {
     // Cubre la carrera entre el findUnique de arriba y el create: dos
     // registros concurrentes con el mismo correo solo pueden ganar uno.
@@ -94,4 +98,27 @@ export async function registerUser(
     }
     throw error;
   }
+}
+
+export async function loginUser(prisma: PrismaClient, input: LoginUserInput): Promise<AuthResult> {
+  const email = input.email.trim().toLowerCase();
+
+  const usuario = await prisma.usuario.findUnique({ where: { email }, include: { rol: true } });
+
+  // Mismo mensaje genérico si el correo no existe o la contraseña es
+  // incorrecta: no revelar si una cuenta existe (RF02).
+  if (!usuario) {
+    throw new HttpError(401, "Credenciales inválidas");
+  }
+
+  const passwordValida = await bcrypt.compare(input.password, usuario.passwordHash);
+  if (!passwordValida) {
+    throw new HttpError(401, "Credenciales inválidas");
+  }
+
+  if (usuario.estado !== "ACTIVO") {
+    throw new HttpError(403, "La cuenta está inactiva");
+  }
+
+  return { token: signToken(usuario), usuario: toUserDto(usuario) };
 }

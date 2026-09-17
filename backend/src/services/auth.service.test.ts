@@ -1,8 +1,10 @@
 import type { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HttpError } from "../middlewares/errorHandler";
-import { registerUser } from "./auth.service";
+import { loginUser, registerUser } from "./auth.service";
 
 function buildPrismaMock() {
   return {
@@ -156,5 +158,95 @@ describe("registerUser", () => {
         rol: "ORGANIZADOR",
       }),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
+  });
+});
+
+describe("loginUser", () => {
+  let prisma: ReturnType<typeof buildPrismaMock>;
+
+  beforeEach(() => {
+    prisma = buildPrismaMock();
+  });
+
+  it("autentica con credenciales válidas y devuelve un token firmado", async () => {
+    const passwordHash = await bcrypt.hash("password123", 10);
+    prisma.usuario.findUnique.mockResolvedValue({
+      id: "usuario-1",
+      nombre: "Ana Torres",
+      email: "ana@example.com",
+      estado: "ACTIVO",
+      passwordHash,
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      rol: { id: "rol-organizador", nombre: "ORGANIZADOR" },
+    });
+
+    const result = await loginUser(prisma as unknown as PrismaClient, {
+      email: "ana@example.com",
+      password: "password123",
+    });
+
+    expect(result.usuario).toEqual({
+      id: "usuario-1",
+      nombre: "Ana Torres",
+      email: "ana@example.com",
+      estado: "ACTIVO",
+      rol: "ORGANIZADOR",
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+    });
+
+    const payload = jwt.verify(result.token, "test-secret") as jwt.JwtPayload;
+    expect(payload.sub).toBe("usuario-1");
+    expect(payload.rol).toBe("ORGANIZADOR");
+  });
+
+  it("rechaza una contraseña incorrecta con un mensaje genérico", async () => {
+    const passwordHash = await bcrypt.hash("password123", 10);
+    prisma.usuario.findUnique.mockResolvedValue({
+      id: "usuario-1",
+      email: "ana@example.com",
+      estado: "ACTIVO",
+      passwordHash,
+      rol: { id: "rol-organizador", nombre: "ORGANIZADOR" },
+    });
+
+    await expect(
+      loginUser(prisma as unknown as PrismaClient, { email: "ana@example.com", password: "incorrecta" }),
+    ).rejects.toMatchObject({ status: 401, message: "Credenciales inválidas" } satisfies Partial<HttpError>);
+  });
+
+  it("rechaza un correo inexistente con el mismo mensaje genérico (no revela si la cuenta existe)", async () => {
+    prisma.usuario.findUnique.mockResolvedValue(null);
+
+    await expect(
+      loginUser(prisma as unknown as PrismaClient, { email: "no-existe@example.com", password: "cualquiera" }),
+    ).rejects.toMatchObject({ status: 401, message: "Credenciales inválidas" } satisfies Partial<HttpError>);
+  });
+
+  it("rechaza a un usuario inactivo aunque la contraseña sea correcta", async () => {
+    const passwordHash = await bcrypt.hash("password123", 10);
+    prisma.usuario.findUnique.mockResolvedValue({
+      id: "usuario-1",
+      email: "ana@example.com",
+      estado: "INACTIVO",
+      passwordHash,
+      rol: { id: "rol-organizador", nombre: "ORGANIZADOR" },
+    });
+
+    await expect(
+      loginUser(prisma as unknown as PrismaClient, { email: "ana@example.com", password: "password123" }),
+    ).rejects.toMatchObject({ status: 403 } satisfies Partial<HttpError>);
+  });
+
+  it("normaliza el correo a minúsculas antes de buscar", async () => {
+    prisma.usuario.findUnique.mockResolvedValue(null);
+
+    await expect(
+      loginUser(prisma as unknown as PrismaClient, { email: "  Ana@Example.COM  ", password: "x" }),
+    ).rejects.toBeDefined();
+
+    expect(prisma.usuario.findUnique).toHaveBeenCalledWith({
+      where: { email: "ana@example.com" },
+      include: { rol: true },
+    });
   });
 });
