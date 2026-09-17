@@ -6,10 +6,14 @@
 //
 // Alcance deliberado: solo las entidades de Objetivo específico 3
 // (Usuario, Rol, Jugador, Torneo, Ronda, Partida, Resultado,
-// CriterioDesempate, Clasificacion). Club, Federación, EntrenadorJugador,
-// Bitácora, Inscripción y el ajuste manual de emparejamientos pertenecen a
-// incrementos posteriores (S10-S13 del roadmap) y se agregan al esquema
-// cuando se codifique esa semana, no antes.
+// CriterioDesempate, Clasificacion, Inscripcion). Club, Federación,
+// EntrenadorJugador, Bitácora y el ajuste manual de emparejamientos
+// pertenecen a incrementos posteriores (S10-S13 del roadmap) y se agregan
+// al esquema cuando se codifique esa semana, no antes.
+//
+// Inscripcion se adelantó a S6 (en vez de esperar a S10-S13 como el resto
+// de este comentario original sugería) porque HU06/HU07 dependen
+// directamente de ella para aplicar RN-01 (no duplicados por torneo).
 
 generator client {
   provider = "prisma-client-js"
@@ -89,6 +93,7 @@ model Jugador {
   clasificaciones Clasificacion[]
   partidasBlancas Partida[]       @relation("PartidaBlancas")
   partidasNegras  Partida[]       @relation("PartidaNegras")
+  inscripciones   Inscripcion[]
 
   @@map("jugadores")
 }
@@ -100,6 +105,12 @@ model Torneo {
   fechaFin      DateTime     @map("fecha_fin")
   estado        EstadoTorneo @default(CREADO)
   formato       String       @default("suizo")
+  // HU05: no están en el diagrama de clases original (docs/media/image7.png
+  // solo define id/nombre/fechas/estado/formato); se agregan porque el CA de
+  // HU05 exige persistir "rondas, ritmo y desempates" y CriterioDesempate ya
+  // cubre desempates pero no había dónde guardar el resto.
+  numeroRondas  Int?         @map("numero_rondas")
+  ritmo         String?
   organizadorId String       @map("organizador_id")
   createdAt     DateTime     @default(now()) @map("created_at")
 
@@ -107,6 +118,7 @@ model Torneo {
   rondas             Ronda[]
   criteriosDesempate CriterioDesempate[]
   clasificaciones    Clasificacion[]
+  inscripciones      Inscripcion[]
 
   @@map("torneos")
 }
@@ -190,4 +202,22 @@ model Clasificacion {
 
   @@unique([torneoId, jugadorId])
   @@map("clasificacion")
+}
+
+// HU06/HU07: listado oficial de participantes de un torneo. No está en
+// docs/media/image7.png (el diagrama modela "participa" como el acceso de
+// Jugador a Clasificacion), pero se necesita antes de que exista
+// clasificación: es el punto donde se aplica RN-01 (un jugador no puede
+// inscribirse dos veces en el mismo torneo).
+model Inscripcion {
+  id        String   @id @default(uuid())
+  torneoId  String   @map("torneo_id")
+  jugadorId String   @map("jugador_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  torneo  Torneo  @relation(fields: [torneoId], references: [id])
+  jugador Jugador @relation(fields: [jugadorId], references: [id])
+
+  @@unique([torneoId, jugadorId])
+  @@map("inscripciones")
 }

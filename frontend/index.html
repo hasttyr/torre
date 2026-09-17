@@ -15,6 +15,24 @@
       rel="stylesheet"
     />
     <title>Torre Central Hub</title>
+    <script>
+      // Aplica el tema antes del primer paint para evitar el flash del tema
+      // por defecto; stores/theme.ts usa la misma clave y lógica al montar.
+      (function () {
+        var theme = 'dark';
+        try {
+          var guardado = localStorage.getItem('torre.theme');
+          if (guardado === 'light' || guardado === 'dark') {
+            theme = guardado;
+          } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+            theme = 'light';
+          }
+        } catch (error) {
+          // Sin acceso a localStorage/matchMedia (navegación privada, etc.): se usa 'dark'.
+        }
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
   </head>
   <body>
     <div id="app"></div>
