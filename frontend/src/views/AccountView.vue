@@ -3,6 +3,7 @@ import axios from "axios";
 import { onMounted, reactive, ref, watch } from "vue";
 
 import AppHeader from "../components/AppHeader.vue";
+import { DISCAPACIDADES, DISCAPACIDAD_LABELS, GENEROS, GENERO_LABELS, type Discapacidad, type Genero } from "../services/auth";
 import { useAuthStore } from "../stores/auth";
 
 const auth = useAuthStore();
@@ -24,6 +25,9 @@ const form = reactive({
   codigoUniversitario: "",
   programa: "",
   semestre: "",
+  fechaNacimiento: "",
+  genero: "" as Genero | "",
+  discapacidad: "" as Discapacidad | "",
 });
 
 function poblarForm(): void {
@@ -33,6 +37,10 @@ function poblarForm(): void {
     form.codigoUniversitario = auth.usuario.jugador.codigoUniversitario;
     form.programa = auth.usuario.jugador.programa;
     form.semestre = String(auth.usuario.jugador.semestre);
+    // El input date espera "YYYY-MM-DD"; el backend devuelve ISO completo.
+    form.fechaNacimiento = auth.usuario.jugador.fechaNacimiento?.slice(0, 10) ?? "";
+    form.genero = auth.usuario.jugador.genero ?? "";
+    form.discapacidad = auth.usuario.jugador.discapacidad ?? "";
   }
 }
 
@@ -71,6 +79,9 @@ function validate(): boolean {
     if (!Number.isInteger(Number(form.semestre)) || Number(form.semestre) <= 0) {
       errors.semestre = "El semestre debe ser un entero positivo";
     }
+    if (form.fechaNacimiento && form.fechaNacimiento > new Date().toISOString().slice(0, 10)) {
+      errors.fechaNacimiento = "La fecha de nacimiento no puede ser futura";
+    }
   }
 
   return Object.keys(errors).length === 0;
@@ -93,6 +104,9 @@ async function onSubmit(): Promise<void> {
             codigoUniversitario: form.codigoUniversitario.trim(),
             programa: form.programa.trim(),
             semestre: Number(form.semestre),
+            fechaNacimiento: form.fechaNacimiento || null,
+            genero: form.genero || null,
+            discapacidad: form.discapacidad || null,
           }
         : {}),
     });
@@ -180,6 +194,34 @@ async function onSubmit(): Promise<void> {
               <label for="programa">Programa</label>
               <input id="programa" v-model="form.programa" type="text" />
               <span class="field-error">{{ errors.programa }}</span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div class="field" :class="{ 'has-error': errors.fechaNacimiento }">
+                <label for="fechaNacimiento">Fecha de nacimiento</label>
+                <input id="fechaNacimiento" v-model="form.fechaNacimiento" type="date" />
+                <span class="field-error">{{ errors.fechaNacimiento }}</span>
+                <span v-if="auth.usuario.jugador.edad != null" class="text-sm text-text-muted">
+                  Edad actual: {{ auth.usuario.jugador.edad }} años
+                </span>
+              </div>
+              <div class="field">
+                <label for="genero">Género</label>
+                <select id="genero" v-model="form.genero">
+                  <option value="">Prefiero no responder</option>
+                  <option v-for="opcion in GENEROS" :key="opcion" :value="opcion">{{ GENERO_LABELS[opcion] }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="discapacidad">Discapacidad</label>
+              <select id="discapacidad" v-model="form.discapacidad">
+                <option value="">Sin especificar</option>
+                <option v-for="opcion in DISCAPACIDADES" :key="opcion" :value="opcion">
+                  {{ DISCAPACIDAD_LABELS[opcion] }}
+                </option>
+              </select>
             </div>
           </template>
 

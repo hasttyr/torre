@@ -6,12 +6,16 @@ import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "../stores/auth";
 import AccountView from "./AccountView.vue";
 
-vi.mock("../services/auth", () => ({
-  loginUser: vi.fn(),
-  logoutUser: vi.fn(),
-  fetchMe: vi.fn(),
-  updateProfile: vi.fn(),
-}));
+vi.mock("../services/auth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../services/auth")>();
+  return {
+    ...actual,
+    loginUser: vi.fn(),
+    logoutUser: vi.fn(),
+    fetchMe: vi.fn(),
+    updateProfile: vi.fn(),
+  };
+});
 
 import { fetchMe, updateProfile } from "../services/auth";
 
@@ -34,7 +38,15 @@ const JUGADOR = {
   estado: "ACTIVO",
   rol: "JUGADOR",
   createdAt: "2026-01-01T00:00:00.000Z",
-  jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
+  jugador: {
+    codigoUniversitario: "U1",
+    programa: "Sistemas",
+    semestre: 5,
+    fechaNacimiento: null,
+    edad: null,
+    genero: null,
+    discapacidad: null,
+  },
 };
 
 async function mountAccountView() {
@@ -107,6 +119,67 @@ describe("AccountView", () => {
     expect((wrapper.get("#codigo").element as HTMLInputElement).value).toBe("U1");
     expect((wrapper.get("#programa").element as HTMLInputElement).value).toBe("Sistemas");
     expect((wrapper.get("#semestre").element as HTMLInputElement).value).toBe("5");
+  });
+
+  it("precarga fecha de nacimiento/género/discapacidad y muestra la edad calculada", async () => {
+    const auth = useAuthStore();
+    const jugadorConDatos = {
+      ...JUGADOR,
+      jugador: {
+        ...JUGADOR.jugador,
+        fechaNacimiento: "2005-06-15T00:00:00.000Z",
+        edad: 21,
+        genero: "FEMENINO" as const,
+        discapacidad: "VISUAL" as const,
+      },
+    };
+    auth.$patch({ token: "token", usuario: jugadorConDatos });
+    fetchMeMock.mockResolvedValue(jugadorConDatos);
+
+    const wrapper = await mountAccountView();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect((wrapper.get("#fechaNacimiento").element as HTMLInputElement).value).toBe("2005-06-15");
+    expect((wrapper.get("#genero").element as HTMLSelectElement).value).toBe("FEMENINO");
+    expect((wrapper.get("#discapacidad").element as HTMLSelectElement).value).toBe("VISUAL");
+    expect(wrapper.text()).toContain("Edad actual: 21 años");
+  });
+
+  it("solo ofrece género y discapacidad del catálogo cerrado (no hay input de texto libre)", async () => {
+    const auth = useAuthStore();
+    auth.$patch({ token: "token", usuario: JUGADOR });
+    fetchMeMock.mockResolvedValue(JUGADOR);
+
+    const wrapper = await mountAccountView();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(wrapper.get("#genero").element.tagName).toBe("SELECT");
+    expect(wrapper.get("#discapacidad").element.tagName).toBe("SELECT");
+    expect(wrapper.findAll("#genero option").length).toBeGreaterThan(1);
+  });
+
+  it("envía fechaNacimiento/genero/discapacidad al guardar (HU20)", async () => {
+    const auth = useAuthStore();
+    auth.$patch({ token: "token", usuario: JUGADOR });
+    fetchMeMock.mockResolvedValue(JUGADOR);
+    updateProfileMock.mockResolvedValue(JUGADOR);
+
+    const wrapper = await mountAccountView();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await wrapper.get("#fechaNacimiento").setValue("2005-06-15");
+    await wrapper.get("#genero").setValue("FEMENINO");
+    await wrapper.get("#discapacidad").setValue("VISUAL");
+    await wrapper.get("form").trigger("submit.prevent");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(updateProfileMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fechaNacimiento: "2005-06-15",
+        genero: "FEMENINO",
+        discapacidad: "VISUAL",
+      }),
+    );
   });
 
   it("guarda los cambios del perfil y muestra un mensaje de éxito (HU20)", async () => {

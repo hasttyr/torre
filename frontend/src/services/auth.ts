@@ -27,10 +27,49 @@ interface RegisterOtroRolPayload extends RegisterBasePayload {
 
 export type RegisterPayload = RegisterJugadorPayload | RegisterOtroRolPayload;
 
+// Duplicado deliberadamente en backend/src/validators/users.schemas.ts
+// (GENEROS/DISCAPACIDADES) — catálogos cerrados, no texto libre.
+export const GENEROS = ["MASCULINO", "FEMENINO", "NO_BINARIO", "PREFIERE_NO_DECIR"] as const;
+export type Genero = (typeof GENEROS)[number];
+
+export const GENERO_LABELS: Record<Genero, string> = {
+  MASCULINO: "Masculino",
+  FEMENINO: "Femenino",
+  NO_BINARIO: "No binario",
+  PREFIERE_NO_DECIR: "Prefiero no decir",
+};
+
+export const DISCAPACIDADES = [
+  "NINGUNA",
+  "FISICA_MOTRIZ",
+  "VISUAL",
+  "AUDITIVA",
+  "COGNITIVA",
+  "PSICOSOCIAL",
+  "MULTIPLE",
+  "OTRA",
+] as const;
+export type Discapacidad = (typeof DISCAPACIDADES)[number];
+
+export const DISCAPACIDAD_LABELS: Record<Discapacidad, string> = {
+  NINGUNA: "Ninguna",
+  FISICA_MOTRIZ: "Física o motriz",
+  VISUAL: "Visual",
+  AUDITIVA: "Auditiva",
+  COGNITIVA: "Cognitiva",
+  PSICOSOCIAL: "Psicosocial",
+  MULTIPLE: "Múltiple",
+  OTRA: "Otra",
+};
+
 export interface JugadorPerfil {
   codigoUniversitario: string;
   programa: string;
   semestre: number;
+  fechaNacimiento: string | null;
+  edad: number | null;
+  genero: Genero | null;
+  discapacidad: Discapacidad | null;
 }
 
 export interface RegisteredUser {
@@ -45,11 +84,16 @@ export interface RegisteredUser {
 
 // HU20: todos opcionales (se actualiza solo lo que venga); nunca incluye
 // rol ni email a propósito, mismo criterio que backend/src/validators/users.schemas.ts.
+// null explícito limpia fechaNacimiento/genero/discapacidad; omitir el
+// campo lo deja como está.
 export interface UpdateProfilePayload {
   nombre?: string;
   codigoUniversitario?: string;
   programa?: string;
   semestre?: number;
+  fechaNacimiento?: string | null;
+  genero?: Genero | null;
+  discapacidad?: Discapacidad | null;
 }
 
 export async function registerUser(payload: RegisterPayload): Promise<RegisteredUser> {

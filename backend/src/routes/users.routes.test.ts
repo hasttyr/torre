@@ -86,7 +86,7 @@ describe("PUT /api/users/me", () => {
       .send({ programa: "Ingeniería", semestre: 6 });
 
     expect(response.status).toBe(200);
-    expect(response.body.jugador).toEqual({ codigoUniversitario: "U1", programa: "Ingeniería", semestre: 6 });
+    expect(response.body.jugador).toMatchObject({ codigoUniversitario: "U1", programa: "Ingeniería", semestre: 6 });
   });
 
   it("ignora cualquier intento de enviar 'rol' en el body (no es un campo válido del schema)", async () => {
@@ -121,6 +121,59 @@ describe("PUT /api/users/me", () => {
       .put("/api/users/me")
       .set("Authorization", `Bearer ${tokenFor("JUGADOR", "usuario-1")}`)
       .send({ nombre: "A" });
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.usuario.update).not.toHaveBeenCalled();
+  });
+
+  it("actualiza fechaNacimiento, genero y discapacidad desde el catálogo cerrado", async () => {
+    prismaMock.usuario.findUnique.mockResolvedValue({
+      id: "usuario-1",
+      jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
+    });
+    prismaMock.usuario.update.mockResolvedValue({
+      id: "usuario-1",
+      nombre: "Luis Gómez",
+      email: "luis@example.com",
+      estado: "ACTIVO",
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      rol: { id: "rol-1", nombre: "JUGADOR" },
+      jugador: {
+        codigoUniversitario: "U1",
+        programa: "Sistemas",
+        semestre: 5,
+        fechaNacimiento: new Date("2005-06-15"),
+        genero: "FEMENINO",
+        discapacidad: "VISUAL",
+      },
+    });
+
+    const response = await request(createApp())
+      .put("/api/users/me")
+      .set("Authorization", `Bearer ${tokenFor("JUGADOR", "usuario-1")}`)
+      .send({ fechaNacimiento: "2005-06-15", genero: "FEMENINO", discapacidad: "VISUAL" });
+
+    expect(response.status).toBe(200);
+    expect(response.body.jugador.genero).toBe("FEMENINO");
+    expect(response.body.jugador.discapacidad).toBe("VISUAL");
+    expect(typeof response.body.jugador.edad).toBe("number");
+  });
+
+  it("responde 400 con un género fuera del catálogo (no acepta texto libre)", async () => {
+    const response = await request(createApp())
+      .put("/api/users/me")
+      .set("Authorization", `Bearer ${tokenFor("JUGADOR", "usuario-1")}`)
+      .send({ genero: "cualquier-cosa" });
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.usuario.update).not.toHaveBeenCalled();
+  });
+
+  it("responde 400 con una fecha de nacimiento futura", async () => {
+    const response = await request(createApp())
+      .put("/api/users/me")
+      .set("Authorization", `Bearer ${tokenFor("JUGADOR", "usuario-1")}`)
+      .send({ fechaNacimiento: "2099-01-01" });
 
     expect(response.status).toBe(400);
     expect(prismaMock.usuario.update).not.toHaveBeenCalled();

@@ -1,8 +1,32 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { HttpError } from "../middlewares/errorHandler";
 import type { UpdateProfileSchemaInput } from "../validators/users.schemas";
 import { toUserDto, type UserDto } from "./user.mapper";
+
+const CAMPOS_JUGADOR = [
+  "codigoUniversitario",
+  "programa",
+  "semestre",
+  "fechaNacimiento",
+  "genero",
+  "discapacidad",
+] as const;
+
+function tieneCambiosJugador(data: UpdateProfileSchemaInput): boolean {
+  return CAMPOS_JUGADOR.some((campo) => data[campo] !== undefined);
+}
+
+function construirDatosJugador(data: UpdateProfileSchemaInput): Prisma.JugadorUpdateWithoutUsuarioInput {
+  return {
+    ...(data.codigoUniversitario !== undefined ? { codigoUniversitario: data.codigoUniversitario.trim() } : {}),
+    ...(data.programa !== undefined ? { programa: data.programa.trim() } : {}),
+    ...(data.semestre !== undefined ? { semestre: data.semestre } : {}),
+    ...(data.fechaNacimiento !== undefined ? { fechaNacimiento: data.fechaNacimiento } : {}),
+    ...(data.genero !== undefined ? { genero: data.genero } : {}),
+    ...(data.discapacidad !== undefined ? { discapacidad: data.discapacidad } : {}),
+  };
+}
 
 export async function getUserById(prisma: PrismaClient, id: string): Promise<UserDto> {
   const usuario = await prisma.usuario.findUnique({ where: { id }, include: { rol: true, jugador: true } });
@@ -50,9 +74,8 @@ export async function updateOwnProfile(
     throw new HttpError(404, "Usuario no encontrado");
   }
 
-  const tieneCambiosJugador =
-    data.codigoUniversitario !== undefined || data.programa !== undefined || data.semestre !== undefined;
-  if (tieneCambiosJugador && !existente.jugador) {
+  const hayCambiosJugador = tieneCambiosJugador(data);
+  if (hayCambiosJugador && !existente.jugador) {
     throw new HttpError(400, "Este usuario no tiene un perfil de jugador para actualizar");
   }
 
@@ -60,19 +83,7 @@ export async function updateOwnProfile(
     where: { id: userId },
     data: {
       ...(data.nombre !== undefined ? { nombre: data.nombre.trim() } : {}),
-      ...(tieneCambiosJugador
-        ? {
-            jugador: {
-              update: {
-                ...(data.codigoUniversitario !== undefined
-                  ? { codigoUniversitario: data.codigoUniversitario.trim() }
-                  : {}),
-                ...(data.programa !== undefined ? { programa: data.programa.trim() } : {}),
-                ...(data.semestre !== undefined ? { semestre: data.semestre } : {}),
-              },
-            },
-          }
-        : {}),
+      ...(hayCambiosJugador ? { jugador: { update: construirDatosJugador(data) } } : {}),
     },
     include: { rol: true, jugador: true },
   });

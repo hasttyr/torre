@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HttpError } from "../middlewares/errorHandler";
+import { calcularEdad } from "./user.mapper";
 import { getUserById, updateOwnProfile } from "./users.service";
 
 function buildPrismaMock() {
@@ -23,12 +24,53 @@ describe("getUserById", () => {
       estado: "ACTIVO",
       createdAt: new Date("2026-01-01"),
       rol: { nombre: "JUGADOR" },
-      jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
+      jugador: {
+        codigoUniversitario: "U1",
+        programa: "Sistemas",
+        semestre: 5,
+        fechaNacimiento: null,
+        genero: null,
+        discapacidad: null,
+      },
     });
 
     const usuario = await getUserById(prisma as unknown as PrismaClient, "usuario-1");
 
-    expect(usuario.jugador).toEqual({ codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 });
+    expect(usuario.jugador).toEqual({
+      codigoUniversitario: "U1",
+      programa: "Sistemas",
+      semestre: 5,
+      fechaNacimiento: null,
+      edad: null,
+      genero: null,
+      discapacidad: null,
+    });
+  });
+
+  it("calcula la edad a partir de fechaNacimiento", async () => {
+    const prisma = buildPrismaMock();
+    prisma.usuario.findUnique.mockResolvedValue({
+      id: "usuario-1",
+      nombre: "Luis Gómez",
+      email: "luis@example.com",
+      estado: "ACTIVO",
+      createdAt: new Date("2026-01-01"),
+      rol: { nombre: "JUGADOR" },
+      jugador: {
+        codigoUniversitario: "U1",
+        programa: "Sistemas",
+        semestre: 5,
+        fechaNacimiento: new Date("2005-06-15"),
+        genero: "MASCULINO",
+        discapacidad: "NINGUNA",
+      },
+    });
+
+    const usuario = await getUserById(prisma as unknown as PrismaClient, "usuario-1");
+
+    expect(usuario.jugador?.edad).toBe(calcularEdad(new Date("2005-06-15")));
+    expect(usuario.jugador?.genero).toBe("MASCULINO");
+    expect(usuario.jugador?.discapacidad).toBe("NINGUNA");
   });
 
   it("no incluye jugador cuando el usuario no tiene ese perfil", async () => {
@@ -111,5 +153,74 @@ describe("updateOwnProfile", () => {
     await expect(
       updateOwnProfile(prisma as unknown as PrismaClient, "no-existe", { nombre: "X" }),
     ).rejects.toMatchObject({ status: 404 } satisfies Partial<HttpError>);
+  });
+
+  it("actualiza fechaNacimiento, genero y discapacidad", async () => {
+    prisma.usuario.findUnique.mockResolvedValue({
+      id: "usuario-1",
+      jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
+    });
+    prisma.usuario.update.mockResolvedValue({
+      id: "usuario-1",
+      nombre: "Luis Gómez",
+      email: "luis@example.com",
+      estado: "ACTIVO",
+      createdAt: new Date("2026-01-01"),
+      rol: { nombre: "JUGADOR" },
+      jugador: {
+        codigoUniversitario: "U1",
+        programa: "Sistemas",
+        semestre: 5,
+        fechaNacimiento: new Date("2005-06-15"),
+        genero: "MASCULINO",
+        discapacidad: "NINGUNA",
+      },
+    });
+
+    await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", {
+      fechaNacimiento: new Date("2005-06-15"),
+      genero: "MASCULINO",
+      discapacidad: "NINGUNA",
+    });
+
+    expect(prisma.usuario.update.mock.calls[0][0].data.jugador.update).toEqual({
+      fechaNacimiento: new Date("2005-06-15"),
+      genero: "MASCULINO",
+      discapacidad: "NINGUNA",
+    });
+  });
+
+  it("permite limpiar genero/discapacidad enviando null explícito", async () => {
+    prisma.usuario.findUnique.mockResolvedValue({
+      id: "usuario-1",
+      jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
+    });
+    prisma.usuario.update.mockResolvedValue({
+      id: "usuario-1",
+      nombre: "Luis Gómez",
+      email: "luis@example.com",
+      estado: "ACTIVO",
+      createdAt: new Date("2026-01-01"),
+      rol: { nombre: "JUGADOR" },
+      jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5, fechaNacimiento: null, genero: null, discapacidad: null },
+    });
+
+    await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { genero: null, discapacidad: null });
+
+    expect(prisma.usuario.update.mock.calls[0][0].data.jugador.update).toEqual({ genero: null, discapacidad: null });
+  });
+});
+
+describe("calcularEdad", () => {
+  it("calcula la edad cuando ya pasó el cumpleaños este año", () => {
+    expect(calcularEdad(new Date("2000-01-01"), new Date("2026-06-01"))).toBe(26);
+  });
+
+  it("no suma el año todavía si el cumpleaños no llegó", () => {
+    expect(calcularEdad(new Date("2000-12-31"), new Date("2026-06-01"))).toBe(25);
+  });
+
+  it("calcula correctamente el día exacto del cumpleaños", () => {
+    expect(calcularEdad(new Date("2000-06-01"), new Date("2026-06-01"))).toBe(26);
   });
 });

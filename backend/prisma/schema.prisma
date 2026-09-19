@@ -82,12 +82,43 @@ model Usuario {
   @@map("usuarios")
 }
 
+// Catálogo cerrado (DANE) en vez de texto libre: evita que el campo se
+// use para escribir cualquier cosa. Editable desde HU20, nunca obligatorio
+// en el registro.
+enum GeneroJugador {
+  MASCULINO
+  FEMENINO
+  NO_BINARIO
+  PREFIERE_NO_DECIR
+}
+
+// Catálogo cerrado alineado al Registro de Localización y Caracterización
+// de Personas con Discapacidad (RLCPD) colombiano.
+enum DiscapacidadJugador {
+  NINGUNA
+  FISICA_MOTRIZ
+  VISUAL
+  AUDITIVA
+  COGNITIVA
+  PSICOSOCIAL
+  MULTIPLE
+  OTRA
+}
+
 model Jugador {
   id                  String @id @default(uuid())
   usuarioId           String @unique @map("usuario_id")
   codigoUniversitario String @map("codigo_universitario")
   programa            String
   semestre            Int
+  // Los tres siguientes son opcionales a propósito: no forman parte del
+  // registro (HU01), se completan después desde "Editar perfil" (HU20).
+  // La edad no se guarda: se calcula en el mapper a partir de
+  // fechaNacimiento para no tener un valor que se desactualiza con el
+  // tiempo.
+  fechaNacimiento DateTime?            @map("fecha_nacimiento")
+  genero          GeneroJugador?
+  discapacidad    DiscapacidadJugador?
 
   usuario         Usuario         @relation(fields: [usuarioId], references: [id])
   clasificaciones Clasificacion[]
