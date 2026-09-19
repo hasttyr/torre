@@ -4,11 +4,11 @@ import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AuthLayout from "../components/AuthLayout.vue";
-import { registerUser, ROLES_AUTOASIGNABLES, type RegisterPayload, type RolAutoasignable } from "../services/auth";
+import { registerUser, SELF_ASSIGNABLE_ROLES, type RegisterPayload, type SelfAssignableRole } from "../services/auth";
 
 const { t } = useI18n();
 
-const ROLE_GLYPHS: Record<RolAutoasignable, string> = {
+const ROLE_GLYPHS: Record<SelfAssignableRole, string> = {
   JUGADOR: "♙",
   ENTRENADOR: "♗",
   ARBITRO: "♘",
@@ -19,16 +19,21 @@ const form = reactive({
   nombre: "",
   email: "",
   password: "",
-  rol: "JUGADOR" as RolAutoasignable,
+  rol: "JUGADOR" as SelfAssignableRole,
   codigoUniversitario: "",
   programa: "",
   semestre: "",
 });
 
-const isJugador = computed(() => form.rol === "JUGADOR");
+const isPlayer = computed(() => form.rol === "JUGADOR");
 
-// Chequeo simple de forma (no regex: evita el patrón de backtracking que
-// marcan los linters de seguridad). La validación real es la del backend.
+/**
+ * Checks whether a string has the basic shape of an email address.
+ *
+ * @remarks
+ * No regex on purpose: it avoids the backtracking pattern security linters
+ * flag. The authoritative validation is always the backend's.
+ */
 function looksLikeEmail(value: string): boolean {
   const at = value.indexOf("@");
   if (at <= 0 || at === value.length - 1) {
@@ -44,8 +49,14 @@ const submitting = ref(false);
 const successMessage = ref<string | null>(null);
 const serverError = ref<string | null>(null);
 
-// Reglas espejo de backend/src/validators/auth.schemas.ts. Es validación de
-// UX (feedback inmediato); la validación que manda siempre es la del backend.
+/**
+ * Validates the registration form, mirroring
+ * backend/src/validators/auth.schemas.ts.
+ *
+ * @remarks This is UX validation (immediate feedback); the validation that
+ * ultimately decides is always the backend's.
+ * @returns `true` if the form has no validation errors.
+ */
 function validate(): boolean {
   for (const key of Object.keys(errors)) {
     delete errors[key];
@@ -61,7 +72,7 @@ function validate(): boolean {
     errors.password = t("auth.passwordMinLength");
   }
 
-  if (isJugador.value) {
+  if (isPlayer.value) {
     if (!form.codigoUniversitario.trim()) {
       errors.codigoUniversitario = t("auth.codigoRequired");
     }
@@ -76,6 +87,7 @@ function validate(): boolean {
   return Object.keys(errors).length === 0;
 }
 
+/** Builds the registration API payload from the form, shaped by the chosen role. */
 function buildPayload(): RegisterPayload {
   const base = {
     nombre: form.nombre.trim(),
@@ -96,6 +108,7 @@ function buildPayload(): RegisterPayload {
   return { ...base, rol: form.rol };
 }
 
+/** Clears the registration form back to its initial empty state. */
 function resetForm(): void {
   form.nombre = "";
   form.email = "";
@@ -105,6 +118,7 @@ function resetForm(): void {
   form.semestre = "";
 }
 
+/** Validates and submits the registration form to the backend. */
 async function onSubmit(): Promise<void> {
   successMessage.value = null;
   serverError.value = null;
@@ -115,8 +129,8 @@ async function onSubmit(): Promise<void> {
 
   submitting.value = true;
   try {
-    const usuario = await registerUser(buildPayload());
-    successMessage.value = t("register.successMessage", { email: usuario.email });
+    const user = await registerUser(buildPayload());
+    successMessage.value = t("register.successMessage", { email: user.email });
     resetForm();
   } catch (error) {
     if (axios.isAxiosError(error) && typeof error.response?.data?.error === "string") {
@@ -170,18 +184,18 @@ async function onSubmit(): Promise<void> {
         <span class="field-label">{{ t("register.rolLabel") }}</span>
         <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4" role="radiogroup" :aria-label="t('register.rolLabel')">
           <label
-            v-for="rol in ROLES_AUTOASIGNABLES"
-            :key="rol"
+            v-for="role in SELF_ASSIGNABLE_ROLES"
+            :key="role"
             class="flex cursor-pointer flex-col items-center gap-1 rounded-lg border px-3 py-3 text-center text-[0.78rem] font-semibold transition-colors"
             :class="
-              form.rol === rol
+              form.rol === role
                 ? 'border-accent bg-accent/15 text-text'
                 : 'border-border bg-surface-2 text-text-muted hover:border-accent/40'
             "
           >
-            <input v-model="form.rol" type="radio" name="rol" :value="rol" class="sr-only" />
-            <span class="text-xl text-accent" aria-hidden="true">{{ ROLE_GLYPHS[rol] }}</span>
-            <span>{{ t(`roles.${rol}`) }}</span>
+            <input v-model="form.rol" type="radio" name="rol" :value="role" class="sr-only" />
+            <span class="text-xl text-accent" aria-hidden="true">{{ ROLE_GLYPHS[role] }}</span>
+            <span>{{ t(`roles.${role}`) }}</span>
           </label>
         </div>
       </div>
@@ -216,7 +230,7 @@ async function onSubmit(): Promise<void> {
         leave-active-class="transition duration-180 ease-in"
         leave-to-class="opacity-0 -translate-y-1.5"
       >
-        <fieldset v-if="isJugador" class="m-0 flex flex-col gap-4 rounded-xl border border-dashed border-border p-4 pt-4">
+        <fieldset v-if="isPlayer" class="m-0 flex flex-col gap-4 rounded-xl border border-dashed border-border p-4 pt-4">
           <legend class="px-1.5 text-[0.8rem] font-semibold text-text-muted">{{ t("register.playerDataLegend") }}</legend>
 
           <div class="field" :class="{ 'has-error': errors.codigoUniversitario }">

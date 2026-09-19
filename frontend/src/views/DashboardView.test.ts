@@ -6,20 +6,20 @@ import { createRouter, createWebHistory } from "vue-router";
 import { i18n } from "../i18n";
 import DashboardView from "./DashboardView.vue";
 
-vi.mock("../services/torneos", () => ({
-  crearTorneo: vi.fn(),
-  obtenerTorneo: vi.fn(),
-  configurarTorneo: vi.fn(),
-  abrirInscripciones: vi.fn(),
-  cerrarInscripciones: vi.fn(),
-  inscribirJugador: vi.fn(),
-  listarJugadoresInscritos: vi.fn(),
-  listarMisTorneos: vi.fn(),
+vi.mock("../services/tournaments", () => ({
+  createTournament: vi.fn(),
+  getTournament: vi.fn(),
+  configureTournament: vi.fn(),
+  openRegistration: vi.fn(),
+  closeRegistration: vi.fn(),
+  enrollPlayer: vi.fn(),
+  listEnrolledPlayers: vi.fn(),
+  listMyTournaments: vi.fn(),
 }));
 
-import { listarMisTorneos } from "../services/torneos";
+import { listMyTournaments } from "../services/tournaments";
 
-const listarMisTorneosMock = vi.mocked(listarMisTorneos);
+const listMyTournamentsMock = vi.mocked(listMyTournaments);
 
 async function mountView() {
   const router = createRouter({
@@ -46,7 +46,7 @@ describe("DashboardView", () => {
   });
 
   it("muestra un estado vacío cuando el organizador no tiene torneos", async () => {
-    listarMisTorneosMock.mockResolvedValue([]);
+    listMyTournamentsMock.mockResolvedValue([]);
 
     const { wrapper } = await mountView();
 
@@ -54,7 +54,7 @@ describe("DashboardView", () => {
   });
 
   it("lista los torneos del organizador con su estado", async () => {
-    listarMisTorneosMock.mockResolvedValue([
+    listMyTournamentsMock.mockResolvedValue([
       {
         id: "torneo-1",
         nombre: "Copa Universitaria",
@@ -79,7 +79,7 @@ describe("DashboardView", () => {
   });
 
   it("navega al panel del torneo al hacer click en la tarjeta", async () => {
-    listarMisTorneosMock.mockResolvedValue([
+    listMyTournamentsMock.mockResolvedValue([
       {
         id: "torneo-1",
         nombre: "Copa Universitaria",

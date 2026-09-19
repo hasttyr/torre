@@ -3,9 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useThemeStore } from "./theme";
 
-function mockMatchMedia(prefiereClaro: boolean): void {
+function mockMatchMedia(prefersLight: boolean): void {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
-    matches: query === "(prefers-color-scheme: light)" ? prefiereClaro : false,
+    matches: query === "(prefers-color-scheme: light)" ? prefersLight : false,
     media: query,
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),

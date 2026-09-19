@@ -23,7 +23,7 @@ describe("router guard de /cuenta", () => {
     const auth = useAuthStore();
     auth.$patch({
       token: "token",
-      usuario: {
+      user: {
         id: "usuario-1",
         nombre: "Ana",
         email: "ana@example.com",

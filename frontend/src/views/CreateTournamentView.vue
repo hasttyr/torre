@@ -6,10 +6,10 @@ import { useRouter } from "vue-router";
 
 import AppHeader from "../components/AppHeader.vue";
 import DateField from "../components/DateField.vue";
-import { useTorneosStore } from "../stores/torneos";
+import { useTournamentsStore } from "../stores/tournaments";
 
 const router = useRouter();
-const torneos = useTorneosStore();
+const tournaments = useTournamentsStore();
 const { t } = useI18n();
 
 const form = reactive({
@@ -23,7 +23,12 @@ const errors = reactive<Record<string, string>>({});
 const submitting = ref(false);
 const serverError = ref<string | null>(null);
 
-// Reglas espejo de backend/src/validators/torneos.schemas.ts.
+/**
+ * Validates the tournament creation form, mirroring
+ * backend/src/validators/torneos.schemas.ts.
+ *
+ * @returns `true` if the form has no validation errors.
+ */
 function validate(): boolean {
   for (const key of Object.keys(errors)) {
     delete errors[key];
@@ -45,6 +50,7 @@ function validate(): boolean {
   return Object.keys(errors).length === 0;
 }
 
+/** Validates and submits the tournament creation form to the backend. */
 async function onSubmit(): Promise<void> {
   serverError.value = null;
 
@@ -54,13 +60,13 @@ async function onSubmit(): Promise<void> {
 
   submitting.value = true;
   try {
-    const torneo = await torneos.crear({
+    const tournament = await tournaments.create({
       nombre: form.nombre.trim(),
       fechaInicio: form.fechaInicio,
       fechaFin: form.fechaFin,
       formato: form.formato.trim() || undefined,
     });
-    router.push(`/torneos/${torneo.id}`);
+    router.push(`/torneos/${tournament.id}`);
   } catch (error) {
     if (axios.isAxiosError(error) && typeof error.response?.data?.error === "string") {
       serverError.value = error.response.data.error;

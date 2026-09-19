@@ -6,25 +6,25 @@ import { createRouter, createWebHistory } from "vue-router";
 import { i18n } from "../i18n";
 import PlayerTournamentsView from "./PlayerTournamentsView.vue";
 
-vi.mock("../services/torneos", () => ({
-  crearTorneo: vi.fn(),
-  obtenerTorneo: vi.fn(),
-  configurarTorneo: vi.fn(),
-  abrirInscripciones: vi.fn(),
-  cerrarInscripciones: vi.fn(),
-  inscribirJugador: vi.fn(),
-  listarJugadoresInscritos: vi.fn(),
-  listarMisTorneos: vi.fn(),
-  listarTorneosDisponibles: vi.fn(),
-  listarTorneosInscrito: vi.fn(),
+vi.mock("../services/tournaments", () => ({
+  createTournament: vi.fn(),
+  getTournament: vi.fn(),
+  configureTournament: vi.fn(),
+  openRegistration: vi.fn(),
+  closeRegistration: vi.fn(),
+  enrollPlayer: vi.fn(),
+  listEnrolledPlayers: vi.fn(),
+  listMyTournaments: vi.fn(),
+  listAvailableTournaments: vi.fn(),
+  listEnrolledTournaments: vi.fn(),
 }));
 
-import { listarTorneosDisponibles, listarTorneosInscrito } from "../services/torneos";
+import { listAvailableTournaments, listEnrolledTournaments } from "../services/tournaments";
 
-const listarTorneosDisponiblesMock = vi.mocked(listarTorneosDisponibles);
-const listarTorneosInscritoMock = vi.mocked(listarTorneosInscrito);
+const listAvailableTournamentsMock = vi.mocked(listAvailableTournaments);
+const listEnrolledTournamentsMock = vi.mocked(listEnrolledTournaments);
 
-const TORNEO_DISPONIBLE = {
+const AVAILABLE_TOURNAMENT = {
   id: "torneo-1",
   nombre: "Copa Abierta",
   fechaInicio: "2026-10-01",
@@ -40,7 +40,7 @@ const TORNEO_DISPONIBLE = {
   createdAt: "2026-09-17T00:00:00.000Z",
 };
 
-const TORNEO_INSCRITO = { ...TORNEO_DISPONIBLE, id: "torneo-2", nombre: "Copa Interna", estado: "CREADO" as const };
+const ENROLLED_TOURNAMENT = { ...AVAILABLE_TOURNAMENT, id: "torneo-2", nombre: "Copa Interna", estado: "CREADO" as const };
 
 async function mountView() {
   const router = createRouter({
@@ -63,8 +63,8 @@ describe("PlayerTournamentsView", () => {
   });
 
   it("muestra estados vacíos cuando no hay disponibles ni inscripciones", async () => {
-    listarTorneosDisponiblesMock.mockResolvedValue([]);
-    listarTorneosInscritoMock.mockResolvedValue([]);
+    listAvailableTournamentsMock.mockResolvedValue([]);
+    listEnrolledTournamentsMock.mockResolvedValue([]);
 
     const { wrapper } = await mountView();
 
@@ -73,8 +73,8 @@ describe("PlayerTournamentsView", () => {
   });
 
   it("lista los torneos disponibles y las inscripciones del jugador por separado", async () => {
-    listarTorneosDisponiblesMock.mockResolvedValue([TORNEO_DISPONIBLE]);
-    listarTorneosInscritoMock.mockResolvedValue([TORNEO_INSCRITO]);
+    listAvailableTournamentsMock.mockResolvedValue([AVAILABLE_TOURNAMENT]);
+    listEnrolledTournamentsMock.mockResolvedValue([ENROLLED_TOURNAMENT]);
 
     const { wrapper } = await mountView();
 
@@ -83,8 +83,8 @@ describe("PlayerTournamentsView", () => {
   });
 
   it("muestra un error si falla la carga", async () => {
-    listarTorneosDisponiblesMock.mockRejectedValue(new Error("network error"));
-    listarTorneosInscritoMock.mockResolvedValue([]);
+    listAvailableTournamentsMock.mockRejectedValue(new Error("network error"));
+    listEnrolledTournamentsMock.mockResolvedValue([]);
 
     const { wrapper } = await mountView();
 

@@ -16,6 +16,11 @@ const errors = reactive<Record<string, string>>({});
 const submitting = ref(false);
 const serverError = ref<string | null>(null);
 
+/**
+ * Validates the login form.
+ *
+ * @returns `true` if the form has no validation errors.
+ */
 function validate(): boolean {
   for (const key of Object.keys(errors)) {
     delete errors[key];
@@ -31,6 +36,7 @@ function validate(): boolean {
   return Object.keys(errors).length === 0;
 }
 
+/** Validates and submits the login form. */
 async function onSubmit(): Promise<void> {
   serverError.value = null;
 

@@ -1,9 +1,9 @@
 import { io } from "socket.io-client";
 
-// Catálogo de eventos en tiempo real (ver README.md > Arquitectura).
-// Duplicado deliberadamente en backend/src/sockets/events.ts (no hay
-// paquete compartido entre los dos proyectos npm): si agregás, renombrás o
-// quitás un evento acá, replicá el cambio también en ese archivo.
+// Catalog of real-time events (see README.md > Architecture).
+// Deliberately duplicated in backend/src/sockets/events.ts (there is no
+// shared package between the two npm projects): if you add, rename or
+// remove an event here, replicate the change there too.
 export const SOCKET_EVENTS = {
   PAIRING_PUBLISHED: "pairing.published",
   MATCH_RESULT_RECORDED: "match.result.recorded",

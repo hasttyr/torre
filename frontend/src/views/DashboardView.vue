@@ -4,9 +4,9 @@ import { useI18n } from "vue-i18n";
 
 import AppHeader from "../components/AppHeader.vue";
 import { useLocaleStore } from "../stores/locale";
-import { useTorneosStore } from "../stores/torneos";
+import { useTournamentsStore } from "../stores/tournaments";
 
-const torneos = useTorneosStore();
+const tournaments = useTournamentsStore();
 const locale = useLocaleStore();
 const { t } = useI18n();
 const loading = ref(true);
@@ -14,7 +14,7 @@ const loadError = ref<string | null>(null);
 
 onMounted(async () => {
   try {
-    await torneos.cargarMisTorneos();
+    await tournaments.loadMyTournaments();
   } catch {
     loadError.value = t("dashboard.loadError");
   } finally {
@@ -22,9 +22,10 @@ onMounted(async () => {
   }
 });
 
-function formatFecha(fecha: string): string {
+/** Formats an ISO date string using the active locale. */
+function formatDate(date: string): string {
   const localeTag = locale.locale;
-  return new Date(fecha).toLocaleDateString(localeTag, { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(date).toLocaleDateString(localeTag, { day: "2-digit", month: "short", year: "numeric" });
 }
 </script>
 
@@ -41,21 +42,24 @@ function formatFecha(fecha: string): string {
       <p v-if="loading">{{ t("dashboard.loading") }}</p>
       <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
 
-      <p v-else-if="torneos.mios.length === 0" class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted">
+      <p
+        v-else-if="tournaments.mine.length === 0"
+        class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
+      >
         {{ t("dashboard.empty") }}
       </p>
 
       <ul v-else class="m-0 flex list-none flex-col gap-3 p-0">
-        <li v-for="torneo in torneos.mios" :key="torneo.id">
+        <li v-for="tournament in tournaments.mine" :key="tournament.id">
           <RouterLink
-            :to="`/torneos/${torneo.id}`"
+            :to="`/torneos/${tournament.id}`"
             class="tournament-card flex flex-col items-start gap-2 rounded-2xl border border-border-soft bg-surface p-5 text-inherit no-underline transition-colors hover:border-accent/40 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
           >
             <div>
-              <h2 class="text-base">{{ torneo.nombre }}</h2>
-              <p class="mt-0.5 text-sm">{{ formatFecha(torneo.fechaInicio) }} — {{ formatFecha(torneo.fechaFin) }}</p>
+              <h2 class="text-base">{{ tournament.nombre }}</h2>
+              <p class="mt-0.5 text-sm">{{ formatDate(tournament.fechaInicio) }} — {{ formatDate(tournament.fechaFin) }}</p>
             </div>
-            <span class="pill">{{ t(`estados.${torneo.estado}`) }}</span>
+            <span class="pill">{{ t(`estados.${tournament.estado}`) }}</span>
           </RouterLink>
         </li>
       </ul>

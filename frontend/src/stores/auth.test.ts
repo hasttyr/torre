@@ -17,7 +17,7 @@ const logoutUserMock = vi.mocked(logoutUser);
 const fetchMeMock = vi.mocked(fetchMe);
 const updateProfileMock = vi.mocked(updateProfile);
 
-const USUARIO = {
+const USER = {
   id: "usuario-1",
   nombre: "Ana Torres",
   email: "ana@example.com",
@@ -37,31 +37,31 @@ describe("useAuthStore", () => {
     const store = useAuthStore();
 
     expect(store.isAuthenticated).toBe(false);
-    expect(store.usuario).toBeNull();
+    expect(store.user).toBeNull();
     expect(api.defaults.headers.common.Authorization).toBeUndefined();
   });
 
   it("hidrata la sesión desde localStorage al crear el store", () => {
     localStorage.setItem("torre.token", "token-guardado");
-    localStorage.setItem("torre.usuario", JSON.stringify(USUARIO));
+    localStorage.setItem("torre.usuario", JSON.stringify(USER));
 
     const store = useAuthStore();
 
     expect(store.isAuthenticated).toBe(true);
-    expect(store.usuario).toEqual(USUARIO);
+    expect(store.user).toEqual(USER);
     expect(api.defaults.headers.common.Authorization).toBe("Bearer token-guardado");
   });
 
   it("login guarda token/usuario, persiste en localStorage y setea el header de axios", async () => {
-    loginUserMock.mockResolvedValue({ token: "nuevo-token", usuario: USUARIO });
+    loginUserMock.mockResolvedValue({ token: "nuevo-token", usuario: USER });
     const store = useAuthStore();
 
     await store.login("ana@example.com", "password123");
 
     expect(store.token).toBe("nuevo-token");
-    expect(store.usuario).toEqual(USUARIO);
+    expect(store.user).toEqual(USER);
     expect(localStorage.getItem("torre.token")).toBe("nuevo-token");
-    expect(JSON.parse(localStorage.getItem("torre.usuario")!)).toEqual(USUARIO);
+    expect(JSON.parse(localStorage.getItem("torre.usuario")!)).toEqual(USER);
     expect(api.defaults.headers.common.Authorization).toBe("Bearer nuevo-token");
   });
 
@@ -76,7 +76,7 @@ describe("useAuthStore", () => {
   });
 
   it("logout limpia el estado, localStorage y el header de axios", async () => {
-    loginUserMock.mockResolvedValue({ token: "token", usuario: USUARIO });
+    loginUserMock.mockResolvedValue({ token: "token", usuario: USER });
     logoutUserMock.mockResolvedValue(undefined);
     const store = useAuthStore();
     await store.login("ana@example.com", "password123");
@@ -85,13 +85,13 @@ describe("useAuthStore", () => {
 
     expect(logoutUserMock).toHaveBeenCalled();
     expect(store.token).toBeNull();
-    expect(store.usuario).toBeNull();
+    expect(store.user).toBeNull();
     expect(localStorage.getItem("torre.token")).toBeNull();
     expect(api.defaults.headers.common.Authorization).toBeUndefined();
   });
 
   it("logout limpia la sesión local aunque la llamada al backend falle", async () => {
-    loginUserMock.mockResolvedValue({ token: "token", usuario: USUARIO });
+    loginUserMock.mockResolvedValue({ token: "token", usuario: USER });
     logoutUserMock.mockRejectedValue(new Error("Network Error"));
     const store = useAuthStore();
     await store.login("ana@example.com", "password123");
@@ -102,32 +102,32 @@ describe("useAuthStore", () => {
     expect(localStorage.getItem("torre.token")).toBeNull();
   });
 
-  it("refreshUsuario actualiza el perfil desde /users/me", async () => {
-    loginUserMock.mockResolvedValue({ token: "token", usuario: USUARIO });
+  it("refreshUser actualiza el perfil desde /users/me", async () => {
+    loginUserMock.mockResolvedValue({ token: "token", usuario: USER });
     const store = useAuthStore();
     await store.login("ana@example.com", "password123");
 
-    const actualizado = { ...USUARIO, nombre: "Ana T." };
-    fetchMeMock.mockResolvedValue(actualizado);
+    const updated = { ...USER, nombre: "Ana T." };
+    fetchMeMock.mockResolvedValue(updated);
 
-    await store.refreshUsuario();
+    await store.refreshUser();
 
-    expect(store.usuario).toEqual(actualizado);
-    expect(JSON.parse(localStorage.getItem("torre.usuario")!)).toEqual(actualizado);
+    expect(store.user).toEqual(updated);
+    expect(JSON.parse(localStorage.getItem("torre.usuario")!)).toEqual(updated);
   });
 
   it("updateProfile guarda el usuario devuelto por el backend (HU20)", async () => {
-    loginUserMock.mockResolvedValue({ token: "token", usuario: USUARIO });
+    loginUserMock.mockResolvedValue({ token: "token", usuario: USER });
     const store = useAuthStore();
     await store.login("ana@example.com", "password123");
 
-    const actualizado = { ...USUARIO, nombre: "Ana T." };
-    updateProfileMock.mockResolvedValue(actualizado);
+    const updated = { ...USER, nombre: "Ana T." };
+    updateProfileMock.mockResolvedValue(updated);
 
     await store.updateProfile({ nombre: "Ana T." });
 
     expect(updateProfileMock).toHaveBeenCalledWith({ nombre: "Ana T." });
-    expect(store.usuario).toEqual(actualizado);
-    expect(JSON.parse(localStorage.getItem("torre.usuario")!)).toEqual(actualizado);
+    expect(store.user).toEqual(updated);
+    expect(JSON.parse(localStorage.getItem("torre.usuario")!)).toEqual(updated);
   });
 });

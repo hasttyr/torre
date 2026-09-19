@@ -15,35 +15,36 @@ const { t } = useI18n();
 
 const datePickerLocale = computed(() => (locale.locale === "en" ? enUS : es));
 
-// v-model es un string "YYYY-MM-DD" (o "" vacío) para no tocar ninguna
-// lógica de formularios existente (payloads, validaciones) que ya asume
-// ese formato — mismo contrato que el <input type="date"> nativo que
-// reemplaza. La conversión Date <-> ISO la hacemos acá, no con la prop
-// "model-type" del picker: en modo texto (text-input) esa prop no siempre
-// respeta el formato configurado al confirmar lo tipeado (se verificó
-// empíricamente), así que es más confiable trabajar con Date crudo.
+// v-model is a "YYYY-MM-DD" string (or "" when empty) so we don't touch any
+// existing form logic (payloads, validations) that already assumes that
+// format — the same contract as the native <input type="date"> it
+// replaces. The Date <-> ISO conversion happens here, not through the
+// picker's "model-type" prop: in text-input mode that prop doesn't always
+// respect the configured format when confirming what was typed (verified
+// empirically), so it's more reliable to work with a raw Date.
 const model = defineModel<string>({ default: "" });
 
-const fechaSeleccionada = computed<Date | null>({
+const selectedDate = computed<Date | null>({
   get: () => (model.value ? new Date(`${model.value}T00:00:00`) : null),
-  set: (valor) => {
-    if (!valor || Array.isArray(valor)) {
+  set: (value) => {
+    if (!value || Array.isArray(value)) {
       model.value = "";
       return;
     }
-    const yyyy = valor.getFullYear();
-    const mm = String(valor.getMonth() + 1).padStart(2, "0");
-    const dd = String(valor.getDate()).padStart(2, "0");
+    const yyyy = value.getFullYear();
+    const mm = String(value.getMonth() + 1).padStart(2, "0");
+    const dd = String(value.getDate()).padStart(2, "0");
     model.value = `${yyyy}-${mm}-${dd}`;
   },
 });
 
-// Función en vez de string de formato: con un string ("dd/MM/yyyy") el
-// valor precargado programáticamente (no tipeado por el usuario) se
-// mostraba con el formato por defecto del navegador en vez del nuestro.
-function formatearFecha(fecha: Date): string {
+// Function instead of a format string: with a string ("dd/MM/yyyy") a
+// programmatically preloaded value (not typed by the user) showed up
+// using the browser's default format instead of ours.
+/** Formats a Date for display in the picker's input, using the active locale. */
+function formatDate(date: Date): string {
   const localeTag = locale.locale;
-  return new Intl.DateTimeFormat(localeTag, { day: "2-digit", month: "2-digit", year: "numeric" }).format(fecha);
+  return new Intl.DateTimeFormat(localeTag, { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
 }
 
 const props = withDefaults(
@@ -62,10 +63,10 @@ const resolvedPlaceholder = computed(() => props.placeholder ?? t("dateField.pla
 
 <template>
   <VueDatePicker
-    v-model="fechaSeleccionada"
+    v-model="selectedDate"
     :dark="theme.theme === 'dark'"
     :input-attrs="{ id, clearable: true }"
-    :formats="{ input: formatearFecha }"
+    :formats="{ input: formatDate }"
     :locale="datePickerLocale"
     :time-config="{ enableTimePicker: false }"
     :disabled="disabled"
@@ -79,15 +80,15 @@ const resolvedPlaceholder = computed(() => props.placeholder ?? t("dateField.pla
 </template>
 
 <style>
-/* Tokens del datepicker mapeados al sistema de diseño de style.css: cambia
-   de tema junto con el resto de la app porque lee las mismas variables
-   CSS (--surface, --accent, etc.), no valores fijos.
+/* Datepicker tokens mapped to style.css's design system: it switches theme
+   along with the rest of the app because it reads the same CSS variables
+   (--surface, --accent, etc.), not fixed values.
 
-   Selector con dos clases (mayor especificidad que ".dp__theme_light"/
-   ".dp__theme_dark" de main.css, que declaran sus propios valores por
-   defecto directo sobre el mismo elemento dp__main): sin esto, un
-   custom property declarado directamente en el elemento gana aunque
-   :root lo redefina, porque :root ahí es solo un valor heredado. */
+   Two-class selector (higher specificity than main.css's ".dp__theme_light"/
+   ".dp__theme_dark", which declare their own defaults directly on the same
+   dp__main element): without this, a custom property declared directly on
+   the element wins even if :root redefines it, because there :root is only
+   an inherited value. */
 .dp__main.dp__theme_light,
 .dp__main.dp__theme_dark {
   --dp-font-family: var(--font-sans);

@@ -5,46 +5,47 @@ import { useI18n } from "vue-i18n";
 
 import AppHeader from "../components/AppHeader.vue";
 import DateField from "../components/DateField.vue";
-import { DISCAPACIDADES, GENEROS, type Discapacidad, type Genero } from "../services/auth";
+import { DISABILITIES, GENDERS, type Disability, type Gender } from "../services/auth";
 import { useAuthStore } from "../stores/auth";
 
 const auth = useAuthStore();
 const { t } = useI18n();
 const loadError = ref<string | null>(null);
-const hoyIso = new Date().toISOString().slice(0, 10);
+const todayIso = new Date().toISOString().slice(0, 10);
 
-// HU20: formulario de edición del propio perfil. Se puebla desde
-// auth.usuario apenas llega (onMounted y el watch de abajo, por si
-// refreshUsuario resuelve después del primer render).
+// HU20: form for editing the user's own profile. It gets populated from
+// auth.user as soon as it arrives (onMounted and the watch below, in case
+// refreshUser resolves after the first render).
 const form = reactive({
   nombre: "",
   codigoUniversitario: "",
   programa: "",
   semestre: "",
   fechaNacimiento: "",
-  genero: "" as Genero | "",
-  discapacidad: "" as Discapacidad | "",
+  genero: "" as Gender | "",
+  discapacidad: "" as Disability | "",
 });
 
-function poblarForm(): void {
-  if (!auth.usuario) return;
-  form.nombre = auth.usuario.nombre;
-  if (auth.usuario.jugador) {
-    form.codigoUniversitario = auth.usuario.jugador.codigoUniversitario;
-    form.programa = auth.usuario.jugador.programa;
-    form.semestre = String(auth.usuario.jugador.semestre);
-    // El input date espera "YYYY-MM-DD"; el backend devuelve ISO completo.
-    form.fechaNacimiento = auth.usuario.jugador.fechaNacimiento?.slice(0, 10) ?? "";
-    form.genero = auth.usuario.jugador.genero ?? "";
-    form.discapacidad = auth.usuario.jugador.discapacidad ?? "";
+/** Fills the edit form from the currently loaded user, if any. */
+function populateForm(): void {
+  if (!auth.user) return;
+  form.nombre = auth.user.nombre;
+  if (auth.user.jugador) {
+    form.codigoUniversitario = auth.user.jugador.codigoUniversitario;
+    form.programa = auth.user.jugador.programa;
+    form.semestre = String(auth.user.jugador.semestre);
+    // The date input expects "YYYY-MM-DD"; the backend returns a full ISO string.
+    form.fechaNacimiento = auth.user.jugador.fechaNacimiento?.slice(0, 10) ?? "";
+    form.genero = auth.user.jugador.genero ?? "";
+    form.discapacidad = auth.user.jugador.discapacidad ?? "";
   }
 }
 
-watch(() => auth.usuario, poblarForm, { immediate: true });
+watch(() => auth.user, populateForm, { immediate: true });
 
 onMounted(async () => {
   try {
-    await auth.refreshUsuario();
+    await auth.refreshUser();
   } catch {
     loadError.value = t("account.loadError");
   }
@@ -55,7 +56,12 @@ const submitting = ref(false);
 const successMessage = ref<string | null>(null);
 const serverError = ref<string | null>(null);
 
-// Reglas espejo de backend/src/validators/users.schemas.ts.
+/**
+ * Validates the profile edit form, mirroring
+ * backend/src/validators/users.schemas.ts.
+ *
+ * @returns `true` if the form has no validation errors.
+ */
 function validate(): boolean {
   for (const key of Object.keys(errors)) {
     delete errors[key];
@@ -65,7 +71,7 @@ function validate(): boolean {
     errors.nombre = t("account.nombreMinLength");
   }
 
-  if (auth.usuario?.jugador) {
+  if (auth.user?.jugador) {
     if (!form.codigoUniversitario.trim()) {
       errors.codigoUniversitario = t("account.codigoRequired");
     }
@@ -83,6 +89,7 @@ function validate(): boolean {
   return Object.keys(errors).length === 0;
 }
 
+/** Validates and submits the profile edit form to the backend. */
 async function onSubmit(): Promise<void> {
   successMessage.value = null;
   serverError.value = null;
@@ -95,7 +102,7 @@ async function onSubmit(): Promise<void> {
   try {
     await auth.updateProfile({
       nombre: form.nombre.trim(),
-      ...(auth.usuario?.jugador
+      ...(auth.user?.jugador
         ? {
             codigoUniversitario: form.codigoUniversitario.trim(),
             programa: form.programa.trim(),
@@ -128,24 +135,24 @@ async function onSubmit(): Promise<void> {
 
       <p v-if="loadError" role="alert" class="banner banner--error mt-4">{{ loadError }}</p>
 
-      <section v-if="auth.usuario" class="card mt-6">
+      <section v-if="auth.user" class="card mt-6">
         <dl class="m-0">
           <div class="flex justify-between gap-4 border-b border-border-soft py-3">
             <dt class="text-sm text-text-muted">{{ t("account.correo") }}</dt>
-            <dd class="m-0 font-semibold">{{ auth.usuario.email }}</dd>
+            <dd class="m-0 font-semibold">{{ auth.user.email }}</dd>
           </div>
           <div class="flex justify-between gap-4 border-b border-border-soft py-3">
             <dt class="text-sm text-text-muted">{{ t("account.rol") }}</dt>
-            <dd class="m-0 font-semibold">{{ t(`roles.${auth.usuario.rol}`) }}</dd>
+            <dd class="m-0 font-semibold">{{ t(`roles.${auth.user.rol}`) }}</dd>
           </div>
           <div class="flex justify-between gap-4 py-3">
             <dt class="text-sm text-text-muted">{{ t("account.estado") }}</dt>
-            <dd class="m-0 font-semibold">{{ auth.usuario.estado === "ACTIVO" ? t("account.activa") : t("account.inactiva") }}</dd>
+            <dd class="m-0 font-semibold">{{ auth.user.estado === "ACTIVO" ? t("account.activa") : t("account.inactiva") }}</dd>
           </div>
         </dl>
       </section>
 
-      <section v-if="auth.usuario" class="card mt-6">
+      <section v-if="auth.user" class="card mt-6">
         <h2 class="mb-1 text-lg">{{ t("account.editProfileTitle") }}</h2>
         <p class="mb-4 text-sm">{{ t("account.editProfileHint") }}</p>
 
@@ -173,7 +180,7 @@ async function onSubmit(): Promise<void> {
             <span class="field-error">{{ errors.nombre }}</span>
           </div>
 
-          <template v-if="auth.usuario.jugador">
+          <template v-if="auth.user.jugador">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="field" :class="{ 'has-error': errors.codigoUniversitario }">
                 <label for="codigo">{{ t("account.codigoLabel") }}</label>
@@ -195,17 +202,17 @@ async function onSubmit(): Promise<void> {
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="field" :class="{ 'has-error': errors.fechaNacimiento }">
                 <label for="fechaNacimiento">{{ t("account.fechaNacimientoLabel") }}</label>
-                <DateField id="fechaNacimiento" v-model="form.fechaNacimiento" :max-date="hoyIso" />
+                <DateField id="fechaNacimiento" v-model="form.fechaNacimiento" :max-date="todayIso" />
                 <span class="field-error">{{ errors.fechaNacimiento }}</span>
-                <span v-if="auth.usuario.jugador.edad != null" class="text-sm text-text-muted">
-                  {{ t("account.edadActual", { edad: auth.usuario.jugador.edad }) }}
+                <span v-if="auth.user.jugador.edad != null" class="text-sm text-text-muted">
+                  {{ t("account.edadActual", { edad: auth.user.jugador.edad }) }}
                 </span>
               </div>
               <div class="field">
                 <label for="genero">{{ t("account.generoLabel") }}</label>
                 <select id="genero" v-model="form.genero">
                   <option value="">{{ t("account.generoPreferNo") }}</option>
-                  <option v-for="opcion in GENEROS" :key="opcion" :value="opcion">{{ t(`genero.${opcion}`) }}</option>
+                  <option v-for="option in GENDERS" :key="option" :value="option">{{ t(`genero.${option}`) }}</option>
                 </select>
               </div>
             </div>
@@ -214,8 +221,8 @@ async function onSubmit(): Promise<void> {
               <label for="discapacidad">{{ t("account.discapacidadLabel") }}</label>
               <select id="discapacidad" v-model="form.discapacidad">
                 <option value="">{{ t("account.discapacidadSinEspecificar") }}</option>
-                <option v-for="opcion in DISCAPACIDADES" :key="opcion" :value="opcion">
-                  {{ t(`discapacidad.${opcion}`) }}
+                <option v-for="option in DISABILITIES" :key="option" :value="option">
+                  {{ t(`discapacidad.${option}`) }}
                 </option>
               </select>
             </div>

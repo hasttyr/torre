@@ -4,9 +4,9 @@ import { useI18n } from "vue-i18n";
 
 import AppHeader from "../components/AppHeader.vue";
 import { useLocaleStore } from "../stores/locale";
-import { useTorneosStore } from "../stores/torneos";
+import { useTournamentsStore } from "../stores/tournaments";
 
-const torneos = useTorneosStore();
+const tournaments = useTournamentsStore();
 const locale = useLocaleStore();
 const { t } = useI18n();
 const loading = ref(true);
@@ -14,7 +14,7 @@ const loadError = ref<string | null>(null);
 
 onMounted(async () => {
   try {
-    await torneos.cargarTorneosJugador();
+    await tournaments.loadPlayerTournaments();
   } catch {
     loadError.value = t("playerTournaments.loadError");
   } finally {
@@ -22,9 +22,10 @@ onMounted(async () => {
   }
 });
 
-function formatFecha(fecha: string): string {
+/** Formats an ISO date string using the active locale. */
+function formatDate(date: string): string {
   const localeTag = locale.locale;
-  return new Date(fecha).toLocaleDateString(localeTag, { day: "2-digit", month: "short", year: "numeric" });
+  return new Date(date).toLocaleDateString(localeTag, { day: "2-digit", month: "short", year: "numeric" });
 }
 </script>
 
@@ -44,7 +45,7 @@ function formatFecha(fecha: string): string {
           </div>
 
           <p
-            v-if="torneos.inscrito.length === 0"
+            v-if="tournaments.enrolled.length === 0"
             class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
           >
             {{ t("playerTournaments.myRegistrationsEmpty") }}
@@ -52,15 +53,15 @@ function formatFecha(fecha: string): string {
 
           <ul v-else class="m-0 flex list-none flex-col gap-3 p-0">
             <li
-              v-for="torneo in torneos.inscrito"
-              :key="torneo.id"
+              v-for="tournament in tournaments.enrolled"
+              :key="tournament.id"
               class="flex flex-col items-start gap-2 rounded-2xl border border-border-soft bg-surface p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
               <div>
-                <h2 class="text-base">{{ torneo.nombre }}</h2>
-                <p class="mt-0.5 text-sm">{{ formatFecha(torneo.fechaInicio) }} — {{ formatFecha(torneo.fechaFin) }}</p>
+                <h2 class="text-base">{{ tournament.nombre }}</h2>
+                <p class="mt-0.5 text-sm">{{ formatDate(tournament.fechaInicio) }} — {{ formatDate(tournament.fechaFin) }}</p>
               </div>
-              <span class="pill">{{ t(`estados.${torneo.estado}`) }}</span>
+              <span class="pill">{{ t(`estados.${tournament.estado}`) }}</span>
             </li>
           </ul>
         </section>
@@ -72,7 +73,7 @@ function formatFecha(fecha: string): string {
           </div>
 
           <p
-            v-if="torneos.disponibles.length === 0"
+            v-if="tournaments.available.length === 0"
             class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
           >
             {{ t("playerTournaments.availableEmpty") }}
@@ -80,15 +81,15 @@ function formatFecha(fecha: string): string {
 
           <ul v-else class="m-0 flex list-none flex-col gap-3 p-0">
             <li
-              v-for="torneo in torneos.disponibles"
-              :key="torneo.id"
+              v-for="tournament in tournaments.available"
+              :key="tournament.id"
               class="flex flex-col items-start gap-2 rounded-2xl border border-border-soft bg-surface p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
               <div>
-                <h2 class="text-base">{{ torneo.nombre }}</h2>
-                <p class="mt-0.5 text-sm">{{ formatFecha(torneo.fechaInicio) }} — {{ formatFecha(torneo.fechaFin) }}</p>
+                <h2 class="text-base">{{ tournament.nombre }}</h2>
+                <p class="mt-0.5 text-sm">{{ formatDate(tournament.fechaInicio) }} — {{ formatDate(tournament.fechaFin) }}</p>
               </div>
-              <span class="pill">{{ t(`estados.${torneo.estado}`) }}</span>
+              <span class="pill">{{ t(`estados.${tournament.estado}`) }}</span>
             </li>
           </ul>
         </section>

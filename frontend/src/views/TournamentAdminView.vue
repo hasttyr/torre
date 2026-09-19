@@ -5,12 +5,12 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
 import AppHeader from "../components/AppHeader.vue";
-import { buscarJugadores, type JugadorBusqueda } from "../services/jugadores";
-import { useTorneosStore } from "../stores/torneos";
+import { searchPlayers, type PlayerSearchResult } from "../services/players";
+import { useTournamentsStore } from "../stores/tournaments";
 
 const route = useRoute();
-const torneos = useTorneosStore();
-const torneoId = String(route.params.id);
+const tournaments = useTournamentsStore();
+const tournamentId = String(route.params.id);
 const { t } = useI18n();
 
 const loadError = ref<string | null>(null);
@@ -18,8 +18,8 @@ const loading = ref(true);
 
 onMounted(async () => {
   try {
-    await torneos.cargar(torneoId);
-    poblarConfigForm();
+    await tournaments.load(tournamentId);
+    populateConfigForm();
   } catch {
     loadError.value = t("tournamentAdmin.loadError");
   } finally {
@@ -27,7 +27,7 @@ onMounted(async () => {
   }
 });
 
-// --- HU05: configurar torneo (rondas, ritmo, desempates) ---
+// --- HU05: configure tournament (rounds, time control, tiebreaks) ---
 
 const configForm = reactive({
   numeroRondas: "",
@@ -40,39 +40,43 @@ const configSubmitting = ref(false);
 const configError = ref<string | null>(null);
 const configSuccess = ref<string | null>(null);
 
-// Refleja el estado guardado en vez de arrancar siempre en blanco: si el
-// organizador vuelve a un torneo ya configurado, ve lo que hay.
-function poblarConfigForm(): void {
-  if (!torneos.actual) return;
-  configForm.numeroRondas = torneos.actual.numeroRondas != null ? String(torneos.actual.numeroRondas) : "";
-  configForm.ritmo = torneos.actual.ritmo ?? "";
-  if (torneos.actual.criteriosDesempate.length > 0) {
-    configForm.desempates = torneos.actual.criteriosDesempate.map((c) => c.nombre).join(", ");
+/**
+ * Fills the configuration form from the loaded tournament instead of
+ * always starting blank: if the organizer comes back to an already
+ * configured tournament, they see what's there.
+ */
+function populateConfigForm(): void {
+  if (!tournaments.current) return;
+  configForm.numeroRondas = tournaments.current.numeroRondas != null ? String(tournaments.current.numeroRondas) : "";
+  configForm.ritmo = tournaments.current.ritmo ?? "";
+  if (tournaments.current.criteriosDesempate.length > 0) {
+    configForm.desempates = tournaments.current.criteriosDesempate.map((c) => c.nombre).join(", ");
   }
-  configForm.programaRestringido = torneos.actual.programaRestringido ?? "";
-  configForm.semestreMinimo = torneos.actual.semestreMinimo != null ? String(torneos.actual.semestreMinimo) : "";
+  configForm.programaRestringido = tournaments.current.programaRestringido ?? "";
+  configForm.semestreMinimo = tournaments.current.semestreMinimo != null ? String(tournaments.current.semestreMinimo) : "";
 }
 
-// RN-05: el orden de desempates solo puede modificarse en estado preliminar
-// del torneo (antes de la ronda 1). El backend es quien decide realmente,
-// esto solo evita un submit que ya se sabe que va a fallar.
-const puedeEditarDesempates = computed(() => torneos.actual?.estado === "CREADO");
+// RN-05: the tiebreak order can only be changed while the tournament is in
+// its preliminary state (before round 1). The backend is what actually
+// decides; this only avoids a submit that is already known to fail.
+const canEditTiebreaks = computed(() => tournaments.current?.estado === "CREADO");
 
-async function onConfigurar(): Promise<void> {
+/** Validates and submits the tournament configuration form. */
+async function onConfigure(): Promise<void> {
   configError.value = null;
   configSuccess.value = null;
   configSubmitting.value = true;
   try {
-    const criteriosDesempate = configForm.desempates
+    const tiebreakCriteria = configForm.desempates
       .split(",")
       .map((nombre) => nombre.trim())
       .filter(Boolean)
       .map((nombre, index) => ({ nombre, orden: index + 1 }));
 
-    await torneos.configurar(torneoId, {
+    await tournaments.configure(tournamentId, {
       numeroRondas: configForm.numeroRondas ? Number(configForm.numeroRondas) : undefined,
       ritmo: configForm.ritmo.trim() || undefined,
-      criteriosDesempate: puedeEditarDesempates.value ? criteriosDesempate : undefined,
+      criteriosDesempate: canEditTiebreaks.value ? tiebreakCriteria : undefined,
       programaRestringido: configForm.programaRestringido.trim() || null,
       semestreMinimo: configForm.semestreMinimo ? Number(configForm.semestreMinimo) : null,
     });
@@ -84,82 +88,86 @@ async function onConfigurar(): Promise<void> {
   }
 }
 
-// --- HU06: abrir / cerrar inscripciones ---
+// --- HU06: open / close registration ---
 
-const inscripcionesSubmitting = ref(false);
-const inscripcionesError = ref<string | null>(null);
+const registrationSubmitting = ref(false);
+const registrationError = ref<string | null>(null);
 
-async function onAbrirInscripciones(): Promise<void> {
-  inscripcionesError.value = null;
-  inscripcionesSubmitting.value = true;
+/** Opens registration for the current tournament. */
+async function onOpenRegistration(): Promise<void> {
+  registrationError.value = null;
+  registrationSubmitting.value = true;
   try {
-    await torneos.abrirInscripciones(torneoId);
+    await tournaments.openRegistration(tournamentId);
   } catch (error) {
-    inscripcionesError.value = extractError(error);
+    registrationError.value = extractError(error);
   } finally {
-    inscripcionesSubmitting.value = false;
+    registrationSubmitting.value = false;
   }
 }
 
-async function onCerrarInscripciones(): Promise<void> {
-  inscripcionesError.value = null;
-  inscripcionesSubmitting.value = true;
+/** Closes registration for the current tournament. */
+async function onCloseRegistration(): Promise<void> {
+  registrationError.value = null;
+  registrationSubmitting.value = true;
   try {
-    await torneos.cerrarInscripciones(torneoId);
+    await tournaments.closeRegistration(tournamentId);
   } catch (error) {
-    inscripcionesError.value = extractError(error);
+    registrationError.value = extractError(error);
   } finally {
-    inscripcionesSubmitting.value = false;
+    registrationSubmitting.value = false;
   }
 }
 
-// --- HU07: registrar jugador ---
+// --- HU07: enroll player ---
 
-const jugadorQuery = ref("");
-const resultadosBusqueda = ref<JugadorBusqueda[]>([]);
-const buscando = ref(false);
-const inscribirSubmitting = ref(false);
-const inscribirError = ref<string | null>(null);
+const playerQuery = ref("");
+const searchResults = ref<PlayerSearchResult[]>([]);
+const searching = ref(false);
+const enrollSubmitting = ref(false);
+const enrollError = ref<string | null>(null);
 
-const inscripcionesAbiertas = computed(() => torneos.actual?.estado === "INSCRIPCIONES_ABIERTAS");
-const yaInscritoIds = computed(() => new Set(torneos.jugadoresInscritos.map((j) => j.jugadorId)));
+const registrationOpen = computed(() => tournaments.current?.estado === "INSCRIPCIONES_ABIERTAS");
+const enrolledIds = computed(() => new Set(tournaments.enrolledPlayers.map((p) => p.jugadorId)));
 
 let debounceHandle: ReturnType<typeof setTimeout> | undefined;
 
-// Búsqueda con debounce: evita un request por cada tecla mientras el
-// organizador escribe nombre, correo o código universitario.
-watch(jugadorQuery, (query) => {
+// Debounced search: avoids one request per keystroke while the organizer
+// types a name, email or university code.
+watch(playerQuery, (query) => {
   clearTimeout(debounceHandle);
   if (!query.trim()) {
-    resultadosBusqueda.value = [];
+    searchResults.value = [];
     return;
   }
   debounceHandle = setTimeout(async () => {
-    buscando.value = true;
+    searching.value = true;
     try {
-      resultadosBusqueda.value = await buscarJugadores(query.trim());
+      searchResults.value = await searchPlayers(query.trim());
     } catch {
-      resultadosBusqueda.value = [];
+      searchResults.value = [];
     } finally {
-      buscando.value = false;
+      searching.value = false;
     }
   }, 300);
 });
 
-async function onInscribirJugador(jugador: JugadorBusqueda): Promise<void> {
-  inscribirError.value = null;
-  inscribirSubmitting.value = true;
+/** Enrolls a chosen player from the search results into the tournament. */
+async function onEnrollPlayer(player: PlayerSearchResult): Promise<void> {
+  enrollError.value = null;
+  enrollSubmitting.value = true;
   try {
-    await torneos.inscribirJugador(torneoId, jugador.id);
-    jugadorQuery.value = "";
-    resultadosBusqueda.value = [];
+    await tournaments.enrollPlayer(tournamentId, player.id);
+    playerQuery.value = "";
+    searchResults.value = [];
   } catch (error) {
-    inscribirError.value = extractError(error);
+    enrollError.value = extractError(error);
   } finally {
-    inscribirSubmitting.value = false;
+    enrollSubmitting.value = false;
   }
 }
 
+/** Extracts a user-facing error message from a failed API call. */
 function extractError(error: unknown): string {
   if (axios.isAxiosError(error) && typeof error.response?.data?.error === "string") {
     return error.response.data.error;
@@ -176,10 +184,10 @@ function extractError(error: unknown): string {
       <p v-if="loading">{{ t("tournamentAdmin.loading") }}</p>
       <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
 
-      <template v-else-if="torneos.actual">
+      <template v-else-if="tournaments.current">
         <header class="flex flex-wrap items-center justify-between gap-4">
-          <h1 class="text-2xl sm:text-3xl">{{ torneos.actual.nombre }}</h1>
-          <span class="pill">{{ t(`estados.${torneos.actual.estado}`) }}</span>
+          <h1 class="text-2xl sm:text-3xl">{{ tournaments.current.nombre }}</h1>
+          <span class="pill">{{ t(`estados.${tournaments.current.estado}`) }}</span>
         </header>
 
         <!-- HU05 -->
@@ -204,7 +212,7 @@ function extractError(error: unknown): string {
             <p v-if="configSuccess" class="banner banner--success mb-4">{{ configSuccess }}</p>
           </Transition>
 
-          <form novalidate class="config-form flex flex-col gap-4" @submit.prevent="onConfigurar">
+          <form novalidate class="config-form flex flex-col gap-4" @submit.prevent="onConfigure">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="field">
                 <label for="numeroRondas">{{ t("tournamentAdmin.numeroRondasLabel") }}</label>
@@ -222,9 +230,9 @@ function extractError(error: unknown): string {
                 id="desempates"
                 v-model="configForm.desempates"
                 type="text"
-                :disabled="!puedeEditarDesempates"
+                :disabled="!canEditTiebreaks"
               />
-              <span v-if="!puedeEditarDesempates" class="text-sm text-text-muted">
+              <span v-if="!canEditTiebreaks" class="text-sm text-text-muted">
                 {{ t("tournamentAdmin.desempatesLockedHint") }}
               </span>
             </div>
@@ -268,7 +276,7 @@ function extractError(error: unknown): string {
           <h2 class="mb-1 text-lg">{{ t("tournamentAdmin.inscripcionesTitle") }}</h2>
           <p class="mb-4 text-sm">
             {{ t("tournamentAdmin.inscripcionesSubtitle") }}
-            <strong class="text-text">{{ t(`estados.${torneos.actual.estado}`) }}</strong>
+            <strong class="text-text">{{ t(`estados.${tournaments.current.estado}`) }}</strong>
           </p>
 
           <Transition
@@ -277,23 +285,23 @@ function extractError(error: unknown): string {
             leave-active-class="transition duration-180 ease-in"
             leave-to-class="opacity-0 -translate-y-1.5"
           >
-            <p v-if="inscripcionesError" role="alert" class="banner banner--error mb-4">{{ inscripcionesError }}</p>
+            <p v-if="registrationError" role="alert" class="banner banner--error mb-4">{{ registrationError }}</p>
           </Transition>
 
           <div class="flex flex-wrap gap-3">
             <button
               type="button"
               class="btn btn-primary"
-              :disabled="inscripcionesSubmitting || torneos.actual.estado !== 'CREADO'"
-              @click="onAbrirInscripciones"
+              :disabled="registrationSubmitting || tournaments.current.estado !== 'CREADO'"
+              @click="onOpenRegistration"
             >
               {{ t("tournamentAdmin.abrirInscripciones") }}
             </button>
             <button
               type="button"
               class="btn btn-ghost"
-              :disabled="inscripcionesSubmitting || torneos.actual.estado !== 'INSCRIPCIONES_ABIERTAS'"
-              @click="onCerrarInscripciones"
+              :disabled="registrationSubmitting || tournaments.current.estado !== 'INSCRIPCIONES_ABIERTAS'"
+              @click="onCloseRegistration"
             >
               {{ t("tournamentAdmin.cerrarInscripciones") }}
             </button>
@@ -311,52 +319,52 @@ function extractError(error: unknown): string {
             leave-active-class="transition duration-180 ease-in"
             leave-to-class="opacity-0 -translate-y-1.5"
           >
-            <p v-if="inscribirError" role="alert" class="banner banner--error mb-4">{{ inscribirError }}</p>
+            <p v-if="enrollError" role="alert" class="banner banner--error mb-4">{{ enrollError }}</p>
           </Transition>
 
           <div class="field relative">
-            <label for="jugadorQuery">{{ t("tournamentAdmin.buscarLabel") }}</label>
+            <label for="playerQuery">{{ t("tournamentAdmin.buscarLabel") }}</label>
             <input
-              id="jugadorQuery"
-              v-model="jugadorQuery"
+              id="playerQuery"
+              v-model="playerQuery"
               type="text"
               :placeholder="t('tournamentAdmin.buscarPlaceholder')"
-              :disabled="!inscripcionesAbiertas"
+              :disabled="!registrationOpen"
             />
 
             <ul
-              v-if="jugadorQuery.trim() && inscripcionesAbiertas"
+              v-if="playerQuery.trim() && registrationOpen"
               class="mt-2 list-none overflow-hidden rounded-lg border border-border-soft p-0"
             >
-              <li v-if="buscando" class="px-3.5 py-2.5 text-sm text-text-muted">{{ t("tournamentAdmin.buscando") }}</li>
-              <template v-else-if="resultadosBusqueda.length > 0">
+              <li v-if="searching" class="px-3.5 py-2.5 text-sm text-text-muted">{{ t("tournamentAdmin.buscando") }}</li>
+              <template v-else-if="searchResults.length > 0">
                 <li
-                  v-for="jugador in resultadosBusqueda"
-                  :key="jugador.id"
+                  v-for="player in searchResults"
+                  :key="player.id"
                   class="flex items-center justify-between gap-3 border-b border-border-soft px-3.5 py-2.5 last:border-b-0"
                 >
                   <div class="flex flex-col gap-0.5">
-                    <strong class="text-text">{{ jugador.nombre }}</strong>
-                    <span class="text-sm text-text-muted">{{ jugador.codigoUniversitario }} · {{ jugador.programa }}</span>
+                    <strong class="text-text">{{ player.nombre }}</strong>
+                    <span class="text-sm text-text-muted">{{ player.codigoUniversitario }} · {{ player.programa }}</span>
                   </div>
                   <button
                     type="button"
                     class="btn btn-ghost"
-                    :disabled="inscribirSubmitting || yaInscritoIds.has(jugador.id)"
-                    @click="onInscribirJugador(jugador)"
+                    :disabled="enrollSubmitting || enrolledIds.has(player.id)"
+                    @click="onEnrollPlayer(player)"
                   >
-                    {{ yaInscritoIds.has(jugador.id) ? t("tournamentAdmin.yaInscrito") : t("tournamentAdmin.inscribir") }}
+                    {{ enrolledIds.has(player.id) ? t("tournamentAdmin.yaInscrito") : t("tournamentAdmin.inscribir") }}
                   </button>
                 </li>
               </template>
               <li v-else class="px-3.5 py-2.5 text-sm text-text-muted">{{ t("tournamentAdmin.sinResultados") }}</li>
             </ul>
           </div>
-          <p v-if="!inscripcionesAbiertas" class="mb-4 text-sm text-text-muted">
+          <p v-if="!registrationOpen" class="mb-4 text-sm text-text-muted">
             {{ t("tournamentAdmin.inscripcionesClosedHint") }}
           </p>
 
-          <div v-if="torneos.jugadoresInscritos.length > 0" class="mt-4 -mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
+          <div v-if="tournaments.enrolledPlayers.length > 0" class="mt-4 -mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
             <table class="w-full min-w-md border-collapse">
               <thead>
                 <tr>
@@ -367,11 +375,11 @@ function extractError(error: unknown): string {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="jugador in torneos.jugadoresInscritos" :key="jugador.jugadorId">
-                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ jugador.nombre }}</td>
-                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ jugador.codigoUniversitario }}</td>
-                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ jugador.programa }}</td>
-                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ jugador.semestre }}</td>
+                <tr v-for="player in tournaments.enrolledPlayers" :key="player.jugadorId">
+                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.nombre }}</td>
+                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.codigoUniversitario }}</td>
+                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.programa }}</td>
+                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.semestre }}</td>
                 </tr>
               </tbody>
             </table>

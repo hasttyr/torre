@@ -6,19 +6,19 @@ import { createRouter, createWebHistory } from "vue-router";
 import { i18n } from "../i18n";
 import CreateTournamentView from "./CreateTournamentView.vue";
 
-vi.mock("../services/torneos", () => ({
-  crearTorneo: vi.fn(),
-  obtenerTorneo: vi.fn(),
-  configurarTorneo: vi.fn(),
-  abrirInscripciones: vi.fn(),
-  cerrarInscripciones: vi.fn(),
-  inscribirJugador: vi.fn(),
-  listarJugadoresInscritos: vi.fn(),
+vi.mock("../services/tournaments", () => ({
+  createTournament: vi.fn(),
+  getTournament: vi.fn(),
+  configureTournament: vi.fn(),
+  openRegistration: vi.fn(),
+  closeRegistration: vi.fn(),
+  enrollPlayer: vi.fn(),
+  listEnrolledPlayers: vi.fn(),
 }));
 
-import { crearTorneo } from "../services/torneos";
+import { createTournament } from "../services/tournaments";
 
-const crearTorneoMock = vi.mocked(crearTorneo);
+const createTournamentMock = vi.mocked(createTournament);
 
 // DateField (Vue Datepicker) parsea el texto tipeado y confirma con blur
 // (applyOnBlur), no con cada evento input como un <input type="date"> nativo.
@@ -55,11 +55,11 @@ describe("CreateTournamentView", () => {
     await wrapper.find("form").trigger("submit.prevent");
 
     expect(wrapper.text()).toContain("El nombre debe tener al menos 2 caracteres");
-    expect(crearTorneoMock).not.toHaveBeenCalled();
+    expect(createTournamentMock).not.toHaveBeenCalled();
   });
 
   it("crea el torneo y navega a su panel de administración", async () => {
-    crearTorneoMock.mockResolvedValue({
+    createTournamentMock.mockResolvedValue({
       id: "torneo-1",
       nombre: "Copa Universitaria",
       fechaInicio: "2026-10-01",
@@ -83,7 +83,7 @@ describe("CreateTournamentView", () => {
     await wrapper.find("form").trigger("submit.prevent");
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(crearTorneoMock).toHaveBeenCalledWith({
+    expect(createTournamentMock).toHaveBeenCalledWith({
       nombre: "Copa Universitaria",
       fechaInicio: "2026-10-01",
       fechaFin: "2026-10-03",
@@ -101,6 +101,6 @@ describe("CreateTournamentView", () => {
     await wrapper.find("form").trigger("submit.prevent");
 
     expect(wrapper.text()).toContain("La fecha de fin no puede ser anterior a la fecha de inicio");
-    expect(crearTorneoMock).not.toHaveBeenCalled();
+    expect(createTournamentMock).not.toHaveBeenCalled();
   });
 });

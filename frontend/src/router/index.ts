@@ -10,9 +10,9 @@ import PlayerTournamentsView from "../views/PlayerTournamentsView.vue";
 import RegisterView from "../views/RegisterView.vue";
 import TournamentAdminView from "../views/TournamentAdminView.vue";
 
-// Roles que administran torneos (HU04-HU07). Espejo de
+// Roles that manage tournaments (HU04-HU07). Mirrors
 // backend/src/routes/torneos.routes.ts (requireRole("ORGANIZADOR", "ADMINISTRADOR")).
-const ROLES_ADMIN_TORNEO = ["ORGANIZADOR", "ADMINISTRADOR"];
+const TOURNAMENT_ADMIN_ROLES = ["ORGANIZADOR", "ADMINISTRADOR"];
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -24,7 +24,7 @@ export const router = createRouter({
     },
     {
       path: "/registro",
-      name: "registro",
+      name: "register",
       component: RegisterView,
     },
     {
@@ -34,37 +34,42 @@ export const router = createRouter({
     },
     {
       path: "/cuenta",
-      name: "cuenta",
+      name: "account",
       component: AccountView,
       meta: { requiresAuth: true },
     },
     {
       path: "/torneos",
-      name: "torneos-dashboard",
+      name: "tournaments-dashboard",
       component: DashboardView,
-      meta: { requiresAuth: true, roles: ROLES_ADMIN_TORNEO },
+      meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
     },
     {
       path: "/torneos/nuevo",
-      name: "torneos-nuevo",
+      name: "tournaments-new",
       component: CreateTournamentView,
-      meta: { requiresAuth: true, roles: ROLES_ADMIN_TORNEO },
+      meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
     },
     {
       path: "/torneos/:id",
-      name: "torneos-admin",
+      name: "tournaments-admin",
       component: TournamentAdminView,
-      meta: { requiresAuth: true, roles: ROLES_ADMIN_TORNEO },
+      meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
     },
     {
       path: "/mis-torneos",
-      name: "torneos-jugador",
+      name: "tournaments-player",
       component: PlayerTournamentsView,
       meta: { requiresAuth: true, roles: ["JUGADOR"] },
     },
   ],
 });
 
+/**
+ * Global navigation guard: blocks routes marked `requiresAuth` for
+ * unauthenticated users, and further restricts by role when the route
+ * declares `meta.roles`.
+ */
 router.beforeEach((to) => {
   if (!to.meta.requiresAuth) {
     return true;
@@ -76,7 +81,7 @@ router.beforeEach((to) => {
   }
 
   const roles = to.meta.roles as string[] | undefined;
-  if (roles && !roles.includes(auth.usuario?.rol ?? "")) {
+  if (roles && !roles.includes(auth.user?.rol ?? "")) {
     return { path: "/" };
   }
 

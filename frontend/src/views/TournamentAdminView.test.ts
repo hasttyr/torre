@@ -6,39 +6,39 @@ import { createRouter, createWebHistory } from "vue-router";
 import { i18n } from "../i18n";
 import TournamentAdminView from "./TournamentAdminView.vue";
 
-vi.mock("../services/torneos", () => ({
-  crearTorneo: vi.fn(),
-  obtenerTorneo: vi.fn(),
-  configurarTorneo: vi.fn(),
-  abrirInscripciones: vi.fn(),
-  cerrarInscripciones: vi.fn(),
-  inscribirJugador: vi.fn(),
-  listarJugadoresInscritos: vi.fn(),
+vi.mock("../services/tournaments", () => ({
+  createTournament: vi.fn(),
+  getTournament: vi.fn(),
+  configureTournament: vi.fn(),
+  openRegistration: vi.fn(),
+  closeRegistration: vi.fn(),
+  enrollPlayer: vi.fn(),
+  listEnrolledPlayers: vi.fn(),
 }));
 
-vi.mock("../services/jugadores", () => ({
-  buscarJugadores: vi.fn(),
+vi.mock("../services/players", () => ({
+  searchPlayers: vi.fn(),
 }));
 
 import {
-  abrirInscripciones,
-  cerrarInscripciones,
-  configurarTorneo,
-  inscribirJugador,
-  listarJugadoresInscritos,
-  obtenerTorneo,
-} from "../services/torneos";
-import { buscarJugadores } from "../services/jugadores";
+  openRegistration,
+  closeRegistration,
+  configureTournament,
+  enrollPlayer,
+  listEnrolledPlayers,
+  getTournament,
+} from "../services/tournaments";
+import { searchPlayers } from "../services/players";
 
-const obtenerTorneoMock = vi.mocked(obtenerTorneo);
-const listarJugadoresInscritosMock = vi.mocked(listarJugadoresInscritos);
-const configurarTorneoMock = vi.mocked(configurarTorneo);
-const abrirInscripcionesMock = vi.mocked(abrirInscripciones);
-const cerrarInscripcionesMock = vi.mocked(cerrarInscripciones);
-const inscribirJugadorMock = vi.mocked(inscribirJugador);
-const buscarJugadoresMock = vi.mocked(buscarJugadores);
+const getTournamentMock = vi.mocked(getTournament);
+const listEnrolledPlayersMock = vi.mocked(listEnrolledPlayers);
+const configureTournamentMock = vi.mocked(configureTournament);
+const openRegistrationMock = vi.mocked(openRegistration);
+const closeRegistrationMock = vi.mocked(closeRegistration);
+const enrollPlayerMock = vi.mocked(enrollPlayer);
+const searchPlayersMock = vi.mocked(searchPlayers);
 
-const TORNEO_CREADO = {
+const CREATED_TOURNAMENT = {
   id: "torneo-1",
   nombre: "Copa Universitaria",
   fechaInicio: "2026-10-01",
@@ -72,12 +72,12 @@ describe("TournamentAdminView", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    listarJugadoresInscritosMock.mockResolvedValue([]);
-    buscarJugadoresMock.mockResolvedValue([]);
+    listEnrolledPlayersMock.mockResolvedValue([]);
+    searchPlayersMock.mockResolvedValue([]);
   });
 
   it("carga y muestra el torneo con su estado", async () => {
-    obtenerTorneoMock.mockResolvedValue(TORNEO_CREADO);
+    getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
 
     const { wrapper } = await mountView();
 
@@ -86,63 +86,63 @@ describe("TournamentAdminView", () => {
   });
 
   it("habilita abrir inscripciones solo cuando el torneo está en CREADO", async () => {
-    obtenerTorneoMock.mockResolvedValue(TORNEO_CREADO);
+    getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
 
     const { wrapper } = await mountView();
 
-    const abrirBtn = wrapper.findAll("button").find((btn) => btn.text() === "Abrir inscripciones")!;
-    expect(abrirBtn.attributes("disabled")).toBeUndefined();
+    const openBtn = wrapper.findAll("button").find((btn) => btn.text() === "Abrir inscripciones")!;
+    expect(openBtn.attributes("disabled")).toBeUndefined();
 
-    const cerrarBtn = wrapper.findAll("button").find((btn) => btn.text() === "Cerrar inscripciones")!;
-    expect(cerrarBtn.attributes("disabled")).toBeDefined();
+    const closeBtn = wrapper.findAll("button").find((btn) => btn.text() === "Cerrar inscripciones")!;
+    expect(closeBtn.attributes("disabled")).toBeDefined();
   });
 
   it("abre inscripciones y refleja el nuevo estado (HU06)", async () => {
-    obtenerTorneoMock.mockResolvedValue(TORNEO_CREADO);
-    abrirInscripcionesMock.mockResolvedValue({ ...TORNEO_CREADO, estado: "INSCRIPCIONES_ABIERTAS" });
+    getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
+    openRegistrationMock.mockResolvedValue({ ...CREATED_TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
 
     const { wrapper } = await mountView();
 
-    const abrirBtn = wrapper.findAll("button").find((btn) => btn.text() === "Abrir inscripciones")!;
-    await abrirBtn.trigger("click");
+    const openBtn = wrapper.findAll("button").find((btn) => btn.text() === "Abrir inscripciones")!;
+    await openBtn.trigger("click");
     await new Promise((resolve) => setTimeout(resolve, 0));
     await wrapper.vm.$nextTick();
 
-    expect(abrirInscripcionesMock).toHaveBeenCalledWith("torneo-1");
+    expect(openRegistrationMock).toHaveBeenCalledWith("torneo-1");
     expect(wrapper.text()).toContain("Inscripciones abiertas");
   });
 
   it("bloquea el campo de búsqueda de jugador cuando las inscripciones no están abiertas", async () => {
-    obtenerTorneoMock.mockResolvedValue(TORNEO_CREADO);
+    getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
 
     const { wrapper } = await mountView();
 
-    const jugadorInput = wrapper.get("#jugadorQuery");
-    expect(jugadorInput.attributes("disabled")).toBeDefined();
+    const playerQueryInput = wrapper.get("#playerQuery");
+    expect(playerQueryInput.attributes("disabled")).toBeDefined();
   });
 
   it("busca y muestra resultados a medida que se escribe (debounced)", async () => {
-    obtenerTorneoMock.mockResolvedValue({ ...TORNEO_CREADO, estado: "INSCRIPCIONES_ABIERTAS" });
-    buscarJugadoresMock.mockResolvedValue([
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
+    searchPlayersMock.mockResolvedValue([
       { id: "j1", nombre: "Luis Gómez", email: "luis@example.com", codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
     ]);
 
     const { wrapper } = await mountView();
 
-    await wrapper.get("#jugadorQuery").setValue("Luis");
+    await wrapper.get("#playerQuery").setValue("Luis");
     await new Promise((resolve) => setTimeout(resolve, 350));
     await wrapper.vm.$nextTick();
 
-    expect(buscarJugadoresMock).toHaveBeenCalledWith("Luis");
+    expect(searchPlayersMock).toHaveBeenCalledWith("Luis");
     expect(wrapper.text()).toContain("Luis Gómez");
   });
 
   it("inscribe un jugador elegido de los resultados de búsqueda (HU07)", async () => {
-    obtenerTorneoMock.mockResolvedValue({ ...TORNEO_CREADO, estado: "INSCRIPCIONES_ABIERTAS" });
-    buscarJugadoresMock.mockResolvedValue([
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
+    searchPlayersMock.mockResolvedValue([
       { id: "j1", nombre: "Luis Gómez", email: "luis@example.com", codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
     ]);
-    inscribirJugadorMock.mockResolvedValue({
+    enrollPlayerMock.mockResolvedValue({
       jugadorId: "j1",
       nombre: "Luis Gómez",
       codigoUniversitario: "U1",
@@ -153,31 +153,31 @@ describe("TournamentAdminView", () => {
 
     const { wrapper } = await mountView();
 
-    await wrapper.get("#jugadorQuery").setValue("Luis");
+    await wrapper.get("#playerQuery").setValue("Luis");
     await new Promise((resolve) => setTimeout(resolve, 350));
     await wrapper.vm.$nextTick();
 
-    const inscribirBtn = wrapper.findAll("button").find((btn) => btn.text() === "Inscribir")!;
-    await inscribirBtn.trigger("click");
+    const enrollBtn = wrapper.findAll("button").find((btn) => btn.text() === "Inscribir")!;
+    await enrollBtn.trigger("click");
     await new Promise((resolve) => setTimeout(resolve, 0));
     await wrapper.vm.$nextTick();
 
-    expect(inscribirJugadorMock).toHaveBeenCalledWith("torneo-1", "j1");
+    expect(enrollPlayerMock).toHaveBeenCalledWith("torneo-1", "j1");
     expect(wrapper.text()).toContain("Luis Gómez");
   });
 
   it("deshabilita la edición de desempates si ya no está en estado preliminar", async () => {
-    obtenerTorneoMock.mockResolvedValue({ ...TORNEO_CREADO, estado: "INSCRIPCIONES_ABIERTAS" });
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
 
     const { wrapper } = await mountView();
 
-    const desempatesInput = wrapper.get("#desempates");
-    expect(desempatesInput.attributes("disabled")).toBeDefined();
+    const tiebreaksInput = wrapper.get("#desempates");
+    expect(tiebreaksInput.attributes("disabled")).toBeDefined();
   });
 
   it("guarda la configuración del torneo (HU05)", async () => {
-    obtenerTorneoMock.mockResolvedValue(TORNEO_CREADO);
-    configurarTorneoMock.mockResolvedValue({ ...TORNEO_CREADO, numeroRondas: 7, ritmo: "90+30" });
+    getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
+    configureTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, numeroRondas: 7, ritmo: "90+30" });
 
     const { wrapper } = await mountView();
 
@@ -187,21 +187,21 @@ describe("TournamentAdminView", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     await wrapper.vm.$nextTick();
 
-    expect(configurarTorneoMock).toHaveBeenCalledWith(
+    expect(configureTournamentMock).toHaveBeenCalledWith(
       "torneo-1",
       expect.objectContaining({ numeroRondas: 7, ritmo: "90+30" }),
     );
     expect(wrapper.text()).toContain("Configuración guardada");
   });
 
-  it("no llama a cerrarInscripciones cuando el torneo no está en INSCRIPCIONES_ABIERTAS", async () => {
-    obtenerTorneoMock.mockResolvedValue(TORNEO_CREADO);
+  it("no llama a closeRegistration cuando el torneo no está en INSCRIPCIONES_ABIERTAS", async () => {
+    getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
 
     const { wrapper } = await mountView();
 
-    const cerrarBtn = wrapper.findAll("button").find((btn) => btn.text() === "Cerrar inscripciones")!;
-    await cerrarBtn.trigger("click");
+    const closeBtn = wrapper.findAll("button").find((btn) => btn.text() === "Cerrar inscripciones")!;
+    await closeBtn.trigger("click");
 
-    expect(cerrarInscripcionesMock).not.toHaveBeenCalled();
+    expect(closeRegistrationMock).not.toHaveBeenCalled();
   });
 });

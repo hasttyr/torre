@@ -14,8 +14,8 @@ const route = useRoute();
 const { t } = useI18n();
 const mobileOpen = ref(false);
 
-// Cierra el menú mobile ante cualquier navegación (incluye atrás/adelante
-// del navegador), no solo los clicks dentro del propio menú.
+// Closes the mobile menu on any navigation (including browser back/forward),
+// not just clicks inside the menu itself.
 watch(
   () => route.fullPath,
   () => {
@@ -23,6 +23,7 @@ watch(
   },
 );
 
+/** Closes the mobile nav panel. */
 function closeMobile(): void {
   mobileOpen.value = false;
 }
@@ -33,13 +34,13 @@ function closeMobile(): void {
     <div class="container flex items-center justify-between gap-4 py-4">
       <AppLogo />
 
-      <!-- Nav de escritorio: oculto por debajo de sm, visible desde sm en adelante. -->
+      <!-- Desktop nav: hidden below sm, visible from sm upward. -->
       <nav class="hidden items-center gap-2.5 sm:flex">
         <template v-if="auth.isAuthenticated">
-          <RouterLink v-if="auth.usuario && ['ORGANIZADOR', 'ADMINISTRADOR'].includes(auth.usuario.rol)" to="/torneos" class="btn btn-ghost">
+          <RouterLink v-if="auth.user && ['ORGANIZADOR', 'ADMINISTRADOR'].includes(auth.user.rol)" to="/torneos" class="btn btn-ghost">
             {{ t("header.misTorneos") }}
           </RouterLink>
-          <RouterLink v-if="auth.usuario?.rol === 'JUGADOR'" to="/mis-torneos" class="btn btn-ghost">{{ t("header.torneos") }}</RouterLink>
+          <RouterLink v-if="auth.user?.rol === 'JUGADOR'" to="/mis-torneos" class="btn btn-ghost">{{ t("header.torneos") }}</RouterLink>
           <UserMenu />
         </template>
         <template v-else>
@@ -50,7 +51,7 @@ function closeMobile(): void {
         </template>
       </nav>
 
-      <!-- Controles de mobile: menú de usuario o toggle de tema + botón hamburguesa. -->
+      <!-- Mobile controls: user menu or theme toggle + hamburger button. -->
       <div class="flex items-center gap-2 sm:hidden">
         <UserMenu v-if="auth.isAuthenticated" />
         <template v-else>
@@ -74,7 +75,7 @@ function closeMobile(): void {
       </div>
     </div>
 
-    <!-- Panel de nav de mobile: se abre debajo del header, oculto desde sm. -->
+    <!-- Mobile nav panel: opens below the header, hidden from sm upward. -->
     <Transition
       enter-active-class="transition duration-150 ease-out"
       enter-from-class="opacity-0 -translate-y-1"
@@ -87,7 +88,7 @@ function closeMobile(): void {
         <div class="container flex flex-col gap-1 py-3">
           <template v-if="auth.isAuthenticated">
             <RouterLink
-              v-if="auth.usuario && ['ORGANIZADOR', 'ADMINISTRADOR'].includes(auth.usuario.rol)"
+              v-if="auth.user && ['ORGANIZADOR', 'ADMINISTRADOR'].includes(auth.user.rol)"
               to="/torneos"
               class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
               @click="closeMobile"
@@ -95,7 +96,7 @@ function closeMobile(): void {
               {{ t("header.misTorneos") }}
             </RouterLink>
             <RouterLink
-              v-if="auth.usuario?.rol === 'JUGADOR'"
+              v-if="auth.user?.rol === 'JUGADOR'"
               to="/mis-torneos"
               class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
               @click="closeMobile"

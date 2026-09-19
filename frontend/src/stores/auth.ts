@@ -11,38 +11,40 @@ import {
 } from "../services/auth";
 
 const STORAGE_KEY_TOKEN = "torre.token";
-const STORAGE_KEY_USUARIO = "torre.usuario";
+const STORAGE_KEY_USER = "torre.usuario";
 
 interface AuthState {
   token: string | null;
-  usuario: RegisteredUser | null;
+  user: RegisteredUser | null;
 }
 
+/** Reads the persisted session (token + user) from localStorage, if any. */
 function readStorage(): AuthState {
   try {
     const token = localStorage.getItem(STORAGE_KEY_TOKEN);
-    const rawUsuario = localStorage.getItem(STORAGE_KEY_USUARIO);
+    const rawUser = localStorage.getItem(STORAGE_KEY_USER);
     return {
       token,
-      usuario: rawUsuario ? (JSON.parse(rawUsuario) as RegisteredUser) : null,
+      user: rawUser ? (JSON.parse(rawUser) as RegisteredUser) : null,
     };
   } catch {
-    // localStorage puede no estar disponible (navegación privada, etc.).
-    return { token: null, usuario: null };
+    // localStorage may not be available (private browsing, etc.).
+    return { token: null, user: null };
   }
 }
 
-function writeStorage(token: string | null, usuario: RegisteredUser | null): void {
+/** Persists (or clears) the session in localStorage. */
+function writeStorage(token: string | null, user: RegisteredUser | null): void {
   try {
-    if (token && usuario) {
+    if (token && user) {
       localStorage.setItem(STORAGE_KEY_TOKEN, token);
-      localStorage.setItem(STORAGE_KEY_USUARIO, JSON.stringify(usuario));
+      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
     } else {
       localStorage.removeItem(STORAGE_KEY_TOKEN);
-      localStorage.removeItem(STORAGE_KEY_USUARIO);
+      localStorage.removeItem(STORAGE_KEY_USER);
     }
   } catch {
-    // Sin persistencia disponible, la sesión sigue funcionando solo en memoria.
+    // No persistence available; the session keeps working in memory only.
   }
 }
 
@@ -58,38 +60,42 @@ export const useAuthStore = defineStore("auth", {
     isAuthenticated: (state) => Boolean(state.token),
   },
   actions: {
+    /** Logs in with email and password and persists the resulting session. */
     async login(email: string, password: string): Promise<void> {
       const { token, usuario } = await loginUser({ email, password });
       this.token = token;
-      this.usuario = usuario;
+      this.user = usuario;
       setAuthToken(token);
       writeStorage(token, usuario);
     },
 
+    /** Logs the current user out, both on the backend (best-effort) and locally. */
     async logout(): Promise<void> {
       try {
         if (this.token) {
           await logoutUser();
         }
       } catch {
-        // JWT sin estado: si la llamada falla igual limpiamos la sesión local.
+        // Stateless JWT: if the call fails, we still clear the local session.
       }
       this.token = null;
-      this.usuario = null;
+      this.user = null;
       setAuthToken(null);
       writeStorage(null, null);
     },
 
-    async refreshUsuario(): Promise<void> {
-      const usuario = await fetchMe();
-      this.usuario = usuario;
-      writeStorage(this.token, usuario);
+    /** Re-fetches the current user's profile from the backend. */
+    async refreshUser(): Promise<void> {
+      const user = await fetchMe();
+      this.user = user;
+      writeStorage(this.token, user);
     },
 
+    /** Updates the current user's own profile. */
     async updateProfile(payload: UpdateProfilePayload): Promise<void> {
-      const usuario = await updateProfile(payload);
-      this.usuario = usuario;
-      writeStorage(this.token, usuario);
+      const user = await updateProfile(payload);
+      this.user = user;
+      writeStorage(this.token, user);
     },
   },
 });

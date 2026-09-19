@@ -4,7 +4,8 @@ export type Theme = "light" | "dark";
 
 const STORAGE_KEY = "torre.theme";
 
-function prefiereClaro(): boolean {
+/** Detects whether the OS/browser prefers a light color scheme. */
+function prefersLight(): boolean {
   try {
     return window.matchMedia("(prefers-color-scheme: light)").matches;
   } catch {
@@ -12,37 +13,41 @@ function prefiereClaro(): boolean {
   }
 }
 
-function leerThemeGuardado(): Theme | null {
+/** Reads the persisted theme preference from localStorage, if any. */
+function readSavedTheme(): Theme | null {
   try {
-    const guardado = localStorage.getItem(STORAGE_KEY);
-    return guardado === "light" || guardado === "dark" ? guardado : null;
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved === "light" || saved === "dark" ? saved : null;
   } catch {
-    // localStorage puede no estar disponible (navegación privada, etc.).
+    // localStorage may not be available (private browsing, etc.).
     return null;
   }
 }
 
-function aplicarTheme(theme: Theme): void {
+/** Applies the theme to the document so CSS can react to it. */
+function applyTheme(theme: Theme): void {
   document.documentElement.dataset.theme = theme;
 }
 
 export const useThemeStore = defineStore("theme", {
   state: (): { theme: Theme } => {
-    const theme = leerThemeGuardado() ?? (prefiereClaro() ? "light" : "dark");
-    aplicarTheme(theme);
+    const theme = readSavedTheme() ?? (prefersLight() ? "light" : "dark");
+    applyTheme(theme);
     return { theme };
   },
   actions: {
+    /** Sets and persists the active theme. */
     setTheme(theme: Theme): void {
       this.theme = theme;
-      aplicarTheme(theme);
+      applyTheme(theme);
       try {
         localStorage.setItem(STORAGE_KEY, theme);
       } catch {
-        // Sin persistencia disponible, el tema sigue funcionando solo en esta carga.
+        // No persistence available; the theme keeps working for this load only.
       }
     },
 
+    /** Toggles between light and dark themes. */
     toggle(): void {
       this.setTheme(this.theme === "dark" ? "light" : "dark");
     },

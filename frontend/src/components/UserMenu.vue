@@ -16,14 +16,15 @@ const { t } = useI18n();
 const open = ref(false);
 const menuRef = ref<HTMLElement | null>(null);
 
+/** Derives a two-letter avatar label from the user's full name (e.g. "Nilson Aldair Molina Rengifo" -> "NM"). */
 const initials = computed((): string => {
-  const nombre = auth.usuario?.nombre?.trim() ?? "";
-  const palabras = nombre.split(/\s+/).filter(Boolean);
-  if (palabras.length === 0) return "?";
-  if (palabras.length === 1) return palabras[0].slice(0, 2).toUpperCase();
-  const primera = palabras[0][0];
-  const media = palabras[Math.floor(palabras.length / 2)][0];
-  return `${primera}${media}`.toUpperCase();
+  const fullName = auth.user?.nombre?.trim() ?? "";
+  const words = fullName.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  const first = words[0][0];
+  const middle = words[Math.floor(words.length / 2)][0];
+  return `${first}${middle}`.toUpperCase();
 });
 
 function toggleMenu(): void {
@@ -45,6 +46,7 @@ async function onLogout(): Promise<void> {
   router.push("/");
 }
 
+/** Closes the dropdown when a click lands outside of it. */
 function onDocumentClick(event: MouseEvent): void {
   if (!menuRef.value) return;
   if (!menuRef.value.contains(event.target as Node)) {
@@ -52,6 +54,7 @@ function onDocumentClick(event: MouseEvent): void {
   }
 }
 
+/** Closes the dropdown on Escape. */
 function onKeydown(event: KeyboardEvent): void {
   if (event.key === "Escape") {
     closeMenu();
@@ -76,7 +79,7 @@ onBeforeUnmount(() => {
       class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-[#17130a] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       :aria-expanded="open"
       aria-haspopup="true"
-      :aria-label="t('userMenu.menuAria', { name: auth.usuario?.nombre ?? '' })"
+      :aria-label="t('userMenu.menuAria', { name: auth.user?.nombre ?? '' })"
       @click="toggleMenu"
     >
       {{ initials }}
@@ -95,8 +98,8 @@ onBeforeUnmount(() => {
         class="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-lg border border-border bg-header shadow-lg"
       >
         <div class="border-b border-border-soft px-3 py-2.5">
-          <p class="truncate text-sm font-semibold text-text">{{ auth.usuario?.nombre }}</p>
-          <p class="truncate text-xs text-text-soft">{{ auth.usuario?.email }}</p>
+          <p class="truncate text-sm font-semibold text-text">{{ auth.user?.nombre }}</p>
+          <p class="truncate text-xs text-text-soft">{{ auth.user?.email }}</p>
         </div>
 
         <div class="flex items-center justify-between px-3 py-2.5">

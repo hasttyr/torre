@@ -74,7 +74,7 @@ describe("AccountView", () => {
 
   it("muestra los datos del usuario guardados en el store mientras refresca el perfil", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", usuario: USUARIO });
+    auth.$patch({ token: "token", user: USUARIO });
     fetchMeMock.mockResolvedValue(USUARIO);
 
     const wrapper = await mountAccountView();
@@ -87,7 +87,7 @@ describe("AccountView", () => {
 
   it("muestra un aviso si falla la actualización del perfil, sin perder los datos ya cargados", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", usuario: USUARIO });
+    auth.$patch({ token: "token", user: USUARIO });
     fetchMeMock.mockRejectedValue(new Error("Network Error"));
 
     const wrapper = await mountAccountView();
@@ -100,7 +100,7 @@ describe("AccountView", () => {
 
   it("no muestra campos de jugador para un usuario sin ese perfil", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", usuario: USUARIO });
+    auth.$patch({ token: "token", user: USUARIO });
     fetchMeMock.mockResolvedValue(USUARIO);
 
     const wrapper = await mountAccountView();
@@ -111,7 +111,7 @@ describe("AccountView", () => {
 
   it("precarga los campos de jugador cuando el usuario tiene ese perfil", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", usuario: JUGADOR });
+    auth.$patch({ token: "token", user: JUGADOR });
     fetchMeMock.mockResolvedValue(JUGADOR);
 
     const wrapper = await mountAccountView();
@@ -134,7 +134,7 @@ describe("AccountView", () => {
         discapacidad: "VISUAL" as const,
       },
     };
-    auth.$patch({ token: "token", usuario: jugadorConDatos });
+    auth.$patch({ token: "token", user: jugadorConDatos });
     fetchMeMock.mockResolvedValue(jugadorConDatos);
 
     const wrapper = await mountAccountView();
@@ -148,7 +148,7 @@ describe("AccountView", () => {
 
   it("solo ofrece género y discapacidad del catálogo cerrado (no hay input de texto libre)", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", usuario: JUGADOR });
+    auth.$patch({ token: "token", user: JUGADOR });
     fetchMeMock.mockResolvedValue(JUGADOR);
 
     const wrapper = await mountAccountView();
@@ -161,7 +161,7 @@ describe("AccountView", () => {
 
   it("envía fechaNacimiento/genero/discapacidad al guardar (HU20)", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", usuario: JUGADOR });
+    auth.$patch({ token: "token", user: JUGADOR });
     fetchMeMock.mockResolvedValue(JUGADOR);
     updateProfileMock.mockResolvedValue(JUGADOR);
 
@@ -186,7 +186,7 @@ describe("AccountView", () => {
 
   it("guarda los cambios del perfil y muestra un mensaje de éxito (HU20)", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", usuario: USUARIO });
+    auth.$patch({ token: "token", user: USUARIO });
     fetchMeMock.mockResolvedValue(USUARIO);
     updateProfileMock.mockResolvedValue({ ...USUARIO, nombre: "Ana T." });
 
@@ -204,7 +204,7 @@ describe("AccountView", () => {
 
   it("muestra el error del backend si falla guardar el perfil", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", usuario: USUARIO });
+    auth.$patch({ token: "token", user: USUARIO });
     fetchMeMock.mockResolvedValue(USUARIO);
     updateProfileMock.mockRejectedValue({
       isAxiosError: true,
