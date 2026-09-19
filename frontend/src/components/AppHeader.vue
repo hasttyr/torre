@@ -42,6 +42,7 @@ function closeMobile(): void {
           <RouterLink v-if="auth.usuario && ['ORGANIZADOR', 'ADMINISTRADOR'].includes(auth.usuario.rol)" to="/torneos" class="btn btn-ghost">
             Mis torneos
           </RouterLink>
+          <RouterLink v-if="auth.usuario?.rol === 'JUGADOR'" to="/mis-torneos" class="btn btn-ghost">Torneos</RouterLink>
           <RouterLink to="/cuenta" class="btn btn-ghost">Mi cuenta</RouterLink>
           <button type="button" class="btn btn-ghost" @click="onLogout">Cerrar sesión</button>
         </template>
@@ -91,6 +92,14 @@ function closeMobile(): void {
               @click="closeMobile"
             >
               Mis torneos
+            </RouterLink>
+            <RouterLink
+              v-if="auth.usuario?.rol === 'JUGADOR'"
+              to="/mis-torneos"
+              class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
+              @click="closeMobile"
+            >
+              Torneos
             </RouterLink>
             <RouterLink to="/cuenta" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10" @click="closeMobile">
               Mi cuenta

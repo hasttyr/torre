@@ -49,7 +49,49 @@ export async function listarMisTorneos(prisma: PrismaClient, userId: string, rol
   return torneos.map(toTorneoDto);
 }
 
-export async function obtenerTorneo(prisma: PrismaClient, torneoId: string): Promise<TorneoDto> {
+// HU25 (adelantada de S11 a S6): listado que ve un jugador para decidir a
+// qué torneo inscribirse. Solo estado INSCRIPCIONES_ABIERTAS cuenta como
+// "disponible" (CA: "un torneo finalizado o privado no aparece"); CREADO
+// todavía no acepta inscripciones así que tampoco se lista.
+export async function listarTorneosDisponibles(prisma: PrismaClient): Promise<TorneoDto[]> {
+  const torneos = await prisma.torneo.findMany({
+    where: { estado: "INSCRIPCIONES_ABIERTAS" },
+    include: { criteriosDesempate: true },
+    orderBy: { fechaInicio: "asc" },
+  });
+  return torneos.map(toTorneoDto);
+}
+
+// Torneos donde el usuario autenticado está inscrito como jugador,
+// independientemente de quién haya hecho la inscripción (hoy siempre el
+// organizador, ver HU07). Un usuario sin perfil de Jugador (p. ej. rol
+// ORGANIZADOR) simplemente no tiene inscripciones.
+export async function listarTorneosInscritoJugador(prisma: PrismaClient, usuarioId: string): Promise<TorneoDto[]> {
+  const jugador = await prisma.jugador.findUnique({ where: { usuarioId } });
+  if (!jugador) {
+    return [];
+  }
+
+  const inscripciones = await prisma.inscripcion.findMany({
+    where: { jugadorId: jugador.id },
+    include: { torneo: { include: { criteriosDesempate: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return inscripciones.map((inscripcion) => toTorneoDto(inscripcion.torneo));
+}
+
+// Restringido a organizador-dueño/administrador: hasta que exista HU18
+// (consulta filtrada por rol), el detalle de un torneo específico —y el
+// roster de HU07 en listarJugadoresInscritos, que expone datos
+// personales— solo lo ve quien lo administra. Ver GET /torneos/disponibles
+// y /torneos/inscrito para lo que sí puede consultar cualquier rol.
+export async function obtenerTorneo(
+  prisma: PrismaClient,
+  torneoId: string,
+  userId: string,
+  rol: string,
+): Promise<TorneoDto> {
   const torneo = await prisma.torneo.findUnique({
     where: { id: torneoId },
     include: { criteriosDesempate: true },
@@ -57,6 +99,7 @@ export async function obtenerTorneo(prisma: PrismaClient, torneoId: string): Pro
   if (!torneo) {
     throw new HttpError(404, "Torneo no encontrado");
   }
+  assertPuedeAdministrar(torneo, userId, rol);
   return toTorneoDto(torneo);
 }
 
@@ -215,11 +258,17 @@ export async function inscribirJugador(
   }
 }
 
-export async function listarJugadoresInscritos(prisma: PrismaClient, torneoId: string): Promise<JugadorInscritoDto[]> {
+export async function listarJugadoresInscritos(
+  prisma: PrismaClient,
+  torneoId: string,
+  userId: string,
+  rol: string,
+): Promise<JugadorInscritoDto[]> {
   const torneo = await prisma.torneo.findUnique({ where: { id: torneoId } });
   if (!torneo) {
     throw new HttpError(404, "Torneo no encontrado");
   }
+  assertPuedeAdministrar(torneo, userId, rol);
 
   const inscripciones = await prisma.inscripcion.findMany({
     where: { torneoId },

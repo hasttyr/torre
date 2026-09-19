@@ -10,6 +10,8 @@ import {
   inscribirJugador,
   listarJugadoresInscritos,
   listarMisTorneos,
+  listarTorneosDisponibles,
+  listarTorneosInscritoJugador,
   obtenerTorneo,
 } from "../services/torneos.service";
 import { configurarTorneoSchema, crearTorneoSchema, inscribirJugadorSchema } from "../validators/torneos.schemas";
@@ -21,6 +23,24 @@ function badRequest(next: NextFunction, message: string): void {
 export async function misTorneos(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const torneos = await listarMisTorneos(prisma, req.user!.id, req.user!.rol);
+    res.status(200).json(torneos);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function disponibles(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const torneos = await listarTorneosDisponibles(prisma);
+    res.status(200).json(torneos);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function misInscripciones(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const torneos = await listarTorneosInscritoJugador(prisma, req.user!.id);
     res.status(200).json(torneos);
   } catch (error) {
     next(error);
@@ -44,7 +64,7 @@ export async function crear(req: Request, res: Response, next: NextFunction): Pr
 
 export async function obtener(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const torneo = await obtenerTorneo(prisma, String(req.params.id));
+    const torneo = await obtenerTorneo(prisma, String(req.params.id), req.user!.id, req.user!.rol);
     res.status(200).json(torneo);
   } catch (error) {
     next(error);
@@ -107,7 +127,7 @@ export async function inscribir(req: Request, res: Response, next: NextFunction)
 
 export async function listarJugadores(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const jugadores = await listarJugadoresInscritos(prisma, String(req.params.id));
+    const jugadores = await listarJugadoresInscritos(prisma, String(req.params.id), req.user!.id, req.user!.rol);
     res.status(200).json(jugadores);
   } catch (error) {
     next(error);

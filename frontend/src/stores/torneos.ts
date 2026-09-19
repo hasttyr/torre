@@ -8,6 +8,8 @@ import {
   inscribirJugador,
   listarJugadoresInscritos,
   listarMisTorneos,
+  listarTorneosDisponibles,
+  listarTorneosInscrito,
   obtenerTorneo,
   type ConfigurarTorneoPayload,
   type CrearTorneoPayload,
@@ -19,6 +21,8 @@ interface TorneosState {
   actual: Torneo | null;
   jugadoresInscritos: JugadorInscrito[];
   mios: Torneo[];
+  disponibles: Torneo[];
+  inscrito: Torneo[];
 }
 
 export const useTorneosStore = defineStore("torneos", {
@@ -26,10 +30,20 @@ export const useTorneosStore = defineStore("torneos", {
     actual: null,
     jugadoresInscritos: [],
     mios: [],
+    disponibles: [],
+    inscrito: [],
   }),
   actions: {
     async cargarMisTorneos(): Promise<void> {
       this.mios = await listarMisTorneos();
+    },
+
+    // HU25 + vista de jugador: se cargan juntos porque comparten la misma
+    // pantalla ("Torneos disponibles" y "Mis inscripciones" lado a lado).
+    async cargarTorneosJugador(): Promise<void> {
+      const [disponibles, inscrito] = await Promise.all([listarTorneosDisponibles(), listarTorneosInscrito()]);
+      this.disponibles = disponibles;
+      this.inscrito = inscrito;
     },
 
     async crear(payload: CrearTorneoPayload): Promise<Torneo> {

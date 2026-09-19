@@ -5,8 +5,10 @@ import {
   cerrar,
   configurar,
   crear,
+  disponibles,
   inscribir,
   listarJugadores,
+  misInscripciones,
   misTorneos,
   obtener,
 } from "../controllers/torneos.controller";
@@ -16,12 +18,17 @@ export const torneosRouter = Router();
 
 const puedeAdministrar = requireRole("ORGANIZADOR", "ADMINISTRADOR");
 
-// Antes de "/:id": si no, Express intentaría resolver "mios" como un :id.
+// Antes de "/:id": si no, Express intentaría resolver "mios"/"disponibles"/
+// "inscrito" como un :id.
 torneosRouter.get("/mios", requireAuth, puedeAdministrar, misTorneos);
+torneosRouter.get("/disponibles", requireAuth, disponibles);
+torneosRouter.get("/inscrito", requireAuth, misInscripciones);
 torneosRouter.post("/", requireAuth, puedeAdministrar, crear);
-torneosRouter.get("/:id", requireAuth, obtener);
+// Restringidos a dueño/administrador (ver comentario en torneos.service.ts):
+// hasta HU18 no hay vista filtrada por rol para árbitro/jugador/entrenador.
+torneosRouter.get("/:id", requireAuth, puedeAdministrar, obtener);
 torneosRouter.put("/:id/configuracion", requireAuth, puedeAdministrar, configurar);
 torneosRouter.post("/:id/inscripciones/abrir", requireAuth, puedeAdministrar, abrir);
 torneosRouter.post("/:id/inscripciones/cerrar", requireAuth, puedeAdministrar, cerrar);
 torneosRouter.post("/:id/jugadores", requireAuth, puedeAdministrar, inscribir);
-torneosRouter.get("/:id/jugadores", requireAuth, listarJugadores);
+torneosRouter.get("/:id/jugadores", requireAuth, puedeAdministrar, listarJugadores);

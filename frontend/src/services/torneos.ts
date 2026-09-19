@@ -46,6 +46,16 @@ export async function listarMisTorneos(): Promise<Torneo[]> {
   return data;
 }
 
+export async function listarTorneosDisponibles(): Promise<Torneo[]> {
+  const { data } = await api.get<Torneo[]>("/torneos/disponibles");
+  return data;
+}
+
+export async function listarTorneosInscrito(): Promise<Torneo[]> {
+  const { data } = await api.get<Torneo[]>("/torneos/inscrito");
+  return data;
+}
+
 export async function crearTorneo(payload: CrearTorneoPayload): Promise<Torneo> {
   const { data } = await api.post<Torneo>("/torneos", payload);
   return data;

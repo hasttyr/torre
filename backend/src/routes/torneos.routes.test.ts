@@ -58,6 +58,64 @@ describe("GET /api/torneos/mios", () => {
   });
 });
 
+describe("GET /api/torneos/disponibles", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("cualquier usuario autenticado ve los torneos con inscripción abierta", async () => {
+    prismaMock.torneo.findMany.mockResolvedValue([{ ...torneoBase, estado: "INSCRIPCIONES_ABIERTAS" }]);
+
+    const response = await request(createApp())
+      .get("/api/torneos/disponibles")
+      .set("Authorization", `Bearer ${tokenPara("JUGADOR")}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(prismaMock.torneo.findMany.mock.calls[0][0].where).toEqual({ estado: "INSCRIPCIONES_ABIERTAS" });
+  });
+
+  it("responde 401 sin token", async () => {
+    const response = await request(createApp()).get("/api/torneos/disponibles");
+    expect(response.status).toBe(401);
+  });
+});
+
+describe("GET /api/torneos/inscrito", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("devuelve los torneos donde el jugador autenticado está inscrito", async () => {
+    prismaMock.jugador.findUnique.mockResolvedValue({ id: "jugador-1", usuarioId: "usuario-1" });
+    prismaMock.inscripcion.findMany.mockResolvedValue([{ id: "insc-1", torneo: torneoBase }]);
+
+    const response = await request(createApp())
+      .get("/api/torneos/inscrito")
+      .set("Authorization", `Bearer ${tokenPara("JUGADOR", "usuario-1")}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0].id).toBe("torneo-1");
+  });
+
+  it("devuelve lista vacía si el usuario no tiene perfil de jugador", async () => {
+    prismaMock.jugador.findUnique.mockResolvedValue(null);
+
+    const response = await request(createApp())
+      .get("/api/torneos/inscrito")
+      .set("Authorization", `Bearer ${tokenPara("ORGANIZADOR", "usuario-1")}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([]);
+  });
+
+  it("responde 401 sin token", async () => {
+    const response = await request(createApp()).get("/api/torneos/inscrito");
+    expect(response.status).toBe(401);
+  });
+});
+
 describe("POST /api/torneos", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -97,6 +155,101 @@ describe("POST /api/torneos", () => {
       .send({ nombre: "Copa Universitaria", fechaInicio: "2026-10-01", fechaFin: "2026-10-03" });
 
     expect(response.status).toBe(403);
+  });
+});
+
+describe("GET /api/torneos/:id", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("el organizador dueño puede ver el detalle de su torneo", async () => {
+    prismaMock.torneo.findUnique.mockResolvedValue(torneoBase);
+
+    const response = await request(createApp())
+      .get("/api/torneos/torneo-1")
+      .set("Authorization", `Bearer ${tokenPara("ORGANIZADOR", "usuario-1")}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.id).toBe("torneo-1");
+  });
+
+  it("un administrador puede ver cualquier torneo aunque no sea el dueño", async () => {
+    prismaMock.torneo.findUnique.mockResolvedValue(torneoBase);
+
+    const response = await request(createApp())
+      .get("/api/torneos/torneo-1")
+      .set("Authorization", `Bearer ${tokenPara("ADMINISTRADOR", "admin-1")}`);
+
+    expect(response.status).toBe(200);
+  });
+
+  it("responde 403 para un JUGADOR ajeno al torneo", async () => {
+    prismaMock.torneo.findUnique.mockResolvedValue(torneoBase);
+
+    const response = await request(createApp())
+      .get("/api/torneos/torneo-1")
+      .set("Authorization", `Bearer ${tokenPara("JUGADOR", "jugador-1")}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("responde 403 para un ORGANIZADOR que no es el dueño del torneo", async () => {
+    prismaMock.torneo.findUnique.mockResolvedValue(torneoBase);
+
+    const response = await request(createApp())
+      .get("/api/torneos/torneo-1")
+      .set("Authorization", `Bearer ${tokenPara("ORGANIZADOR", "otro-organizador")}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("responde 401 sin token", async () => {
+    const response = await request(createApp()).get("/api/torneos/torneo-1");
+    expect(response.status).toBe(401);
+  });
+});
+
+describe("GET /api/torneos/:id/jugadores", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("el organizador dueño puede ver el roster de inscritos", async () => {
+    prismaMock.torneo.findUnique.mockResolvedValue(torneoBase);
+    prismaMock.inscripcion.findMany.mockResolvedValue([]);
+
+    const response = await request(createApp())
+      .get("/api/torneos/torneo-1/jugadores")
+      .set("Authorization", `Bearer ${tokenPara("ORGANIZADOR", "usuario-1")}`);
+
+    expect(response.status).toBe(200);
+  });
+
+  it("responde 403 para un JUGADOR que consulta el roster de un torneo ajeno", async () => {
+    prismaMock.torneo.findUnique.mockResolvedValue(torneoBase);
+
+    const response = await request(createApp())
+      .get("/api/torneos/torneo-1/jugadores")
+      .set("Authorization", `Bearer ${tokenPara("JUGADOR", "jugador-1")}`);
+
+    expect(response.status).toBe(403);
+    expect(prismaMock.inscripcion.findMany).not.toHaveBeenCalled();
+  });
+
+  it("responde 403 para un ARBITRO (todavía sin acceso hasta HU18)", async () => {
+    prismaMock.torneo.findUnique.mockResolvedValue(torneoBase);
+
+    const response = await request(createApp())
+      .get("/api/torneos/torneo-1/jugadores")
+      .set("Authorization", `Bearer ${tokenPara("ARBITRO", "arbitro-1")}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("responde 401 sin token", async () => {
+    const response = await request(createApp()).get("/api/torneos/torneo-1/jugadores");
+    expect(response.status).toBe(401);
   });
 });
 

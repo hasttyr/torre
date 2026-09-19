@@ -10,6 +10,8 @@ vi.mock("../services/torneos", () => ({
   inscribirJugador: vi.fn(),
   listarJugadoresInscritos: vi.fn(),
   listarMisTorneos: vi.fn(),
+  listarTorneosDisponibles: vi.fn(),
+  listarTorneosInscrito: vi.fn(),
 }));
 
 import {
@@ -20,6 +22,8 @@ import {
   inscribirJugador,
   listarJugadoresInscritos,
   listarMisTorneos,
+  listarTorneosDisponibles,
+  listarTorneosInscrito,
   obtenerTorneo,
 } from "../services/torneos";
 import { useTorneosStore } from "./torneos";
@@ -32,6 +36,8 @@ const cerrarInscripcionesMock = vi.mocked(cerrarInscripciones);
 const inscribirJugadorMock = vi.mocked(inscribirJugador);
 const listarJugadoresInscritosMock = vi.mocked(listarJugadoresInscritos);
 const listarMisTorneosMock = vi.mocked(listarMisTorneos);
+const listarTorneosDisponiblesMock = vi.mocked(listarTorneosDisponibles);
+const listarTorneosInscritoMock = vi.mocked(listarTorneosInscrito);
 
 const TORNEO = {
   id: "torneo-1",
@@ -124,5 +130,16 @@ describe("useTorneosStore", () => {
     await store.cargarMisTorneos();
 
     expect(store.mios).toEqual([TORNEO]);
+  });
+
+  it("cargarTorneosJugador guarda disponibles e inscritos", async () => {
+    listarTorneosDisponiblesMock.mockResolvedValue([TORNEO]);
+    listarTorneosInscritoMock.mockResolvedValue([{ ...TORNEO, id: "torneo-2" }]);
+    const store = useTorneosStore();
+
+    await store.cargarTorneosJugador();
+
+    expect(store.disponibles).toEqual([TORNEO]);
+    expect(store.inscrito).toEqual([{ ...TORNEO, id: "torneo-2" }]);
   });
 });

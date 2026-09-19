@@ -6,6 +6,7 @@ import CreateTournamentView from "../views/CreateTournamentView.vue";
 import DashboardView from "../views/DashboardView.vue";
 import HomeView from "../views/HomeView.vue";
 import LoginView from "../views/LoginView.vue";
+import PlayerTournamentsView from "../views/PlayerTournamentsView.vue";
 import RegisterView from "../views/RegisterView.vue";
 import TournamentAdminView from "../views/TournamentAdminView.vue";
 
@@ -54,6 +55,12 @@ export const router = createRouter({
       name: "torneos-admin",
       component: TournamentAdminView,
       meta: { requiresAuth: true, roles: ROLES_ADMIN_TORNEO },
+    },
+    {
+      path: "/mis-torneos",
+      name: "torneos-jugador",
+      component: PlayerTournamentsView,
+      meta: { requiresAuth: true, roles: ["JUGADOR"] },
     },
   ],
 });
