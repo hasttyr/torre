@@ -137,9 +137,14 @@ async function onSubmit(): Promise<void> {
 <template>
   <AuthLayout title="Crear cuenta" subtitle="Elegí tu rol en el torneo para empezar.">
     <template #banners>
-      <Transition name="banner">
+      <Transition
+        enter-active-class="transition duration-180 ease-out"
+        enter-from-class="opacity-0 -translate-y-1.5"
+        leave-active-class="transition duration-180 ease-in"
+        leave-to-class="opacity-0 -translate-y-1.5"
+      >
         <output v-if="successMessage" class="banner banner--success">
-          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true" class="mt-0.5 shrink-0">
             <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5" />
             <path d="M6 10.5l2.5 2.5L14 7.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
@@ -147,9 +152,14 @@ async function onSubmit(): Promise<void> {
         </output>
       </Transition>
 
-      <Transition name="banner">
+      <Transition
+        enter-active-class="transition duration-180 ease-out"
+        enter-from-class="opacity-0 -translate-y-1.5"
+        leave-active-class="transition duration-180 ease-in"
+        leave-to-class="opacity-0 -translate-y-1.5"
+      >
         <p v-if="serverError" role="alert" class="banner banner--error">
-          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true" class="mt-0.5 shrink-0">
             <path d="M10 2 1 17h18L10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
             <path d="M10 8v3.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
             <circle cx="10" cy="14" r="0.9" fill="currentColor" />
@@ -162,15 +172,19 @@ async function onSubmit(): Promise<void> {
     <form novalidate @submit.prevent="onSubmit">
       <div class="field">
         <span class="field-label">Rol</span>
-        <div class="role-picker" role="radiogroup" aria-label="Rol">
+        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4" role="radiogroup" aria-label="Rol">
           <label
             v-for="rol in ROLES_AUTOASIGNABLES"
             :key="rol"
-            class="role-pill"
-            :class="{ 'role-pill--active': form.rol === rol }"
+            class="flex cursor-pointer flex-col items-center gap-1 rounded-lg border px-3 py-3 text-center text-[0.78rem] font-semibold transition-colors"
+            :class="
+              form.rol === rol
+                ? 'border-accent bg-accent/15 text-text'
+                : 'border-border bg-surface-2 text-text-muted hover:border-accent/40'
+            "
           >
-            <input v-model="form.rol" type="radio" name="rol" :value="rol" class="visually-hidden" />
-            <span class="role-pill__glyph" aria-hidden="true">{{ ROLE_GLYPHS[rol] }}</span>
+            <input v-model="form.rol" type="radio" name="rol" :value="rol" class="sr-only" />
+            <span class="text-xl text-accent" aria-hidden="true">{{ ROLE_GLYPHS[rol] }}</span>
             <span>{{ ROLE_LABELS[rol] }}</span>
           </label>
         </div>
@@ -200,9 +214,14 @@ async function onSubmit(): Promise<void> {
         <span class="field-error">{{ errors.password }}</span>
       </div>
 
-      <Transition name="fields">
-        <fieldset v-if="isJugador" class="jugador-fields">
-          <legend>Datos de jugador</legend>
+      <Transition
+        enter-active-class="transition duration-180 ease-out"
+        enter-from-class="opacity-0 -translate-y-1.5"
+        leave-active-class="transition duration-180 ease-in"
+        leave-to-class="opacity-0 -translate-y-1.5"
+      >
+        <fieldset v-if="isJugador" class="m-0 flex flex-col gap-4 rounded-xl border border-dashed border-border p-4 pt-4">
+          <legend class="px-1.5 text-[0.8rem] font-semibold text-text-muted">Datos de jugador</legend>
 
           <div class="field" :class="{ 'has-error': errors.codigoUniversitario }">
             <label for="codigo">Código universitario</label>
@@ -225,7 +244,7 @@ async function onSubmit(): Promise<void> {
       </Transition>
 
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
-        <svg v-if="submitting" class="spinner" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+        <svg v-if="submitting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
           <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" opacity="0.25" />
           <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
         </svg>
@@ -236,81 +255,3 @@ async function onSubmit(): Promise<void> {
     <template #footer><RouterLink to="/">← Volver al inicio</RouterLink></template>
   </AuthLayout>
 </template>
-
-<style scoped>
-.role-picker {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.6rem;
-}
-
-@media (min-width: 420px) {
-  .role-picker {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
-.role-pill {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.7rem 0.4rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
-  cursor: pointer;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  transition:
-    border-color 0.15s ease,
-    color 0.15s ease,
-    background-color 0.15s ease;
-}
-
-.role-pill:hover {
-  border-color: var(--accent-border);
-}
-
-.role-pill--active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--text);
-}
-
-.role-pill__glyph {
-  font-size: 1.3rem;
-  color: var(--accent);
-}
-
-.jugador-fields {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-md);
-  padding: 1.1rem 1rem 1.25rem;
-  margin: 0;
-}
-
-.jugador-fields legend {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  padding: 0 0.35rem;
-}
-
-.fields-enter-active,
-.fields-leave-active {
-  transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
-}
-
-.fields-enter-from,
-.fields-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
-}
-</style>

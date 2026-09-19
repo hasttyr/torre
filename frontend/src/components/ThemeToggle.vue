@@ -7,7 +7,7 @@ const theme = useThemeStore();
 <template>
   <button
     type="button"
-    class="theme-toggle"
+    class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-text transition-colors hover:border-accent/40 hover:bg-accent/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
     :aria-label="theme.theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
     :title="theme.theme === 'dark' ? 'Modo claro' : 'Modo oscuro'"
     @click="theme.toggle()"
@@ -31,31 +31,3 @@ const theme = useThemeStore();
     </svg>
   </button>
 </template>
-
-<style scoped>
-.theme-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.4rem;
-  height: 2.4rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-  transition:
-    border-color 0.15s ease,
-    background-color 0.15s ease;
-}
-
-.theme-toggle:hover {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-}
-
-.theme-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-</style>

@@ -32,113 +32,36 @@ function formatFecha(fecha: string): string {
 </script>
 
 <template>
-  <div class="page">
+  <div class="min-h-screen">
     <AppHeader />
 
-    <main class="container dashboard">
-      <header class="dashboard-header">
-        <h1>Mis torneos</h1>
+    <main class="container flex max-w-xl flex-col gap-6 py-10 sm:py-12">
+      <header class="flex flex-wrap items-center justify-between gap-4">
+        <h1 class="text-2xl sm:text-3xl">Mis torneos</h1>
         <RouterLink to="/torneos/nuevo" class="btn btn-primary">+ Crear torneo</RouterLink>
       </header>
 
       <p v-if="loading">Cargando torneos…</p>
       <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
 
-      <p v-else-if="torneos.mios.length === 0" class="empty-state">
+      <p v-else-if="torneos.mios.length === 0" class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted">
         Todavía no administrás ningún torneo. Creá el primero para empezar.
       </p>
 
-      <ul v-else class="tournament-list">
+      <ul v-else class="m-0 flex list-none flex-col gap-3 p-0">
         <li v-for="torneo in torneos.mios" :key="torneo.id">
-          <RouterLink :to="`/torneos/${torneo.id}`" class="tournament-card">
-            <div class="tournament-card__main">
-              <h2>{{ torneo.nombre }}</h2>
-              <p class="tournament-card__dates">
-                {{ formatFecha(torneo.fechaInicio) }} — {{ formatFecha(torneo.fechaFin) }}
-              </p>
+          <RouterLink
+            :to="`/torneos/${torneo.id}`"
+            class="tournament-card flex flex-col items-start gap-2 rounded-2xl border border-border-soft bg-surface p-5 text-inherit no-underline transition-colors hover:border-accent/40 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+          >
+            <div>
+              <h2 class="text-base">{{ torneo.nombre }}</h2>
+              <p class="mt-0.5 text-sm">{{ formatFecha(torneo.fechaInicio) }} — {{ formatFecha(torneo.fechaFin) }}</p>
             </div>
-            <span class="estado-pill">{{ ESTADO_LABELS[torneo.estado] ?? torneo.estado }}</span>
+            <span class="pill">{{ ESTADO_LABELS[torneo.estado] ?? torneo.estado }}</span>
           </RouterLink>
         </li>
       </ul>
     </main>
   </div>
 </template>
-
-<style scoped>
-.page {
-  min-height: 100vh;
-}
-
-.dashboard {
-  padding-block: 3rem;
-  max-width: 40rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.dashboard-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.empty-state {
-  color: var(--text-muted);
-  background: var(--surface);
-  border: 1px dashed var(--border-soft);
-  border-radius: var(--radius-lg);
-  padding: 2rem;
-  text-align: center;
-}
-
-.tournament-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.tournament-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  padding: 1.1rem 1.4rem;
-  text-decoration: none;
-  color: inherit;
-  transition: border-color 0.15s ease;
-}
-
-.tournament-card:hover {
-  border-color: var(--accent-border);
-}
-
-.tournament-card__main h2 {
-  margin: 0;
-  font-size: 1.05rem;
-}
-
-.tournament-card__dates {
-  margin: 0.2rem 0 0;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.estado-pill {
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.3rem 0.75rem;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--text);
-  white-space: nowrap;
-}
-</style>

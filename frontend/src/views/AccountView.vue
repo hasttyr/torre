@@ -25,79 +25,34 @@ const ROLE_LABELS: Record<string, string> = {
 </script>
 
 <template>
-  <div class="page">
+  <div class="min-h-screen">
     <AppHeader />
 
-    <main class="container account">
-      <h1>Mi cuenta</h1>
+    <main class="container max-w-xl py-10 sm:py-12">
+      <h1 class="text-2xl sm:text-3xl">Mi cuenta</h1>
 
-      <p v-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
+      <p v-if="loadError" role="alert" class="banner banner--error mt-4">{{ loadError }}</p>
 
-      <section v-if="auth.usuario" class="account-card">
-        <dl>
-          <div class="account-row">
-            <dt>Nombre</dt>
-            <dd>{{ auth.usuario.nombre }}</dd>
+      <section v-if="auth.usuario" class="card mt-6">
+        <dl class="m-0">
+          <div class="flex justify-between gap-4 border-b border-border-soft py-3">
+            <dt class="text-sm text-text-muted">Nombre</dt>
+            <dd class="m-0 font-semibold">{{ auth.usuario.nombre }}</dd>
           </div>
-          <div class="account-row">
-            <dt>Correo</dt>
-            <dd>{{ auth.usuario.email }}</dd>
+          <div class="flex justify-between gap-4 border-b border-border-soft py-3">
+            <dt class="text-sm text-text-muted">Correo</dt>
+            <dd class="m-0 font-semibold">{{ auth.usuario.email }}</dd>
           </div>
-          <div class="account-row">
-            <dt>Rol</dt>
-            <dd>{{ ROLE_LABELS[auth.usuario.rol] ?? auth.usuario.rol }}</dd>
+          <div class="flex justify-between gap-4 border-b border-border-soft py-3">
+            <dt class="text-sm text-text-muted">Rol</dt>
+            <dd class="m-0 font-semibold">{{ ROLE_LABELS[auth.usuario.rol] ?? auth.usuario.rol }}</dd>
           </div>
-          <div class="account-row">
-            <dt>Estado</dt>
-            <dd>{{ auth.usuario.estado === "ACTIVO" ? "Activa" : "Inactiva" }}</dd>
+          <div class="flex justify-between gap-4 py-3">
+            <dt class="text-sm text-text-muted">Estado</dt>
+            <dd class="m-0 font-semibold">{{ auth.usuario.estado === "ACTIVO" ? "Activa" : "Inactiva" }}</dd>
           </div>
         </dl>
       </section>
     </main>
   </div>
 </template>
-
-<style scoped>
-.page {
-  min-height: 100vh;
-}
-
-.account {
-  padding-block: 3rem;
-  max-width: 40rem;
-}
-
-.account-card {
-  margin-top: 1.5rem;
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem 1.75rem;
-}
-
-dl {
-  margin: 0;
-}
-
-.account-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-block: 0.75rem;
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.account-row:last-child {
-  border-bottom: none;
-}
-
-.account-row dt {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-.account-row dd {
-  margin: 0;
-  font-weight: 600;
-}
-</style>

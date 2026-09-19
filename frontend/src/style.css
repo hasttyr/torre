@@ -1,5 +1,33 @@
-:root {
-  /* Tokens fijos, iguales en ambos temas. */
+@import 'tailwindcss';
+
+/* stores/theme.ts alterna [data-theme] en <html>; este custom variant hace
+   que las utilidades dark: de Tailwind respondan a ese atributo en vez del
+   .dark de clase o prefers-color-scheme por defecto. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* Tokens de diseño expuestos como utilidades de Tailwind (bg-bg, text-text,
+   bg-surface, border-border, text-accent, ring-accent, etc.). El VALOR de
+   cada var() se resuelve en runtime desde los bloques :root de abajo, así
+   que cambiar de tema no requiere recompilar clases: las mismas utilidades
+   ya apuntan a colores distintos. */
+@theme {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-soft: var(--border-soft);
+  --color-header: var(--header-bg);
+
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-success: var(--success);
+  --color-error: var(--error);
+
   --font-display: 'Fraunces', 'Georgia', serif;
   --font-sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
 
@@ -7,17 +35,11 @@
   --radius-md: 14px;
   --radius-lg: 22px;
 
-  --container: 1180px;
-
-  font: 16px/1.6 var(--font-sans);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --shadow-md: var(--shadow-md-value);
+  --shadow-lg: var(--shadow-lg-value);
 }
 
-/* Tema oscuro: por defecto y explícito vía [data-theme="dark"]
-   (lo aplica stores/theme.ts sobre <html>). */
+/* Tema oscuro: por defecto y explícito vía [data-theme="dark"]. */
 :root,
 :root[data-theme='dark'] {
   --bg: #0f1115;
@@ -26,7 +48,7 @@
   --surface-2: #20242e;
   --border: #2a2f3a;
   --border-soft: #21252f;
-  --header-bg: rgba(15, 17, 21, 0.75);
+  --header-bg: rgb(15 17 21 / 75%);
 
   --text: #f2ede4;
   --text-muted: #9aa0ab;
@@ -34,17 +56,12 @@
 
   --accent: #c9a227;
   --accent-hover: #ddb84a;
-  --accent-soft: rgba(201, 162, 39, 0.14);
-  --accent-border: rgba(201, 162, 39, 0.4);
 
   --success: #3fb27f;
-  --success-soft: rgba(63, 178, 127, 0.14);
   --error: #e5484d;
-  --error-soft: rgba(229, 72, 77, 0.12);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.45);
+  --shadow-md-value: 0 8px 24px rgb(0 0 0 / 35%);
+  --shadow-lg-value: 0 24px 60px rgb(0 0 0 / 45%);
 
   color-scheme: dark;
 }
@@ -56,7 +73,7 @@
   --surface-2: #f1efe6;
   --border: #ddd7c8;
   --border-soft: #e8e3d6;
-  --header-bg: rgba(247, 245, 240, 0.8);
+  --header-bg: rgb(247 245 240 / 80%);
 
   --text: #211e18;
   --text-muted: #5c5648;
@@ -64,244 +81,113 @@
 
   --accent: #96731b;
   --accent-hover: #7d5f16;
-  --accent-soft: rgba(150, 115, 27, 0.12);
-  --accent-border: rgba(150, 115, 27, 0.38);
 
   --success: #1f8a5f;
-  --success-soft: rgba(31, 138, 95, 0.12);
   --error: #c1272d;
-  --error-soft: rgba(193, 39, 45, 0.1);
 
-  --shadow-sm: 0 1px 2px rgba(33, 30, 24, 0.08);
-  --shadow-md: 0 8px 24px rgba(33, 30, 24, 0.1);
-  --shadow-lg: 0 24px 60px rgba(33, 30, 24, 0.14);
+  --shadow-md-value: 0 8px 24px rgb(33 30 24 / 10%);
+  --shadow-lg-value: 0 24px 60px rgb(33 30 24 / 14%);
 
   color-scheme: light;
 }
 
-:root {
-  color: var(--text);
-  background: var(--bg);
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
-}
+@layer base {
+  body {
+    @apply bg-bg text-text font-sans antialiased;
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgb(201 162 39 / 10%), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 100% 0%, rgb(63 92 178 / 8%), transparent 55%);
+    background-attachment: fixed;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
+  }
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+  h1,
+  h2,
+  h3 {
+    @apply font-display font-semibold text-text leading-tight;
+  }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  background-image:
-    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(201, 162, 39, 0.1), transparent 60%),
-    radial-gradient(ellipse 700px 500px at 100% 0%, rgba(63, 92, 178, 0.08), transparent 55%);
-  background-attachment: fixed;
-}
-
-h1,
-h2,
-h3 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  color: var(--text);
-  margin: 0;
-  line-height: 1.15;
-}
-
-p {
-  margin: 0;
-  color: var(--text-muted);
-}
-
-a {
-  color: inherit;
-}
-
-.container {
-  width: 100%;
-  max-width: var(--container);
-  margin: 0 auto;
-  padding-inline: 24px;
-}
-
-/* Botones */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  font: inherit;
-  font-weight: 600;
-  font-size: 0.95rem;
-  border-radius: var(--radius-sm);
-  padding: 0.75rem 1.5rem;
-  border: 1px solid transparent;
-  cursor: pointer;
-  text-decoration: none;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease,
-    background-color 0.15s ease,
-    border-color 0.15s ease;
-  white-space: nowrap;
-}
-
-.btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.btn-primary {
-  background: var(--accent);
-  color: #17130a;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.btn-ghost {
-  background: transparent;
-  border-color: var(--border);
-  color: var(--text);
-}
-
-.btn-ghost:hover:not(:disabled) {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-}
-
-.btn-block {
-  width: 100%;
-}
-
-/* Formularios */
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.field label,
-.field-label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.field input,
-.field select {
-  font: inherit;
-  color: var(--text);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 0.7rem 0.85rem;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.field input::placeholder {
-  color: var(--text-faint);
-}
-
-.field input:focus,
-.field select:focus {
-  outline: none;
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
-}
-
-.field.has-error input,
-.field.has-error select {
-  border-color: var(--error);
-}
-
-.field.has-error .field-error {
-  display: flex;
-}
-
-.field-error {
-  display: none;
-  align-items: center;
-  gap: 0.35rem;
-  font-size: 0.82rem;
-  color: var(--error);
-}
-
-/* Banners */
-.banner {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-  padding: 0.85rem 1rem;
-  border-radius: var(--radius-sm);
-  font-size: 0.92rem;
-  border: 1px solid transparent;
-}
-
-.banner--success {
-  background: var(--success-soft);
-  border-color: rgba(63, 178, 127, 0.35);
-  color: #a9e6c9;
-}
-
-.banner--error {
-  background: var(--error-soft);
-  border-color: rgba(229, 72, 77, 0.35);
-  color: #f6b4b6;
-}
-
-.banner svg {
-  flex-shrink: 0;
-  margin-top: 0.1rem;
-}
-
-/* Transición compartida para <Transition name="banner"> (RegisterView, LoginView) */
-.banner-enter-active,
-.banner-leave-active {
-  transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
-}
-
-.banner-enter-from,
-.banner-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-
-/* Utilidades */
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+  p {
+    @apply text-text-muted;
   }
 }
 
-.spinner {
-  animation: spin 0.8s linear infinite;
+@layer utilities {
+  /* Único helper de layout compartido: repetir max-w/mx-auto/px en cada
+     vista no suma claridad, a diferencia de botones/inputs/banners donde
+     las utilidades quedan inline a propósito para que se lea el comportamiento
+     de Tailwind directo en cada template. */
+  .container {
+    @apply mx-auto w-full max-w-[1180px] px-4 sm:px-6;
+  }
+}
+
+@layer components {
+  /* Primitivos reutilizados en 6+ vistas (botones, campos, banners, cards):
+     se agrupan acá con @apply para no repetir la misma docena de utilidades
+     en cada template. Todo lo específico de cada vista queda inline. */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-transparent px-6 py-3 text-[0.95rem] font-semibold whitespace-nowrap transition-all disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-primary {
+    @apply bg-accent text-[#17130a] hover:-translate-y-px hover:bg-accent-hover hover:shadow-md;
+  }
+
+  .btn-ghost {
+    @apply border-border bg-transparent text-text hover:border-accent/40 hover:bg-accent/10;
+  }
+
+  .btn-block {
+    @apply w-full;
+  }
+
+  .field {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .field label,
+  .field-label {
+    @apply text-sm font-semibold text-text-muted;
+  }
+
+  .field input,
+  .field select {
+    @apply rounded-lg border border-border bg-surface-2 px-3.5 py-3 font-sans text-text transition-shadow placeholder:text-text-faint focus:border-accent focus:ring-3 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .field.has-error input,
+  .field.has-error select {
+    @apply border-error;
+  }
+
+  .field-error {
+    @apply hidden items-center gap-1.5 text-[0.82rem] text-error;
+  }
+
+  .field.has-error .field-error {
+    @apply flex;
+  }
+
+  .banner {
+    @apply flex items-start gap-2.5 rounded-lg border px-4 py-3.5 text-[0.92rem];
+  }
+
+  .banner--success {
+    @apply border-success/35 bg-success/10 text-success;
+  }
+
+  .banner--error {
+    @apply border-error/35 bg-error/10 text-error;
+  }
+
+  .card {
+    @apply rounded-3xl border border-border-soft bg-surface p-6 sm:p-7;
+  }
+
+  .pill {
+    @apply inline-flex items-center rounded-full bg-accent/15 px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-text;
+  }
 }

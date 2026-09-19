@@ -44,269 +44,95 @@ const STEPS = [
 </script>
 
 <template>
-  <div class="page">
+  <div class="flex min-h-screen flex-col">
     <AppHeader />
 
     <main>
-      <section class="hero">
-        <div class="hero__glyph" aria-hidden="true">♜</div>
-        <div class="container hero__inner">
-          <p class="hero__eyebrow">Práctica de Ingeniería IV · Universidad Central</p>
-          <h1 class="hero__title">
-            Torneos de ajedrez universitarios,<br />
+      <section class="relative overflow-hidden py-14 text-center sm:py-20 lg:py-28">
+        <div
+          class="pointer-events-none absolute -top-24 -right-12 text-[16rem] leading-none text-accent/6 select-none sm:text-[20rem] lg:text-[26rem]"
+          aria-hidden="true"
+        >
+          ♜
+        </div>
+        <div class="container relative flex max-w-3xl flex-col items-center gap-5">
+          <p class="text-xs font-semibold tracking-[0.08em] text-accent uppercase sm:text-sm">
+            Práctica de Ingeniería IV · Universidad Central
+          </p>
+          <h1 class="text-[2.1rem] leading-tight sm:text-5xl lg:text-6xl">
+            Torneos de ajedrez universitarios,<br class="hidden sm:block" />
             sin hojas de cálculo
           </h1>
-          <p class="hero__subtitle">
+          <p class="max-w-xl text-base text-text-muted sm:text-lg">
             Torre Central Hub automatiza el ciclo completo de un torneo: inscripción, emparejamiento suizo
             adaptado, resultados, clasificación y desempates — en tiempo real y con trazabilidad administrativa
             completa.
           </p>
-          <div class="hero__actions">
+          <div class="mt-2 flex flex-wrap justify-center gap-3">
             <RouterLink to="/registro" class="btn btn-primary">Crear cuenta gratis</RouterLink>
             <a href="#funciona" class="btn btn-ghost">Cómo funciona</a>
           </div>
         </div>
       </section>
 
-      <section id="funciona" class="section">
+      <section id="funciona" class="py-12 sm:py-16 lg:py-20">
         <div class="container">
-          <h2 class="section__title">Todo el ciclo del torneo, en un solo lugar</h2>
-          <p class="section__subtitle">
+          <h2 class="mx-auto max-w-xl text-center text-[1.6rem] sm:text-3xl lg:text-4xl">
+            Todo el ciclo del torneo, en un solo lugar
+          </h2>
+          <p class="mx-auto mt-3 max-w-xl text-center">
             Desde la inscripción hasta el cierre oficial, cubriendo las reglas de un torneo suizo real.
           </p>
 
-          <div class="feature-grid">
-            <article v-for="feature in FEATURES" :key="feature.title" class="feature-card">
-              <span class="feature-card__glyph" aria-hidden="true">{{ feature.glyph }}</span>
-              <h3>{{ feature.title }}</h3>
-              <p>{{ feature.text }}</p>
+          <div class="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <article
+              v-for="feature in FEATURES"
+              :key="feature.title"
+              class="rounded-2xl border border-border-soft bg-surface p-6 transition-all hover:-translate-y-0.5 hover:border-accent/40"
+            >
+              <span class="mb-3 inline-flex text-2xl text-accent" aria-hidden="true">{{ feature.glyph }}</span>
+              <h3 class="mb-1.5 text-base">{{ feature.title }}</h3>
+              <p class="text-sm">{{ feature.text }}</p>
             </article>
           </div>
         </div>
       </section>
 
-      <section class="section section--alt">
+      <section class="border-y border-border-soft bg-bg-elevated py-12 sm:py-16 lg:py-20">
         <div class="container">
-          <h2 class="section__title">Cuatro pasos, un torneo completo</h2>
+          <h2 class="mx-auto max-w-xl text-center text-[1.6rem] sm:text-3xl lg:text-4xl">
+            Cuatro pasos, un torneo completo
+          </h2>
 
-          <ol class="steps">
-            <li v-for="step in STEPS" :key="step.n" class="step">
-              <span class="step__n">{{ step.n }}</span>
+          <ol class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <li v-for="step in STEPS" :key="step.n" class="flex gap-4">
+              <span class="shrink-0 font-display text-2xl text-accent">{{ step.n }}</span>
               <div>
-                <h3>{{ step.title }}</h3>
-                <p>{{ step.text }}</p>
+                <h3 class="mb-1 text-base">{{ step.title }}</h3>
+                <p class="text-sm">{{ step.text }}</p>
               </div>
             </li>
           </ol>
         </div>
       </section>
 
-      <section class="section cta">
-        <div class="container cta__inner">
-          <h2>¿Organizás un torneo?</h2>
-          <p>Creá tu cuenta como organizador, árbitro, entrenador o jugador y empezá a usarlo hoy.</p>
-          <RouterLink to="/registro" class="btn btn-primary">Crear cuenta</RouterLink>
+      <section class="py-12 sm:py-16 lg:py-20">
+        <div class="container flex flex-col items-center gap-3 text-center">
+          <h2 class="text-[1.6rem] sm:text-3xl">¿Organizás un torneo?</h2>
+          <p class="max-w-md">Creá tu cuenta como organizador, árbitro, entrenador o jugador y empezá a usarlo hoy.</p>
+          <RouterLink to="/registro" class="btn btn-primary mt-2">Crear cuenta</RouterLink>
         </div>
       </section>
     </main>
 
-    <footer class="site-footer">
-      <div class="container site-footer__inner">
+    <footer class="mt-auto border-t border-border-soft py-8">
+      <div class="container flex flex-wrap items-center justify-between gap-4 text-sm text-text-muted">
         <AppLogo size="md" />
         <p>Universidad Central — Facultad de Ingeniería y Ciencias Básicas</p>
-        <a href="https://github.com/hasttyr/torre" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/hasttyr/torre" target="_blank" rel="noopener" class="text-text-muted no-underline hover:text-accent">
+          GitHub
+        </a>
       </div>
     </footer>
   </div>
 </template>
-
-<style scoped>
-.page {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.hero {
-  position: relative;
-  overflow: hidden;
-  padding-block: clamp(3.5rem, 8vw, 7rem) clamp(3rem, 6vw, 5rem);
-  text-align: center;
-}
-
-.hero__glyph {
-  position: absolute;
-  top: -6rem;
-  right: -3rem;
-  font-size: clamp(16rem, 30vw, 26rem);
-  color: rgba(201, 162, 39, 0.06);
-  line-height: 1;
-  pointer-events: none;
-  user-select: none;
-}
-
-.hero__inner {
-  position: relative;
-  max-width: 46rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-}
-
-.hero__eyebrow {
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--accent);
-}
-
-.hero__title {
-  font-size: clamp(2.1rem, 5vw, 3.4rem);
-}
-
-.hero__subtitle {
-  font-size: 1.1rem;
-  max-width: 38rem;
-}
-
-.hero__actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.section {
-  padding-block: clamp(3rem, 6vw, 5rem);
-}
-
-.section--alt {
-  background: var(--bg-elevated);
-  border-block: 1px solid var(--border-soft);
-}
-
-.section__title {
-  font-size: clamp(1.6rem, 3vw, 2.2rem);
-  text-align: center;
-  max-width: 34rem;
-  margin-inline: auto;
-}
-
-.section__subtitle {
-  text-align: center;
-  margin: 0.75rem auto 0;
-  max-width: 34rem;
-}
-
-.feature-grid {
-  margin-top: 2.5rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr));
-  gap: 1.25rem;
-}
-
-.feature-card {
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  padding: 1.5rem;
-  transition:
-    transform 0.15s ease,
-    border-color 0.15s ease;
-}
-
-.feature-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--accent-border);
-}
-
-.feature-card__glyph {
-  display: inline-flex;
-  font-size: 1.6rem;
-  color: var(--accent);
-  margin-bottom: 0.75rem;
-}
-
-.feature-card h3 {
-  font-size: 1.05rem;
-  margin-bottom: 0.4rem;
-}
-
-.feature-card p {
-  font-size: 0.92rem;
-}
-
-.steps {
-  list-style: none;
-  margin: 2.5rem 0 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
-  gap: 1.5rem;
-}
-
-.step {
-  display: flex;
-  gap: 1rem;
-}
-
-.step__n {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  color: var(--accent);
-  flex-shrink: 0;
-}
-
-.step h3 {
-  font-size: 1rem;
-  margin-bottom: 0.3rem;
-}
-
-.step p {
-  font-size: 0.9rem;
-}
-
-.cta__inner {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.cta__inner p {
-  max-width: 30rem;
-}
-
-.cta__inner .btn {
-  margin-top: 0.5rem;
-}
-
-.site-footer {
-  border-top: 1px solid var(--border-soft);
-  padding-block: 2rem;
-  margin-top: auto;
-}
-
-.site-footer__inner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.site-footer__inner a {
-  text-decoration: none;
-  color: var(--text-muted);
-}
-
-.site-footer__inner a:hover {
-  color: var(--accent);
-}
-</style>

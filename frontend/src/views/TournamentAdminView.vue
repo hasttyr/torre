@@ -157,33 +157,43 @@ function extractError(error: unknown): string {
 </script>
 
 <template>
-  <div class="page">
+  <div class="min-h-screen">
     <AppHeader />
 
-    <main class="container admin">
+    <main class="container flex max-w-xl flex-col gap-6 py-10 sm:py-12">
       <p v-if="loading">Cargando torneo…</p>
       <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
 
       <template v-else-if="torneos.actual">
-        <header class="admin-header">
-          <h1>{{ torneos.actual.nombre }}</h1>
-          <span class="estado-pill">{{ ESTADO_LABELS[torneos.actual.estado] ?? torneos.actual.estado }}</span>
+        <header class="flex flex-wrap items-center justify-between gap-4">
+          <h1 class="text-2xl sm:text-3xl">{{ torneos.actual.nombre }}</h1>
+          <span class="pill">{{ ESTADO_LABELS[torneos.actual.estado] ?? torneos.actual.estado }}</span>
         </header>
 
         <!-- HU05 -->
-        <section class="admin-card">
-          <h2>Configuración del torneo</h2>
-          <p class="section-hint">Rondas, ritmo y orden de desempates.</p>
+        <section class="card">
+          <h2 class="mb-1 text-lg">Configuración del torneo</h2>
+          <p class="mb-4 text-sm">Rondas, ritmo y orden de desempates.</p>
 
-          <Transition name="banner">
-            <p v-if="configError" role="alert" class="banner banner--error">{{ configError }}</p>
+          <Transition
+            enter-active-class="transition duration-180 ease-out"
+            enter-from-class="opacity-0 -translate-y-1.5"
+            leave-active-class="transition duration-180 ease-in"
+            leave-to-class="opacity-0 -translate-y-1.5"
+          >
+            <p v-if="configError" role="alert" class="banner banner--error mb-4">{{ configError }}</p>
           </Transition>
-          <Transition name="banner">
-            <p v-if="configSuccess" class="banner banner--success">{{ configSuccess }}</p>
+          <Transition
+            enter-active-class="transition duration-180 ease-out"
+            enter-from-class="opacity-0 -translate-y-1.5"
+            leave-active-class="transition duration-180 ease-in"
+            leave-to-class="opacity-0 -translate-y-1.5"
+          >
+            <p v-if="configSuccess" class="banner banner--success mb-4">{{ configSuccess }}</p>
           </Transition>
 
-          <form novalidate class="config-form" @submit.prevent="onConfigurar">
-            <div class="field-row">
+          <form novalidate class="config-form flex flex-col gap-4" @submit.prevent="onConfigurar">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="field">
                 <label for="numeroRondas">Número de rondas</label>
                 <input id="numeroRondas" v-model="configForm.numeroRondas" type="number" min="1" placeholder="7" />
@@ -202,30 +212,35 @@ function extractError(error: unknown): string {
                 type="text"
                 :disabled="!puedeEditarDesempates"
               />
-              <span v-if="!puedeEditarDesempates" class="section-hint">
+              <span v-if="!puedeEditarDesempates" class="text-sm text-text-muted">
                 No se puede modificar: ya inició la primera ronda.
               </span>
             </div>
 
-            <button type="submit" class="btn btn-primary" :disabled="configSubmitting">
+            <button type="submit" class="btn btn-primary self-start" :disabled="configSubmitting">
               {{ configSubmitting ? "Guardando..." : "Guardar configuración" }}
             </button>
           </form>
         </section>
 
         <!-- HU06 -->
-        <section class="admin-card">
-          <h2>Inscripciones</h2>
-          <p class="section-hint">
+        <section class="card">
+          <h2 class="mb-1 text-lg">Inscripciones</h2>
+          <p class="mb-4 text-sm">
             Controlá cuándo se aceptan nuevos participantes. Estado actual:
-            <strong>{{ ESTADO_LABELS[torneos.actual.estado] ?? torneos.actual.estado }}</strong>
+            <strong class="text-text">{{ ESTADO_LABELS[torneos.actual.estado] ?? torneos.actual.estado }}</strong>
           </p>
 
-          <Transition name="banner">
-            <p v-if="inscripcionesError" role="alert" class="banner banner--error">{{ inscripcionesError }}</p>
+          <Transition
+            enter-active-class="transition duration-180 ease-out"
+            enter-from-class="opacity-0 -translate-y-1.5"
+            leave-active-class="transition duration-180 ease-in"
+            leave-to-class="opacity-0 -translate-y-1.5"
+          >
+            <p v-if="inscripcionesError" role="alert" class="banner banner--error mb-4">{{ inscripcionesError }}</p>
           </Transition>
 
-          <div class="inline-actions">
+          <div class="flex flex-wrap gap-3">
             <button
               type="button"
               class="btn btn-primary"
@@ -246,15 +261,20 @@ function extractError(error: unknown): string {
         </section>
 
         <!-- HU07 -->
-        <section class="admin-card">
-          <h2>Jugadores inscritos</h2>
-          <p class="section-hint">Listado oficial de participantes del torneo.</p>
+        <section class="card">
+          <h2 class="mb-1 text-lg">Jugadores inscritos</h2>
+          <p class="mb-4 text-sm">Listado oficial de participantes del torneo.</p>
 
-          <Transition name="banner">
-            <p v-if="inscribirError" role="alert" class="banner banner--error">{{ inscribirError }}</p>
+          <Transition
+            enter-active-class="transition duration-180 ease-out"
+            enter-from-class="opacity-0 -translate-y-1.5"
+            leave-active-class="transition duration-180 ease-in"
+            leave-to-class="opacity-0 -translate-y-1.5"
+          >
+            <p v-if="inscribirError" role="alert" class="banner banner--error mb-4">{{ inscribirError }}</p>
           </Transition>
 
-          <div class="field jugador-search">
+          <div class="field relative">
             <label for="jugadorQuery">Buscar jugador (nombre, correo o código)</label>
             <input
               id="jugadorQuery"
@@ -264,13 +284,20 @@ function extractError(error: unknown): string {
               :disabled="!inscripcionesAbiertas"
             />
 
-            <ul v-if="jugadorQuery.trim() && inscripcionesAbiertas" class="search-results">
-              <li v-if="buscando" class="search-hint">Buscando…</li>
+            <ul
+              v-if="jugadorQuery.trim() && inscripcionesAbiertas"
+              class="mt-2 list-none overflow-hidden rounded-lg border border-border-soft p-0"
+            >
+              <li v-if="buscando" class="px-3.5 py-2.5 text-sm text-text-muted">Buscando…</li>
               <template v-else-if="resultadosBusqueda.length > 0">
-                <li v-for="jugador in resultadosBusqueda" :key="jugador.id" class="search-result">
-                  <div>
-                    <strong>{{ jugador.nombre }}</strong>
-                    <span class="section-hint">{{ jugador.codigoUniversitario }} · {{ jugador.programa }}</span>
+                <li
+                  v-for="jugador in resultadosBusqueda"
+                  :key="jugador.id"
+                  class="flex items-center justify-between gap-3 border-b border-border-soft px-3.5 py-2.5 last:border-b-0"
+                >
+                  <div class="flex flex-col gap-0.5">
+                    <strong class="text-text">{{ jugador.nombre }}</strong>
+                    <span class="text-sm text-text-muted">{{ jugador.codigoUniversitario }} · {{ jugador.programa }}</span>
                   </div>
                   <button
                     type="button"
@@ -282,163 +309,36 @@ function extractError(error: unknown): string {
                   </button>
                 </li>
               </template>
-              <li v-else class="search-hint">Sin resultados</li>
+              <li v-else class="px-3.5 py-2.5 text-sm text-text-muted">Sin resultados</li>
             </ul>
           </div>
-          <p v-if="!inscripcionesAbiertas" class="section-hint">
+          <p v-if="!inscripcionesAbiertas" class="mb-4 text-sm text-text-muted">
             Las inscripciones deben estar abiertas para registrar jugadores.
           </p>
 
-          <table v-if="torneos.jugadoresInscritos.length > 0" class="jugadores-table">
-            <thead>
-              <tr>
-                <th>Nombre</th>
-                <th>Código</th>
-                <th>Programa</th>
-                <th>Semestre</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="jugador in torneos.jugadoresInscritos" :key="jugador.jugadorId">
-                <td>{{ jugador.nombre }}</td>
-                <td>{{ jugador.codigoUniversitario }}</td>
-                <td>{{ jugador.programa }}</td>
-                <td>{{ jugador.semestre }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <p v-else class="section-hint">Todavía no hay jugadores inscritos.</p>
+          <div v-if="torneos.jugadoresInscritos.length > 0" class="mt-4 -mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
+            <table class="w-full min-w-md border-collapse">
+              <thead>
+                <tr>
+                  <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">Nombre</th>
+                  <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">Código</th>
+                  <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">Programa</th>
+                  <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">Semestre</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="jugador in torneos.jugadoresInscritos" :key="jugador.jugadorId">
+                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ jugador.nombre }}</td>
+                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ jugador.codigoUniversitario }}</td>
+                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ jugador.programa }}</td>
+                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ jugador.semestre }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p v-else class="text-sm text-text-muted">Todavía no hay jugadores inscritos.</p>
         </section>
       </template>
     </main>
   </div>
 </template>
-
-<style scoped>
-.page {
-  min-height: 100vh;
-}
-
-.admin {
-  padding-block: 3rem;
-  max-width: 40rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.admin-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.estado-pill {
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.3rem 0.75rem;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--text);
-  white-space: nowrap;
-}
-
-.admin-card {
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-lg);
-  padding: 1.5rem 1.75rem;
-}
-
-.admin-card h2 {
-  margin: 0 0 0.25rem;
-  font-size: 1.1rem;
-}
-
-.section-hint {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  margin: 0 0 1rem;
-}
-
-.config-form,
-.inline-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.inline-form {
-  flex-direction: row;
-  align-items: flex-end;
-  gap: 0.75rem;
-}
-
-.inline-form .field {
-  flex: 1;
-}
-
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.jugador-search {
-  position: relative;
-}
-
-.search-results {
-  list-style: none;
-  margin: 0.5rem 0 0;
-  padding: 0;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.search-result {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.6rem 0.85rem;
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.search-result:last-child {
-  border-bottom: none;
-}
-
-.search-result div {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
-.search-hint {
-  padding: 0.6rem 0.85rem;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.inline-actions {
-  display: flex;
-  gap: 0.75rem;
-}
-
-.jugadores-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 1rem;
-}
-
-.jugadores-table th,
-.jugadores-table td {
-  text-align: left;
-  padding: 0.5rem 0.6rem;
-  border-bottom: 1px solid var(--border-soft);
-  font-size: 0.9rem;
-}
-</style>

@@ -60,9 +60,14 @@ async function onSubmit(): Promise<void> {
     quote-author="Alexander Kotov"
   >
     <template #banners>
-      <Transition name="banner">
+      <Transition
+        enter-active-class="transition duration-180 ease-out"
+        enter-from-class="opacity-0 -translate-y-1.5"
+        leave-active-class="transition duration-180 ease-in"
+        leave-to-class="opacity-0 -translate-y-1.5"
+      >
         <p v-if="serverError" role="alert" class="banner banner--error">
-          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true" class="mt-0.5 shrink-0">
             <path d="M10 2 1 17h18L10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
             <path d="M10 8v3.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
             <circle cx="10" cy="14" r="0.9" fill="currentColor" />
@@ -86,7 +91,7 @@ async function onSubmit(): Promise<void> {
       </div>
 
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
-        <svg v-if="submitting" class="spinner" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+        <svg v-if="submitting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
           <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" opacity="0.25" />
           <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
         </svg>

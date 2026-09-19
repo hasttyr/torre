@@ -71,25 +71,30 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <div class="page">
+  <div class="min-h-screen">
     <AppHeader />
 
-    <main class="container create-tournament">
-      <h1>Crear torneo</h1>
-      <p class="subtitle">Datos básicos para iniciar la administración del torneo.</p>
+    <main class="container max-w-lg py-10 sm:py-12">
+      <h1 class="text-2xl sm:text-3xl">Crear torneo</h1>
+      <p class="mt-1">Datos básicos para iniciar la administración del torneo.</p>
 
-      <Transition name="banner">
-        <p v-if="serverError" role="alert" class="banner banner--error">{{ serverError }}</p>
+      <Transition
+        enter-active-class="transition duration-180 ease-out"
+        enter-from-class="opacity-0 -translate-y-1.5"
+        leave-active-class="transition duration-180 ease-in"
+        leave-to-class="opacity-0 -translate-y-1.5"
+      >
+        <p v-if="serverError" role="alert" class="banner banner--error mt-4">{{ serverError }}</p>
       </Transition>
 
-      <form novalidate class="tournament-form" @submit.prevent="onSubmit">
+      <form novalidate class="mt-6 flex flex-col gap-4" @submit.prevent="onSubmit">
         <div class="field" :class="{ 'has-error': errors.nombre }">
           <label for="nombre">Nombre del torneo</label>
           <input id="nombre" v-model="form.nombre" type="text" placeholder="Copa Universitaria de Ajedrez" />
           <span class="field-error">{{ errors.nombre }}</span>
         </div>
 
-        <div class="field-row">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="field" :class="{ 'has-error': errors.fechaInicio }">
             <label for="fechaInicio">Fecha de inicio</label>
             <input id="fechaInicio" v-model="form.fechaInicio" type="date" />
@@ -115,32 +120,3 @@ async function onSubmit(): Promise<void> {
     </main>
   </div>
 </template>
-
-<style scoped>
-.page {
-  min-height: 100vh;
-}
-
-.create-tournament {
-  padding-block: 3rem;
-  max-width: 32rem;
-}
-
-.subtitle {
-  color: var(--text-muted);
-  margin-top: 0.25rem;
-}
-
-.tournament-form {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-</style>
