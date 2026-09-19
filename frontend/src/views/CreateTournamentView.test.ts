@@ -19,6 +19,14 @@ import { crearTorneo } from "../services/torneos";
 
 const crearTorneoMock = vi.mocked(crearTorneo);
 
+// DateField (Vue Datepicker) parsea el texto tipeado y confirma con blur
+// (applyOnBlur), no con cada evento input como un <input type="date"> nativo.
+async function setDateField(wrapper: ReturnType<typeof mount>, id: string, isoDate: string): Promise<void> {
+  const [year, month, day] = isoDate.split("-");
+  await wrapper.get(`#${id}`).setValue(`${day}/${month}/${year}`);
+  await wrapper.get(`#${id}`).trigger("blur");
+}
+
 async function mountView() {
   const router = createRouter({
     history: createWebHistory(),
@@ -69,8 +77,8 @@ describe("CreateTournamentView", () => {
     const { wrapper, router } = await mountView();
 
     await wrapper.find("#nombre").setValue("Copa Universitaria");
-    await wrapper.find("#fechaInicio").setValue("2026-10-01");
-    await wrapper.find("#fechaFin").setValue("2026-10-03");
+    await setDateField(wrapper, "fechaInicio", "2026-10-01");
+    await setDateField(wrapper, "fechaFin", "2026-10-03");
     await wrapper.find("form").trigger("submit.prevent");
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -87,8 +95,8 @@ describe("CreateTournamentView", () => {
     const { wrapper } = await mountView();
 
     await wrapper.find("#nombre").setValue("Copa Universitaria");
-    await wrapper.find("#fechaInicio").setValue("2026-10-05");
-    await wrapper.find("#fechaFin").setValue("2026-10-01");
+    await setDateField(wrapper, "fechaInicio", "2026-10-05");
+    await setDateField(wrapper, "fechaFin", "2026-10-01");
     await wrapper.find("form").trigger("submit.prevent");
 
     expect(wrapper.text()).toContain("La fecha de fin no puede ser anterior a la fecha de inicio");

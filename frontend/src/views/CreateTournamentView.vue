@@ -4,6 +4,7 @@ import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import AppHeader from "../components/AppHeader.vue";
+import DateField from "../components/DateField.vue";
 import { useTorneosStore } from "../stores/torneos";
 
 const router = useRouter();
@@ -97,13 +98,13 @@ async function onSubmit(): Promise<void> {
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="field" :class="{ 'has-error': errors.fechaInicio }">
             <label for="fechaInicio">Fecha de inicio</label>
-            <input id="fechaInicio" v-model="form.fechaInicio" type="date" />
+            <DateField id="fechaInicio" v-model="form.fechaInicio" />
             <span class="field-error">{{ errors.fechaInicio }}</span>
           </div>
 
           <div class="field" :class="{ 'has-error': errors.fechaFin }">
             <label for="fechaFin">Fecha de fin</label>
-            <input id="fechaFin" v-model="form.fechaFin" type="date" />
+            <DateField id="fechaFin" v-model="form.fechaFin" />
             <span class="field-error">{{ errors.fechaFin }}</span>
           </div>
         </div>

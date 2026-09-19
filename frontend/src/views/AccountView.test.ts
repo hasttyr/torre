@@ -139,7 +139,7 @@ describe("AccountView", () => {
     const wrapper = await mountAccountView();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect((wrapper.get("#fechaNacimiento").element as HTMLInputElement).value).toBe("2005-06-15");
+    expect((wrapper.get("#fechaNacimiento").element as HTMLInputElement).value).toBe("15/06/2005");
     expect((wrapper.get("#genero").element as HTMLSelectElement).value).toBe("FEMENINO");
     expect((wrapper.get("#discapacidad").element as HTMLSelectElement).value).toBe("VISUAL");
     expect(wrapper.text()).toContain("Edad actual: 21 años");
@@ -167,7 +167,8 @@ describe("AccountView", () => {
     const wrapper = await mountAccountView();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    await wrapper.get("#fechaNacimiento").setValue("2005-06-15");
+    await wrapper.get("#fechaNacimiento").setValue("15/06/2005");
+    await wrapper.get("#fechaNacimiento").trigger("blur");
     await wrapper.get("#genero").setValue("FEMENINO");
     await wrapper.get("#discapacidad").setValue("VISUAL");
     await wrapper.get("form").trigger("submit.prevent");

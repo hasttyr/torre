@@ -3,11 +3,13 @@ import axios from "axios";
 import { onMounted, reactive, ref, watch } from "vue";
 
 import AppHeader from "../components/AppHeader.vue";
+import DateField from "../components/DateField.vue";
 import { DISCAPACIDADES, DISCAPACIDAD_LABELS, GENEROS, GENERO_LABELS, type Discapacidad, type Genero } from "../services/auth";
 import { useAuthStore } from "../stores/auth";
 
 const auth = useAuthStore();
 const loadError = ref<string | null>(null);
+const hoyIso = new Date().toISOString().slice(0, 10);
 
 const ROLE_LABELS: Record<string, string> = {
   JUGADOR: "Jugador",
@@ -199,7 +201,7 @@ async function onSubmit(): Promise<void> {
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="field" :class="{ 'has-error': errors.fechaNacimiento }">
                 <label for="fechaNacimiento">Fecha de nacimiento</label>
-                <input id="fechaNacimiento" v-model="form.fechaNacimiento" type="date" />
+                <DateField id="fechaNacimiento" v-model="form.fechaNacimiento" :max-date="hoyIso" />
                 <span class="field-error">{{ errors.fechaNacimiento }}</span>
                 <span v-if="auth.usuario.jugador.edad != null" class="text-sm text-text-muted">
                   Edad actual: {{ auth.usuario.jugador.edad }} años
