@@ -10,11 +10,13 @@ vi.mock("../services/auth", () => ({
   loginUser: vi.fn(),
   logoutUser: vi.fn(),
   fetchMe: vi.fn(),
+  updateProfile: vi.fn(),
 }));
 
-import { fetchMe } from "../services/auth";
+import { fetchMe, updateProfile } from "../services/auth";
 
 const fetchMeMock = vi.mocked(fetchMe);
+const updateProfileMock = vi.mocked(updateProfile);
 
 const USUARIO = {
   id: "usuario-1",
@@ -23,6 +25,16 @@ const USUARIO = {
   estado: "ACTIVO",
   rol: "ORGANIZADOR",
   createdAt: "2026-01-01T00:00:00.000Z",
+};
+
+const JUGADOR = {
+  id: "usuario-2",
+  nombre: "Luis Gómez",
+  email: "luis@example.com",
+  estado: "ACTIVO",
+  rol: "JUGADOR",
+  createdAt: "2026-01-01T00:00:00.000Z",
+  jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
 };
 
 async function mountAccountView() {
@@ -55,7 +67,7 @@ describe("AccountView", () => {
     const wrapper = await mountAccountView();
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(wrapper.text()).toContain("Ana Torres");
+    expect((wrapper.get("#nombre").element as HTMLInputElement).value).toBe("Ana Torres");
     expect(wrapper.text()).toContain("ana@example.com");
     expect(wrapper.text()).toContain("Organizador");
   });
@@ -70,6 +82,67 @@ describe("AccountView", () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("No se pudo actualizar tu perfil");
-    expect(wrapper.text()).toContain("Ana Torres");
+    expect((wrapper.get("#nombre").element as HTMLInputElement).value).toBe("Ana Torres");
+  });
+
+  it("no muestra campos de jugador para un usuario sin ese perfil", async () => {
+    const auth = useAuthStore();
+    auth.$patch({ token: "token", usuario: USUARIO });
+    fetchMeMock.mockResolvedValue(USUARIO);
+
+    const wrapper = await mountAccountView();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(wrapper.find("#codigo").exists()).toBe(false);
+  });
+
+  it("precarga los campos de jugador cuando el usuario tiene ese perfil", async () => {
+    const auth = useAuthStore();
+    auth.$patch({ token: "token", usuario: JUGADOR });
+    fetchMeMock.mockResolvedValue(JUGADOR);
+
+    const wrapper = await mountAccountView();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect((wrapper.get("#codigo").element as HTMLInputElement).value).toBe("U1");
+    expect((wrapper.get("#programa").element as HTMLInputElement).value).toBe("Sistemas");
+    expect((wrapper.get("#semestre").element as HTMLInputElement).value).toBe("5");
+  });
+
+  it("guarda los cambios del perfil y muestra un mensaje de éxito (HU20)", async () => {
+    const auth = useAuthStore();
+    auth.$patch({ token: "token", usuario: USUARIO });
+    fetchMeMock.mockResolvedValue(USUARIO);
+    updateProfileMock.mockResolvedValue({ ...USUARIO, nombre: "Ana T." });
+
+    const wrapper = await mountAccountView();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await wrapper.get("#nombre").setValue("Ana T.");
+    await wrapper.get("form").trigger("submit.prevent");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    expect(updateProfileMock).toHaveBeenCalledWith({ nombre: "Ana T." });
+    expect(wrapper.text()).toContain("Perfil actualizado");
+  });
+
+  it("muestra el error del backend si falla guardar el perfil", async () => {
+    const auth = useAuthStore();
+    auth.$patch({ token: "token", usuario: USUARIO });
+    fetchMeMock.mockResolvedValue(USUARIO);
+    updateProfileMock.mockRejectedValue({
+      isAxiosError: true,
+      response: { data: { error: "El nombre debe tener al menos 2 caracteres" } },
+    });
+
+    const wrapper = await mountAccountView();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await wrapper.get("form").trigger("submit.prevent");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain("El nombre debe tener al menos 2 caracteres");
   });
 });

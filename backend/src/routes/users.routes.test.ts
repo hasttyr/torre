@@ -45,7 +45,7 @@ describe("GET /api/users/me", () => {
     expect(response.body).toMatchObject({ id: "usuario-1", email: "ana@example.com", rol: "ORGANIZADOR" });
     expect(prismaMock.usuario.findUnique).toHaveBeenCalledWith({
       where: { id: "usuario-1" },
-      include: { rol: true },
+      include: { rol: true, jugador: true },
     });
   });
 
@@ -57,6 +57,73 @@ describe("GET /api/users/me", () => {
       .set("Authorization", `Bearer ${tokenFor("ORGANIZADOR")}`);
 
     expect(response.status).toBe(404);
+  });
+});
+
+describe("PUT /api/users/me", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("actualiza el propio perfil (HU20)", async () => {
+    prismaMock.usuario.findUnique.mockResolvedValue({
+      id: "usuario-1",
+      jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
+    });
+    prismaMock.usuario.update.mockResolvedValue({
+      id: "usuario-1",
+      nombre: "Luis Gómez",
+      email: "luis@example.com",
+      estado: "ACTIVO",
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      rol: { id: "rol-1", nombre: "JUGADOR" },
+      jugador: { codigoUniversitario: "U1", programa: "Ingeniería", semestre: 6 },
+    });
+
+    const response = await request(createApp())
+      .put("/api/users/me")
+      .set("Authorization", `Bearer ${tokenFor("JUGADOR", "usuario-1")}`)
+      .send({ programa: "Ingeniería", semestre: 6 });
+
+    expect(response.status).toBe(200);
+    expect(response.body.jugador).toEqual({ codigoUniversitario: "U1", programa: "Ingeniería", semestre: 6 });
+  });
+
+  it("ignora cualquier intento de enviar 'rol' en el body (no es un campo válido del schema)", async () => {
+    prismaMock.usuario.findUnique.mockResolvedValue({ id: "usuario-1", jugador: null });
+    prismaMock.usuario.update.mockResolvedValue({
+      id: "usuario-1",
+      nombre: "Ana T.",
+      email: "ana@example.com",
+      estado: "ACTIVO",
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      rol: { id: "rol-1", nombre: "ORGANIZADOR" },
+      jugador: null,
+    });
+
+    const response = await request(createApp())
+      .put("/api/users/me")
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZADOR", "usuario-1")}`)
+      .send({ nombre: "Ana T.", rol: "ADMINISTRADOR" });
+
+    expect(response.status).toBe(200);
+    expect(prismaMock.usuario.update.mock.calls[0][0].data).not.toHaveProperty("rol");
+    expect(prismaMock.usuario.update.mock.calls[0][0].data).not.toHaveProperty("rolId");
+  });
+
+  it("responde 401 sin token", async () => {
+    const response = await request(createApp()).put("/api/users/me").send({ nombre: "X" });
+    expect(response.status).toBe(401);
+  });
+
+  it("responde 400 con un nombre demasiado corto", async () => {
+    const response = await request(createApp())
+      .put("/api/users/me")
+      .set("Authorization", `Bearer ${tokenFor("JUGADOR", "usuario-1")}`)
+      .send({ nombre: "A" });
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.usuario.update).not.toHaveBeenCalled();
   });
 });
 
@@ -102,7 +169,7 @@ describe("PATCH /api/users/:id/rol", () => {
     expect(prismaMock.usuario.update).toHaveBeenCalledWith({
       where: { id: "usuario-2" },
       data: { rolId: "rol-arbitro" },
-      include: { rol: true },
+      include: { rol: true, jugador: true },
     });
   });
 

@@ -5,15 +5,17 @@ vi.mock("../services/auth", () => ({
   loginUser: vi.fn(),
   logoutUser: vi.fn(),
   fetchMe: vi.fn(),
+  updateProfile: vi.fn(),
 }));
 
 import { api } from "../services/api";
-import { fetchMe, loginUser, logoutUser } from "../services/auth";
+import { fetchMe, loginUser, logoutUser, updateProfile } from "../services/auth";
 import { useAuthStore } from "./auth";
 
 const loginUserMock = vi.mocked(loginUser);
 const logoutUserMock = vi.mocked(logoutUser);
 const fetchMeMock = vi.mocked(fetchMe);
+const updateProfileMock = vi.mocked(updateProfile);
 
 const USUARIO = {
   id: "usuario-1",
@@ -110,6 +112,21 @@ describe("useAuthStore", () => {
 
     await store.refreshUsuario();
 
+    expect(store.usuario).toEqual(actualizado);
+    expect(JSON.parse(localStorage.getItem("torre.usuario")!)).toEqual(actualizado);
+  });
+
+  it("updateProfile guarda el usuario devuelto por el backend (HU20)", async () => {
+    loginUserMock.mockResolvedValue({ token: "token", usuario: USUARIO });
+    const store = useAuthStore();
+    await store.login("ana@example.com", "password123");
+
+    const actualizado = { ...USUARIO, nombre: "Ana T." };
+    updateProfileMock.mockResolvedValue(actualizado);
+
+    await store.updateProfile({ nombre: "Ana T." });
+
+    expect(updateProfileMock).toHaveBeenCalledWith({ nombre: "Ana T." });
     expect(store.usuario).toEqual(actualizado);
     expect(JSON.parse(localStorage.getItem("torre.usuario")!)).toEqual(actualizado);
   });

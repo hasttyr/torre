@@ -27,6 +27,12 @@ interface RegisterOtroRolPayload extends RegisterBasePayload {
 
 export type RegisterPayload = RegisterJugadorPayload | RegisterOtroRolPayload;
 
+export interface JugadorPerfil {
+  codigoUniversitario: string;
+  programa: string;
+  semestre: number;
+}
+
 export interface RegisteredUser {
   id: string;
   nombre: string;
@@ -34,6 +40,16 @@ export interface RegisteredUser {
   estado: string;
   rol: string;
   createdAt: string;
+  jugador?: JugadorPerfil;
+}
+
+// HU20: todos opcionales (se actualiza solo lo que venga); nunca incluye
+// rol ni email a propósito, mismo criterio que backend/src/validators/users.schemas.ts.
+export interface UpdateProfilePayload {
+  nombre?: string;
+  codigoUniversitario?: string;
+  programa?: string;
+  semestre?: number;
 }
 
 export async function registerUser(payload: RegisterPayload): Promise<RegisteredUser> {
@@ -64,5 +80,10 @@ export async function logoutUser(): Promise<void> {
 
 export async function fetchMe(): Promise<RegisteredUser> {
   const { data } = await api.get<RegisteredUser>("/users/me");
+  return data;
+}
+
+export async function updateProfile(payload: UpdateProfilePayload): Promise<RegisteredUser> {
+  const { data } = await api.put<RegisteredUser>("/users/me", payload);
   return data;
 }

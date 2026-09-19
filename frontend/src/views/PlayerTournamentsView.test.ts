@@ -32,6 +32,8 @@ const TORNEO_DISPONIBLE = {
   formato: "suizo",
   numeroRondas: null,
   ritmo: null,
+  programaRestringido: null,
+  semestreMinimo: null,
   organizadorId: "org-1",
   criteriosDesempate: [],
   createdAt: "2026-09-17T00:00:00.000Z",

@@ -1,10 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { HttpError } from "../middlewares/errorHandler";
+import type { UpdateProfileSchemaInput } from "../validators/users.schemas";
 import { toUserDto, type UserDto } from "./user.mapper";
 
 export async function getUserById(prisma: PrismaClient, id: string): Promise<UserDto> {
-  const usuario = await prisma.usuario.findUnique({ where: { id }, include: { rol: true } });
+  const usuario = await prisma.usuario.findUnique({ where: { id }, include: { rol: true, jugador: true } });
   if (!usuario) {
     throw new HttpError(404, "Usuario no encontrado");
   }
@@ -25,11 +26,56 @@ export async function updateUserRole(prisma: PrismaClient, id: string, nuevoRol:
   const usuario = await prisma.usuario.update({
     where: { id },
     data: { rolId: rol.id },
-    include: { rol: true },
+    include: { rol: true, jugador: true },
   });
 
   // RN-11 exige registrar este cambio en la bitácora de auditoría; la
   // entidad Bitacora todavía no existe (llega en S13, incremento 9 del
   // roadmap). Cuando exista, este es el punto donde se escribe el registro.
+  return toUserDto(usuario);
+}
+
+// HU20: el usuario solo edita SU propio perfil (el :id nunca viene del
+// body, siempre de req.user.id en el controller) y nunca su rol — el
+// payload de esta función ni siquiera acepta ese campo (ver
+// validators/users.schemas.ts). Los campos de Jugador solo se actualizan
+// si el usuario tiene ese perfil.
+export async function updateOwnProfile(
+  prisma: PrismaClient,
+  userId: string,
+  data: UpdateProfileSchemaInput,
+): Promise<UserDto> {
+  const existente = await prisma.usuario.findUnique({ where: { id: userId }, include: { jugador: true } });
+  if (!existente) {
+    throw new HttpError(404, "Usuario no encontrado");
+  }
+
+  const tieneCambiosJugador =
+    data.codigoUniversitario !== undefined || data.programa !== undefined || data.semestre !== undefined;
+  if (tieneCambiosJugador && !existente.jugador) {
+    throw new HttpError(400, "Este usuario no tiene un perfil de jugador para actualizar");
+  }
+
+  const usuario = await prisma.usuario.update({
+    where: { id: userId },
+    data: {
+      ...(data.nombre !== undefined ? { nombre: data.nombre.trim() } : {}),
+      ...(tieneCambiosJugador
+        ? {
+            jugador: {
+              update: {
+                ...(data.codigoUniversitario !== undefined
+                  ? { codigoUniversitario: data.codigoUniversitario.trim() }
+                  : {}),
+                ...(data.programa !== undefined ? { programa: data.programa.trim() } : {}),
+                ...(data.semestre !== undefined ? { semestre: data.semestre } : {}),
+              },
+            },
+          }
+        : {}),
+    },
+    include: { rol: true, jugador: true },
+  });
+
   return toUserDto(usuario);
 }

@@ -144,6 +144,8 @@ export async function configurarTorneo(
       data: {
         ...(data.numeroRondas !== undefined ? { numeroRondas: data.numeroRondas } : {}),
         ...(data.ritmo !== undefined ? { ritmo: data.ritmo } : {}),
+        ...(data.programaRestringido !== undefined ? { programaRestringido: data.programaRestringido } : {}),
+        ...(data.semestreMinimo !== undefined ? { semestreMinimo: data.semestreMinimo } : {}),
       },
       include: { criteriosDesempate: true },
     });
@@ -235,6 +237,19 @@ export async function inscribirJugador(
   const jugador = await prisma.jugador.findUnique({ where: { id: jugadorId }, include: { usuario: true } });
   if (!jugador) {
     throw new HttpError(404, "Jugador no encontrado");
+  }
+
+  // Elegibilidad configurada en HU05 (programaRestringido/semestreMinimo):
+  // se valida acá, no en el schema de zod, porque depende de datos del
+  // torneo y del jugador, no solo de la forma del payload.
+  if (torneo.programaRestringido && jugador.programa !== torneo.programaRestringido) {
+    throw new HttpError(
+      409,
+      `Este torneo solo admite jugadores del programa "${torneo.programaRestringido}"`,
+    );
+  }
+  if (torneo.semestreMinimo != null && jugador.semestre < torneo.semestreMinimo) {
+    throw new HttpError(409, `Este torneo exige un semestre mínimo de ${torneo.semestreMinimo}`);
   }
 
   try {

@@ -17,6 +17,7 @@ const loading = ref(true);
 onMounted(async () => {
   try {
     await torneos.cargar(torneoId);
+    poblarConfigForm();
   } catch {
     loadError.value = "No se pudo cargar el torneo";
   } finally {
@@ -38,10 +39,25 @@ const configForm = reactive({
   numeroRondas: "",
   ritmo: "",
   desempates: "Buchholz, Buchholz Cortado 1, Sonneborn-Berger, ARO",
+  programaRestringido: "",
+  semestreMinimo: "",
 });
 const configSubmitting = ref(false);
 const configError = ref<string | null>(null);
 const configSuccess = ref<string | null>(null);
+
+// Refleja el estado guardado en vez de arrancar siempre en blanco: si el
+// organizador vuelve a un torneo ya configurado, ve lo que hay.
+function poblarConfigForm(): void {
+  if (!torneos.actual) return;
+  configForm.numeroRondas = torneos.actual.numeroRondas != null ? String(torneos.actual.numeroRondas) : "";
+  configForm.ritmo = torneos.actual.ritmo ?? "";
+  if (torneos.actual.criteriosDesempate.length > 0) {
+    configForm.desempates = torneos.actual.criteriosDesempate.map((c) => c.nombre).join(", ");
+  }
+  configForm.programaRestringido = torneos.actual.programaRestringido ?? "";
+  configForm.semestreMinimo = torneos.actual.semestreMinimo != null ? String(torneos.actual.semestreMinimo) : "";
+}
 
 // RN-05: el orden de desempates solo puede modificarse en estado preliminar
 // del torneo (antes de la ronda 1). El backend es quien decide realmente,
@@ -63,6 +79,8 @@ async function onConfigurar(): Promise<void> {
       numeroRondas: configForm.numeroRondas ? Number(configForm.numeroRondas) : undefined,
       ritmo: configForm.ritmo.trim() || undefined,
       criteriosDesempate: puedeEditarDesempates.value ? criteriosDesempate : undefined,
+      programaRestringido: configForm.programaRestringido.trim() || null,
+      semestreMinimo: configForm.semestreMinimo ? Number(configForm.semestreMinimo) : null,
     });
     configSuccess.value = "Configuración guardada";
   } catch (error) {
@@ -215,6 +233,28 @@ function extractError(error: unknown): string {
               <span v-if="!puedeEditarDesempates" class="text-sm text-text-muted">
                 No se puede modificar: ya inició la primera ronda.
               </span>
+            </div>
+
+            <div class="border-t border-border-soft pt-4">
+              <p class="field-label mb-3">Elegibilidad de inscripción (opcional)</p>
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div class="field">
+                  <label for="programaRestringido">Programa restringido</label>
+                  <input
+                    id="programaRestringido"
+                    v-model="configForm.programaRestringido"
+                    type="text"
+                    placeholder="Sin restricción"
+                  />
+                </div>
+                <div class="field">
+                  <label for="semestreMinimo">Semestre mínimo</label>
+                  <input id="semestreMinimo" v-model="configForm.semestreMinimo" type="number" min="1" placeholder="Sin restricción" />
+                </div>
+              </div>
+              <p class="mt-2 text-sm text-text-muted">
+                Si se completan, solo se podrán inscribir jugadores que cumplan ambos criterios.
+              </p>
             </div>
 
             <button type="submit" class="btn btn-primary self-start" :disabled="configSubmitting">

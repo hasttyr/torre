@@ -1,7 +1,14 @@
 import { defineStore } from "pinia";
 
 import { setAuthToken } from "../services/api";
-import { fetchMe, loginUser, logoutUser, type RegisteredUser } from "../services/auth";
+import {
+  fetchMe,
+  loginUser,
+  logoutUser,
+  updateProfile,
+  type RegisteredUser,
+  type UpdateProfilePayload,
+} from "../services/auth";
 
 const STORAGE_KEY_TOKEN = "torre.token";
 const STORAGE_KEY_USUARIO = "torre.usuario";
@@ -75,6 +82,12 @@ export const useAuthStore = defineStore("auth", {
 
     async refreshUsuario(): Promise<void> {
       const usuario = await fetchMe();
+      this.usuario = usuario;
+      writeStorage(this.token, usuario);
+    },
+
+    async updateProfile(payload: UpdateProfilePayload): Promise<void> {
+      const usuario = await updateProfile(payload);
       this.usuario = usuario;
       writeStorage(this.token, usuario);
     },

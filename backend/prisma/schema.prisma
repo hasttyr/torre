@@ -111,6 +111,13 @@ model Torneo {
   // cubre desempates pero no había dónde guardar el resto.
   numeroRondas  Int?         @map("numero_rondas")
   ritmo         String?
+  // Elegibilidad de inscripción, validada en HU07 (RN-01 ya cubre
+  // duplicados; esto cubre el criterio de programa/semestre). null = sin
+  // restricción en ese criterio. Deliberadamente NO se agrega rating/Elo:
+  // el documento del proyecto excluye el cálculo de rating federativo del
+  // alcance funcional.
+  programaRestringido String? @map("programa_restringido")
+  semestreMinimo      Int?    @map("semestre_minimo")
   organizadorId String       @map("organizador_id")
   createdAt     DateTime     @default(now()) @map("created_at")
 

@@ -14,6 +14,10 @@ export interface Torneo {
   formato: string;
   numeroRondas: number | null;
   ritmo: string | null;
+  // Elegibilidad de inscripción (ver comentario en backend/prisma/schema.prisma):
+  // null = sin restricción en ese criterio.
+  programaRestringido: string | null;
+  semestreMinimo: number | null;
   organizadorId: string;
   criteriosDesempate: CriterioDesempate[];
   createdAt: string;
@@ -30,6 +34,9 @@ export interface ConfigurarTorneoPayload {
   numeroRondas?: number;
   ritmo?: string;
   criteriosDesempate?: CriterioDesempate[];
+  // null explícito limpia la restricción; omitir el campo la deja como está.
+  programaRestringido?: string | null;
+  semestreMinimo?: number | null;
 }
 
 export interface JugadorInscrito {

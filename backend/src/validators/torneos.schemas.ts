@@ -27,6 +27,11 @@ export const configurarTorneoSchema = z.object({
   numeroRondas: z.number().int().positive("El número de rondas debe ser un entero positivo").optional(),
   ritmo: z.string().trim().min(1, "El ritmo es requerido").optional(),
   criteriosDesempate: z.array(criterioDesempateSchema).optional(),
+  // Elegibilidad de inscripción (ver comentario en schema.prisma). null
+  // explícito limpia la restricción; undefined (campo ausente) la deja
+  // como está.
+  programaRestringido: z.string().trim().min(1, "El programa no puede quedar vacío").nullable().optional(),
+  semestreMinimo: z.number().int().positive("El semestre mínimo debe ser un entero positivo").nullable().optional(),
 });
 
 export type ConfigurarTorneoSchemaInput = z.infer<typeof configurarTorneoSchema>;

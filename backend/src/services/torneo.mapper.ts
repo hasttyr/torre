@@ -9,6 +9,8 @@ export interface TorneoDto {
   formato: string;
   numeroRondas: number | null;
   ritmo: string | null;
+  programaRestringido: string | null;
+  semestreMinimo: number | null;
   organizadorId: string;
   criteriosDesempate: { nombre: string; orden: number }[];
   createdAt: Date;
@@ -24,6 +26,8 @@ export function toTorneoDto(torneo: Torneo & { criteriosDesempate?: CriterioDese
     formato: torneo.formato,
     numeroRondas: torneo.numeroRondas,
     ritmo: torneo.ritmo,
+    programaRestringido: torneo.programaRestringido,
+    semestreMinimo: torneo.semestreMinimo,
     organizadorId: torneo.organizadorId,
     criteriosDesempate: (torneo.criteriosDesempate ?? [])
       .slice()
