@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
 import { useAuthStore } from "../stores/auth";
 import AppLogo from "./AppLogo.vue";
+import LocaleToggle from "./LocaleToggle.vue";
 import ThemeToggle from "./ThemeToggle.vue";
 import UserMenu from "./UserMenu.vue";
 
 const auth = useAuthStore();
 const route = useRoute();
+const { t } = useI18n();
 const mobileOpen = ref(false);
 
 // Cierra el menú mobile ante cualquier navegación (incluye atrás/adelante
@@ -34,14 +37,15 @@ function closeMobile(): void {
       <nav class="hidden items-center gap-2.5 sm:flex">
         <template v-if="auth.isAuthenticated">
           <RouterLink v-if="auth.usuario && ['ORGANIZADOR', 'ADMINISTRADOR'].includes(auth.usuario.rol)" to="/torneos" class="btn btn-ghost">
-            Mis torneos
+            {{ t("header.misTorneos") }}
           </RouterLink>
-          <RouterLink v-if="auth.usuario?.rol === 'JUGADOR'" to="/mis-torneos" class="btn btn-ghost">Torneos</RouterLink>
+          <RouterLink v-if="auth.usuario?.rol === 'JUGADOR'" to="/mis-torneos" class="btn btn-ghost">{{ t("header.torneos") }}</RouterLink>
           <UserMenu />
         </template>
         <template v-else>
-          <RouterLink to="/login" class="btn btn-ghost">Iniciar sesión</RouterLink>
-          <RouterLink to="/registro" class="btn btn-primary">Crear cuenta</RouterLink>
+          <RouterLink to="/login" class="btn btn-ghost">{{ t("header.iniciarSesion") }}</RouterLink>
+          <RouterLink to="/registro" class="btn btn-primary">{{ t("header.crearCuenta") }}</RouterLink>
+          <LocaleToggle />
           <ThemeToggle />
         </template>
       </nav>
@@ -49,12 +53,15 @@ function closeMobile(): void {
       <!-- Controles de mobile: menú de usuario o toggle de tema + botón hamburguesa. -->
       <div class="flex items-center gap-2 sm:hidden">
         <UserMenu v-if="auth.isAuthenticated" />
-        <ThemeToggle v-else />
+        <template v-else>
+          <LocaleToggle />
+          <ThemeToggle />
+        </template>
         <button
           type="button"
           class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text"
           :aria-expanded="mobileOpen"
-          :aria-label="mobileOpen ? 'Cerrar menú' : 'Abrir menú'"
+          :aria-label="mobileOpen ? t('header.cerrarMenu') : t('header.abrirMenu')"
           @click="mobileOpen = !mobileOpen"
         >
           <svg v-if="!mobileOpen" viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
@@ -85,7 +92,7 @@ function closeMobile(): void {
               class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
               @click="closeMobile"
             >
-              Mis torneos
+              {{ t("header.misTorneos") }}
             </RouterLink>
             <RouterLink
               v-if="auth.usuario?.rol === 'JUGADOR'"
@@ -93,15 +100,15 @@ function closeMobile(): void {
               class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
               @click="closeMobile"
             >
-              Torneos
+              {{ t("header.torneos") }}
             </RouterLink>
           </template>
           <template v-else>
             <RouterLink to="/login" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10" @click="closeMobile">
-              Iniciar sesión
+              {{ t("header.iniciarSesion") }}
             </RouterLink>
             <RouterLink to="/registro" class="rounded-lg bg-accent px-3 py-2.5 text-center text-sm font-semibold text-[#17130a]" @click="closeMobile">
-              Crear cuenta
+              {{ t("header.crearCuenta") }}
             </RouterLink>
           </template>
         </div>

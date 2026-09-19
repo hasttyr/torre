@@ -1,6 +1,7 @@
 import { mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { i18n } from "../i18n";
 import RegisterView from "./RegisterView.vue";
 
 vi.mock("../services/auth", async (importOriginal) => {
@@ -31,14 +32,14 @@ describe("RegisterView", () => {
   });
 
   it("muestra los campos de jugador por default (rol inicial JUGADOR)", () => {
-    const wrapper = mount(RegisterView);
+    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
 
     expect(wrapper.find("fieldset").exists()).toBe(true);
     expect(wrapper.text()).toContain("Datos de jugador");
   });
 
   it("oculta los campos de jugador cuando se elige otro rol", async () => {
-    const wrapper = mount(RegisterView);
+    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
 
     await selectRol(wrapper, "ORGANIZADOR");
 
@@ -46,7 +47,7 @@ describe("RegisterView", () => {
   });
 
   it("muestra errores de validación y no llama al backend si el formulario está vacío", async () => {
-    const wrapper = mount(RegisterView);
+    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
 
     await selectRol(wrapper, "ORGANIZADOR");
     await wrapper.find("form").trigger("submit.prevent");
@@ -58,7 +59,7 @@ describe("RegisterView", () => {
   });
 
   it("valida los campos adicionales de jugador antes de enviar", async () => {
-    const wrapper = mount(RegisterView);
+    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
 
     await fillBaseFields(wrapper);
     await wrapper.find("form").trigger("submit.prevent");
@@ -78,7 +79,7 @@ describe("RegisterView", () => {
       createdAt: "2026-01-01T00:00:00.000Z",
     });
 
-    const wrapper = mount(RegisterView);
+    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
     await fillBaseFields(wrapper);
 
     const [codigoInput, programaInput, semestreInput] = wrapper.findAll("fieldset input");
@@ -112,7 +113,7 @@ describe("RegisterView", () => {
       createdAt: "2026-01-01T00:00:00.000Z",
     });
 
-    const wrapper = mount(RegisterView);
+    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
     await selectRol(wrapper, "ORGANIZADOR");
     await wrapper.find('input[type="text"]').setValue("Carlos Ruiz");
     await wrapper.find('input[type="email"]').setValue("carlos@example.com");
@@ -135,7 +136,7 @@ describe("RegisterView", () => {
       response: { data: { error: "Ya existe una cuenta registrada con ese correo" } },
     });
 
-    const wrapper = mount(RegisterView);
+    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
     await selectRol(wrapper, "ORGANIZADOR");
     await wrapper.find('input[type="text"]').setValue("Ana Torres");
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
@@ -151,7 +152,7 @@ describe("RegisterView", () => {
   it("muestra un mensaje genérico si no hay respuesta del servidor (error de red)", async () => {
     registerUserMock.mockRejectedValue(new Error("Network Error"));
 
-    const wrapper = mount(RegisterView);
+    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
     await selectRol(wrapper, "ORGANIZADOR");
     await wrapper.find('input[type="text"]').setValue("Ana Torres");
     await wrapper.find('input[type="email"]').setValue("ana@example.com");

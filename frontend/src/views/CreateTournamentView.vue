@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import axios from "axios";
 import { reactive, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 import AppHeader from "../components/AppHeader.vue";
@@ -9,6 +10,7 @@ import { useTorneosStore } from "../stores/torneos";
 
 const router = useRouter();
 const torneos = useTorneosStore();
+const { t } = useI18n();
 
 const form = reactive({
   nombre: "",
@@ -28,16 +30,16 @@ function validate(): boolean {
   }
 
   if (form.nombre.trim().length < 2) {
-    errors.nombre = "El nombre debe tener al menos 2 caracteres";
+    errors.nombre = t("createTournament.nombreMinLength");
   }
   if (!form.fechaInicio) {
-    errors.fechaInicio = "La fecha de inicio es requerida";
+    errors.fechaInicio = t("createTournament.fechaInicioRequired");
   }
   if (!form.fechaFin) {
-    errors.fechaFin = "La fecha de fin es requerida";
+    errors.fechaFin = t("createTournament.fechaFinRequired");
   }
   if (form.fechaInicio && form.fechaFin && form.fechaFin < form.fechaInicio) {
-    errors.fechaFin = "La fecha de fin no puede ser anterior a la fecha de inicio";
+    errors.fechaFin = t("createTournament.fechaFinAnterior");
   }
 
   return Object.keys(errors).length === 0;
@@ -63,7 +65,7 @@ async function onSubmit(): Promise<void> {
     if (axios.isAxiosError(error) && typeof error.response?.data?.error === "string") {
       serverError.value = error.response.data.error;
     } else {
-      serverError.value = "No se pudo conectar con el servidor";
+      serverError.value = t("auth.serverError");
     }
   } finally {
     submitting.value = false;
@@ -76,8 +78,8 @@ async function onSubmit(): Promise<void> {
     <AppHeader />
 
     <main class="container max-w-lg py-10 sm:py-12">
-      <h1 class="text-2xl sm:text-3xl">Crear torneo</h1>
-      <p class="mt-1">Datos básicos para iniciar la administración del torneo.</p>
+      <h1 class="text-2xl sm:text-3xl">{{ t("createTournament.title") }}</h1>
+      <p class="mt-1">{{ t("createTournament.subtitle") }}</p>
 
       <Transition
         enter-active-class="transition duration-180 ease-out"
@@ -90,32 +92,32 @@ async function onSubmit(): Promise<void> {
 
       <form novalidate class="mt-6 flex flex-col gap-4" @submit.prevent="onSubmit">
         <div class="field" :class="{ 'has-error': errors.nombre }">
-          <label for="nombre">Nombre del torneo</label>
-          <input id="nombre" v-model="form.nombre" type="text" placeholder="Copa Universitaria de Ajedrez" />
+          <label for="nombre">{{ t("createTournament.nombreLabel") }}</label>
+          <input id="nombre" v-model="form.nombre" type="text" :placeholder="t('createTournament.nombrePlaceholder')" />
           <span class="field-error">{{ errors.nombre }}</span>
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="field" :class="{ 'has-error': errors.fechaInicio }">
-            <label for="fechaInicio">Fecha de inicio</label>
+            <label for="fechaInicio">{{ t("createTournament.fechaInicioLabel") }}</label>
             <DateField id="fechaInicio" v-model="form.fechaInicio" />
             <span class="field-error">{{ errors.fechaInicio }}</span>
           </div>
 
           <div class="field" :class="{ 'has-error': errors.fechaFin }">
-            <label for="fechaFin">Fecha de fin</label>
+            <label for="fechaFin">{{ t("createTournament.fechaFinLabel") }}</label>
             <DateField id="fechaFin" v-model="form.fechaFin" />
             <span class="field-error">{{ errors.fechaFin }}</span>
           </div>
         </div>
 
         <div class="field">
-          <label for="formato">Formato</label>
-          <input id="formato" v-model="form.formato" type="text" placeholder="suizo" />
+          <label for="formato">{{ t("createTournament.formatoLabel") }}</label>
+          <input id="formato" v-model="form.formato" type="text" :placeholder="t('createTournament.formatoPlaceholder')" />
         </div>
 
         <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
-          {{ submitting ? "Creando torneo..." : "Crear torneo" }}
+          {{ submitting ? t("createTournament.submitting") : t("createTournament.submit") }}
         </button>
       </form>
     </main>

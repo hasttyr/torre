@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
+import { i18n } from "../i18n";
 import PlayerTournamentsView from "./PlayerTournamentsView.vue";
 
 vi.mock("../services/torneos", () => ({
@@ -49,7 +50,7 @@ async function mountView() {
   router.push("/mis-torneos");
   await router.isReady();
 
-  const wrapper = mount(PlayerTournamentsView, { global: { plugins: [router] } });
+  const wrapper = mount(PlayerTournamentsView, { global: { plugins: [router, i18n] } });
   await new Promise((resolve) => setTimeout(resolve, 0));
   await wrapper.vm.$nextTick();
   return { wrapper };

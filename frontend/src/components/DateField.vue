@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import { VueDatePicker } from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
-import { computed } from "vue";
+import { enUS } from "date-fns/locale/en-US";
 import { es } from "date-fns/locale/es";
+import { computed } from "vue";
+import { useI18n } from "vue-i18n";
 
+import { useLocaleStore } from "../stores/locale";
 import { useThemeStore } from "../stores/theme";
 
 const theme = useThemeStore();
+const locale = useLocaleStore();
+const { t } = useI18n();
+
+const datePickerLocale = computed(() => (locale.locale === "en" ? enUS : es));
 
 // v-model es un string "YYYY-MM-DD" (o "" vacío) para no tocar ninguna
 // lógica de formularios existente (payloads, validaciones) que ya asume
@@ -35,10 +42,11 @@ const fechaSeleccionada = computed<Date | null>({
 // valor precargado programáticamente (no tipeado por el usuario) se
 // mostraba con el formato por defecto del navegador en vez del nuestro.
 function formatearFecha(fecha: Date): string {
-  return new Intl.DateTimeFormat("es-CO", { day: "2-digit", month: "2-digit", year: "numeric" }).format(fecha);
+  const localeTag = locale.locale;
+  return new Intl.DateTimeFormat(localeTag, { day: "2-digit", month: "2-digit", year: "numeric" }).format(fecha);
 }
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     id: string;
     placeholder?: string;
@@ -46,8 +54,10 @@ withDefaults(
     minDate?: string;
     maxDate?: string;
   }>(),
-  { placeholder: "Elegí una fecha", disabled: false, minDate: undefined, maxDate: undefined },
+  { placeholder: undefined, disabled: false, minDate: undefined, maxDate: undefined },
 );
+
+const resolvedPlaceholder = computed(() => props.placeholder ?? t("dateField.placeholder"));
 </script>
 
 <template>
@@ -56,12 +66,12 @@ withDefaults(
     :dark="theme.theme === 'dark'"
     :input-attrs="{ id, clearable: true }"
     :formats="{ input: formatearFecha }"
-    :locale="es"
+    :locale="datePickerLocale"
     :time-config="{ enableTimePicker: false }"
     :disabled="disabled"
     :min-date="minDate"
     :max-date="maxDate"
-    :placeholder="placeholder"
+    :placeholder="resolvedPlaceholder"
     :text-input="{ format: 'dd/MM/yyyy' }"
     auto-apply
     teleport

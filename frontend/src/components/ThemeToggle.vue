@@ -1,15 +1,18 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
+
 import { useThemeStore } from "../stores/theme";
 
 const theme = useThemeStore();
+const { t } = useI18n();
 </script>
 
 <template>
   <button
     type="button"
     class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-text transition-colors hover:border-accent/40 hover:bg-accent/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
-    :aria-label="theme.theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
-    :title="theme.theme === 'dark' ? 'Modo claro' : 'Modo oscuro'"
+    :aria-label="theme.theme === 'dark' ? t('theme.switchToLight') : t('theme.switchToDark')"
+    :title="theme.theme === 'dark' ? t('theme.lightMode') : t('theme.darkMode')"
     @click="theme.toggle()"
   >
     <svg v-if="theme.theme === 'dark'" viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">

@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
+import { i18n } from "../i18n";
 import { useAuthStore } from "../stores/auth";
 import AccountView from "./AccountView.vue";
 
@@ -61,7 +62,7 @@ async function mountAccountView() {
   router.push("/cuenta");
   await router.isReady();
 
-  return mount(AccountView, { global: { plugins: [router] } });
+  return mount(AccountView, { global: { plugins: [router, i18n] } });
 }
 
 describe("AccountView", () => {

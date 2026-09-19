@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 
 import AppHeader from "../components/AppHeader.vue";
+import { useLocaleStore } from "../stores/locale";
 import { useTorneosStore } from "../stores/torneos";
 
 const torneos = useTorneosStore();
+const locale = useLocaleStore();
+const { t } = useI18n();
 const loading = ref(true);
 const loadError = ref<string | null>(null);
 
@@ -12,22 +16,15 @@ onMounted(async () => {
   try {
     await torneos.cargarMisTorneos();
   } catch {
-    loadError.value = "No se pudieron cargar tus torneos";
+    loadError.value = t("dashboard.loadError");
   } finally {
     loading.value = false;
   }
 });
 
-const ESTADO_LABELS: Record<string, string> = {
-  CREADO: "Preliminar",
-  INSCRIPCIONES_ABIERTAS: "Inscripciones abiertas",
-  INSCRIPCIONES_CERRADAS: "Inscripciones cerradas",
-  EN_CURSO: "En curso",
-  FINALIZADO: "Finalizado",
-};
-
 function formatFecha(fecha: string): string {
-  return new Date(fecha).toLocaleDateString("es-CO", { day: "2-digit", month: "short", year: "numeric" });
+  const localeTag = locale.locale;
+  return new Date(fecha).toLocaleDateString(localeTag, { day: "2-digit", month: "short", year: "numeric" });
 }
 </script>
 
@@ -37,15 +34,15 @@ function formatFecha(fecha: string): string {
 
     <main class="container flex max-w-xl flex-col gap-6 py-10 sm:py-12">
       <header class="flex flex-wrap items-center justify-between gap-4">
-        <h1 class="text-2xl sm:text-3xl">Mis torneos</h1>
-        <RouterLink to="/torneos/nuevo" class="btn btn-primary">+ Crear torneo</RouterLink>
+        <h1 class="text-2xl sm:text-3xl">{{ t("dashboard.title") }}</h1>
+        <RouterLink to="/torneos/nuevo" class="btn btn-primary">{{ t("dashboard.createButton") }}</RouterLink>
       </header>
 
-      <p v-if="loading">Cargando torneos…</p>
+      <p v-if="loading">{{ t("dashboard.loading") }}</p>
       <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
 
       <p v-else-if="torneos.mios.length === 0" class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted">
-        Todavía no administrás ningún torneo. Creá el primero para empezar.
+        {{ t("dashboard.empty") }}
       </p>
 
       <ul v-else class="m-0 flex list-none flex-col gap-3 p-0">
@@ -58,7 +55,7 @@ function formatFecha(fecha: string): string {
               <h2 class="text-base">{{ torneo.nombre }}</h2>
               <p class="mt-0.5 text-sm">{{ formatFecha(torneo.fechaInicio) }} — {{ formatFecha(torneo.fechaFin) }}</p>
             </div>
-            <span class="pill">{{ ESTADO_LABELS[torneo.estado] ?? torneo.estado }}</span>
+            <span class="pill">{{ t(`estados.${torneo.estado}`) }}</span>
           </RouterLink>
         </li>
       </ul>

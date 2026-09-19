@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 import { useAuthStore } from "../stores/auth";
+import { useLocaleStore } from "../stores/locale";
 import { useThemeStore } from "../stores/theme";
 
 const auth = useAuthStore();
 const theme = useThemeStore();
+const locale = useLocaleStore();
 const router = useRouter();
+const { t } = useI18n();
 
 const open = ref(false);
 const menuRef = ref<HTMLElement | null>(null);
@@ -72,7 +76,7 @@ onBeforeUnmount(() => {
       class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-[#17130a] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       :aria-expanded="open"
       aria-haspopup="true"
-      :aria-label="`Menú de ${auth.usuario?.nombre ?? 'usuario'}`"
+      :aria-label="t('userMenu.menuAria', { name: auth.usuario?.nombre ?? '' })"
       @click="toggleMenu"
     >
       {{ initials }}
@@ -96,7 +100,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="flex items-center justify-between px-3 py-2.5">
-          <span class="text-sm text-text">Tema</span>
+          <span class="text-sm text-text">{{ t("userMenu.tema") }}</span>
           <button
             type="button"
             class="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-text transition-colors hover:border-accent/40 hover:bg-accent/10"
@@ -119,7 +123,18 @@ onBeforeUnmount(() => {
                 stroke-linejoin="round"
               />
             </svg>
-            {{ theme.theme === "dark" ? "Oscuro" : "Claro" }}
+            {{ theme.theme === "dark" ? t("userMenu.oscuro") : t("userMenu.claro") }}
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between px-3 py-2.5">
+          <span class="text-sm text-text">{{ t("userMenu.idioma") }}</span>
+          <button
+            type="button"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-text transition-colors hover:border-accent/40 hover:bg-accent/10"
+            @click="locale.toggle()"
+          >
+            {{ locale.locale.toUpperCase() }}
           </button>
         </div>
 
@@ -129,14 +144,14 @@ onBeforeUnmount(() => {
             class="block w-full px-3 py-2 text-left text-sm font-medium text-text hover:bg-accent/10"
             @click="goToProfile"
           >
-            Mi perfil
+            {{ t("userMenu.miPerfil") }}
           </button>
           <button
             type="button"
             class="block w-full px-3 py-2 text-left text-sm font-medium text-red-500 hover:bg-red-500/10"
             @click="onLogout"
           >
-            Cerrar sesión
+            {{ t("userMenu.cerrarSesion") }}
           </button>
         </div>
       </div>

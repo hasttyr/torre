@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import { useI18n } from "vue-i18n";
+
 import AppLogo from "./AppLogo.vue";
+
+const { t } = useI18n();
 
 withDefaults(defineProps<{ title: string; subtitle?: string; quote?: string; quoteAuthor?: string }>(), {
   subtitle: undefined,
-  quote: "El ajedrez no perdona ni la más pequeña falla.",
-  quoteAuthor: "José Raúl Capablanca",
+  quote: undefined,
+  quoteAuthor: undefined,
 });
 </script>
 
@@ -23,10 +27,10 @@ withDefaults(defineProps<{ title: string; subtitle?: string; quote?: string; quo
           aria-hidden="true"
         >
           <span class="text-8xl leading-none text-accent opacity-85">♞</span>
-          <blockquote v-if="quote" class="m-0 font-display text-2xl leading-snug text-text">
-            “{{ quote }}”
-            <cite v-if="quoteAuthor" class="mt-4 block font-sans text-sm not-italic text-text-muted">{{
-              quoteAuthor
+          <blockquote class="m-0 font-display text-2xl leading-snug text-text">
+            “{{ quote ?? t("authLayout.defaultQuote") }}”
+            <cite class="mt-4 block font-sans text-sm not-italic text-text-muted">{{
+              quoteAuthor ?? t("authLayout.defaultQuoteAuthor")
             }}</cite>
           </blockquote>
         </aside>

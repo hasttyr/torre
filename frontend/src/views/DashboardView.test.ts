@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
+import { i18n } from "../i18n";
 import DashboardView from "./DashboardView.vue";
 
 vi.mock("../services/torneos", () => ({
@@ -32,7 +33,7 @@ async function mountView() {
   router.push("/torneos");
   await router.isReady();
 
-  const wrapper = mount(DashboardView, { global: { plugins: [router] } });
+  const wrapper = mount(DashboardView, { global: { plugins: [router, i18n] } });
   await new Promise((resolve) => setTimeout(resolve, 0));
   await wrapper.vm.$nextTick();
   return { wrapper, router };
@@ -49,7 +50,7 @@ describe("DashboardView", () => {
 
     const { wrapper } = await mountView();
 
-    expect(wrapper.text()).toContain("Todavía no administrás ningún torneo");
+    expect(wrapper.text()).toContain("Todavía no administras ningún torneo");
   });
 
   it("lista los torneos del organizador con su estado", async () => {

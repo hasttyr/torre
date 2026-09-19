@@ -2,6 +2,7 @@ import { mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { i18n } from "../i18n";
 import ThemeToggle from "./ThemeToggle.vue";
 
 describe("ThemeToggle", () => {
@@ -18,7 +19,7 @@ describe("ThemeToggle", () => {
   });
 
   it("arranca en modo oscuro y cambia a claro al hacer click", async () => {
-    const wrapper = mount(ThemeToggle);
+    const wrapper = mount(ThemeToggle, { global: { plugins: [i18n] } });
 
     expect(wrapper.attributes("title")).toBe("Modo claro");
 
@@ -29,7 +30,7 @@ describe("ThemeToggle", () => {
   });
 
   it("persiste la selección en localStorage", async () => {
-    const wrapper = mount(ThemeToggle);
+    const wrapper = mount(ThemeToggle, { global: { plugins: [i18n] } });
 
     await wrapper.trigger("click");
 

@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
+import { i18n } from "../i18n";
 import LoginView from "./LoginView.vue";
 
 vi.mock("../services/auth", () => ({
@@ -26,7 +27,7 @@ async function mountLoginView() {
   router.push("/login-under-test");
   await router.isReady();
 
-  const wrapper = mount(LoginView, { global: { plugins: [router] } });
+  const wrapper = mount(LoginView, { global: { plugins: [router, i18n] } });
   return { wrapper, router };
 }
 

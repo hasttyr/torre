@@ -32,13 +32,6 @@ export type RegisterPayload = RegisterJugadorPayload | RegisterOtroRolPayload;
 export const GENEROS = ["MASCULINO", "FEMENINO", "NO_BINARIO", "PREFIERE_NO_DECIR"] as const;
 export type Genero = (typeof GENEROS)[number];
 
-export const GENERO_LABELS: Record<Genero, string> = {
-  MASCULINO: "Masculino",
-  FEMENINO: "Femenino",
-  NO_BINARIO: "No binario",
-  PREFIERE_NO_DECIR: "Prefiero no decir",
-};
-
 export const DISCAPACIDADES = [
   "NINGUNA",
   "FISICA_MOTRIZ",
@@ -50,17 +43,6 @@ export const DISCAPACIDADES = [
   "OTRA",
 ] as const;
 export type Discapacidad = (typeof DISCAPACIDADES)[number];
-
-export const DISCAPACIDAD_LABELS: Record<Discapacidad, string> = {
-  NINGUNA: "Ninguna",
-  FISICA_MOTRIZ: "Física o motriz",
-  VISUAL: "Visual",
-  AUDITIVA: "Auditiva",
-  COGNITIVA: "Cognitiva",
-  PSICOSOCIAL: "Psicosocial",
-  MULTIPLE: "Múltiple",
-  OTRA: "Otra",
-};
 
 export interface JugadorPerfil {
   codigoUniversitario: string;

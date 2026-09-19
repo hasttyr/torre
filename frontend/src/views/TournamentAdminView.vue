@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import axios from "axios";
 import { computed, onMounted, reactive, ref, watch } from "vue";
+import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
 import AppHeader from "../components/AppHeader.vue";
@@ -10,6 +11,7 @@ import { useTorneosStore } from "../stores/torneos";
 const route = useRoute();
 const torneos = useTorneosStore();
 const torneoId = String(route.params.id);
+const { t } = useI18n();
 
 const loadError = ref<string | null>(null);
 const loading = ref(true);
@@ -19,19 +21,11 @@ onMounted(async () => {
     await torneos.cargar(torneoId);
     poblarConfigForm();
   } catch {
-    loadError.value = "No se pudo cargar el torneo";
+    loadError.value = t("tournamentAdmin.loadError");
   } finally {
     loading.value = false;
   }
 });
-
-const ESTADO_LABELS: Record<string, string> = {
-  CREADO: "Preliminar",
-  INSCRIPCIONES_ABIERTAS: "Inscripciones abiertas",
-  INSCRIPCIONES_CERRADAS: "Inscripciones cerradas",
-  EN_CURSO: "En curso",
-  FINALIZADO: "Finalizado",
-};
 
 // --- HU05: configurar torneo (rondas, ritmo, desempates) ---
 
@@ -82,7 +76,7 @@ async function onConfigurar(): Promise<void> {
       programaRestringido: configForm.programaRestringido.trim() || null,
       semestreMinimo: configForm.semestreMinimo ? Number(configForm.semestreMinimo) : null,
     });
-    configSuccess.value = "Configuración guardada";
+    configSuccess.value = t("tournamentAdmin.configSuccess");
   } catch (error) {
     configError.value = extractError(error);
   } finally {
@@ -170,7 +164,7 @@ function extractError(error: unknown): string {
   if (axios.isAxiosError(error) && typeof error.response?.data?.error === "string") {
     return error.response.data.error;
   }
-  return "No se pudo conectar con el servidor";
+  return t("tournamentAdmin.genericServerError");
 }
 </script>
 
@@ -179,19 +173,19 @@ function extractError(error: unknown): string {
     <AppHeader />
 
     <main class="container flex max-w-xl flex-col gap-6 py-10 sm:py-12">
-      <p v-if="loading">Cargando torneo…</p>
+      <p v-if="loading">{{ t("tournamentAdmin.loading") }}</p>
       <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
 
       <template v-else-if="torneos.actual">
         <header class="flex flex-wrap items-center justify-between gap-4">
           <h1 class="text-2xl sm:text-3xl">{{ torneos.actual.nombre }}</h1>
-          <span class="pill">{{ ESTADO_LABELS[torneos.actual.estado] ?? torneos.actual.estado }}</span>
+          <span class="pill">{{ t(`estados.${torneos.actual.estado}`) }}</span>
         </header>
 
         <!-- HU05 -->
         <section class="card">
-          <h2 class="mb-1 text-lg">Configuración del torneo</h2>
-          <p class="mb-4 text-sm">Rondas, ritmo y orden de desempates.</p>
+          <h2 class="mb-1 text-lg">{{ t("tournamentAdmin.configTitle") }}</h2>
+          <p class="mb-4 text-sm">{{ t("tournamentAdmin.configSubtitle") }}</p>
 
           <Transition
             enter-active-class="transition duration-180 ease-out"
@@ -213,17 +207,17 @@ function extractError(error: unknown): string {
           <form novalidate class="config-form flex flex-col gap-4" @submit.prevent="onConfigurar">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="field">
-                <label for="numeroRondas">Número de rondas</label>
+                <label for="numeroRondas">{{ t("tournamentAdmin.numeroRondasLabel") }}</label>
                 <input id="numeroRondas" v-model="configForm.numeroRondas" type="number" min="1" placeholder="7" />
               </div>
               <div class="field">
-                <label for="ritmo">Ritmo</label>
+                <label for="ritmo">{{ t("tournamentAdmin.ritmoLabel") }}</label>
                 <input id="ritmo" v-model="configForm.ritmo" type="text" placeholder="90+30" />
               </div>
             </div>
 
             <div class="field">
-              <label for="desempates">Orden de desempates (separados por coma)</label>
+              <label for="desempates">{{ t("tournamentAdmin.desempatesLabel") }}</label>
               <input
                 id="desempates"
                 v-model="configForm.desempates"
@@ -231,44 +225,50 @@ function extractError(error: unknown): string {
                 :disabled="!puedeEditarDesempates"
               />
               <span v-if="!puedeEditarDesempates" class="text-sm text-text-muted">
-                No se puede modificar: ya inició la primera ronda.
+                {{ t("tournamentAdmin.desempatesLockedHint") }}
               </span>
             </div>
 
             <div class="border-t border-border-soft pt-4">
-              <p class="field-label mb-3">Elegibilidad de inscripción (opcional)</p>
+              <p class="field-label mb-3">{{ t("tournamentAdmin.eligibilityLegend") }}</p>
               <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div class="field">
-                  <label for="programaRestringido">Programa restringido</label>
+                  <label for="programaRestringido">{{ t("tournamentAdmin.programaRestringidoLabel") }}</label>
                   <input
                     id="programaRestringido"
                     v-model="configForm.programaRestringido"
                     type="text"
-                    placeholder="Sin restricción"
+                    :placeholder="t('tournamentAdmin.programaRestringidoPlaceholder')"
                   />
                 </div>
                 <div class="field">
-                  <label for="semestreMinimo">Semestre mínimo</label>
-                  <input id="semestreMinimo" v-model="configForm.semestreMinimo" type="number" min="1" placeholder="Sin restricción" />
+                  <label for="semestreMinimo">{{ t("tournamentAdmin.semestreMinimoLabel") }}</label>
+                  <input
+                    id="semestreMinimo"
+                    v-model="configForm.semestreMinimo"
+                    type="number"
+                    min="1"
+                    :placeholder="t('tournamentAdmin.semestreMinimoPlaceholder')"
+                  />
                 </div>
               </div>
               <p class="mt-2 text-sm text-text-muted">
-                Si se completan, solo se podrán inscribir jugadores que cumplan ambos criterios.
+                {{ t("tournamentAdmin.eligibilityHint") }}
               </p>
             </div>
 
             <button type="submit" class="btn btn-primary self-start" :disabled="configSubmitting">
-              {{ configSubmitting ? "Guardando..." : "Guardar configuración" }}
+              {{ configSubmitting ? t("tournamentAdmin.saving") : t("tournamentAdmin.saveConfig") }}
             </button>
           </form>
         </section>
 
         <!-- HU06 -->
         <section class="card">
-          <h2 class="mb-1 text-lg">Inscripciones</h2>
+          <h2 class="mb-1 text-lg">{{ t("tournamentAdmin.inscripcionesTitle") }}</h2>
           <p class="mb-4 text-sm">
-            Controlá cuándo se aceptan nuevos participantes. Estado actual:
-            <strong class="text-text">{{ ESTADO_LABELS[torneos.actual.estado] ?? torneos.actual.estado }}</strong>
+            {{ t("tournamentAdmin.inscripcionesSubtitle") }}
+            <strong class="text-text">{{ t(`estados.${torneos.actual.estado}`) }}</strong>
           </p>
 
           <Transition
@@ -287,7 +287,7 @@ function extractError(error: unknown): string {
               :disabled="inscripcionesSubmitting || torneos.actual.estado !== 'CREADO'"
               @click="onAbrirInscripciones"
             >
-              Abrir inscripciones
+              {{ t("tournamentAdmin.abrirInscripciones") }}
             </button>
             <button
               type="button"
@@ -295,15 +295,15 @@ function extractError(error: unknown): string {
               :disabled="inscripcionesSubmitting || torneos.actual.estado !== 'INSCRIPCIONES_ABIERTAS'"
               @click="onCerrarInscripciones"
             >
-              Cerrar inscripciones
+              {{ t("tournamentAdmin.cerrarInscripciones") }}
             </button>
           </div>
         </section>
 
         <!-- HU07 -->
         <section class="card">
-          <h2 class="mb-1 text-lg">Jugadores inscritos</h2>
-          <p class="mb-4 text-sm">Listado oficial de participantes del torneo.</p>
+          <h2 class="mb-1 text-lg">{{ t("tournamentAdmin.jugadoresTitle") }}</h2>
+          <p class="mb-4 text-sm">{{ t("tournamentAdmin.jugadoresSubtitle") }}</p>
 
           <Transition
             enter-active-class="transition duration-180 ease-out"
@@ -315,12 +315,12 @@ function extractError(error: unknown): string {
           </Transition>
 
           <div class="field relative">
-            <label for="jugadorQuery">Buscar jugador (nombre, correo o código)</label>
+            <label for="jugadorQuery">{{ t("tournamentAdmin.buscarLabel") }}</label>
             <input
               id="jugadorQuery"
               v-model="jugadorQuery"
               type="text"
-              placeholder="Luis Gómez"
+              :placeholder="t('tournamentAdmin.buscarPlaceholder')"
               :disabled="!inscripcionesAbiertas"
             />
 
@@ -328,7 +328,7 @@ function extractError(error: unknown): string {
               v-if="jugadorQuery.trim() && inscripcionesAbiertas"
               class="mt-2 list-none overflow-hidden rounded-lg border border-border-soft p-0"
             >
-              <li v-if="buscando" class="px-3.5 py-2.5 text-sm text-text-muted">Buscando…</li>
+              <li v-if="buscando" class="px-3.5 py-2.5 text-sm text-text-muted">{{ t("tournamentAdmin.buscando") }}</li>
               <template v-else-if="resultadosBusqueda.length > 0">
                 <li
                   v-for="jugador in resultadosBusqueda"
@@ -345,25 +345,25 @@ function extractError(error: unknown): string {
                     :disabled="inscribirSubmitting || yaInscritoIds.has(jugador.id)"
                     @click="onInscribirJugador(jugador)"
                   >
-                    {{ yaInscritoIds.has(jugador.id) ? "Ya inscrito" : "Inscribir" }}
+                    {{ yaInscritoIds.has(jugador.id) ? t("tournamentAdmin.yaInscrito") : t("tournamentAdmin.inscribir") }}
                   </button>
                 </li>
               </template>
-              <li v-else class="px-3.5 py-2.5 text-sm text-text-muted">Sin resultados</li>
+              <li v-else class="px-3.5 py-2.5 text-sm text-text-muted">{{ t("tournamentAdmin.sinResultados") }}</li>
             </ul>
           </div>
           <p v-if="!inscripcionesAbiertas" class="mb-4 text-sm text-text-muted">
-            Las inscripciones deben estar abiertas para registrar jugadores.
+            {{ t("tournamentAdmin.inscripcionesClosedHint") }}
           </p>
 
           <div v-if="torneos.jugadoresInscritos.length > 0" class="mt-4 -mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
             <table class="w-full min-w-md border-collapse">
               <thead>
                 <tr>
-                  <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">Nombre</th>
-                  <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">Código</th>
-                  <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">Programa</th>
-                  <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">Semestre</th>
+                  <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">{{ t("tournamentAdmin.tableNombre") }}</th>
+                  <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">{{ t("tournamentAdmin.tableCodigo") }}</th>
+                  <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">{{ t("tournamentAdmin.tablePrograma") }}</th>
+                  <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">{{ t("tournamentAdmin.tableSemestre") }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -376,7 +376,7 @@ function extractError(error: unknown): string {
               </tbody>
             </table>
           </div>
-          <p v-else class="text-sm text-text-muted">Todavía no hay jugadores inscritos.</p>
+          <p v-else class="text-sm text-text-muted">{{ t("tournamentAdmin.sinJugadores") }}</p>
         </section>
       </template>
     </main>
