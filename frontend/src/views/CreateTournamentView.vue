@@ -16,7 +16,7 @@ const form = reactive({
   name: "",
   startDate: "",
   endDate: "",
-  format: "suizo",
+  format: "swiss",
 });
 
 const errors = reactive<Record<string, string>>({});

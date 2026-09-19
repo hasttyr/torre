@@ -10,7 +10,7 @@ export interface Tournament {
   name: string;
   startDate: string;
   endDate: string;
-  status: "CREADO" | "INSCRIPCIONES_ABIERTAS" | "INSCRIPCIONES_CERRADAS" | "EN_CURSO" | "FINALIZADO";
+  status: "CREATED" | "REGISTRATION_OPEN" | "REGISTRATION_CLOSED" | "IN_PROGRESS" | "FINISHED";
   format: string;
   roundsCount: number | null;
   timeControl: string | null;

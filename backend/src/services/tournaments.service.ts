@@ -11,10 +11,10 @@ function isUniqueConstraintError(error: unknown): boolean {
 
 // An organizer only manages their own tournaments; an administrator can act
 // on any of them (same rule as updateUserRole in users.service.ts, which
-// reserves the role change to ADMINISTRADOR).
-/** Throws if `userId`/`rol` aren't allowed to manage the given tournament. */
-function assertCanManageTournament(tournament: { organizadorId: string }, userId: string, rol: string): void {
-  if (rol !== "ADMINISTRADOR" && tournament.organizadorId !== userId) {
+// reserves the role change to ADMINISTRATOR).
+/** Throws if `userId`/`role` aren't allowed to manage the given tournament. */
+function assertCanManageTournament(tournament: { organizerId: string }, userId: string, role: string): void {
+  if (role !== "ADMINISTRATOR" && tournament.organizerId !== userId) {
     throw new HttpError(403, "No tenés permiso para administrar este torneo");
   }
 }
@@ -25,66 +25,66 @@ export async function createTournament(
   organizerId: string,
   data: CreateTournamentSchemaInput,
 ): Promise<TournamentDto> {
-  const tournament = await prisma.torneo.create({
+  const tournament = await prisma.tournament.create({
     data: {
-      nombre: data.name.trim(),
-      fechaInicio: data.startDate,
-      fechaFin: data.endDate,
-      formato: data.format?.trim() ?? "suizo",
-      organizadorId: organizerId,
+      name: data.name.trim(),
+      startDate: data.startDate,
+      endDate: data.endDate,
+      format: data.format?.trim() ?? "swiss",
+      organizerId,
     },
-    include: { criteriosDesempate: true },
+    include: { tiebreakCriteria: true },
   });
 
   return toTournamentDto(tournament);
 }
 
-// HU26 (pulled forward from S11 to S6, together with Inscripcion): without
+// HU26 (pulled forward from S11 to S6, together with Enrollment): without
 // this there's no way to find a tournament already created from the UI
 // short of saving the link by hand. An organizer sees only their own; an
 // administrator sees all (same rule as assertCanManageTournament).
 /** Lists the tournaments the given user organizes (or all of them, for an admin). */
-export async function listMyTournaments(prisma: PrismaClient, userId: string, rol: string): Promise<TournamentDto[]> {
-  const tournaments = await prisma.torneo.findMany({
-    where: rol === "ADMINISTRADOR" ? {} : { organizadorId: userId },
-    include: { criteriosDesempate: true },
+export async function listMyTournaments(prisma: PrismaClient, userId: string, role: string): Promise<TournamentDto[]> {
+  const tournaments = await prisma.tournament.findMany({
+    where: role === "ADMINISTRATOR" ? {} : { organizerId: userId },
+    include: { tiebreakCriteria: true },
     orderBy: { createdAt: "desc" },
   });
   return tournaments.map(toTournamentDto);
 }
 
 // HU25 (pulled forward from S11 to S6): the listing a player sees to decide
-// which tournament to register for. Only INSCRIPCIONES_ABIERTAS counts as
+// which tournament to register for. Only REGISTRATION_OPEN counts as
 // "available" (CA: "a finished or private tournament doesn't show up");
-// CREADO doesn't accept registrations yet either, so it isn't listed.
+// CREATED doesn't accept registrations yet either, so it isn't listed.
 /** Lists tournaments currently open for registration. */
 export async function listAvailableTournaments(prisma: PrismaClient): Promise<TournamentDto[]> {
-  const tournaments = await prisma.torneo.findMany({
-    where: { estado: "INSCRIPCIONES_ABIERTAS" },
-    include: { criteriosDesempate: true },
-    orderBy: { fechaInicio: "asc" },
+  const tournaments = await prisma.tournament.findMany({
+    where: { status: "REGISTRATION_OPEN" },
+    include: { tiebreakCriteria: true },
+    orderBy: { startDate: "asc" },
   });
   return tournaments.map(toTournamentDto);
 }
 
 // Tournaments where the authenticated user is enrolled as a player,
 // regardless of who made the enrollment (today always the organizer, see
-// HU07). A user without a Jugador profile (e.g. ORGANIZADOR role) simply
+// HU07). A user without a Player profile (e.g. ORGANIZER role) simply
 // has no enrollments.
 /** Lists tournaments the given user (as a player) is enrolled in. */
 export async function listEnrolledTournaments(prisma: PrismaClient, userId: string): Promise<TournamentDto[]> {
-  const player = await prisma.jugador.findUnique({ where: { usuarioId: userId } });
+  const player = await prisma.player.findUnique({ where: { userId } });
   if (!player) {
     return [];
   }
 
-  const enrollments = await prisma.inscripcion.findMany({
-    where: { jugadorId: player.id },
-    include: { torneo: { include: { criteriosDesempate: true } } },
+  const enrollments = await prisma.enrollment.findMany({
+    where: { playerId: player.id },
+    include: { tournament: { include: { tiebreakCriteria: true } } },
     orderBy: { createdAt: "desc" },
   });
 
-  return enrollments.map((enrollment) => toTournamentDto(enrollment.torneo));
+  return enrollments.map((enrollment) => toTournamentDto(enrollment.tournament));
 }
 
 // Restricted to the owning organizer/an administrator: until HU18 exists
@@ -101,16 +101,16 @@ export async function getTournament(
   prisma: PrismaClient,
   tournamentId: string,
   userId: string,
-  rol: string,
+  role: string,
 ): Promise<TournamentDto> {
-  const tournament = await prisma.torneo.findUnique({
+  const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
-    include: { criteriosDesempate: true },
+    include: { tiebreakCriteria: true },
   });
   if (!tournament) {
     throw new HttpError(404, "Torneo no encontrado");
   }
-  assertCanManageTournament(tournament, userId, rol);
+  assertCanManageTournament(tournament, userId, role);
   return toTournamentDto(tournament);
 }
 
@@ -124,19 +124,19 @@ export async function configureTournament(
   prisma: PrismaClient,
   tournamentId: string,
   userId: string,
-  rol: string,
+  role: string,
   data: ConfigureTournamentSchemaInput,
 ): Promise<TournamentDto> {
-  const tournament = await prisma.torneo.findUnique({ where: { id: tournamentId } });
+  const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
   if (!tournament) {
     throw new HttpError(404, "Torneo no encontrado");
   }
-  assertCanManageTournament(tournament, userId, rol);
+  assertCanManageTournament(tournament, userId, role);
 
   if (data.tiebreakCriteria) {
     // RN-05: the tiebreak order can only be changed while the tournament is
     // in its preliminary state, i.e. before round 1 exists.
-    const firstRound = await prisma.ronda.findFirst({ where: { torneoId: tournamentId, numero: 1 } });
+    const firstRound = await prisma.round.findFirst({ where: { tournamentId, number: 1 } });
     if (firstRound) {
       throw new HttpError(409, "No se puede modificar el orden de desempates después de iniciada la primera ronda");
     }
@@ -144,27 +144,27 @@ export async function configureTournament(
 
   const updated = await prisma.$transaction(async (tx) => {
     if (data.tiebreakCriteria) {
-      await tx.criterioDesempate.deleteMany({ where: { torneoId: tournamentId } });
+      await tx.tiebreakCriterion.deleteMany({ where: { tournamentId } });
       if (data.tiebreakCriteria.length > 0) {
-        await tx.criterioDesempate.createMany({
+        await tx.tiebreakCriterion.createMany({
           data: data.tiebreakCriteria.map((criterion) => ({
-            torneoId: tournamentId,
-            nombre: criterion.name,
-            orden: criterion.order,
+            tournamentId,
+            name: criterion.name,
+            order: criterion.order,
           })),
         });
       }
     }
 
-    return tx.torneo.update({
+    return tx.tournament.update({
       where: { id: tournamentId },
       data: {
-        ...(data.roundsCount !== undefined ? { numeroRondas: data.roundsCount } : {}),
-        ...(data.timeControl !== undefined ? { ritmo: data.timeControl } : {}),
-        ...(data.restrictedProgram !== undefined ? { programaRestringido: data.restrictedProgram } : {}),
-        ...(data.minimumSemester !== undefined ? { semestreMinimo: data.minimumSemester } : {}),
+        ...(data.roundsCount !== undefined ? { roundsCount: data.roundsCount } : {}),
+        ...(data.timeControl !== undefined ? { timeControl: data.timeControl } : {}),
+        ...(data.restrictedProgram !== undefined ? { restrictedProgram: data.restrictedProgram } : {}),
+        ...(data.minimumSemester !== undefined ? { minimumSemester: data.minimumSemester } : {}),
       },
-      include: { criteriosDesempate: true },
+      include: { tiebreakCriteria: true },
     });
   });
 
@@ -172,33 +172,33 @@ export async function configureTournament(
 }
 
 const REGISTRATION_TRANSITIONS = {
-  open: { from: "CREADO", to: "INSCRIPCIONES_ABIERTAS" },
-  close: { from: "INSCRIPCIONES_ABIERTAS", to: "INSCRIPCIONES_CERRADAS" },
+  open: { from: "CREATED", to: "REGISTRATION_OPEN" },
+  close: { from: "REGISTRATION_OPEN", to: "REGISTRATION_CLOSED" },
 } as const;
 
-/** Moves a tournament's registration state through one of the allowed transitions. */
+/** Moves a tournament's registration status through one of the allowed transitions. */
 async function transitionRegistration(
   prisma: PrismaClient,
   tournamentId: string,
   userId: string,
-  rol: string,
+  role: string,
   action: keyof typeof REGISTRATION_TRANSITIONS,
 ): Promise<TournamentDto> {
-  const tournament = await prisma.torneo.findUnique({ where: { id: tournamentId } });
+  const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
   if (!tournament) {
     throw new HttpError(404, "Torneo no encontrado");
   }
-  assertCanManageTournament(tournament, userId, rol);
+  assertCanManageTournament(tournament, userId, role);
 
   const { from, to } = REGISTRATION_TRANSITIONS[action];
-  if (tournament.estado !== from) {
-    throw new HttpError(409, `No se puede pasar de "${tournament.estado}" a "${to}": se requiere estado "${from}"`);
+  if (tournament.status !== from) {
+    throw new HttpError(409, `No se puede pasar de "${tournament.status}" a "${to}": se requiere estado "${from}"`);
   }
 
-  const updated = await prisma.torneo.update({
+  const updated = await prisma.tournament.update({
     where: { id: tournamentId },
-    data: { estado: to },
-    include: { criteriosDesempate: true },
+    data: { status: to },
+    include: { tiebreakCriteria: true },
   });
 
   return toTournamentDto(updated);
@@ -209,9 +209,9 @@ export function openRegistration(
   prisma: PrismaClient,
   tournamentId: string,
   userId: string,
-  rol: string,
+  role: string,
 ): Promise<TournamentDto> {
-  return transitionRegistration(prisma, tournamentId, userId, rol, "open");
+  return transitionRegistration(prisma, tournamentId, userId, role, "open");
 }
 
 /** Closes registration for a tournament (HU06). */
@@ -219,9 +219,9 @@ export function closeRegistration(
   prisma: PrismaClient,
   tournamentId: string,
   userId: string,
-  rol: string,
+  role: string,
 ): Promise<TournamentDto> {
-  return transitionRegistration(prisma, tournamentId, userId, rol, "close");
+  return transitionRegistration(prisma, tournamentId, userId, role, "close");
 }
 
 export interface EnrolledPlayerDto {
@@ -244,20 +244,20 @@ export async function enrollPlayer(
   tournamentId: string,
   playerId: string,
   userId: string,
-  rol: string,
+  role: string,
 ): Promise<EnrolledPlayerDto> {
-  const tournament = await prisma.torneo.findUnique({ where: { id: tournamentId } });
+  const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
   if (!tournament) {
     throw new HttpError(404, "Torneo no encontrado");
   }
-  assertCanManageTournament(tournament, userId, rol);
+  assertCanManageTournament(tournament, userId, role);
 
   // CA HU06: once registration is closed, new enrollments are rejected.
-  if (tournament.estado !== "INSCRIPCIONES_ABIERTAS") {
+  if (tournament.status !== "REGISTRATION_OPEN") {
     throw new HttpError(409, "El torneo no tiene las inscripciones abiertas");
   }
 
-  const player = await prisma.jugador.findUnique({ where: { id: playerId }, include: { usuario: true } });
+  const player = await prisma.player.findUnique({ where: { id: playerId }, include: { user: true } });
   if (!player) {
     throw new HttpError(404, "Jugador no encontrado");
   }
@@ -265,23 +265,23 @@ export async function enrollPlayer(
   // Eligibility configured in HU05 (restrictedProgram/minimumSemester): validated
   // here, not in the zod schema, because it depends on tournament and player
   // data, not just the payload's shape.
-  if (tournament.programaRestringido && player.programa !== tournament.programaRestringido) {
-    throw new HttpError(409, `Este torneo solo admite jugadores del programa "${tournament.programaRestringido}"`);
+  if (tournament.restrictedProgram && player.program !== tournament.restrictedProgram) {
+    throw new HttpError(409, `Este torneo solo admite jugadores del programa "${tournament.restrictedProgram}"`);
   }
-  if (tournament.semestreMinimo != null && player.semestre < tournament.semestreMinimo) {
-    throw new HttpError(409, `Este torneo exige un semestre mínimo de ${tournament.semestreMinimo}`);
+  if (tournament.minimumSemester != null && player.semester < tournament.minimumSemester) {
+    throw new HttpError(409, `Este torneo exige un semestre mínimo de ${tournament.minimumSemester}`);
   }
 
   try {
-    const enrollment = await prisma.inscripcion.create({
-      data: { torneoId: tournamentId, jugadorId: playerId },
+    const enrollment = await prisma.enrollment.create({
+      data: { tournamentId, playerId },
     });
     return {
       playerId: player.id,
-      name: player.usuario.nombre,
-      universityCode: player.codigoUniversitario,
-      program: player.programa,
-      semester: player.semestre,
+      name: player.user.name,
+      universityCode: player.universityCode,
+      program: player.program,
+      semester: player.semester,
       enrolledAt: enrollment.createdAt,
     };
   } catch (error) {
@@ -298,26 +298,26 @@ export async function listEnrolledPlayers(
   prisma: PrismaClient,
   tournamentId: string,
   userId: string,
-  rol: string,
+  role: string,
 ): Promise<EnrolledPlayerDto[]> {
-  const tournament = await prisma.torneo.findUnique({ where: { id: tournamentId } });
+  const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
   if (!tournament) {
     throw new HttpError(404, "Torneo no encontrado");
   }
-  assertCanManageTournament(tournament, userId, rol);
+  assertCanManageTournament(tournament, userId, role);
 
-  const enrollments = await prisma.inscripcion.findMany({
-    where: { torneoId: tournamentId },
-    include: { jugador: { include: { usuario: true } } },
+  const enrollments = await prisma.enrollment.findMany({
+    where: { tournamentId },
+    include: { player: { include: { user: true } } },
     orderBy: { createdAt: "asc" },
   });
 
   return enrollments.map((enrollment) => ({
-    playerId: enrollment.jugador.id,
-    name: enrollment.jugador.usuario.nombre,
-    universityCode: enrollment.jugador.codigoUniversitario,
-    program: enrollment.jugador.programa,
-    semester: enrollment.jugador.semestre,
+    playerId: enrollment.player.id,
+    name: enrollment.player.user.name,
+    universityCode: enrollment.player.universityCode,
+    program: enrollment.player.program,
+    semester: enrollment.player.semester,
     enrolledAt: enrollment.createdAt,
   }));
 }

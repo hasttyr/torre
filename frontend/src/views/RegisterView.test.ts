@@ -35,7 +35,7 @@ describe("RegisterView", () => {
     registerUserMock.mockReset();
   });
 
-  it("shows player fields by default (initial role JUGADOR)", () => {
+  it("shows player fields by default (initial role PLAYER)", () => {
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
 
     expect(wrapper.find("fieldset").exists()).toBe(true);
@@ -45,7 +45,7 @@ describe("RegisterView", () => {
   it("hides player fields when another role is chosen", async () => {
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
 
-    await selectRol(wrapper, "ORGANIZADOR");
+    await selectRol(wrapper, "ORGANIZER");
 
     expect(wrapper.find("fieldset").exists()).toBe(false);
   });
@@ -53,7 +53,7 @@ describe("RegisterView", () => {
   it("shows validation errors and does not call the backend when the form is empty", async () => {
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
 
-    await selectRol(wrapper, "ORGANIZADOR");
+    await selectRol(wrapper, "ORGANIZER");
     await wrapper.find("form").trigger("submit.prevent");
 
     expect(wrapper.text()).toContain("El nombre debe tener al menos 2 caracteres");
@@ -93,8 +93,8 @@ describe("RegisterView", () => {
       id: "1",
       name: "Ana Torres",
       email: "ana@example.com",
-      status: "ACTIVO",
-      role: "JUGADOR",
+      status: "ACTIVE",
+      role: "PLAYER",
       createdAt: "2026-01-01T00:00:00.000Z",
       dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
     });
@@ -117,7 +117,7 @@ describe("RegisterView", () => {
       email: "ana@example.com",
       password: "password123",
       acceptDataPolicy: true,
-      role: "JUGADOR",
+      role: "PLAYER",
       universityCode: "U12345",
       program: "Ingeniería de Sistemas",
       semester: 5,
@@ -130,14 +130,14 @@ describe("RegisterView", () => {
       id: "2",
       name: "Carlos Ruiz",
       email: "carlos@example.com",
-      status: "ACTIVO",
-      role: "ORGANIZADOR",
+      status: "ACTIVE",
+      role: "ORGANIZER",
       createdAt: "2026-01-01T00:00:00.000Z",
       dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
     });
 
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
-    await selectRol(wrapper, "ORGANIZADOR");
+    await selectRol(wrapper, "ORGANIZER");
     await wrapper.find('input[type="text"]').setValue("Carlos Ruiz");
     await wrapper.find('input[type="email"]').setValue("carlos@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
@@ -151,7 +151,7 @@ describe("RegisterView", () => {
       email: "carlos@example.com",
       password: "password123",
       acceptDataPolicy: true,
-      role: "ORGANIZADOR",
+      role: "ORGANIZER",
     });
   });
 
@@ -162,7 +162,7 @@ describe("RegisterView", () => {
     });
 
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
-    await selectRol(wrapper, "ORGANIZADOR");
+    await selectRol(wrapper, "ORGANIZER");
     await wrapper.find('input[type="text"]').setValue("Ana Torres");
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
@@ -179,7 +179,7 @@ describe("RegisterView", () => {
     registerUserMock.mockRejectedValue(new Error("Network Error"));
 
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
-    await selectRol(wrapper, "ORGANIZADOR");
+    await selectRol(wrapper, "ORGANIZER");
     await wrapper.find('input[type="text"]').setValue("Ana Torres");
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");

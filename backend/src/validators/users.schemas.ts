@@ -1,26 +1,26 @@
 import { z } from "zod";
 
-// Unlike public registration (auth.schemas.ts), ADMINISTRADOR is allowed
+// Unlike public registration (auth.schemas.ts), ADMINISTRATOR is allowed
 // here: whoever assigns it is already an authenticated administrator.
 export const updateRoleSchema = z.object({
-  role: z.enum(["ORGANIZADOR", "ARBITRO", "JUGADOR", "ENTRENADOR", "ADMINISTRADOR"]),
+  role: z.enum(["ORGANIZER", "ARBITER", "PLAYER", "COACH", "ADMINISTRATOR"]),
 });
 
 export type UpdateRoleSchemaInput = z.infer<typeof updateRoleSchema>;
 
-// Closed catalogs — mirror the GeneroJugador/DiscapacidadJugador enums in
+// Closed catalogs — mirror the Gender/Disability enums in
 // prisma/schema.prisma. Listed here too (not only in the Prisma enum) so
 // zod returns a readable validation message instead of a generic type error.
-export const GENDERS = ["MASCULINO", "FEMENINO", "NO_BINARIO", "PREFIERE_NO_DECIR"] as const;
+export const GENDERS = ["MALE", "FEMALE", "NON_BINARY", "PREFER_NOT_TO_SAY"] as const;
 export const DISABILITIES = [
-  "NINGUNA",
-  "FISICA_MOTRIZ",
+  "NONE",
+  "PHYSICAL_MOTOR",
   "VISUAL",
-  "AUDITIVA",
-  "COGNITIVA",
-  "PSICOSOCIAL",
+  "HEARING",
+  "COGNITIVE",
+  "PSYCHOSOCIAL",
   "MULTIPLE",
-  "OTRA",
+  "OTHER",
 ] as const;
 
 // HU20: every field is optional (only what is sent gets updated) and it
@@ -50,12 +50,12 @@ export const updateProfileSchema = z.object({
 export type UpdateProfileSchemaInput = z.infer<typeof updateProfileSchema>;
 
 // HU22/Ley 1581 de 2012: derechos ARCO ejercidos por el titular sobre sus
-// propios datos. RECTIFICACION reutiliza updateProfileSchema (mismo shape
+// propios datos. RECTIFICATION reutiliza updateProfileSchema (mismo shape
 // que HU20) en vez de duplicar sus reglas de validación.
 export const dataRequestSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("ACCESO") }),
-  z.object({ type: z.literal("RECTIFICACION"), data: updateProfileSchema }),
-  z.object({ type: z.literal("SUPRESION"), reason: z.string().trim().min(1).optional() }),
+  z.object({ type: z.literal("ACCESS") }),
+  z.object({ type: z.literal("RECTIFICATION"), data: updateProfileSchema }),
+  z.object({ type: z.literal("SUPPRESSION"), reason: z.string().trim().min(1).optional() }),
 ]);
 
 export type DataRequestSchemaInput = z.infer<typeof dataRequestSchema>;

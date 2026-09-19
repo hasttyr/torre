@@ -8,10 +8,10 @@ import { loginUser, registerUser } from "./auth.service";
 
 function buildPrismaMock() {
   return {
-    rol: {
+    role: {
       findUnique: vi.fn(),
     },
-    usuario: {
+    user: {
       findUnique: vi.fn(),
       create: vi.fn(),
     },
@@ -26,34 +26,34 @@ describe("registerUser", () => {
   });
 
   it("creates an account with valid data for a role without an additional profile", async () => {
-    prisma.rol.findUnique.mockResolvedValue({ id: "rol-organizador", nombre: "ORGANIZADOR" });
-    prisma.usuario.findUnique.mockResolvedValue(null);
-    prisma.usuario.create.mockResolvedValue({
-      id: "usuario-1",
-      nombre: "Ana Torres",
+    prisma.role.findUnique.mockResolvedValue({ id: "role-organizer", name: "ORGANIZER" });
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.user.create.mockResolvedValue({
+      id: "user-1",
+      name: "Ana Torres",
       email: "ana@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       createdAt: new Date("2026-01-01T00:00:00Z"),
-      rol: { id: "rol-organizador", nombre: "ORGANIZADOR" },
-      consentimientoAceptado: true,
-      consentimientoFecha: new Date("2026-01-01T00:00:00Z"),
-      consentimientoVersion: "2026-08-01",
+      role: { id: "role-organizer", name: "ORGANIZER" },
+      dataPolicyAccepted: true,
+      dataPolicyAcceptedAt: new Date("2026-01-01T00:00:00Z"),
+      dataPolicyVersion: "2026-08-01",
     });
 
     const result = await registerUser(prisma as unknown as PrismaClient, {
       name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
-      role: "ORGANIZADOR",
+      role: "ORGANIZER",
       acceptDataPolicy: true,
     });
 
     expect(result).toEqual({
-      id: "usuario-1",
+      id: "user-1",
       name: "Ana Torres",
       email: "ana@example.com",
-      status: "ACTIVO",
-      role: "ORGANIZADOR",
+      status: "ACTIVE",
+      role: "ORGANIZER",
       createdAt: new Date("2026-01-01T00:00:00Z"),
       dataConsent: {
         accepted: true,
@@ -62,80 +62,80 @@ describe("registerUser", () => {
       },
     });
 
-    const createArgs = prisma.usuario.create.mock.calls[0][0];
+    const createArgs = prisma.user.create.mock.calls[0][0];
     expect(createArgs.data.email).toBe("ana@example.com");
     expect(createArgs.data.passwordHash).not.toBe("password123");
-    expect(createArgs.data.jugador).toBeUndefined();
-    expect(createArgs.data.consentimientoAceptado).toBe(true);
-    expect(createArgs.data.consentimientoVersion).toBe("2026-08-01");
+    expect(createArgs.data.player).toBeUndefined();
+    expect(createArgs.data.dataPolicyAccepted).toBe(true);
+    expect(createArgs.data.dataPolicyVersion).toBe("2026-08-01");
   });
 
-  it("creates the account and the nested player profile when the role is JUGADOR", async () => {
-    prisma.rol.findUnique.mockResolvedValue({ id: "rol-jugador", nombre: "JUGADOR" });
-    prisma.usuario.findUnique.mockResolvedValue(null);
-    prisma.usuario.create.mockResolvedValue({
-      id: "usuario-2",
-      nombre: "Luis Gómez",
+  it("creates the account and the nested player profile when the role is PLAYER", async () => {
+    prisma.role.findUnique.mockResolvedValue({ id: "role-player", name: "PLAYER" });
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.user.create.mockResolvedValue({
+      id: "user-2",
+      name: "Luis Gómez",
       email: "luis@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       createdAt: new Date("2026-01-02T00:00:00Z"),
-      rol: { id: "rol-jugador", nombre: "JUGADOR" },
+      role: { id: "role-player", name: "PLAYER" },
     });
 
     await registerUser(prisma as unknown as PrismaClient, {
       name: "Luis Gómez",
       email: "luis@example.com",
       password: "password123",
-      role: "JUGADOR",
+      role: "PLAYER",
       universityCode: "U12345",
       program: "Ingeniería de Sistemas",
       semester: 5,
       acceptDataPolicy: true,
     });
 
-    const createArgs = prisma.usuario.create.mock.calls[0][0];
-    expect(createArgs.data.jugador.create).toEqual({
-      codigoUniversitario: "U12345",
-      programa: "Ingeniería de Sistemas",
-      semestre: 5,
+    const createArgs = prisma.user.create.mock.calls[0][0];
+    expect(createArgs.data.player.create).toEqual({
+      universityCode: "U12345",
+      program: "Ingeniería de Sistemas",
+      semester: 5,
     });
   });
 
   it("normalizes the email to lowercase and trims spaces", async () => {
-    prisma.rol.findUnique.mockResolvedValue({ id: "rol-arbitro", nombre: "ARBITRO" });
-    prisma.usuario.findUnique.mockResolvedValue(null);
-    prisma.usuario.create.mockResolvedValue({
-      id: "usuario-3",
-      nombre: "Ana",
+    prisma.role.findUnique.mockResolvedValue({ id: "role-arbiter", name: "ARBITER" });
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.user.create.mockResolvedValue({
+      id: "user-3",
+      name: "Ana",
       email: "ana@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       createdAt: new Date(),
-      rol: { id: "rol-arbitro", nombre: "ARBITRO" },
+      role: { id: "role-arbiter", name: "ARBITER" },
     });
 
     await registerUser(prisma as unknown as PrismaClient, {
       name: "  Ana  ",
       email: "  Ana@Example.COM  ",
       password: "password123",
-      role: "ARBITRO",
+      role: "ARBITER",
       acceptDataPolicy: true,
     });
 
-    expect(prisma.usuario.findUnique).toHaveBeenCalledWith({ where: { email: "ana@example.com" } });
-    expect(prisma.usuario.create.mock.calls[0][0].data.email).toBe("ana@example.com");
-    expect(prisma.usuario.create.mock.calls[0][0].data.nombre).toBe("Ana");
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { email: "ana@example.com" } });
+    expect(prisma.user.create.mock.calls[0][0].data.email).toBe("ana@example.com");
+    expect(prisma.user.create.mock.calls[0][0].data.name).toBe("Ana");
   });
 
   it("rejects an already registered email", async () => {
-    prisma.rol.findUnique.mockResolvedValue({ id: "rol-jugador", nombre: "JUGADOR" });
-    prisma.usuario.findUnique.mockResolvedValue({ id: "usuario-existente" });
+    prisma.role.findUnique.mockResolvedValue({ id: "role-player", name: "PLAYER" });
+    prisma.user.findUnique.mockResolvedValue({ id: "existing-user" });
 
     await expect(
       registerUser(prisma as unknown as PrismaClient, {
         name: "Duplicado",
         email: "existe@example.com",
         password: "password123",
-        role: "JUGADOR",
+        role: "PLAYER",
         universityCode: "U1",
         program: "Ingeniería",
         semester: 1,
@@ -143,34 +143,34 @@ describe("registerUser", () => {
       }),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
 
-    expect(prisma.usuario.create).not.toHaveBeenCalled();
+    expect(prisma.user.create).not.toHaveBeenCalled();
   });
 
   it("rejects a role that doesn't exist in the database", async () => {
-    prisma.rol.findUnique.mockResolvedValue(null);
+    prisma.role.findUnique.mockResolvedValue(null);
 
     await expect(
       registerUser(prisma as unknown as PrismaClient, {
         name: "Alguien",
         email: "alguien@example.com",
         password: "password123",
-        role: "ORGANIZADOR",
+        role: "ORGANIZER",
         acceptDataPolicy: true,
       }),
     ).rejects.toMatchObject({ status: 400 } satisfies Partial<HttpError>);
   });
 
   it("turns a concurrent uniqueness violation (P2002) into a 409", async () => {
-    prisma.rol.findUnique.mockResolvedValue({ id: "rol-organizador", nombre: "ORGANIZADOR" });
-    prisma.usuario.findUnique.mockResolvedValue(null);
-    prisma.usuario.create.mockRejectedValue({ code: "P2002" });
+    prisma.role.findUnique.mockResolvedValue({ id: "role-organizer", name: "ORGANIZER" });
+    prisma.user.findUnique.mockResolvedValue(null);
+    prisma.user.create.mockRejectedValue({ code: "P2002" });
 
     await expect(
       registerUser(prisma as unknown as PrismaClient, {
         name: "Carrera",
         email: "carrera@example.com",
         password: "password123",
-        role: "ORGANIZADOR",
+        role: "ORGANIZER",
         acceptDataPolicy: true,
       }),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
@@ -186,17 +186,17 @@ describe("loginUser", () => {
 
   it("authenticates with valid credentials and returns a signed token", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
-    prisma.usuario.findUnique.mockResolvedValue({
-      id: "usuario-1",
-      nombre: "Ana Torres",
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      name: "Ana Torres",
       email: "ana@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       passwordHash,
       createdAt: new Date("2026-01-01T00:00:00Z"),
-      rol: { id: "rol-organizador", nombre: "ORGANIZADOR" },
-      consentimientoAceptado: true,
-      consentimientoFecha: new Date("2026-01-01T00:00:00Z"),
-      consentimientoVersion: "2026-08-01",
+      role: { id: "role-organizer", name: "ORGANIZER" },
+      dataPolicyAccepted: true,
+      dataPolicyAcceptedAt: new Date("2026-01-01T00:00:00Z"),
+      dataPolicyVersion: "2026-08-01",
     });
 
     const result = await loginUser(prisma as unknown as PrismaClient, {
@@ -205,11 +205,11 @@ describe("loginUser", () => {
     });
 
     expect(result.user).toEqual({
-      id: "usuario-1",
+      id: "user-1",
       name: "Ana Torres",
       email: "ana@example.com",
-      status: "ACTIVO",
-      role: "ORGANIZADOR",
+      status: "ACTIVE",
+      role: "ORGANIZER",
       createdAt: new Date("2026-01-01T00:00:00Z"),
       dataConsent: {
         accepted: true,
@@ -219,18 +219,18 @@ describe("loginUser", () => {
     });
 
     const payload = jwt.verify(result.token, "test-secret") as jwt.JwtPayload;
-    expect(payload.sub).toBe("usuario-1");
-    expect(payload.rol).toBe("ORGANIZADOR");
+    expect(payload.sub).toBe("user-1");
+    expect(payload.role).toBe("ORGANIZER");
   });
 
   it("rejects an incorrect password with a generic message", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
-    prisma.usuario.findUnique.mockResolvedValue({
-      id: "usuario-1",
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
       email: "ana@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       passwordHash,
-      rol: { id: "rol-organizador", nombre: "ORGANIZADOR" },
+      role: { id: "role-organizer", name: "ORGANIZER" },
     });
 
     await expect(
@@ -239,7 +239,7 @@ describe("loginUser", () => {
   });
 
   it("rejects a nonexistent email with the same generic message (doesn't reveal whether the account exists)", async () => {
-    prisma.usuario.findUnique.mockResolvedValue(null);
+    prisma.user.findUnique.mockResolvedValue(null);
 
     await expect(
       loginUser(prisma as unknown as PrismaClient, { email: "no-existe@example.com", password: "cualquiera" }),
@@ -248,12 +248,12 @@ describe("loginUser", () => {
 
   it("rejects an inactive user even when the password is correct", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
-    prisma.usuario.findUnique.mockResolvedValue({
-      id: "usuario-1",
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
       email: "ana@example.com",
-      estado: "INACTIVO",
+      status: "INACTIVE",
       passwordHash,
-      rol: { id: "rol-organizador", nombre: "ORGANIZADOR" },
+      role: { id: "role-organizer", name: "ORGANIZER" },
     });
 
     await expect(
@@ -262,15 +262,15 @@ describe("loginUser", () => {
   });
 
   it("normalizes the email to lowercase before looking it up", async () => {
-    prisma.usuario.findUnique.mockResolvedValue(null);
+    prisma.user.findUnique.mockResolvedValue(null);
 
     await expect(
       loginUser(prisma as unknown as PrismaClient, { email: "  Ana@Example.COM  ", password: "x" }),
     ).rejects.toBeDefined();
 
-    expect(prisma.usuario.findUnique).toHaveBeenCalledWith({
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
       where: { email: "ana@example.com" },
-      include: { rol: true },
+      include: { role: true },
     });
   });
 });

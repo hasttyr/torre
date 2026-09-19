@@ -1,6 +1,6 @@
 export interface AuthUser {
   id: string;
-  rol: string;
+  role: string;
 }
 
 declare global {

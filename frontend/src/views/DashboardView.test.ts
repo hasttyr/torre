@@ -56,12 +56,12 @@ describe("DashboardView", () => {
   it("lists the organizer's tournaments with their status", async () => {
     listMyTournamentsMock.mockResolvedValue([
       {
-        id: "torneo-1",
+        id: "tournament-1",
         name: "Copa Universitaria",
         startDate: "2026-10-01",
         endDate: "2026-10-03",
-        status: "INSCRIPCIONES_ABIERTAS",
-        format: "suizo",
+        status: "REGISTRATION_OPEN",
+        format: "swiss",
         roundsCount: null,
         timeControl: null,
   restrictedProgram: null,
@@ -81,12 +81,12 @@ describe("DashboardView", () => {
   it("navigates to the tournament panel when clicking the card", async () => {
     listMyTournamentsMock.mockResolvedValue([
       {
-        id: "torneo-1",
+        id: "tournament-1",
         name: "Copa Universitaria",
         startDate: "2026-10-01",
         endDate: "2026-10-03",
-        status: "CREADO",
-        format: "suizo",
+        status: "CREATED",
+        format: "swiss",
         roundsCount: null,
         timeControl: null,
   restrictedProgram: null,
@@ -103,6 +103,6 @@ describe("DashboardView", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     await wrapper.vm.$nextTick();
 
-    expect(router.currentRoute.value.path).toBe("/torneos/torneo-1");
+    expect(router.currentRoute.value.path).toBe("/torneos/tournament-1");
   });
 });

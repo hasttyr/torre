@@ -27,8 +27,8 @@ describe("router guard for /cuenta", () => {
         id: "usuario-1",
         name: "Ana",
         email: "ana@example.com",
-        status: "ACTIVO",
-        role: "ORGANIZADOR",
+        status: "ACTIVE",
+        role: "ORGANIZER",
         createdAt: "2026-01-01T00:00:00.000Z",
       },
     });

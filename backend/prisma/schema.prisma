@@ -1,19 +1,23 @@
-// Modelo de datos de S4 (Fase 2 — Diseño), fiel a los diagramas ya
-// aprobados en la sustentación: docs/media/image1.png (ER conceptual),
-// docs/media/image7.png (clases de dominio) y docs/media/image8.png
-// (estados de torneo/ronda y ciclo de partida). Ver también
-// docs/diagrama-componentes.md.
+// Data model from S4 (Phase 2 — Design), matching the diagrams approved at
+// the defense: docs/media/image1.png (conceptual ER), docs/media/image7.png
+// (domain classes) and docs/media/image8.png (tournament/round states and
+// match lifecycle). See also docs/diagrama-componentes.md.
 //
-// Alcance deliberado: solo las entidades de Objetivo específico 3
-// (Usuario, Rol, Jugador, Torneo, Ronda, Partida, Resultado,
-// CriterioDesempate, Clasificacion, Inscripcion). Club, Federación,
-// EntrenadorJugador, Bitácora y el ajuste manual de emparejamientos
-// pertenecen a incrementos posteriores (S10-S13 del roadmap) y se agregan
-// al esquema cuando se codifique esa semana, no antes.
+// Naming standard: every model, field and enum is named in English,
+// regardless of the Spanish vocabulary used in the project documentation
+// (Torneo, Jugador, Ronda, ...) — the documentation's domain terms map onto
+// these English identifiers one-to-one, listed in each model's comment
+// where the mapping isn't obvious from the name alone.
 //
-// Inscripcion se adelantó a S6 (en vez de esperar a S10-S13 como el resto
-// de este comentario original sugería) porque HU06/HU07 dependen
-// directamente de ella para aplicar RN-01 (no duplicados por torneo).
+// Deliberate scope: only the entities from Specific Objective 3 (User,
+// Role, Player, Tournament, Round, Match, Result, TiebreakCriterion,
+// Standing, Enrollment). Club, Federation, CoachPlayer link, AuditLog and
+// manual pairing adjustment belong to later increments (S10-S13 of the
+// roadmap) and get added to the schema when that week is coded, not before.
+//
+// Enrollment was pulled forward to S6 (instead of waiting for S10-S13 like
+// the rest of this original comment suggested) because HU06/HU07 depend on
+// it directly to enforce RN-01 (no duplicate enrollment per tournament).
 
 generator client {
   provider = "prisma-client-js"
@@ -24,293 +28,290 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Los diagramas de origen tipan "estado" como string genérico; se refina a
-// enum aquí por integridad a nivel de base de datos, con los mismos valores.
-enum EstadoUsuario {
-  ACTIVO
-  INACTIVO
+// The source diagrams type "estado" as a generic string; refined to an enum
+// here for database-level integrity, with the same values.
+enum UserStatus {
+  ACTIVE
+  INACTIVE
 }
 
-// Ver docs/media/image8.png. EN_CURSO agrupa el ciclo de rondas
-// (RondaGenerada/ResultadosEnRegistro/ClasificacionActualizada), que se
-// modela con el detalle fino en EstadoRonda.
-enum EstadoTorneo {
-  CREADO
-  INSCRIPCIONES_ABIERTAS
-  INSCRIPCIONES_CERRADAS
-  EN_CURSO
-  FINALIZADO
+// See docs/media/image8.png. IN_PROGRESS groups the round cycle
+// (RoundGenerated/RecordingResults/StandingsUpdated), modeled with finer
+// detail in RoundStatus.
+enum TournamentStatus {
+  CREATED
+  REGISTRATION_OPEN
+  REGISTRATION_CLOSED
+  IN_PROGRESS
+  FINISHED
 }
 
-enum EstadoRonda {
-  GENERADA
-  RESULTADOS_EN_REGISTRO
-  CLASIFICACION_ACTUALIZADA
+enum RoundStatus {
+  GENERATED
+  RECORDING_RESULTS
+  STANDINGS_UPDATED
 }
 
-// Ciclo de partida (docs/media/image8.png, swimlane "Ciclo de Partida").
-enum EstadoPartida {
-  PROGRAMADA
-  EN_JUEGO
-  FINALIZADA
-  CORREGIDA
+// Match lifecycle (docs/media/image8.png, "Ciclo de Partida" swimlane).
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  FINISHED
+  CORRECTED
 }
 
-model Rol {
-  id     String @id @default(uuid())
-  nombre String @unique
+model Role {
+  id   String @id @default(uuid())
+  name String @unique
 
-  usuarios Usuario[]
+  users User[]
 
   @@map("roles")
 }
 
-model Usuario {
-  id           String        @id @default(uuid())
-  nombre       String
-  email        String        @unique
-  passwordHash String        @map("password_hash")
-  estado       EstadoUsuario @default(ACTIVO)
-  rolId        String        @map("rol_id")
-  createdAt    DateTime      @default(now()) @map("created_at")
-  updatedAt    DateTime      @updatedAt @map("updated_at")
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  status       UserStatus @default(ACTIVE)
+  roleId       String     @map("role_id")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
 
-  // HU21/RN-10: no se completa el registro sin esta aceptación explícita, y
-  // fecha/versión quedan almacenadas (CA HU21, P23). consentimientoVersion
-  // referencia DATA_POLICY_VERSION en config/dataPolicy.ts.
-  consentimientoAceptado Boolean   @default(false) @map("consentimiento_aceptado")
-  consentimientoFecha    DateTime? @map("consentimiento_fecha")
-  consentimientoVersion  String?   @map("consentimiento_version")
+  // HU21/RN-10: registration isn't completed without this explicit
+  // acceptance, and the date/version are stored (CA HU21, P23).
+  // dataPolicyVersion references DATA_POLICY_VERSION in config/dataPolicy.ts.
+  dataPolicyAccepted   Boolean   @default(false) @map("data_policy_accepted")
+  dataPolicyAcceptedAt DateTime? @map("data_policy_accepted_at")
+  dataPolicyVersion    String?   @map("data_policy_version")
 
-  rol                      Rol                        @relation(fields: [rolId], references: [id])
-  jugador                  Jugador?
-  torneosOrganizados       Torneo[]                   @relation("TorneoOrganizador")
-  solicitudesRecuperacion  SolicitudRecuperacion[]
-  solicitudesDatos         SolicitudDatosPersonales[]
+  role                  Role                   @relation(fields: [roleId], references: [id])
+  player                Player?
+  organizedTournaments  Tournament[]           @relation("TournamentOrganizer")
+  passwordResetRequests PasswordResetRequest[]
+  dataRequests          DataRequest[]
 
-  @@map("usuarios")
+  @@map("users")
 }
 
-// HU19/RF11: el token en texto plano nunca se persiste, solo su hash — un
-// volcado de la base no alcanza para restablecer una cuenta. Sin
-// infraestructura de correo en la arquitectura documentada, el envío se
-// simula (ver services/passwordReset.service.ts); el modelo ya queda listo
-// para conectar un proveedor real sin cambios de esquema.
-model SolicitudRecuperacion {
-  id        String    @id @default(uuid())
-  usuarioId String    @map("usuario_id")
-  tokenHash String    @unique @map("token_hash")
-  expiraEn  DateTime  @map("expira_en")
-  usadoEn   DateTime? @map("usado_en")
-  createdAt DateTime  @default(now()) @map("created_at")
-
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
-
-  @@map("solicitudes_recuperacion")
+// Closed catalog (DANE) instead of free text: keeps the field from being
+// used to write anything. Editable from HU20, never required at registration.
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  PREFER_NOT_TO_SAY
 }
 
-// HU22/Ley 1581 de 2012, art. 8: derechos ARCO (Acceso, Rectificación,
-// Cancelación/Supresión) ejercidos por el titular sobre sus propios datos.
-enum TipoSolicitudDatos {
-  ACCESO
-  RECTIFICACION
-  SUPRESION
-}
-
-// BLOQUEADA: la supresión se pidió pero hay datos indispensables para un
-// torneo en curso (CA HU22), así que se bloquea la cuenta en vez de borrarla.
-enum EstadoSolicitudDatos {
-  RESUELTA
-  BLOQUEADA
-}
-
-model SolicitudDatosPersonales {
-  id        String               @id @default(uuid())
-  usuarioId String               @map("usuario_id")
-  tipo      TipoSolicitudDatos
-  estado    EstadoSolicitudDatos
-  detalle   String?
-  createdAt DateTime             @default(now()) @map("created_at")
-
-  usuario Usuario @relation(fields: [usuarioId], references: [id])
-
-  @@map("solicitudes_datos_personales")
-}
-
-// Catálogo cerrado (DANE) en vez de texto libre: evita que el campo se
-// use para escribir cualquier cosa. Editable desde HU20, nunca obligatorio
-// en el registro.
-enum GeneroJugador {
-  MASCULINO
-  FEMENINO
-  NO_BINARIO
-  PREFIERE_NO_DECIR
-}
-
-// Catálogo cerrado alineado al Registro de Localización y Caracterización
-// de Personas con Discapacidad (RLCPD) colombiano.
-enum DiscapacidadJugador {
-  NINGUNA
-  FISICA_MOTRIZ
+// Closed catalog aligned with the Colombian RLCPD (Registro de Localización
+// y Caracterización de Personas con Discapacidad).
+enum Disability {
+  NONE
+  PHYSICAL_MOTOR
   VISUAL
-  AUDITIVA
-  COGNITIVA
-  PSICOSOCIAL
+  HEARING
+  COGNITIVE
+  PSYCHOSOCIAL
   MULTIPLE
-  OTRA
+  OTHER
 }
 
-model Jugador {
-  id                  String @id @default(uuid())
-  usuarioId           String @unique @map("usuario_id")
-  codigoUniversitario String @map("codigo_universitario")
-  programa            String
-  semestre            Int
-  // Los tres siguientes son opcionales a propósito: no forman parte del
-  // registro (HU01), se completan después desde "Editar perfil" (HU20).
-  // La edad no se guarda: se calcula en el mapper a partir de
-  // fechaNacimiento para no tener un valor que se desactualiza con el
-  // tiempo.
-  fechaNacimiento DateTime?            @map("fecha_nacimiento")
-  genero          GeneroJugador?
-  discapacidad    DiscapacidadJugador?
+model Player {
+  id             String      @id @default(uuid())
+  userId         String      @unique @map("user_id")
+  universityCode String      @map("university_code")
+  program        String
+  semester       Int
+  // The next three are optional on purpose: they aren't part of
+  // registration (HU01), they get filled in later from "Edit profile"
+  // (HU20). Age isn't stored: it's computed in the mapper from birthDate so
+  // there's no value that goes stale over time.
+  birthDate      DateTime?   @map("birth_date")
+  gender         Gender?
+  disability     Disability?
 
-  usuario         Usuario         @relation(fields: [usuarioId], references: [id])
-  clasificaciones Clasificacion[]
-  partidasBlancas Partida[]       @relation("PartidaBlancas")
-  partidasNegras  Partida[]       @relation("PartidaNegras")
-  inscripciones   Inscripcion[]
+  user           User         @relation(fields: [userId], references: [id])
+  standings      Standing[]
+  matchesAsWhite Match[]      @relation("MatchWhite")
+  matchesAsBlack Match[]      @relation("MatchBlack")
+  enrollments    Enrollment[]
 
-  @@map("jugadores")
+  @@map("players")
 }
 
-model Torneo {
-  id            String       @id @default(uuid())
-  nombre        String
-  fechaInicio   DateTime     @map("fecha_inicio")
-  fechaFin      DateTime     @map("fecha_fin")
-  estado        EstadoTorneo @default(CREADO)
-  formato       String       @default("suizo")
-  // HU05: no están en el diagrama de clases original (docs/media/image7.png
-  // solo define id/nombre/fechas/estado/formato); se agregan porque el CA de
-  // HU05 exige persistir "rondas, ritmo y desempates" y CriterioDesempate ya
-  // cubre desempates pero no había dónde guardar el resto.
-  numeroRondas  Int?         @map("numero_rondas")
-  ritmo         String?
-  // Elegibilidad de inscripción, validada en HU07 (RN-01 ya cubre
-  // duplicados; esto cubre el criterio de programa/semestre). null = sin
-  // restricción en ese criterio. Deliberadamente NO se agrega rating/Elo:
-  // el documento del proyecto excluye el cálculo de rating federativo del
-  // alcance funcional.
-  programaRestringido String? @map("programa_restringido")
-  semestreMinimo      Int?    @map("semestre_minimo")
-  organizadorId String       @map("organizador_id")
-  createdAt     DateTime     @default(now()) @map("created_at")
+model Tournament {
+  id                String           @id @default(uuid())
+  name              String
+  startDate         DateTime         @map("start_date")
+  endDate           DateTime         @map("end_date")
+  status            TournamentStatus @default(CREATED)
+  format            String           @default("swiss")
+  // HU05: not in the original class diagram (docs/media/image7.png only
+  // defines id/name/dates/status/format); added because HU05's CA requires
+  // persisting "rounds, time control and tiebreaks", and TiebreakCriterion
+  // already covers tiebreaks but there was nowhere to store the rest.
+  roundsCount       Int?             @map("rounds_count")
+  timeControl       String?          @map("time_control")
+  // Registration eligibility, validated in HU07 (RN-01 already covers
+  // duplicates; this covers the program/semester criterion). null = no
+  // restriction on that criterion. Deliberately NOT adding rating/Elo: the
+  // project document excludes federated rating calculation from scope.
+  restrictedProgram String?          @map("restricted_program")
+  minimumSemester   Int?             @map("minimum_semester")
+  organizerId       String           @map("organizer_id")
+  createdAt         DateTime         @default(now()) @map("created_at")
 
-  organizador        Usuario             @relation("TorneoOrganizador", fields: [organizadorId], references: [id])
-  rondas             Ronda[]
-  criteriosDesempate CriterioDesempate[]
-  clasificaciones    Clasificacion[]
-  inscripciones      Inscripcion[]
+  organizer        User                @relation("TournamentOrganizer", fields: [organizerId], references: [id])
+  rounds           Round[]
+  tiebreakCriteria TiebreakCriterion[]
+  standings        Standing[]
+  enrollments      Enrollment[]
 
-  @@map("torneos")
+  @@map("tournaments")
 }
 
-model Ronda {
+model Round {
+  id           String      @id @default(uuid())
+  tournamentId String      @map("tournament_id")
+  number       Int
+  status       RoundStatus @default(GENERATED)
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  matches    Match[]
+
+  @@unique([tournamentId, number])
+  @@map("rounds")
+}
+
+// Names aligned with the sustentation document's data dictionary
+// ("Partida.id_blancas", "Partida.id_negras" -> whiteId/blackId) rather than
+// the class diagram's "colorBlancas/colorNegras", for being more explicit.
+// A bye is a match with blackId (or whiteId) null, with no "type" field of
+// its own (docs/media/image7.png doesn't distinguish a match type).
+model Match {
   id        String      @id @default(uuid())
-  torneoId  String      @map("torneo_id")
-  numero    Int
-  estado    EstadoRonda @default(GENERADA)
+  roundId   String      @map("round_id")
+  board     Int
+  whiteId   String?     @map("white_id")
+  blackId   String?     @map("black_id")
+  status    MatchStatus @default(SCHEDULED)
   createdAt DateTime    @default(now()) @map("created_at")
 
-  torneo   Torneo    @relation(fields: [torneoId], references: [id])
-  partidas Partida[]
+  round  Round   @relation(fields: [roundId], references: [id])
+  white  Player? @relation("MatchWhite", fields: [whiteId], references: [id])
+  black  Player? @relation("MatchBlack", fields: [blackId], references: [id])
+  result Result?
 
-  @@unique([torneoId, numero])
-  @@map("rondas")
+  @@map("matches")
 }
 
-// Nombres alineados con el diccionario de datos del documento de
-// sustentación ("Partida.id_blancas", "Partida.id_negras") en vez de
-// "colorBlancas/colorNegras" del diagrama de clases, por ser más explícitos.
-// Un bye es una partida con id_negras (o id_blancas) nulo, sin campo "tipo"
-// propio (docs/media/image7.png no distingue tipo de partida).
-model Partida {
-  id        String        @id @default(uuid())
-  rondaId   String        @map("ronda_id")
-  mesa      Int
-  idBlancas String?       @map("id_blancas")
-  idNegras  String?       @map("id_negras")
-  estado    EstadoPartida @default(PROGRAMADA)
-  createdAt DateTime      @default(now()) @map("created_at")
+// Result recorded per match (the "registra" 1:1 relationship in
+// docs/media/image1.png), not a shared catalog: every decided match has its
+// own row with the date it was recorded. The catalog of allowed values
+// (RN-03) is enforced with a CHECK, added by hand in the migration because
+// Prisma doesn't express CHECK constraints declaratively.
+model Result {
+  id         String   @id @default(uuid())
+  matchId    String   @unique @map("match_id")
+  value      String
+  recordedAt DateTime @default(now()) @map("recorded_at")
 
-  ronda     Ronda      @relation(fields: [rondaId], references: [id])
-  blancas   Jugador?   @relation("PartidaBlancas", fields: [idBlancas], references: [id])
-  negras    Jugador?   @relation("PartidaNegras", fields: [idNegras], references: [id])
-  resultado Resultado?
+  match Match @relation(fields: [matchId], references: [id])
 
-  @@map("partidas")
+  @@map("results")
 }
 
-// Registro de resultado por partida (relación 1:1 "registra" en
-// docs/media/image1.png), no un catálogo compartido: cada partida decidida
-// tiene su propia fila con la fecha en que se registró. El catálogo de
-// valores permitidos (RN-03) se aplica con un CHECK, agregado a mano en la
-// migración porque Prisma no expresa CHECK de forma declarativa.
-model Resultado {
-  id            String   @id @default(uuid())
-  partidaId     String   @unique @map("partida_id")
-  valor         String
-  fechaRegistro DateTime @default(now()) @map("fecha_registro")
+model TiebreakCriterion {
+  id           String @id @default(uuid())
+  tournamentId String @map("tournament_id")
+  name         String
+  order        Int
 
-  partida Partida @relation(fields: [partidaId], references: [id])
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
 
-  @@map("resultados")
+  @@unique([tournamentId, order])
+  @@map("tiebreak_criteria")
 }
 
-model CriterioDesempate {
-  id       String @id @default(uuid())
-  torneoId String @map("torneo_id")
-  nombre   String
-  orden    Int
-
-  torneo Torneo @relation(fields: [torneoId], references: [id])
-
-  @@unique([torneoId, orden])
-  @@map("criterios_desempate")
-}
-
-model Clasificacion {
+model Standing {
   id              String  @id @default(uuid())
-  torneoId        String  @map("torneo_id")
-  jugadorId       String  @map("jugador_id")
-  puntaje         Decimal @default(0) @db.Decimal(5, 2)
+  tournamentId    String  @map("tournament_id")
+  playerId        String  @map("player_id")
+  score           Decimal @default(0) @db.Decimal(5, 2)
   buchholz        Decimal @default(0) @db.Decimal(6, 2)
-  buchholzC1      Decimal @default(0) @map("buchholz_c1") @db.Decimal(6, 2)
+  buchholzCut1    Decimal @default(0) @map("buchholz_cut1") @db.Decimal(6, 2)
   sonnebornBerger Decimal @default(0) @map("sonneborn_berger") @db.Decimal(6, 2)
   aro             Decimal @default(0) @db.Decimal(6, 2)
 
-  torneo  Torneo  @relation(fields: [torneoId], references: [id])
-  jugador Jugador @relation(fields: [jugadorId], references: [id])
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  player     Player     @relation(fields: [playerId], references: [id])
 
-  @@unique([torneoId, jugadorId])
-  @@map("clasificacion")
+  @@unique([tournamentId, playerId])
+  @@map("standings")
 }
 
-// HU06/HU07: listado oficial de participantes de un torneo. No está en
-// docs/media/image7.png (el diagrama modela "participa" como el acceso de
-// Jugador a Clasificacion), pero se necesita antes de que exista
-// clasificación: es el punto donde se aplica RN-01 (un jugador no puede
-// inscribirse dos veces en el mismo torneo).
-model Inscripcion {
-  id        String   @id @default(uuid())
-  torneoId  String   @map("torneo_id")
-  jugadorId String   @map("jugador_id")
-  createdAt DateTime @default(now()) @map("created_at")
+// HU06/HU07: the official roster of a tournament's participants. Not in
+// docs/media/image7.png (the diagram models "participa" as Player's access
+// to Standing), but it's needed before a Standing exists: it's where RN-01
+// is enforced (a player can't enroll twice in the same tournament).
+model Enrollment {
+  id           String   @id @default(uuid())
+  tournamentId String   @map("tournament_id")
+  playerId     String   @map("player_id")
+  createdAt    DateTime @default(now()) @map("created_at")
 
-  torneo  Torneo  @relation(fields: [torneoId], references: [id])
-  jugador Jugador @relation(fields: [jugadorId], references: [id])
+  tournament Tournament @relation(fields: [tournamentId], references: [id])
+  player     Player     @relation(fields: [playerId], references: [id])
 
-  @@unique([torneoId, jugadorId])
-  @@map("inscripciones")
+  @@unique([tournamentId, playerId])
+  @@map("enrollments")
+}
+
+// HU19/RF11: the raw token is never persisted, only its hash — a database
+// dump alone isn't enough to reset an account. No email infrastructure
+// exists in this project's documented architecture yet, so the send is
+// simulated (see services/passwordReset.service.ts); the model is already
+// ready to plug in a real provider with no schema changes.
+model PasswordResetRequest {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("password_reset_requests")
+}
+
+// HU22/Colombian Law 1581 of 2012, art. 8: ARCO rights (Access,
+// Rectification, Cancellation/Suppression) exercised by the data subject
+// over their own data.
+enum DataRequestType {
+  ACCESS
+  RECTIFICATION
+  SUPPRESSION
+}
+
+// BLOCKED: suppression was requested but there's data indispensable to a
+// tournament in progress (CA HU22), so the account is blocked instead of deleted.
+enum DataRequestStatus {
+  RESOLVED
+  BLOCKED
+}
+
+model DataRequest {
+  id        String            @id @default(uuid())
+  userId    String            @map("user_id")
+  type      DataRequestType
+  status    DataRequestStatus
+  detail    String?
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("data_requests")
 }

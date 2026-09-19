@@ -2,15 +2,15 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// Catálogo de roles (RF03). Ver docs/media/image1.png / image7.png.
-const ROLES = ["ORGANIZADOR", "ARBITRO", "JUGADOR", "ENTRENADOR", "ADMINISTRADOR"];
+// Role catalog (RF03). See docs/media/image1.png / image7.png.
+const ROLES = ["ORGANIZER", "ARBITER", "PLAYER", "COACH", "ADMINISTRATOR"];
 
 async function main() {
-  for (const nombre of ROLES) {
-    await prisma.rol.upsert({
-      where: { nombre },
+  for (const name of ROLES) {
+    await prisma.role.upsert({
+      where: { name },
       update: {},
-      create: { nombre },
+      create: { name },
     });
   }
 }

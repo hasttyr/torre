@@ -7,4 +7,4 @@ export const playersRouter = Router();
 
 // Same roles that manage tournament registration in tournaments.routes.ts:
 // whoever can enroll players is who needs to search for them.
-playersRouter.get("/", requireAuth, requireRole("ORGANIZADOR", "ADMINISTRADOR"), search);
+playersRouter.get("/", requireAuth, requireRole("ORGANIZER", "ADMINISTRATOR"), search);

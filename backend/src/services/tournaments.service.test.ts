@@ -17,23 +17,23 @@ import {
 
 function buildPrismaMock() {
   const mock = {
-    torneo: {
+    tournament: {
       create: vi.fn(),
       findUnique: vi.fn(),
       findMany: vi.fn(),
       update: vi.fn(),
     },
-    ronda: {
+    round: {
       findFirst: vi.fn(),
     },
-    jugador: {
+    player: {
       findUnique: vi.fn(),
     },
-    inscripcion: {
+    enrollment: {
       create: vi.fn(),
       findMany: vi.fn(),
     },
-    criterioDesempate: {
+    tiebreakCriterion: {
       deleteMany: vi.fn(),
       createMany: vi.fn(),
     },
@@ -43,20 +43,20 @@ function buildPrismaMock() {
 }
 
 describe("createTournament", () => {
-  it("creates a tournament in preliminary state (CREADO) with valid data", async () => {
+  it("creates a tournament in preliminary state (CREATED) with valid data", async () => {
     const prisma = buildPrismaMock();
-    prisma.torneo.create.mockResolvedValue({
+    prisma.tournament.create.mockResolvedValue({
       id: "tournament-1",
-      nombre: "Copa Universitaria",
-      fechaInicio: new Date("2026-10-01"),
-      fechaFin: new Date("2026-10-03"),
-      estado: "CREADO",
-      formato: "suizo",
-      numeroRondas: null,
-      ritmo: null,
-      organizadorId: "org-1",
+      name: "Copa Universitaria",
+      startDate: new Date("2026-10-01"),
+      endDate: new Date("2026-10-03"),
+      status: "CREATED",
+      format: "swiss",
+      roundsCount: null,
+      timeControl: null,
+      organizerId: "org-1",
       createdAt: new Date("2026-09-17"),
-      criteriosDesempate: [],
+      tiebreakCriteria: [],
     });
 
     const tournament = await createTournament(prisma as unknown as PrismaClient, "org-1", {
@@ -65,65 +65,65 @@ describe("createTournament", () => {
       endDate: new Date("2026-10-03"),
     });
 
-    expect(tournament.status).toBe("CREADO");
-    expect(prisma.torneo.create.mock.calls[0][0].data.organizadorId).toBe("org-1");
+    expect(tournament.status).toBe("CREATED");
+    expect(prisma.tournament.create.mock.calls[0][0].data.organizerId).toBe("org-1");
   });
 });
 
 describe("listMyTournaments", () => {
   it("an organizer only sees the tournaments they own", async () => {
     const prisma = buildPrismaMock();
-    prisma.torneo.findMany.mockResolvedValue([]);
+    prisma.tournament.findMany.mockResolvedValue([]);
 
-    await listMyTournaments(prisma as unknown as PrismaClient, "org-1", "ORGANIZADOR");
+    await listMyTournaments(prisma as unknown as PrismaClient, "org-1", "ORGANIZER");
 
-    expect(prisma.torneo.findMany.mock.calls[0][0].where).toEqual({ organizadorId: "org-1" });
+    expect(prisma.tournament.findMany.mock.calls[0][0].where).toEqual({ organizerId: "org-1" });
   });
 
   it("an administrator sees all tournaments", async () => {
     const prisma = buildPrismaMock();
-    prisma.torneo.findMany.mockResolvedValue([]);
+    prisma.tournament.findMany.mockResolvedValue([]);
 
-    await listMyTournaments(prisma as unknown as PrismaClient, "admin-1", "ADMINISTRADOR");
+    await listMyTournaments(prisma as unknown as PrismaClient, "admin-1", "ADMINISTRATOR");
 
-    expect(prisma.torneo.findMany.mock.calls[0][0].where).toEqual({});
+    expect(prisma.tournament.findMany.mock.calls[0][0].where).toEqual({});
   });
 });
 
 describe("getTournament", () => {
   it("the owning organizer can see the detail", async () => {
     const prisma = buildPrismaMock();
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1", criteriosDesempate: [] });
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1", tiebreakCriteria: [] });
 
-    const tournament = await getTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR");
+    const tournament = await getTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZER");
 
     expect(tournament.id).toBe("tournament-1");
   });
 
   it("an administrator can see any tournament", async () => {
     const prisma = buildPrismaMock();
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1", criteriosDesempate: [] });
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1", tiebreakCriteria: [] });
 
     await expect(
-      getTournament(prisma as unknown as PrismaClient, "tournament-1", "admin-1", "ADMINISTRADOR"),
+      getTournament(prisma as unknown as PrismaClient, "tournament-1", "admin-1", "ADMINISTRATOR"),
     ).resolves.toMatchObject({ id: "tournament-1" });
   });
 
   it("rejects (403) a user who is neither the owner nor an administrator", async () => {
     const prisma = buildPrismaMock();
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1", criteriosDesempate: [] });
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1", tiebreakCriteria: [] });
 
     await expect(
-      getTournament(prisma as unknown as PrismaClient, "tournament-1", "jugador-1", "JUGADOR"),
+      getTournament(prisma as unknown as PrismaClient, "tournament-1", "player-1", "PLAYER"),
     ).rejects.toMatchObject({ status: 403 } satisfies Partial<HttpError>);
   });
 
   it("responds 404 when the tournament doesn't exist", async () => {
     const prisma = buildPrismaMock();
-    prisma.torneo.findUnique.mockResolvedValue(null);
+    prisma.tournament.findUnique.mockResolvedValue(null);
 
     await expect(
-      getTournament(prisma as unknown as PrismaClient, "tournament-inexistente", "org-1", "ORGANIZADOR"),
+      getTournament(prisma as unknown as PrismaClient, "tournament-inexistente", "org-1", "ORGANIZER"),
     ).rejects.toMatchObject({ status: 404 } satisfies Partial<HttpError>);
   });
 });
@@ -131,73 +131,73 @@ describe("getTournament", () => {
 describe("listEnrolledPlayers", () => {
   it("the owning organizer can see the roster", async () => {
     const prisma = buildPrismaMock();
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
-    prisma.inscripcion.findMany.mockResolvedValue([]);
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1" });
+    prisma.enrollment.findMany.mockResolvedValue([]);
 
     await expect(
-      listEnrolledPlayers(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR"),
+      listEnrolledPlayers(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZER"),
     ).resolves.toEqual([]);
   });
 
   it("rejects (403) a player unrelated to the tournament", async () => {
     const prisma = buildPrismaMock();
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1" });
 
     await expect(
-      listEnrolledPlayers(prisma as unknown as PrismaClient, "tournament-1", "jugador-1", "JUGADOR"),
+      listEnrolledPlayers(prisma as unknown as PrismaClient, "tournament-1", "player-1", "PLAYER"),
     ).rejects.toMatchObject({ status: 403 } satisfies Partial<HttpError>);
-    expect(prisma.inscripcion.findMany).not.toHaveBeenCalled();
+    expect(prisma.enrollment.findMany).not.toHaveBeenCalled();
   });
 });
 
 describe("listAvailableTournaments", () => {
   it("only returns tournaments with open registration", async () => {
     const prisma = buildPrismaMock();
-    prisma.torneo.findMany.mockResolvedValue([]);
+    prisma.tournament.findMany.mockResolvedValue([]);
 
     await listAvailableTournaments(prisma as unknown as PrismaClient);
 
-    expect(prisma.torneo.findMany.mock.calls[0][0].where).toEqual({ estado: "INSCRIPCIONES_ABIERTAS" });
+    expect(prisma.tournament.findMany.mock.calls[0][0].where).toEqual({ status: "REGISTRATION_OPEN" });
   });
 });
 
 describe("listEnrolledTournaments", () => {
   it("returns an empty list when the user has no player profile", async () => {
     const prisma = buildPrismaMock();
-    prisma.jugador.findUnique.mockResolvedValue(null);
+    prisma.player.findUnique.mockResolvedValue(null);
 
-    const tournaments = await listEnrolledTournaments(prisma as unknown as PrismaClient, "usuario-1");
+    const tournaments = await listEnrolledTournaments(prisma as unknown as PrismaClient, "user-1");
 
     expect(tournaments).toEqual([]);
-    expect(prisma.inscripcion.findMany).not.toHaveBeenCalled();
+    expect(prisma.enrollment.findMany).not.toHaveBeenCalled();
   });
 
   it("returns the tournaments where the player is enrolled", async () => {
     const prisma = buildPrismaMock();
-    prisma.jugador.findUnique.mockResolvedValue({ id: "jugador-1", usuarioId: "usuario-1" });
-    prisma.inscripcion.findMany.mockResolvedValue([
+    prisma.player.findUnique.mockResolvedValue({ id: "player-1", userId: "user-1" });
+    prisma.enrollment.findMany.mockResolvedValue([
       {
-        id: "insc-1",
+        id: "enrollment-1",
         createdAt: new Date("2026-09-17"),
-        torneo: {
+        tournament: {
           id: "tournament-1",
-          nombre: "Copa Universitaria",
-          fechaInicio: new Date("2026-10-01"),
-          fechaFin: new Date("2026-10-03"),
-          estado: "INSCRIPCIONES_ABIERTAS",
-          formato: "suizo",
-          numeroRondas: null,
-          ritmo: null,
-          organizadorId: "org-1",
+          name: "Copa Universitaria",
+          startDate: new Date("2026-10-01"),
+          endDate: new Date("2026-10-03"),
+          status: "REGISTRATION_OPEN",
+          format: "swiss",
+          roundsCount: null,
+          timeControl: null,
+          organizerId: "org-1",
           createdAt: new Date("2026-09-15"),
-          criteriosDesempate: [],
+          tiebreakCriteria: [],
         },
       },
     ]);
 
-    const tournaments = await listEnrolledTournaments(prisma as unknown as PrismaClient, "usuario-1");
+    const tournaments = await listEnrolledTournaments(prisma as unknown as PrismaClient, "user-1");
 
-    expect(prisma.inscripcion.findMany.mock.calls[0][0].where).toEqual({ jugadorId: "jugador-1" });
+    expect(prisma.enrollment.findMany.mock.calls[0][0].where).toEqual({ playerId: "player-1" });
     expect(tournaments).toEqual([
       expect.objectContaining({ id: "tournament-1", name: "Copa Universitaria" }),
     ]);
@@ -212,74 +212,74 @@ describe("configureTournament", () => {
   });
 
   it("rejects when the user is neither the owning organizer nor an administrator", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1" });
 
     await expect(
-      configureTournament(prisma as unknown as PrismaClient, "tournament-1", "otro-usuario", "ORGANIZADOR", {
+      configureTournament(prisma as unknown as PrismaClient, "tournament-1", "other-user", "ORGANIZER", {
         roundsCount: 5,
       }),
     ).rejects.toMatchObject({ status: 403 } satisfies Partial<HttpError>);
   });
 
   it("blocks changes to the tiebreak order once round 1 already exists", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
-    prisma.ronda.findFirst.mockResolvedValue({ id: "ronda-1", numero: 1 });
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1" });
+    prisma.round.findFirst.mockResolvedValue({ id: "round-1", number: 1 });
 
     await expect(
-      configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR", {
+      configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZER", {
         tiebreakCriteria: [{ name: "Buchholz", order: 1 }],
       }),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
 
-    expect(prisma.criterioDesempate.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.tiebreakCriterion.deleteMany).not.toHaveBeenCalled();
   });
 
   it("saves the configuration when round 1 doesn't exist yet", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
-    prisma.ronda.findFirst.mockResolvedValue(null);
-    prisma.torneo.update.mockResolvedValue({
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1" });
+    prisma.round.findFirst.mockResolvedValue(null);
+    prisma.tournament.update.mockResolvedValue({
       id: "tournament-1",
-      nombre: "Copa",
-      fechaInicio: new Date(),
-      fechaFin: new Date(),
-      estado: "CREADO",
-      formato: "suizo",
-      numeroRondas: 7,
-      ritmo: "90+30",
-      organizadorId: "org-1",
+      name: "Copa",
+      startDate: new Date(),
+      endDate: new Date(),
+      status: "CREATED",
+      format: "swiss",
+      roundsCount: 7,
+      timeControl: "90+30",
+      organizerId: "org-1",
       createdAt: new Date(),
-      criteriosDesempate: [{ id: "c1", torneoId: "tournament-1", nombre: "Buchholz", orden: 1 }],
+      tiebreakCriteria: [{ id: "c1", tournamentId: "tournament-1", name: "Buchholz", order: 1 }],
     });
 
-    const tournament = await configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR", {
+    const tournament = await configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZER", {
       roundsCount: 7,
       timeControl: "90+30",
       tiebreakCriteria: [{ name: "Buchholz", order: 1 }],
     });
 
-    expect(prisma.criterioDesempate.deleteMany).toHaveBeenCalledWith({ where: { torneoId: "tournament-1" } });
+    expect(prisma.tiebreakCriterion.deleteMany).toHaveBeenCalledWith({ where: { tournamentId: "tournament-1" } });
     expect(tournament.roundsCount).toBe(7);
     expect(tournament.tiebreakCriteria).toEqual([{ name: "Buchholz", order: 1 }]);
   });
 
   it("an administrator can configure a tournament even without being the owning organizer", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
-    prisma.torneo.update.mockResolvedValue({
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1" });
+    prisma.tournament.update.mockResolvedValue({
       id: "tournament-1",
-      nombre: "Copa",
-      fechaInicio: new Date(),
-      fechaFin: new Date(),
-      estado: "CREADO",
-      formato: "suizo",
-      numeroRondas: 3,
-      ritmo: null,
-      organizadorId: "org-1",
+      name: "Copa",
+      startDate: new Date(),
+      endDate: new Date(),
+      status: "CREATED",
+      format: "swiss",
+      roundsCount: 3,
+      timeControl: null,
+      organizerId: "org-1",
       createdAt: new Date(),
-      criteriosDesempate: [],
+      tiebreakCriteria: [],
     });
 
     await expect(
-      configureTournament(prisma as unknown as PrismaClient, "tournament-1", "admin-1", "ADMINISTRADOR", {
+      configureTournament(prisma as unknown as PrismaClient, "tournament-1", "admin-1", "ADMINISTRATOR", {
         roundsCount: 3,
       }),
     ).resolves.toMatchObject({ roundsCount: 3 });
@@ -293,69 +293,69 @@ describe("openRegistration / closeRegistration", () => {
     prisma = buildPrismaMock();
   });
 
-  it("opens registration from CREADO", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1", estado: "CREADO" });
-    prisma.torneo.update.mockResolvedValue({
+  it("opens registration from CREATED", async () => {
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1", status: "CREATED" });
+    prisma.tournament.update.mockResolvedValue({
       id: "tournament-1",
-      nombre: "Copa",
-      fechaInicio: new Date(),
-      fechaFin: new Date(),
-      estado: "INSCRIPCIONES_ABIERTAS",
-      formato: "suizo",
-      numeroRondas: null,
-      ritmo: null,
-      organizadorId: "org-1",
+      name: "Copa",
+      startDate: new Date(),
+      endDate: new Date(),
+      status: "REGISTRATION_OPEN",
+      format: "swiss",
+      roundsCount: null,
+      timeControl: null,
+      organizerId: "org-1",
       createdAt: new Date(),
-      criteriosDesempate: [],
+      tiebreakCriteria: [],
     });
 
-    const tournament = await openRegistration(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR");
+    const tournament = await openRegistration(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZER");
 
-    expect(tournament.status).toBe("INSCRIPCIONES_ABIERTAS");
+    expect(tournament.status).toBe("REGISTRATION_OPEN");
   });
 
-  it("rejects opening registration when the tournament is not in CREADO", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({
+  it("rejects opening registration when the tournament is not in CREATED", async () => {
+    prisma.tournament.findUnique.mockResolvedValue({
       id: "tournament-1",
-      organizadorId: "org-1",
-      estado: "INSCRIPCIONES_CERRADAS",
+      organizerId: "org-1",
+      status: "REGISTRATION_CLOSED",
     });
 
     await expect(
-      openRegistration(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR"),
+      openRegistration(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZER"),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
   });
 
-  it("closes registration from INSCRIPCIONES_ABIERTAS", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({
+  it("closes registration from REGISTRATION_OPEN", async () => {
+    prisma.tournament.findUnique.mockResolvedValue({
       id: "tournament-1",
-      organizadorId: "org-1",
-      estado: "INSCRIPCIONES_ABIERTAS",
+      organizerId: "org-1",
+      status: "REGISTRATION_OPEN",
     });
-    prisma.torneo.update.mockResolvedValue({
+    prisma.tournament.update.mockResolvedValue({
       id: "tournament-1",
-      nombre: "Copa",
-      fechaInicio: new Date(),
-      fechaFin: new Date(),
-      estado: "INSCRIPCIONES_CERRADAS",
-      formato: "suizo",
-      numeroRondas: null,
-      ritmo: null,
-      organizadorId: "org-1",
+      name: "Copa",
+      startDate: new Date(),
+      endDate: new Date(),
+      status: "REGISTRATION_CLOSED",
+      format: "swiss",
+      roundsCount: null,
+      timeControl: null,
+      organizerId: "org-1",
       createdAt: new Date(),
-      criteriosDesempate: [],
+      tiebreakCriteria: [],
     });
 
-    const tournament = await closeRegistration(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR");
+    const tournament = await closeRegistration(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZER");
 
-    expect(tournament.status).toBe("INSCRIPCIONES_CERRADAS");
+    expect(tournament.status).toBe("REGISTRATION_CLOSED");
   });
 
   it("rejects closing registration when it was never opened", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1", estado: "CREADO" });
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1", status: "CREATED" });
 
     await expect(
-      closeRegistration(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR"),
+      closeRegistration(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZER"),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
   });
 });
@@ -368,172 +368,172 @@ describe("enrollPlayer", () => {
   });
 
   it("enrolls a player when registration is open", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({
+    prisma.tournament.findUnique.mockResolvedValue({
       id: "tournament-1",
-      organizadorId: "org-1",
-      estado: "INSCRIPCIONES_ABIERTAS",
+      organizerId: "org-1",
+      status: "REGISTRATION_OPEN",
     });
-    prisma.jugador.findUnique.mockResolvedValue({
-      id: "jugador-1",
-      codigoUniversitario: "U1",
-      programa: "Sistemas",
-      semestre: 5,
-      usuario: { nombre: "Luis Gómez" },
+    prisma.player.findUnique.mockResolvedValue({
+      id: "player-1",
+      universityCode: "U1",
+      program: "Sistemas",
+      semester: 5,
+      user: { name: "Luis Gómez" },
     });
-    prisma.inscripcion.create.mockResolvedValue({ id: "insc-1", createdAt: new Date("2026-09-17") });
+    prisma.enrollment.create.mockResolvedValue({ id: "enrollment-1", createdAt: new Date("2026-09-17") });
 
     const result = await enrollPlayer(
       prisma as unknown as PrismaClient,
       "tournament-1",
-      "jugador-1",
+      "player-1",
       "org-1",
-      "ORGANIZADOR",
+      "ORGANIZER",
     );
 
-    expect(result).toMatchObject({ playerId: "jugador-1", name: "Luis Gómez" });
+    expect(result).toMatchObject({ playerId: "player-1", name: "Luis Gómez" });
   });
 
   it("rejects enrolling when the tournament doesn't have registration open", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({
+    prisma.tournament.findUnique.mockResolvedValue({
       id: "tournament-1",
-      organizadorId: "org-1",
-      estado: "INSCRIPCIONES_CERRADAS",
+      organizerId: "org-1",
+      status: "REGISTRATION_CLOSED",
     });
 
     await expect(
-      enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "jugador-1", "org-1", "ORGANIZADOR"),
+      enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "player-1", "org-1", "ORGANIZER"),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
 
-    expect(prisma.inscripcion.create).not.toHaveBeenCalled();
+    expect(prisma.enrollment.create).not.toHaveBeenCalled();
   });
 
   it("rejects (RN-01) a duplicate enrollment attempt in the same tournament", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({
+    prisma.tournament.findUnique.mockResolvedValue({
       id: "tournament-1",
-      organizadorId: "org-1",
-      estado: "INSCRIPCIONES_ABIERTAS",
+      organizerId: "org-1",
+      status: "REGISTRATION_OPEN",
     });
-    prisma.jugador.findUnique.mockResolvedValue({
-      id: "jugador-1",
-      codigoUniversitario: "U1",
-      programa: "Sistemas",
-      semestre: 5,
-      usuario: { nombre: "Luis Gómez" },
+    prisma.player.findUnique.mockResolvedValue({
+      id: "player-1",
+      universityCode: "U1",
+      program: "Sistemas",
+      semester: 5,
+      user: { name: "Luis Gómez" },
     });
-    prisma.inscripcion.create.mockRejectedValue({ code: "P2002" });
+    prisma.enrollment.create.mockRejectedValue({ code: "P2002" });
 
     await expect(
-      enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "jugador-1", "org-1", "ORGANIZADOR"),
+      enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "player-1", "org-1", "ORGANIZER"),
     ).rejects.toMatchObject({ status: 409, message: "El jugador ya está inscrito en este torneo" } satisfies Partial<HttpError>);
   });
 
   it("responds 404 when the player doesn't exist", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({
+    prisma.tournament.findUnique.mockResolvedValue({
       id: "tournament-1",
-      organizadorId: "org-1",
-      estado: "INSCRIPCIONES_ABIERTAS",
+      organizerId: "org-1",
+      status: "REGISTRATION_OPEN",
     });
-    prisma.jugador.findUnique.mockResolvedValue(null);
+    prisma.player.findUnique.mockResolvedValue(null);
 
     await expect(
-      enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "jugador-inexistente", "org-1", "ORGANIZADOR"),
+      enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "nonexistent-player", "org-1", "ORGANIZER"),
     ).rejects.toMatchObject({ status: 404 } satisfies Partial<HttpError>);
   });
 
   it("rejects (409) a player from another program when the tournament has restrictedProgram", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({
+    prisma.tournament.findUnique.mockResolvedValue({
       id: "tournament-1",
-      organizadorId: "org-1",
-      estado: "INSCRIPCIONES_ABIERTAS",
-      programaRestringido: "Ingeniería de Sistemas",
-      semestreMinimo: null,
+      organizerId: "org-1",
+      status: "REGISTRATION_OPEN",
+      restrictedProgram: "Ingeniería de Sistemas",
+      minimumSemester: null,
     });
-    prisma.jugador.findUnique.mockResolvedValue({
-      id: "jugador-1",
-      codigoUniversitario: "U1",
-      programa: "Ingeniería Industrial",
-      semestre: 5,
-      usuario: { nombre: "Luis Gómez" },
+    prisma.player.findUnique.mockResolvedValue({
+      id: "player-1",
+      universityCode: "U1",
+      program: "Ingeniería Industrial",
+      semester: 5,
+      user: { name: "Luis Gómez" },
     });
 
     await expect(
-      enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "jugador-1", "org-1", "ORGANIZADOR"),
+      enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "player-1", "org-1", "ORGANIZER"),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
-    expect(prisma.inscripcion.create).not.toHaveBeenCalled();
+    expect(prisma.enrollment.create).not.toHaveBeenCalled();
   });
 
   it("rejects (409) a player below the configured minimumSemester", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({
+    prisma.tournament.findUnique.mockResolvedValue({
       id: "tournament-1",
-      organizadorId: "org-1",
-      estado: "INSCRIPCIONES_ABIERTAS",
-      programaRestringido: null,
-      semestreMinimo: 5,
+      organizerId: "org-1",
+      status: "REGISTRATION_OPEN",
+      restrictedProgram: null,
+      minimumSemester: 5,
     });
-    prisma.jugador.findUnique.mockResolvedValue({
-      id: "jugador-1",
-      codigoUniversitario: "U1",
-      programa: "Sistemas",
-      semestre: 3,
-      usuario: { nombre: "Luis Gómez" },
+    prisma.player.findUnique.mockResolvedValue({
+      id: "player-1",
+      universityCode: "U1",
+      program: "Sistemas",
+      semester: 3,
+      user: { name: "Luis Gómez" },
     });
 
     await expect(
-      enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "jugador-1", "org-1", "ORGANIZADOR"),
+      enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "player-1", "org-1", "ORGANIZER"),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
   });
 
   it("allows enrolling when the player meets the required program and minimum semester", async () => {
-    prisma.torneo.findUnique.mockResolvedValue({
+    prisma.tournament.findUnique.mockResolvedValue({
       id: "tournament-1",
-      organizadorId: "org-1",
-      estado: "INSCRIPCIONES_ABIERTAS",
-      programaRestringido: "Sistemas",
-      semestreMinimo: 5,
+      organizerId: "org-1",
+      status: "REGISTRATION_OPEN",
+      restrictedProgram: "Sistemas",
+      minimumSemester: 5,
     });
-    prisma.jugador.findUnique.mockResolvedValue({
-      id: "jugador-1",
-      codigoUniversitario: "U1",
-      programa: "Sistemas",
-      semestre: 5,
-      usuario: { nombre: "Luis Gómez" },
+    prisma.player.findUnique.mockResolvedValue({
+      id: "player-1",
+      universityCode: "U1",
+      program: "Sistemas",
+      semester: 5,
+      user: { name: "Luis Gómez" },
     });
-    prisma.inscripcion.create.mockResolvedValue({ id: "insc-1", createdAt: new Date("2026-09-19") });
+    prisma.enrollment.create.mockResolvedValue({ id: "enrollment-1", createdAt: new Date("2026-09-19") });
 
     await expect(
-      enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "jugador-1", "org-1", "ORGANIZADOR"),
-    ).resolves.toMatchObject({ playerId: "jugador-1" });
+      enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "player-1", "org-1", "ORGANIZER"),
+    ).resolves.toMatchObject({ playerId: "player-1" });
   });
 });
 
 describe("configureTournament — eligibility restrictions", () => {
-  it("persists programaRestringido and semestreMinimo", async () => {
+  it("persists restrictedProgram and minimumSemester", async () => {
     const prisma = buildPrismaMock();
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
-    prisma.torneo.update.mockResolvedValue({
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1" });
+    prisma.tournament.update.mockResolvedValue({
       id: "tournament-1",
-      nombre: "Copa",
-      fechaInicio: new Date(),
-      fechaFin: new Date(),
-      estado: "CREADO",
-      formato: "suizo",
-      numeroRondas: null,
-      ritmo: null,
-      programaRestringido: "Sistemas",
-      semestreMinimo: 5,
-      organizadorId: "org-1",
+      name: "Copa",
+      startDate: new Date(),
+      endDate: new Date(),
+      status: "CREATED",
+      format: "swiss",
+      roundsCount: null,
+      timeControl: null,
+      restrictedProgram: "Sistemas",
+      minimumSemester: 5,
+      organizerId: "org-1",
       createdAt: new Date(),
-      criteriosDesempate: [],
+      tiebreakCriteria: [],
     });
 
-    const tournament = await configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR", {
+    const tournament = await configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZER", {
       restrictedProgram: "Sistemas",
       minimumSemester: 5,
     });
 
-    expect(prisma.torneo.update.mock.calls[0][0].data).toMatchObject({
-      programaRestringido: "Sistemas",
-      semestreMinimo: 5,
+    expect(prisma.tournament.update.mock.calls[0][0].data).toMatchObject({
+      restrictedProgram: "Sistemas",
+      minimumSemester: 5,
     });
     expect(tournament.restrictedProgram).toBe("Sistemas");
     expect(tournament.minimumSemester).toBe(5);
@@ -541,27 +541,27 @@ describe("configureTournament — eligibility restrictions", () => {
 
   it("allows clearing a restriction by sending an explicit null", async () => {
     const prisma = buildPrismaMock();
-    prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
-    prisma.torneo.update.mockResolvedValue({
+    prisma.tournament.findUnique.mockResolvedValue({ id: "tournament-1", organizerId: "org-1" });
+    prisma.tournament.update.mockResolvedValue({
       id: "tournament-1",
-      nombre: "Copa",
-      fechaInicio: new Date(),
-      fechaFin: new Date(),
-      estado: "CREADO",
-      formato: "suizo",
-      numeroRondas: null,
-      ritmo: null,
-      programaRestringido: null,
-      semestreMinimo: null,
-      organizadorId: "org-1",
+      name: "Copa",
+      startDate: new Date(),
+      endDate: new Date(),
+      status: "CREATED",
+      format: "swiss",
+      roundsCount: null,
+      timeControl: null,
+      restrictedProgram: null,
+      minimumSemester: null,
+      organizerId: "org-1",
       createdAt: new Date(),
-      criteriosDesempate: [],
+      tiebreakCriteria: [],
     });
 
-    await configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR", {
+    await configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZER", {
       restrictedProgram: null,
     });
 
-    expect(prisma.torneo.update.mock.calls[0][0].data).toMatchObject({ programaRestringido: null });
+    expect(prisma.tournament.update.mock.calls[0][0].data).toMatchObject({ restrictedProgram: null });
   });
 });

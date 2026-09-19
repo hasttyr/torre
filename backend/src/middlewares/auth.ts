@@ -24,24 +24,24 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
 
   try {
     const payload = jwt.verify(token, env.jwtSecret) as jwt.JwtPayload;
-    if (typeof payload.sub !== "string" || typeof payload.rol !== "string") {
+    if (typeof payload.sub !== "string" || typeof payload.role !== "string") {
       throw new Error("unexpected token payload shape");
     }
-    req.user = { id: payload.sub, rol: payload.rol } satisfies AuthUser;
+    req.user = { id: payload.sub, role: payload.role } satisfies AuthUser;
     next();
   } catch {
     next(new HttpError(401, "Token inválido o expirado"));
   }
 }
 
-/** Express middleware factory: rejects the request unless `req.user.rol` is one of the given roles. */
+/** Express middleware factory: rejects the request unless `req.user.role` is one of the given roles. */
 export function requireRole(...roles: string[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user) {
       next(new HttpError(401, "No autenticado"));
       return;
     }
-    if (!roles.includes(req.user.rol)) {
+    if (!roles.includes(req.user.role)) {
       next(new HttpError(403, "No tenés permiso para esta acción"));
       return;
     }

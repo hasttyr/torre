@@ -7,7 +7,7 @@ import { getUserById, updateOwnProfile } from "./users.service";
 
 function buildPrismaMock() {
   return {
-    usuario: {
+    user: {
       findUnique: vi.fn(),
       update: vi.fn(),
     },
@@ -17,24 +17,24 @@ function buildPrismaMock() {
 describe("getUserById", () => {
   it("includes the player profile when it exists", async () => {
     const prisma = buildPrismaMock();
-    prisma.usuario.findUnique.mockResolvedValue({
-      id: "usuario-1",
-      nombre: "Luis Gómez",
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      name: "Luis Gómez",
       email: "luis@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       createdAt: new Date("2026-01-01"),
-      rol: { nombre: "JUGADOR" },
-      jugador: {
-        codigoUniversitario: "U1",
-        programa: "Sistemas",
-        semestre: 5,
-        fechaNacimiento: null,
-        genero: null,
-        discapacidad: null,
+      role: { name: "PLAYER" },
+      player: {
+        universityCode: "U1",
+        program: "Sistemas",
+        semester: 5,
+        birthDate: null,
+        gender: null,
+        disability: null,
       },
     });
 
-    const user = await getUserById(prisma as unknown as PrismaClient, "usuario-1");
+    const user = await getUserById(prisma as unknown as PrismaClient, "user-1");
 
     expect(user.player).toEqual({
       universityCode: "U1",
@@ -47,45 +47,45 @@ describe("getUserById", () => {
     });
   });
 
-  it("calculates age from fechaNacimiento", async () => {
+  it("calculates age from birthDate", async () => {
     const prisma = buildPrismaMock();
-    prisma.usuario.findUnique.mockResolvedValue({
-      id: "usuario-1",
-      nombre: "Luis Gómez",
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      name: "Luis Gómez",
       email: "luis@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       createdAt: new Date("2026-01-01"),
-      rol: { nombre: "JUGADOR" },
-      jugador: {
-        codigoUniversitario: "U1",
-        programa: "Sistemas",
-        semestre: 5,
-        fechaNacimiento: new Date("2005-06-15"),
-        genero: "MASCULINO",
-        discapacidad: "NINGUNA",
+      role: { name: "PLAYER" },
+      player: {
+        universityCode: "U1",
+        program: "Sistemas",
+        semester: 5,
+        birthDate: new Date("2005-06-15"),
+        gender: "MALE",
+        disability: "NONE",
       },
     });
 
-    const user = await getUserById(prisma as unknown as PrismaClient, "usuario-1");
+    const user = await getUserById(prisma as unknown as PrismaClient, "user-1");
 
     expect(user.player?.age).toBe(calculateAge(new Date("2005-06-15")));
-    expect(user.player?.gender).toBe("MASCULINO");
-    expect(user.player?.disability).toBe("NINGUNA");
+    expect(user.player?.gender).toBe("MALE");
+    expect(user.player?.disability).toBe("NONE");
   });
 
-  it("does not include jugador when the user doesn't have that profile", async () => {
+  it("does not include player when the user doesn't have that profile", async () => {
     const prisma = buildPrismaMock();
-    prisma.usuario.findUnique.mockResolvedValue({
-      id: "usuario-1",
-      nombre: "Ana Torres",
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      name: "Ana Torres",
       email: "ana@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       createdAt: new Date("2026-01-01"),
-      rol: { nombre: "ORGANIZADOR" },
-      jugador: null,
+      role: { name: "ORGANIZER" },
+      player: null,
     });
 
-    const user = await getUserById(prisma as unknown as PrismaClient, "usuario-1");
+    const user = await getUserById(prisma as unknown as PrismaClient, "user-1");
 
     expect(user.player).toBeUndefined();
   });
@@ -99,115 +99,115 @@ describe("updateOwnProfile", () => {
   });
 
   it("updates the name without touching the player profile when those fields aren't sent", async () => {
-    prisma.usuario.findUnique.mockResolvedValue({ id: "usuario-1", jugador: null });
-    prisma.usuario.update.mockResolvedValue({
-      id: "usuario-1",
-      nombre: "Ana T.",
+    prisma.user.findUnique.mockResolvedValue({ id: "user-1", player: null });
+    prisma.user.update.mockResolvedValue({
+      id: "user-1",
+      name: "Ana T.",
       email: "ana@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       createdAt: new Date("2026-01-01"),
-      rol: { nombre: "ORGANIZADOR" },
-      jugador: null,
+      role: { name: "ORGANIZER" },
+      player: null,
     });
 
-    await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { name: "Ana T." });
+    await updateOwnProfile(prisma as unknown as PrismaClient, "user-1", { name: "Ana T." });
 
-    expect(prisma.usuario.update.mock.calls[0][0].data).toEqual({ nombre: "Ana T." });
+    expect(prisma.user.update.mock.calls[0][0].data).toEqual({ name: "Ana T." });
   });
 
   it("updates player fields when the user has that profile", async () => {
-    prisma.usuario.findUnique.mockResolvedValue({
-      id: "usuario-1",
-      jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      player: { universityCode: "U1", program: "Sistemas", semester: 5 },
     });
-    prisma.usuario.update.mockResolvedValue({
-      id: "usuario-1",
-      nombre: "Luis Gómez",
+    prisma.user.update.mockResolvedValue({
+      id: "user-1",
+      name: "Luis Gómez",
       email: "luis@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       createdAt: new Date("2026-01-01"),
-      rol: { nombre: "JUGADOR" },
-      jugador: { codigoUniversitario: "U1", programa: "Ingeniería", semestre: 6 },
+      role: { name: "PLAYER" },
+      player: { universityCode: "U1", program: "Ingeniería", semester: 6 },
     });
 
-    await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { program: "Ingeniería", semester: 6 });
+    await updateOwnProfile(prisma as unknown as PrismaClient, "user-1", { program: "Ingeniería", semester: 6 });
 
-    expect(prisma.usuario.update.mock.calls[0][0].data.jugador.update).toEqual({
-      programa: "Ingeniería",
-      semestre: 6,
+    expect(prisma.user.update.mock.calls[0][0].data.player.update).toEqual({
+      program: "Ingeniería",
+      semester: 6,
     });
   });
 
   it("rejects (400) updating player fields when the user doesn't have that profile", async () => {
-    prisma.usuario.findUnique.mockResolvedValue({ id: "usuario-1", jugador: null });
+    prisma.user.findUnique.mockResolvedValue({ id: "user-1", player: null });
 
     await expect(
-      updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { program: "Ingeniería" }),
+      updateOwnProfile(prisma as unknown as PrismaClient, "user-1", { program: "Ingeniería" }),
     ).rejects.toMatchObject({ status: 400 } satisfies Partial<HttpError>);
-    expect(prisma.usuario.update).not.toHaveBeenCalled();
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 
   it("responds 404 when the user doesn't exist", async () => {
-    prisma.usuario.findUnique.mockResolvedValue(null);
+    prisma.user.findUnique.mockResolvedValue(null);
 
     await expect(
       updateOwnProfile(prisma as unknown as PrismaClient, "no-existe", { name: "X" }),
     ).rejects.toMatchObject({ status: 404 } satisfies Partial<HttpError>);
   });
 
-  it("updates fechaNacimiento, genero and discapacidad", async () => {
-    prisma.usuario.findUnique.mockResolvedValue({
-      id: "usuario-1",
-      jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
+  it("updates birthDate, gender and disability", async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      player: { universityCode: "U1", program: "Sistemas", semester: 5 },
     });
-    prisma.usuario.update.mockResolvedValue({
-      id: "usuario-1",
-      nombre: "Luis Gómez",
+    prisma.user.update.mockResolvedValue({
+      id: "user-1",
+      name: "Luis Gómez",
       email: "luis@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       createdAt: new Date("2026-01-01"),
-      rol: { nombre: "JUGADOR" },
-      jugador: {
-        codigoUniversitario: "U1",
-        programa: "Sistemas",
-        semestre: 5,
-        fechaNacimiento: new Date("2005-06-15"),
-        genero: "MASCULINO",
-        discapacidad: "NINGUNA",
+      role: { name: "PLAYER" },
+      player: {
+        universityCode: "U1",
+        program: "Sistemas",
+        semester: 5,
+        birthDate: new Date("2005-06-15"),
+        gender: "MALE",
+        disability: "NONE",
       },
     });
 
-    await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", {
+    await updateOwnProfile(prisma as unknown as PrismaClient, "user-1", {
       birthDate: new Date("2005-06-15"),
-      gender: "MASCULINO",
-      disability: "NINGUNA",
+      gender: "MALE",
+      disability: "NONE",
     });
 
-    expect(prisma.usuario.update.mock.calls[0][0].data.jugador.update).toEqual({
-      fechaNacimiento: new Date("2005-06-15"),
-      genero: "MASCULINO",
-      discapacidad: "NINGUNA",
+    expect(prisma.user.update.mock.calls[0][0].data.player.update).toEqual({
+      birthDate: new Date("2005-06-15"),
+      gender: "MALE",
+      disability: "NONE",
     });
   });
 
-  it("allows clearing genero/discapacidad by sending an explicit null", async () => {
-    prisma.usuario.findUnique.mockResolvedValue({
-      id: "usuario-1",
-      jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
+  it("allows clearing gender/disability by sending an explicit null", async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      player: { universityCode: "U1", program: "Sistemas", semester: 5 },
     });
-    prisma.usuario.update.mockResolvedValue({
-      id: "usuario-1",
-      nombre: "Luis Gómez",
+    prisma.user.update.mockResolvedValue({
+      id: "user-1",
+      name: "Luis Gómez",
       email: "luis@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       createdAt: new Date("2026-01-01"),
-      rol: { nombre: "JUGADOR" },
-      jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5, fechaNacimiento: null, genero: null, discapacidad: null },
+      role: { name: "PLAYER" },
+      player: { universityCode: "U1", program: "Sistemas", semester: 5, birthDate: null, gender: null, disability: null },
     });
 
-    await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { gender: null, disability: null });
+    await updateOwnProfile(prisma as unknown as PrismaClient, "user-1", { gender: null, disability: null });
 
-    expect(prisma.usuario.update.mock.calls[0][0].data.jugador.update).toEqual({ genero: null, discapacidad: null });
+    expect(prisma.user.update.mock.calls[0][0].data.player.update).toEqual({ gender: null, disability: null });
   });
 });
 

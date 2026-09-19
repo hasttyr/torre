@@ -17,7 +17,7 @@ import { configureTournamentSchema, createTournamentSchema, enrollPlayerSchema }
 
 /** GET /tournaments/mine — tournaments the current user organizes. */
 export const listMine = asyncHandler(async (req, res) => {
-  const tournaments = await listMyTournaments(prisma, req.user!.id, req.user!.rol);
+  const tournaments = await listMyTournaments(prisma, req.user!.id, req.user!.role);
   res.status(200).json(tournaments);
 });
 
@@ -46,7 +46,7 @@ export const create = asyncHandler(async (req, res) => {
 
 /** GET /tournaments/:id — a single tournament's detail. */
 export const get = asyncHandler(async (req, res) => {
-  const tournament = await getTournament(prisma, String(req.params.id), req.user!.id, req.user!.rol);
+  const tournament = await getTournament(prisma, String(req.params.id), req.user!.id, req.user!.role);
   res.status(200).json(tournament);
 });
 
@@ -57,19 +57,19 @@ export const configure = asyncHandler(async (req, res) => {
     throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join("; "));
   }
 
-  const tournament = await configureTournament(prisma, String(req.params.id), req.user!.id, req.user!.rol, parsed.data);
+  const tournament = await configureTournament(prisma, String(req.params.id), req.user!.id, req.user!.role, parsed.data);
   res.status(200).json(tournament);
 });
 
 /** POST /tournaments/:id/registration/open — opens registration (HU06). */
 export const open = asyncHandler(async (req, res) => {
-  const tournament = await openRegistration(prisma, String(req.params.id), req.user!.id, req.user!.rol);
+  const tournament = await openRegistration(prisma, String(req.params.id), req.user!.id, req.user!.role);
   res.status(200).json(tournament);
 });
 
 /** POST /tournaments/:id/registration/close — closes registration (HU06). */
 export const close = asyncHandler(async (req, res) => {
-  const tournament = await closeRegistration(prisma, String(req.params.id), req.user!.id, req.user!.rol);
+  const tournament = await closeRegistration(prisma, String(req.params.id), req.user!.id, req.user!.role);
   res.status(200).json(tournament);
 });
 
@@ -80,12 +80,12 @@ export const enroll = asyncHandler(async (req, res) => {
     throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join("; "));
   }
 
-  const player = await enrollPlayer(prisma, String(req.params.id), parsed.data.playerId, req.user!.id, req.user!.rol);
+  const player = await enrollPlayer(prisma, String(req.params.id), parsed.data.playerId, req.user!.id, req.user!.role);
   res.status(201).json(player);
 });
 
 /** GET /tournaments/:id/players — lists the players enrolled in the tournament. */
 export const listPlayers = asyncHandler(async (req, res) => {
-  const players = await listEnrolledPlayers(prisma, String(req.params.id), req.user!.id, req.user!.rol);
+  const players = await listEnrolledPlayers(prisma, String(req.params.id), req.user!.id, req.user!.role);
   res.status(200).json(players);
 });

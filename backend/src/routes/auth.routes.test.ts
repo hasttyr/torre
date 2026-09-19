@@ -10,9 +10,9 @@ import { createApp } from "../app";
 // vi.hoisted para no referenciar una variable que todavía no existe.
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
-    rol: { findUnique: vi.fn() },
-    usuario: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
-    solicitudRecuperacion: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+    role: { findUnique: vi.fn() },
+    user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+    passwordResetRequest: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
     $transaction: vi.fn(),
   },
 }));
@@ -27,27 +27,27 @@ describe("POST /api/auth/register", () => {
   });
 
   it("registers a valid organizer and returns 201 without exposing the hash", async () => {
-    prismaMock.rol.findUnique.mockResolvedValue({ id: "rol-1", nombre: "ORGANIZADOR" });
-    prismaMock.usuario.findUnique.mockResolvedValue(null);
-    prismaMock.usuario.create.mockResolvedValue({
-      id: "usuario-1",
-      nombre: "Ana Torres",
+    prismaMock.role.findUnique.mockResolvedValue({ id: "role-1", name: "ORGANIZER" });
+    prismaMock.user.findUnique.mockResolvedValue(null);
+    prismaMock.user.create.mockResolvedValue({
+      id: "user-1",
+      name: "Ana Torres",
       email: "ana@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       createdAt: new Date("2026-01-01T00:00:00Z"),
-      rol: { id: "rol-1", nombre: "ORGANIZADOR" },
+      role: { id: "role-1", name: "ORGANIZER" },
     });
 
     const response = await request(createApp()).post("/api/auth/register").send({
       name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
-      role: "ORGANIZADOR",
+      role: "ORGANIZER",
       acceptDataPolicy: true,
     });
 
     expect(response.status).toBe(201);
-    expect(response.body).toMatchObject({ id: "usuario-1", email: "ana@example.com", role: "ORGANIZADOR" });
+    expect(response.body).toMatchObject({ id: "user-1", email: "ana@example.com", role: "ORGANIZER" });
     expect(response.body.passwordHash).toBeUndefined();
   });
 
@@ -56,19 +56,19 @@ describe("POST /api/auth/register", () => {
       name: "Ana Torres",
       email: "no-es-un-correo",
       password: "password123",
-      role: "ORGANIZADOR",
+      role: "ORGANIZER",
     });
 
     expect(response.status).toBe(400);
-    expect(prismaMock.usuario.create).not.toHaveBeenCalled();
+    expect(prismaMock.user.create).not.toHaveBeenCalled();
   });
 
-  it("responds 400 when the player profile required for role JUGADOR is missing", async () => {
+  it("responds 400 when the player profile required for role PLAYER is missing", async () => {
     const response = await request(createApp()).post("/api/auth/register").send({
       name: "Luis Gómez",
       email: "luis@example.com",
       password: "password123",
-      role: "JUGADOR",
+      role: "PLAYER",
     });
 
     expect(response.status).toBe(400);
@@ -79,35 +79,35 @@ describe("POST /api/auth/register", () => {
       name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
-      role: "ORGANIZADOR",
+      role: "ORGANIZER",
       acceptDataPolicy: false,
     });
 
     expect(response.status).toBe(400);
-    expect(prismaMock.usuario.create).not.toHaveBeenCalled();
+    expect(prismaMock.user.create).not.toHaveBeenCalled();
   });
 
-  it("responds 400 when the role is ADMINISTRADOR (not self-assignable)", async () => {
+  it("responds 400 when the role is ADMINISTRATOR (not self-assignable)", async () => {
     const response = await request(createApp()).post("/api/auth/register").send({
       name: "Quiero Ser Admin",
       email: "admin@example.com",
       password: "password123",
-      role: "ADMINISTRADOR",
+      role: "ADMINISTRATOR",
     });
 
     expect(response.status).toBe(400);
-    expect(prismaMock.usuario.create).not.toHaveBeenCalled();
+    expect(prismaMock.user.create).not.toHaveBeenCalled();
   });
 
   it("responds 409 when the email is already registered", async () => {
-    prismaMock.rol.findUnique.mockResolvedValue({ id: "rol-1", nombre: "JUGADOR" });
-    prismaMock.usuario.findUnique.mockResolvedValue({ id: "usuario-existente" });
+    prismaMock.role.findUnique.mockResolvedValue({ id: "role-1", name: "PLAYER" });
+    prismaMock.user.findUnique.mockResolvedValue({ id: "existing-user" });
 
     const response = await request(createApp()).post("/api/auth/register").send({
       name: "Luis Gómez",
       email: "luis@example.com",
       password: "password123",
-      role: "JUGADOR",
+      role: "PLAYER",
       universityCode: "U123",
       program: "Ingeniería",
       semester: 3,
@@ -119,7 +119,7 @@ describe("POST /api/auth/register", () => {
 
   it("does not expose internal details when something uncontrolled fails (e.g. the database)", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    prismaMock.rol.findUnique.mockRejectedValue(
+    prismaMock.role.findUnique.mockRejectedValue(
       new Error("Can't reach database server at `localhost:5432` (ruta interna: /home/app/src/x.ts)"),
     );
 
@@ -127,7 +127,7 @@ describe("POST /api/auth/register", () => {
       name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
-      role: "ORGANIZADOR",
+      role: "ORGANIZER",
       acceptDataPolicy: true,
     });
 
@@ -145,14 +145,14 @@ describe("POST /api/auth/login", () => {
 
   it("authenticates with valid credentials and returns token + user", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
-    prismaMock.usuario.findUnique.mockResolvedValue({
-      id: "usuario-1",
-      nombre: "Ana Torres",
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      name: "Ana Torres",
       email: "ana@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       passwordHash,
       createdAt: new Date("2026-01-01T00:00:00Z"),
-      rol: { id: "rol-1", nombre: "ORGANIZADOR" },
+      role: { id: "role-1", name: "ORGANIZER" },
     });
 
     const response = await request(createApp())
@@ -160,19 +160,19 @@ describe("POST /api/auth/login", () => {
       .send({ email: "ana@example.com", password: "password123" });
 
     expect(response.status).toBe(200);
-    expect(response.body.user).toMatchObject({ id: "usuario-1", email: "ana@example.com", role: "ORGANIZADOR" });
+    expect(response.body.user).toMatchObject({ id: "user-1", email: "ana@example.com", role: "ORGANIZER" });
     expect(typeof response.body.token).toBe("string");
     expect(response.body.user.passwordHash).toBeUndefined();
   });
 
   it("responds 401 with an incorrect password", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
-    prismaMock.usuario.findUnique.mockResolvedValue({
-      id: "usuario-1",
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "user-1",
       email: "ana@example.com",
-      estado: "ACTIVO",
+      status: "ACTIVE",
       passwordHash,
-      rol: { id: "rol-1", nombre: "ORGANIZADOR" },
+      role: { id: "role-1", name: "ORGANIZER" },
     });
 
     const response = await request(createApp())
@@ -183,7 +183,7 @@ describe("POST /api/auth/login", () => {
   });
 
   it("responds 401 with an email that doesn't exist", async () => {
-    prismaMock.usuario.findUnique.mockResolvedValue(null);
+    prismaMock.user.findUnique.mockResolvedValue(null);
 
     const response = await request(createApp())
       .post("/api/auth/login")
@@ -196,7 +196,7 @@ describe("POST /api/auth/login", () => {
     const response = await request(createApp()).post("/api/auth/login").send({ email: "ana@example.com" });
 
     expect(response.status).toBe(400);
-    expect(prismaMock.usuario.findUnique).not.toHaveBeenCalled();
+    expect(prismaMock.user.findUnique).not.toHaveBeenCalled();
   });
 });
 
@@ -206,8 +206,8 @@ describe("POST /api/auth/password/forgot", () => {
   });
 
   it("responds 200 with a generic message for a registered email", async () => {
-    prismaMock.usuario.findUnique.mockResolvedValue({ id: "usuario-1", estado: "ACTIVO" });
-    prismaMock.solicitudRecuperacion.create.mockResolvedValue({ id: "solicitud-1" });
+    prismaMock.user.findUnique.mockResolvedValue({ id: "user-1", status: "ACTIVE" });
+    prismaMock.passwordResetRequest.create.mockResolvedValue({ id: "request-1" });
     const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
     const response = await request(createApp())
@@ -215,20 +215,20 @@ describe("POST /api/auth/password/forgot", () => {
       .send({ email: "ana@example.com" });
 
     expect(response.status).toBe(200);
-    expect(prismaMock.solicitudRecuperacion.create).toHaveBeenCalledTimes(1);
+    expect(prismaMock.passwordResetRequest.create).toHaveBeenCalledTimes(1);
 
     consoleLogSpy.mockRestore();
   });
 
   it("responds 200 with the same generic message for an unregistered email (doesn't reveal existence)", async () => {
-    prismaMock.usuario.findUnique.mockResolvedValue(null);
+    prismaMock.user.findUnique.mockResolvedValue(null);
 
     const response = await request(createApp())
       .post("/api/auth/password/forgot")
       .send({ email: "no-existe@example.com" });
 
     expect(response.status).toBe(200);
-    expect(prismaMock.solicitudRecuperacion.create).not.toHaveBeenCalled();
+    expect(prismaMock.passwordResetRequest.create).not.toHaveBeenCalled();
   });
 
   it("responds 400 with an invalid email", async () => {
@@ -244,11 +244,11 @@ describe("POST /api/auth/password/reset", () => {
   });
 
   it("responds 200 and updates the password with a valid token", async () => {
-    prismaMock.solicitudRecuperacion.findUnique.mockResolvedValue({
-      id: "solicitud-1",
-      usuarioId: "usuario-1",
-      usadoEn: null,
-      expiraEn: new Date(Date.now() + 60_000),
+    prismaMock.passwordResetRequest.findUnique.mockResolvedValue({
+      id: "request-1",
+      userId: "user-1",
+      usedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
     });
     prismaMock.$transaction.mockResolvedValue(undefined);
 
@@ -261,11 +261,11 @@ describe("POST /api/auth/password/reset", () => {
   });
 
   it("responds 400 with an expired token", async () => {
-    prismaMock.solicitudRecuperacion.findUnique.mockResolvedValue({
-      id: "solicitud-1",
-      usuarioId: "usuario-1",
-      usadoEn: null,
-      expiraEn: new Date(Date.now() - 60_000),
+    prismaMock.passwordResetRequest.findUnique.mockResolvedValue({
+      id: "request-1",
+      userId: "user-1",
+      usedAt: null,
+      expiresAt: new Date(Date.now() - 60_000),
     });
 
     const response = await request(createApp())
@@ -277,11 +277,11 @@ describe("POST /api/auth/password/reset", () => {
   });
 
   it("responds 400 with an already-used token", async () => {
-    prismaMock.solicitudRecuperacion.findUnique.mockResolvedValue({
-      id: "solicitud-1",
-      usuarioId: "usuario-1",
-      usadoEn: new Date(),
-      expiraEn: new Date(Date.now() + 60_000),
+    prismaMock.passwordResetRequest.findUnique.mockResolvedValue({
+      id: "request-1",
+      userId: "user-1",
+      usedAt: new Date(),
+      expiresAt: new Date(Date.now() + 60_000),
     });
 
     const response = await request(createApp())
@@ -292,7 +292,7 @@ describe("POST /api/auth/password/reset", () => {
   });
 
   it("responds 400 with a token that doesn't exist", async () => {
-    prismaMock.solicitudRecuperacion.findUnique.mockResolvedValue(null);
+    prismaMock.passwordResetRequest.findUnique.mockResolvedValue(null);
 
     const response = await request(createApp())
       .post("/api/auth/password/reset")
@@ -307,13 +307,13 @@ describe("POST /api/auth/password/reset", () => {
       .send({ token: "cualquiera", newPassword: "corta" });
 
     expect(response.status).toBe(400);
-    expect(prismaMock.solicitudRecuperacion.findUnique).not.toHaveBeenCalled();
+    expect(prismaMock.passwordResetRequest.findUnique).not.toHaveBeenCalled();
   });
 });
 
 describe("POST /api/auth/logout", () => {
   it("responds 204 with a valid token", async () => {
-    const token = jwt.sign({ sub: "usuario-1", rol: "ORGANIZADOR" }, "test-secret", { expiresIn: "1h" });
+    const token = jwt.sign({ sub: "user-1", role: "ORGANIZER" }, "test-secret", { expiresIn: "1h" });
 
     const response = await request(createApp()).post("/api/auth/logout").set("Authorization", `Bearer ${token}`);
 

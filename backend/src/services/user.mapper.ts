@@ -1,4 +1,4 @@
-import type { Jugador, Rol, Usuario } from "@prisma/client";
+import type { Player, Role, User } from "@prisma/client";
 
 export interface PlayerProfileDto {
   universityCode: string;
@@ -12,9 +12,9 @@ export interface PlayerProfileDto {
   disability: string | null;
 }
 
-// HU22 ("conocer"): expuesto en el perfil para que el titular pueda ver, sin
-// pedirlo aparte, cuándo y bajo qué versión de la política aceptó el
-// tratamiento de sus datos (RN-10/HU21).
+// HU22 ("access"): exposed on the profile so the data subject can see, without
+// requesting it separately, when and under which policy version they
+// accepted the data-treatment terms (RN-10/HU21).
 export interface DataConsentDto {
   accepted: boolean;
   date: Date | null;
@@ -22,7 +22,7 @@ export interface DataConsentDto {
 }
 
 // DTO shared by registration, login and profile lookup: never includes
-// passwordHash. `player` is only present if the user has the JUGADOR role
+// passwordHash. `player` is only present if the user has the PLAYER role
 // (1:1 profile, see schema.prisma).
 export interface UserDto {
   id: string;
@@ -48,29 +48,29 @@ export function calculateAge(birthDate: Date, today: Date = new Date()): number 
 }
 
 /** Maps a Prisma user (with its role and optional player profile) to the public {@link UserDto} shape. */
-export function toUserDto(user: Usuario & { rol: Rol; jugador?: Jugador | null }): UserDto {
+export function toUserDto(user: User & { role: Role; player?: Player | null }): UserDto {
   return {
     id: user.id,
-    name: user.nombre,
+    name: user.name,
     email: user.email,
-    status: user.estado,
-    role: user.rol.nombre,
+    status: user.status,
+    role: user.role.name,
     createdAt: user.createdAt,
     dataConsent: {
-      accepted: user.consentimientoAceptado,
-      date: user.consentimientoFecha,
-      version: user.consentimientoVersion,
+      accepted: user.dataPolicyAccepted,
+      date: user.dataPolicyAcceptedAt,
+      version: user.dataPolicyVersion,
     },
-    ...(user.jugador
+    ...(user.player
       ? {
           player: {
-            universityCode: user.jugador.codigoUniversitario,
-            program: user.jugador.programa,
-            semester: user.jugador.semestre,
-            birthDate: user.jugador.fechaNacimiento,
-            age: user.jugador.fechaNacimiento ? calculateAge(user.jugador.fechaNacimiento) : null,
-            gender: user.jugador.genero,
-            disability: user.jugador.discapacidad,
+            universityCode: user.player.universityCode,
+            program: user.player.program,
+            semester: user.player.semester,
+            birthDate: user.player.birthDate,
+            age: user.player.birthDate ? calculateAge(user.player.birthDate) : null,
+            gender: user.player.gender,
+            disability: user.player.disability,
           },
         }
       : {}),

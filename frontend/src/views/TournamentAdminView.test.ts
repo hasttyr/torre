@@ -39,12 +39,12 @@ const enrollPlayerMock = vi.mocked(enrollPlayer);
 const searchPlayersMock = vi.mocked(searchPlayers);
 
 const CREATED_TOURNAMENT = {
-  id: "torneo-1",
+  id: "tournament-1",
   name: "Copa Universitaria",
   startDate: "2026-10-01",
   endDate: "2026-10-03",
-  status: "CREADO" as const,
-  format: "suizo",
+  status: "CREATED" as const,
+  format: "swiss",
   roundsCount: null,
   timeControl: null,
   restrictedProgram: null,
@@ -59,7 +59,7 @@ async function mountView() {
     history: createWebHistory(),
     routes: [{ path: "/torneos/:id", component: TournamentAdminView }],
   });
-  router.push("/torneos/torneo-1");
+  router.push("/torneos/tournament-1");
   await router.isReady();
 
   const wrapper = mount(TournamentAdminView, { global: { plugins: [router, i18n] } });
@@ -85,7 +85,7 @@ describe("TournamentAdminView", () => {
     expect(wrapper.text()).toContain("Preliminar");
   });
 
-  it("enables opening registration only when the tournament is in CREADO", async () => {
+  it("enables opening registration only when the tournament is in CREATED", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
 
     const { wrapper } = await mountView();
@@ -99,7 +99,7 @@ describe("TournamentAdminView", () => {
 
   it("opens registration and reflects the new state (HU06)", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
-    openRegistrationMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "INSCRIPCIONES_ABIERTAS" });
+    openRegistrationMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
 
     const { wrapper } = await mountView();
 
@@ -108,7 +108,7 @@ describe("TournamentAdminView", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     await wrapper.vm.$nextTick();
 
-    expect(openRegistrationMock).toHaveBeenCalledWith("torneo-1");
+    expect(openRegistrationMock).toHaveBeenCalledWith("tournament-1");
     expect(wrapper.text()).toContain("Inscripciones abiertas");
   });
 
@@ -122,7 +122,7 @@ describe("TournamentAdminView", () => {
   });
 
   it("searches and shows results as you type (debounced)", async () => {
-    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "INSCRIPCIONES_ABIERTAS" });
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
     searchPlayersMock.mockResolvedValue([
       { id: "j1", name: "Luis Gómez", email: "luis@example.com", universityCode: "U1", program: "Sistemas", semester: 5 },
     ]);
@@ -138,7 +138,7 @@ describe("TournamentAdminView", () => {
   });
 
   it("enrolls a player chosen from the search results (HU07)", async () => {
-    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "INSCRIPCIONES_ABIERTAS" });
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
     searchPlayersMock.mockResolvedValue([
       { id: "j1", name: "Luis Gómez", email: "luis@example.com", universityCode: "U1", program: "Sistemas", semester: 5 },
     ]);
@@ -162,12 +162,12 @@ describe("TournamentAdminView", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
     await wrapper.vm.$nextTick();
 
-    expect(enrollPlayerMock).toHaveBeenCalledWith("torneo-1", "j1");
+    expect(enrollPlayerMock).toHaveBeenCalledWith("tournament-1", "j1");
     expect(wrapper.text()).toContain("Luis Gómez");
   });
 
   it("disables editing tiebreaks once it's no longer in preliminary state", async () => {
-    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "INSCRIPCIONES_ABIERTAS" });
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
 
     const { wrapper } = await mountView();
 
@@ -188,13 +188,13 @@ describe("TournamentAdminView", () => {
     await wrapper.vm.$nextTick();
 
     expect(configureTournamentMock).toHaveBeenCalledWith(
-      "torneo-1",
+      "tournament-1",
       expect.objectContaining({ roundsCount: 7, timeControl: "90+30" }),
     );
     expect(wrapper.text()).toContain("Configuración guardada");
   });
 
-  it("does not call closeRegistration when the tournament is not in INSCRIPCIONES_ABIERTAS", async () => {
+  it("does not call closeRegistration when the tournament is not in REGISTRATION_OPEN", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
 
     const { wrapper } = await mountView();

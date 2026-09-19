@@ -13,8 +13,8 @@ import ResetPasswordView from "../views/ResetPasswordView.vue";
 import TournamentAdminView from "../views/TournamentAdminView.vue";
 
 // Roles that manage tournaments (HU04-HU07). Mirrors
-// backend/src/routes/torneos.routes.ts (requireRole("ORGANIZADOR", "ADMINISTRADOR")).
-const TOURNAMENT_ADMIN_ROLES = ["ORGANIZADOR", "ADMINISTRADOR"];
+// backend/src/routes/tournaments.routes.ts (requireRole("ORGANIZER", "ADMINISTRATOR")).
+const TOURNAMENT_ADMIN_ROLES = ["ORGANIZER", "ADMINISTRATOR"];
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -72,7 +72,7 @@ export const router = createRouter({
       path: "/mis-torneos",
       name: "tournaments-player",
       component: PlayerTournamentsView,
-      meta: { requiresAuth: true, roles: ["JUGADOR"] },
+      meta: { requiresAuth: true, roles: ["PLAYER"] },
     },
   ],
 });

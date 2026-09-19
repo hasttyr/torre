@@ -9,24 +9,24 @@ import { registerUser, SELF_ASSIGNABLE_ROLES, type RegisterPayload, type SelfAss
 const { t } = useI18n();
 
 const ROLE_GLYPHS: Record<SelfAssignableRole, string> = {
-  JUGADOR: "♙",
-  ENTRENADOR: "♗",
-  ARBITRO: "♘",
-  ORGANIZADOR: "♕",
+  PLAYER: "♙",
+  COACH: "♗",
+  ARBITER: "♘",
+  ORGANIZER: "♕",
 };
 
 const form = reactive({
   name: "",
   email: "",
   password: "",
-  role: "JUGADOR" as SelfAssignableRole,
+  role: "PLAYER" as SelfAssignableRole,
   universityCode: "",
   program: "",
   semester: "",
   acceptDataPolicy: false,
 });
 
-const isPlayer = computed(() => form.role === "JUGADOR");
+const isPlayer = computed(() => form.role === "PLAYER");
 
 /**
  * Checks whether a string has the basic shape of an email address.
@@ -103,10 +103,10 @@ function buildPayload(): RegisterPayload {
     acceptDataPolicy: true as const,
   };
 
-  if (form.role === "JUGADOR") {
+  if (form.role === "PLAYER") {
     return {
       ...base,
-      role: "JUGADOR",
+      role: "PLAYER",
       universityCode: form.universityCode.trim(),
       program: form.program.trim(),
       semester: Number(form.semester),

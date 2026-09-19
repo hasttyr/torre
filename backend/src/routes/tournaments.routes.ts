@@ -16,7 +16,7 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 
 export const tournamentsRouter = Router();
 
-const canManage = requireRole("ORGANIZADOR", "ADMINISTRADOR");
+const canManage = requireRole("ORGANIZER", "ADMINISTRATOR");
 
 // Before "/:id": otherwise Express would try to resolve "mine"/"available"/
 // "enrolled" as a :id.

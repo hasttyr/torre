@@ -12,8 +12,8 @@ function buildReq(headers: Record<string, string> = {}): Request {
   } as unknown as Request;
 }
 
-function signValidToken(overrides: Partial<{ sub: string; rol: string }> = {}): string {
-  return jwt.sign({ sub: "usuario-1", rol: "ORGANIZADOR", ...overrides }, "test-secret", { expiresIn: "1h" });
+function signValidToken(overrides: Partial<{ sub: string; role: string }> = {}): string {
+  return jwt.sign({ sub: "user-1", role: "ORGANIZER", ...overrides }, "test-secret", { expiresIn: "1h" });
 }
 
 describe("requireAuth", () => {
@@ -24,7 +24,7 @@ describe("requireAuth", () => {
 
     requireAuth(req, {} as Response, next as NextFunction);
 
-    expect(req.user).toEqual({ id: "usuario-1", rol: "ORGANIZADOR" });
+    expect(req.user).toEqual({ id: "user-1", role: "ORGANIZER" });
     expect(next).toHaveBeenCalledWith();
   });
 
@@ -38,7 +38,7 @@ describe("requireAuth", () => {
   });
 
   it("rejects with 401 when the token is signed with a different secret", () => {
-    const token = jwt.sign({ sub: "usuario-1", rol: "ORGANIZADOR" }, "otro-secreto", { expiresIn: "1h" });
+    const token = jwt.sign({ sub: "user-1", role: "ORGANIZER" }, "otro-secreto", { expiresIn: "1h" });
     const req = buildReq({ authorization: `Bearer ${token}` });
     const next = vi.fn();
 
@@ -48,7 +48,7 @@ describe("requireAuth", () => {
   });
 
   it("rejects with 401 when the token has expired", () => {
-    const expired = jwt.sign({ sub: "usuario-1", rol: "ORGANIZADOR" }, "test-secret", { expiresIn: -1 });
+    const expired = jwt.sign({ sub: "user-1", role: "ORGANIZER" }, "test-secret", { expiresIn: -1 });
     const req = buildReq({ authorization: `Bearer ${expired}` });
     const next = vi.fn();
 
@@ -60,19 +60,19 @@ describe("requireAuth", () => {
 
 describe("requireRole", () => {
   it("lets the request through when req.user's role is allowed", () => {
-    const req = { user: { id: "usuario-1", rol: "ADMINISTRADOR" } } as unknown as Request;
+    const req = { user: { id: "user-1", role: "ADMINISTRATOR" } } as unknown as Request;
     const next = vi.fn();
 
-    requireRole("ADMINISTRADOR")(req, {} as Response, next as NextFunction);
+    requireRole("ADMINISTRATOR")(req, {} as Response, next as NextFunction);
 
     expect(next).toHaveBeenCalledWith();
   });
 
   it("rejects with 403 when the role is not allowed", () => {
-    const req = { user: { id: "usuario-1", rol: "JUGADOR" } } as unknown as Request;
+    const req = { user: { id: "user-1", role: "PLAYER" } } as unknown as Request;
     const next = vi.fn();
 
-    requireRole("ADMINISTRADOR")(req, {} as Response, next as NextFunction);
+    requireRole("ADMINISTRATOR")(req, {} as Response, next as NextFunction);
 
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 403 } satisfies Partial<HttpError>));
   });
@@ -81,7 +81,7 @@ describe("requireRole", () => {
     const req = { user: undefined } as unknown as Request;
     const next = vi.fn();
 
-    requireRole("ADMINISTRADOR")(req, {} as Response, next as NextFunction);
+    requireRole("ADMINISTRATOR")(req, {} as Response, next as NextFunction);
 
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 401 } satisfies Partial<HttpError>));
   });

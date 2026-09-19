@@ -60,12 +60,12 @@ describe("CreateTournamentView", () => {
 
   it("creates the tournament and navigates to its admin panel", async () => {
     createTournamentMock.mockResolvedValue({
-      id: "torneo-1",
+      id: "tournament-1",
       name: "Copa Universitaria",
       startDate: "2026-10-01",
       endDate: "2026-10-03",
-      status: "CREADO",
-      format: "suizo",
+      status: "CREATED",
+      format: "swiss",
       roundsCount: null,
       timeControl: null,
   restrictedProgram: null,
@@ -87,9 +87,9 @@ describe("CreateTournamentView", () => {
       name: "Copa Universitaria",
       startDate: "2026-10-01",
       endDate: "2026-10-03",
-      format: "suizo",
+      format: "swiss",
     });
-    expect(router.currentRoute.value.path).toBe("/torneos/torneo-1");
+    expect(router.currentRoute.value.path).toBe("/torneos/tournament-1");
   });
 
   it("rejects when the end date is earlier than the start date", async () => {

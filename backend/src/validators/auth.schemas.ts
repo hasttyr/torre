@@ -10,22 +10,22 @@ const baseFields = {
   }),
 };
 
-// JUGADOR requires extra data because Jugador.codigoUniversitario, programa
-// and semestre are NOT NULL in the schema (see prisma/schema.prisma).
+// PLAYER requires extra data because Player.universityCode, program
+// and semester are NOT NULL in the schema (see prisma/schema.prisma).
 export const registerSchema = z.discriminatedUnion("role", [
   z.object({
     ...baseFields,
-    role: z.literal("JUGADOR"),
+    role: z.literal("PLAYER"),
     universityCode: z.string().trim().min(1, "El código universitario es requerido"),
     program: z.string().trim().min(1, "El programa es requerido"),
     semester: z.number().int().positive("El semestre debe ser un entero positivo"),
   }),
   z.object({
     ...baseFields,
-    // ADMINISTRADOR is deliberately excluded: an admin account must not be
+    // ADMINISTRATOR is deliberately excluded: an admin account must not be
     // creatable through self-registration; it's provisioned some other way
     // (seed, a future internal panel).
-    role: z.enum(["ORGANIZADOR", "ARBITRO", "ENTRENADOR"]),
+    role: z.enum(["ORGANIZER", "ARBITER", "COACH"]),
   }),
 ]);
 

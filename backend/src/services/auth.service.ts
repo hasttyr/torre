@@ -11,20 +11,20 @@ interface RegisterUserBase {
   name: string;
   email: string;
   password: string;
-  // RN-10/HU21: garantizado `true` por registerSchema (z.literal(true)); el
-  // servicio no vuelve a validarlo, solo lo persiste con fecha y versión.
+  // RN-10/HU21: guaranteed `true` by registerSchema (z.literal(true)); the
+  // service doesn't re-validate it, only persists it with a date and version.
   acceptDataPolicy: true;
 }
 
 interface RegisterPlayerInput extends RegisterUserBase {
-  role: "JUGADOR";
+  role: "PLAYER";
   universityCode: string;
   program: string;
   semester: number;
 }
 
 interface RegisterOtherRoleInput extends RegisterUserBase {
-  role: "ORGANIZADOR" | "ARBITRO" | "ENTRENADOR";
+  role: "ORGANIZER" | "ARBITER" | "COACH";
 }
 
 export type RegisterUserInput = RegisterPlayerInput | RegisterOtherRoleInput;
@@ -45,12 +45,12 @@ function isUniqueConstraintError(error: unknown): boolean {
 }
 
 /** Signs a JWT carrying the user's id and role name. */
-function signToken(user: { id: string; rol: { nombre: string } }): string {
+function signToken(user: { id: string; role: { name: string } }): string {
   // The role travels embedded in the token (it isn't re-read from the DB on
   // every request): if an admin changes someone's role, that person only
   // sees it reflected on their next login, not immediately. Standard
   // stateless-JWT trade-off, acceptable with a short expiration (1d).
-  return jwt.sign({ sub: user.id, rol: user.rol.nombre }, env.jwtSecret, {
+  return jwt.sign({ sub: user.id, role: user.role.name }, env.jwtSecret, {
     expiresIn: env.jwtExpiresIn,
   } as jwt.SignOptions);
 }
@@ -67,12 +67,12 @@ export async function registerUser(prisma: PrismaClient, input: RegisterUserInpu
   const email = input.email.trim().toLowerCase();
   const name = input.name.trim();
 
-  const role = await prisma.rol.findUnique({ where: { nombre: input.role } });
+  const role = await prisma.role.findUnique({ where: { name: input.role } });
   if (!role) {
     throw new HttpError(400, `El rol "${input.role}" no existe. Verificá que el seed de roles se haya ejecutado.`);
   }
 
-  const existingUser = await prisma.usuario.findUnique({ where: { email } });
+  const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     throw new HttpError(409, "Ya existe una cuenta registrada con ese correo");
   }
@@ -80,28 +80,28 @@ export async function registerUser(prisma: PrismaClient, input: RegisterUserInpu
   const passwordHash = await hashPassword(input.password);
 
   try {
-    const user = await prisma.usuario.create({
+    const user = await prisma.user.create({
       data: {
-        nombre: name,
+        name,
         email,
         passwordHash,
-        rolId: role.id,
-        consentimientoAceptado: true,
-        consentimientoFecha: new Date(),
-        consentimientoVersion: DATA_POLICY_VERSION,
-        ...(input.role === "JUGADOR"
+        roleId: role.id,
+        dataPolicyAccepted: true,
+        dataPolicyAcceptedAt: new Date(),
+        dataPolicyVersion: DATA_POLICY_VERSION,
+        ...(input.role === "PLAYER"
           ? {
-              jugador: {
+              player: {
                 create: {
-                  codigoUniversitario: input.universityCode.trim(),
-                  programa: input.program.trim(),
-                  semestre: input.semester,
+                  universityCode: input.universityCode.trim(),
+                  program: input.program.trim(),
+                  semester: input.semester,
                 },
               },
             }
           : {}),
       },
-      include: { rol: true },
+      include: { role: true },
     });
 
     return toUserDto(user);
@@ -126,7 +126,7 @@ export async function registerUser(prisma: PrismaClient, input: RegisterUserInpu
 export async function loginUser(prisma: PrismaClient, input: LoginUserInput): Promise<AuthResult> {
   const email = input.email.trim().toLowerCase();
 
-  const user = await prisma.usuario.findUnique({ where: { email }, include: { rol: true } });
+  const user = await prisma.user.findUnique({ where: { email }, include: { role: true } });
 
   // Same generic message whether the email doesn't exist or the password is
   // wrong: don't reveal whether an account exists (RF02).
@@ -139,7 +139,7 @@ export async function loginUser(prisma: PrismaClient, input: LoginUserInput): Pr
     throw new HttpError(401, "Credenciales inválidas");
   }
 
-  if (user.estado !== "ACTIVO") {
+  if (user.status !== "ACTIVE") {
     throw new HttpError(403, "La cuenta está inactiva");
   }
 

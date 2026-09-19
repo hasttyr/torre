@@ -12,7 +12,7 @@ export interface PlayerSearchResultDto {
 const RESULT_LIMIT = 10;
 
 // Supports HU07 in the UI: without this, the organizer has no way to learn
-// the Jugador id (different from the Usuario id) that POST
+// the Player id (different from the User id) that POST
 // /tournaments/:id/players requires. Simple search by name, email or
 // university code; there's no additional permission catalog beyond
 // requireRole on the route, because it doesn't expose data the organizer
@@ -24,25 +24,25 @@ export async function searchPlayers(prisma: PrismaClient, query: string): Promis
     return [];
   }
 
-  const players = await prisma.jugador.findMany({
+  const players = await prisma.player.findMany({
     where: {
       OR: [
-        { usuario: { nombre: { contains: text, mode: "insensitive" } } },
-        { usuario: { email: { contains: text, mode: "insensitive" } } },
-        { codigoUniversitario: { contains: text, mode: "insensitive" } },
+        { user: { name: { contains: text, mode: "insensitive" } } },
+        { user: { email: { contains: text, mode: "insensitive" } } },
+        { universityCode: { contains: text, mode: "insensitive" } },
       ],
     },
-    include: { usuario: true },
+    include: { user: true },
     take: RESULT_LIMIT,
-    orderBy: { usuario: { nombre: "asc" } },
+    orderBy: { user: { name: "asc" } },
   });
 
   return players.map((player) => ({
     id: player.id,
-    name: player.usuario.nombre,
-    email: player.usuario.email,
-    universityCode: player.codigoUniversitario,
-    program: player.programa,
-    semester: player.semestre,
+    name: player.user.name,
+    email: player.user.email,
+    universityCode: player.universityCode,
+    program: player.program,
+    semester: player.semester,
   }));
 }

@@ -45,7 +45,7 @@ watch(() => tournaments.current, populateForm, { immediate: true });
 // RN-05: the tiebreak order can only be changed while the tournament is in
 // its preliminary state (before round 1). The backend is what actually
 // decides; this only avoids a submit that is already known to fail.
-const canEditTiebreaks = computed(() => tournaments.current?.status === "CREADO");
+const canEditTiebreaks = computed(() => tournaments.current?.status === "CREATED");
 
 /** Validates and submits the tournament configuration form. */
 async function onSubmit(): Promise<void> {

@@ -21,9 +21,10 @@ const USER = {
   id: "usuario-1",
   name: "Ana Torres",
   email: "ana@example.com",
-  status: "ACTIVO",
-  role: "ORGANIZADOR",
+  status: "ACTIVE",
+  role: "ORGANIZER",
   createdAt: "2026-01-01T00:00:00.000Z",
+  dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
 };
 
 describe("useAuthStore", () => {

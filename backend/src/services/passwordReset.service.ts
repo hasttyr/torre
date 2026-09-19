@@ -24,20 +24,20 @@ function hashToken(token: string): string {
  */
 export async function requestPasswordReset(prisma: PrismaClient, email: string): Promise<void> {
   const normalizedEmail = email.trim().toLowerCase();
-  const user = await prisma.usuario.findUnique({ where: { email: normalizedEmail } });
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
   // Same silent no-op for "doesn't exist" and "exists but inactive": neither
   // case should let an attacker distinguish a valid account from an invalid one.
-  if (!user || user.estado !== "ACTIVO") {
+  if (!user || user.status !== "ACTIVE") {
     return;
   }
 
   const token = crypto.randomBytes(32).toString("hex");
-  await prisma.solicitudRecuperacion.create({
+  await prisma.passwordResetRequest.create({
     data: {
-      usuarioId: user.id,
+      userId: user.id,
       tokenHash: hashToken(token),
-      expiraEn: new Date(Date.now() + RESET_TOKEN_TTL_MS),
+      expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS),
     },
   });
 
@@ -51,16 +51,16 @@ export async function requestPasswordReset(prisma: PrismaClient, email: string):
  * @throws {HttpError} 400 if the token is invalid, expired, or already used.
  */
 export async function confirmPasswordReset(prisma: PrismaClient, token: string, newPassword: string): Promise<void> {
-  const solicitud = await prisma.solicitudRecuperacion.findUnique({ where: { tokenHash: hashToken(token) } });
+  const request = await prisma.passwordResetRequest.findUnique({ where: { tokenHash: hashToken(token) } });
 
-  if (!solicitud || solicitud.usadoEn || solicitud.expiraEn < new Date()) {
+  if (!request || request.usedAt || request.expiresAt < new Date()) {
     throw new HttpError(400, "El enlace de restablecimiento no es válido o ya expiró");
   }
 
   const passwordHash = await hashPassword(newPassword);
 
   await prisma.$transaction([
-    prisma.usuario.update({ where: { id: solicitud.usuarioId }, data: { passwordHash } }),
-    prisma.solicitudRecuperacion.update({ where: { id: solicitud.id }, data: { usadoEn: new Date() } }),
+    prisma.user.update({ where: { id: request.userId }, data: { passwordHash } }),
+    prisma.passwordResetRequest.update({ where: { id: request.id }, data: { usedAt: new Date() } }),
   ]);
 }

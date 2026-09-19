@@ -11,34 +11,34 @@
     "placeholder": "Choose a date"
   },
   "roles": {
-    "JUGADOR": "Player",
-    "ENTRENADOR": "Coach",
-    "ARBITRO": "Arbiter",
-    "ORGANIZADOR": "Organizer",
-    "ADMINISTRADOR": "Administrator"
+    "PLAYER": "Player",
+    "COACH": "Coach",
+    "ARBITER": "Arbiter",
+    "ORGANIZER": "Organizer",
+    "ADMINISTRATOR": "Administrator"
   },
   "estados": {
-    "CREADO": "Preliminary",
-    "INSCRIPCIONES_ABIERTAS": "Registration open",
-    "INSCRIPCIONES_CERRADAS": "Registration closed",
-    "EN_CURSO": "In progress",
-    "FINALIZADO": "Finished"
+    "CREATED": "Preliminary",
+    "REGISTRATION_OPEN": "Registration open",
+    "REGISTRATION_CLOSED": "Registration closed",
+    "IN_PROGRESS": "In progress",
+    "FINISHED": "Finished"
   },
   "genero": {
-    "MASCULINO": "Male",
-    "FEMENINO": "Female",
-    "NO_BINARIO": "Non-binary",
-    "PREFIERE_NO_DECIR": "Prefer not to say"
+    "MALE": "Male",
+    "FEMALE": "Female",
+    "NON_BINARY": "Non-binary",
+    "PREFER_NOT_TO_SAY": "Prefer not to say"
   },
   "discapacidad": {
-    "NINGUNA": "None",
-    "FISICA_MOTRIZ": "Physical or motor",
+    "NONE": "None",
+    "PHYSICAL_MOTOR": "Physical or motor",
     "VISUAL": "Visual",
-    "AUDITIVA": "Hearing",
-    "COGNITIVA": "Cognitive",
-    "PSICOSOCIAL": "Psychosocial",
+    "HEARING": "Hearing",
+    "COGNITIVE": "Cognitive",
+    "PSYCHOSOCIAL": "Psychosocial",
     "MULTIPLE": "Multiple",
-    "OTRA": "Other"
+    "OTHER": "Other"
   },
   "header": {
     "myTournaments": "My tournaments",

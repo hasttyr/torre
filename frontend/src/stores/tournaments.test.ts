@@ -40,12 +40,12 @@ const listAvailableTournamentsMock = vi.mocked(listAvailableTournaments);
 const listEnrolledTournamentsMock = vi.mocked(listEnrolledTournaments);
 
 const TOURNAMENT = {
-  id: "torneo-1",
+  id: "tournament-1",
   name: "Copa Universitaria",
   startDate: "2026-10-01",
   endDate: "2026-10-03",
-  status: "CREADO" as const,
-  format: "suizo",
+  status: "CREATED" as const,
+  format: "swiss",
   roundsCount: null,
   timeControl: null,
   restrictedProgram: null,
@@ -79,7 +79,7 @@ describe("useTournamentsStore", () => {
     ]);
     const store = useTournamentsStore();
 
-    await store.load("torneo-1");
+    await store.load("tournament-1");
 
     expect(store.current).toEqual(TOURNAMENT);
     expect(store.enrolledPlayers).toHaveLength(1);
@@ -89,22 +89,22 @@ describe("useTournamentsStore", () => {
     configureTournamentMock.mockResolvedValue({ ...TOURNAMENT, roundsCount: 7, timeControl: "90+30" });
     const store = useTournamentsStore();
 
-    await store.configure("torneo-1", { roundsCount: 7, timeControl: "90+30" });
+    await store.configure("tournament-1", { roundsCount: 7, timeControl: "90+30" });
 
     expect(store.current?.roundsCount).toBe(7);
     expect(store.current?.timeControl).toBe("90+30");
   });
 
   it("openRegistration and closeRegistration reflect the new state", async () => {
-    openRegistrationMock.mockResolvedValue({ ...TOURNAMENT, status: "INSCRIPCIONES_ABIERTAS" });
-    closeRegistrationMock.mockResolvedValue({ ...TOURNAMENT, status: "INSCRIPCIONES_CERRADAS" });
+    openRegistrationMock.mockResolvedValue({ ...TOURNAMENT, status: "REGISTRATION_OPEN" });
+    closeRegistrationMock.mockResolvedValue({ ...TOURNAMENT, status: "REGISTRATION_CLOSED" });
     const store = useTournamentsStore();
 
-    await store.openRegistration("torneo-1");
-    expect(store.current?.status).toBe("INSCRIPCIONES_ABIERTAS");
+    await store.openRegistration("tournament-1");
+    expect(store.current?.status).toBe("REGISTRATION_OPEN");
 
-    await store.closeRegistration("torneo-1");
-    expect(store.current?.status).toBe("INSCRIPCIONES_CERRADAS");
+    await store.closeRegistration("tournament-1");
+    expect(store.current?.status).toBe("REGISTRATION_CLOSED");
   });
 
   it("enrollPlayer adds the player to the list", async () => {
@@ -118,7 +118,7 @@ describe("useTournamentsStore", () => {
     });
     const store = useTournamentsStore();
 
-    await store.enrollPlayer("torneo-1", "j1");
+    await store.enrollPlayer("tournament-1", "j1");
 
     expect(store.enrolledPlayers).toEqual([
       { playerId: "j1", name: "Luis", universityCode: "U1", program: "Sistemas", semester: 5, enrolledAt: "2026-09-17" },
@@ -136,12 +136,12 @@ describe("useTournamentsStore", () => {
 
   it("loadPlayerTournaments stores available and enrolled tournaments", async () => {
     listAvailableTournamentsMock.mockResolvedValue([TOURNAMENT]);
-    listEnrolledTournamentsMock.mockResolvedValue([{ ...TOURNAMENT, id: "torneo-2" }]);
+    listEnrolledTournamentsMock.mockResolvedValue([{ ...TOURNAMENT, id: "tournament-2" }]);
     const store = useTournamentsStore();
 
     await store.loadPlayerTournaments();
 
     expect(store.available).toEqual([TOURNAMENT]);
-    expect(store.enrolled).toEqual([{ ...TOURNAMENT, id: "torneo-2" }]);
+    expect(store.enrolled).toEqual([{ ...TOURNAMENT, id: "tournament-2" }]);
   });
 });

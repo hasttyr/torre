@@ -19,7 +19,7 @@ const searching = ref(false);
 const submitting = ref(false);
 const error = ref<string | null>(null);
 
-const registrationOpen = computed(() => tournaments.current?.status === "INSCRIPCIONES_ABIERTAS");
+const registrationOpen = computed(() => tournaments.current?.status === "REGISTRATION_OPEN");
 const enrolledIds = computed(() => new Set(tournaments.enrolledPlayers.map((p) => p.playerId)));
 
 let debounceHandle: ReturnType<typeof setTimeout> | undefined;

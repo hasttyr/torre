@@ -63,7 +63,7 @@ async function onClose(): Promise<void> {
       <button
         type="button"
         class="btn btn-primary"
-        :disabled="submitting || tournaments.current?.status !== 'CREADO'"
+        :disabled="submitting || tournaments.current?.status !== 'CREATED'"
         @click="onOpen"
       >
         {{ t("tournamentAdmin.openRegistration") }}
@@ -71,7 +71,7 @@ async function onClose(): Promise<void> {
       <button
         type="button"
         class="btn btn-ghost"
-        :disabled="submitting || tournaments.current?.status !== 'INSCRIPCIONES_ABIERTAS'"
+        :disabled="submitting || tournaments.current?.status !== 'REGISTRATION_OPEN'"
         @click="onClose"
       >
         {{ t("tournamentAdmin.closeRegistration") }}

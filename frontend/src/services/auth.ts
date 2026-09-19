@@ -4,7 +4,7 @@ import { api } from "./api";
 // backend/src/services/auth.service.ts (there is no shared package between
 // the two npm projects): if the registration contract changes there,
 // replicate the change here.
-export const SELF_ASSIGNABLE_ROLES = ["JUGADOR", "ENTRENADOR", "ARBITRO", "ORGANIZADOR"] as const;
+export const SELF_ASSIGNABLE_ROLES = ["PLAYER", "COACH", "ARBITER", "ORGANIZER"] as const;
 
 export type SelfAssignableRole = (typeof SELF_ASSIGNABLE_ROLES)[number];
 
@@ -17,32 +17,32 @@ interface RegisterBasePayload {
 }
 
 interface RegisterPlayerPayload extends RegisterBasePayload {
-  role: "JUGADOR";
+  role: "PLAYER";
   universityCode: string;
   program: string;
   semester: number;
 }
 
 interface RegisterOtherRolePayload extends RegisterBasePayload {
-  role: "ENTRENADOR" | "ARBITRO" | "ORGANIZADOR";
+  role: "COACH" | "ARBITER" | "ORGANIZER";
 }
 
 export type RegisterPayload = RegisterPlayerPayload | RegisterOtherRolePayload;
 
 // Deliberately duplicated in backend/src/validators/users.schemas.ts
 // (GENEROS/DISCAPACIDADES) — closed catalogs, not free text.
-export const GENDERS = ["MASCULINO", "FEMENINO", "NO_BINARIO", "PREFIERE_NO_DECIR"] as const;
+export const GENDERS = ["MALE", "FEMALE", "NON_BINARY", "PREFER_NOT_TO_SAY"] as const;
 export type Gender = (typeof GENDERS)[number];
 
 export const DISABILITIES = [
-  "NINGUNA",
-  "FISICA_MOTRIZ",
+  "NONE",
+  "PHYSICAL_MOTOR",
   "VISUAL",
-  "AUDITIVA",
-  "COGNITIVA",
-  "PSICOSOCIAL",
+  "HEARING",
+  "COGNITIVE",
+  "PSYCHOSOCIAL",
   "MULTIPLE",
-  "OTRA",
+  "OTHER",
 ] as const;
 export type Disability = (typeof DISABILITIES)[number];
 
@@ -93,7 +93,7 @@ export interface UpdateProfilePayload {
  * Registers a new user account.
  *
  * @param payload - The registration form data. The shape depends on the chosen role:
- * a `JUGADOR` (player) role requires university enrollment details, other roles don't.
+ * a `PLAYER` role requires university enrollment details, other roles don't.
  * @returns The newly created user as stored by the backend.
  */
 export async function registerUser(payload: RegisterPayload): Promise<RegisteredUser> {

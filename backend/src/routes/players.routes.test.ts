@@ -6,14 +6,14 @@ import { createApp } from "../app";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
-    jugador: { findMany: vi.fn() },
+    player: { findMany: vi.fn() },
   },
 }));
 
 vi.mock("../config/prisma", () => ({ prisma: prismaMock }));
 
-function tokenFor(rol: string): string {
-  return jwt.sign({ sub: "usuario-1", rol }, "test-secret", { expiresIn: "1h" });
+function tokenFor(role: string): string {
+  return jwt.sign({ sub: "user-1", role }, "test-secret", { expiresIn: "1h" });
 }
 
 describe("GET /api/players", () => {
@@ -22,24 +22,24 @@ describe("GET /api/players", () => {
   });
 
   it("searches players and responds 200 with the expected DTO", async () => {
-    prismaMock.jugador.findMany.mockResolvedValue([
+    prismaMock.player.findMany.mockResolvedValue([
       {
-        id: "jugador-1",
-        codigoUniversitario: "U123",
-        programa: "Sistemas",
-        semestre: 5,
-        usuario: { nombre: "Luis Gómez", email: "luis@example.com" },
+        id: "player-1",
+        universityCode: "U123",
+        program: "Sistemas",
+        semester: 5,
+        user: { name: "Luis Gómez", email: "luis@example.com" },
       },
     ]);
 
     const response = await request(createApp())
       .get("/api/players?q=Luis")
-      .set("Authorization", `Bearer ${tokenFor("ORGANIZADOR")}`);
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual([
       {
-        id: "jugador-1",
+        id: "player-1",
         name: "Luis Gómez",
         email: "luis@example.com",
         universityCode: "U123",
@@ -54,10 +54,10 @@ describe("GET /api/players", () => {
     expect(response.status).toBe(401);
   });
 
-  it("responds 403 for a role without permission (JUGADOR)", async () => {
+  it("responds 403 for a role without permission (PLAYER)", async () => {
     const response = await request(createApp())
       .get("/api/players?q=Luis")
-      .set("Authorization", `Bearer ${tokenFor("JUGADOR")}`);
+      .set("Authorization", `Bearer ${tokenFor("PLAYER")}`);
 
     expect(response.status).toBe(403);
   });

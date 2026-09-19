@@ -23,22 +23,26 @@ import { fetchMe, updateProfile } from "../services/auth";
 const fetchMeMock = vi.mocked(fetchMe);
 const updateProfileMock = vi.mocked(updateProfile);
 
+const DATA_CONSENT = { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" };
+
 const USER = {
-  id: "usuario-1",
+  id: "user-1",
   name: "Ana Torres",
   email: "ana@example.com",
-  status: "ACTIVO",
-  role: "ORGANIZADOR",
+  status: "ACTIVE",
+  role: "ORGANIZER",
   createdAt: "2026-01-01T00:00:00.000Z",
+  dataConsent: DATA_CONSENT,
 };
 
 const PLAYER = {
-  id: "usuario-2",
+  id: "user-2",
   name: "Luis Gómez",
   email: "luis@example.com",
-  status: "ACTIVO",
-  role: "JUGADOR",
+  status: "ACTIVE",
+  role: "PLAYER",
   createdAt: "2026-01-01T00:00:00.000Z",
+  dataConsent: DATA_CONSENT,
   player: {
     universityCode: "U1",
     program: "Sistemas",
@@ -130,7 +134,7 @@ describe("AccountView", () => {
         ...PLAYER.player,
         birthDate: "2005-06-15T00:00:00.000Z",
         age: 21,
-        gender: "FEMENINO" as const,
+        gender: "FEMALE" as const,
         disability: "VISUAL" as const,
       },
     };
@@ -141,7 +145,7 @@ describe("AccountView", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect((wrapper.get("#birthDate").element as HTMLInputElement).value).toBe("15/06/2005");
-    expect((wrapper.get("#gender").element as HTMLSelectElement).value).toBe("FEMENINO");
+    expect((wrapper.get("#gender").element as HTMLSelectElement).value).toBe("FEMALE");
     expect((wrapper.get("#disability").element as HTMLSelectElement).value).toBe("VISUAL");
     expect(wrapper.text()).toContain("Edad actual: 21 años");
   });
@@ -170,7 +174,7 @@ describe("AccountView", () => {
 
     await wrapper.get("#birthDate").setValue("15/06/2005");
     await wrapper.get("#birthDate").trigger("blur");
-    await wrapper.get("#gender").setValue("FEMENINO");
+    await wrapper.get("#gender").setValue("FEMALE");
     await wrapper.get("#disability").setValue("VISUAL");
     await wrapper.get("form").trigger("submit.prevent");
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -178,7 +182,7 @@ describe("AccountView", () => {
     expect(updateProfileMock).toHaveBeenCalledWith(
       expect.objectContaining({
         birthDate: "2005-06-15",
-        gender: "FEMENINO",
+        gender: "FEMALE",
         disability: "VISUAL",
       }),
     );
