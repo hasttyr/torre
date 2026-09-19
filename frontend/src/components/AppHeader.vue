@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 
 import { useAuthStore } from "../stores/auth";
 import AppLogo from "./AppLogo.vue";
 import ThemeToggle from "./ThemeToggle.vue";
+import UserMenu from "./UserMenu.vue";
 
 const auth = useAuthStore();
-const router = useRouter();
 const route = useRoute();
 const mobileOpen = ref(false);
 
@@ -19,12 +19,6 @@ watch(
     mobileOpen.value = false;
   },
 );
-
-async function onLogout(): Promise<void> {
-  mobileOpen.value = false;
-  await auth.logout();
-  router.push("/");
-}
 
 function closeMobile(): void {
   mobileOpen.value = false;
@@ -43,19 +37,19 @@ function closeMobile(): void {
             Mis torneos
           </RouterLink>
           <RouterLink v-if="auth.usuario?.rol === 'JUGADOR'" to="/mis-torneos" class="btn btn-ghost">Torneos</RouterLink>
-          <RouterLink to="/cuenta" class="btn btn-ghost">Mi cuenta</RouterLink>
-          <button type="button" class="btn btn-ghost" @click="onLogout">Cerrar sesión</button>
+          <UserMenu />
         </template>
         <template v-else>
           <RouterLink to="/login" class="btn btn-ghost">Iniciar sesión</RouterLink>
           <RouterLink to="/registro" class="btn btn-primary">Crear cuenta</RouterLink>
+          <ThemeToggle />
         </template>
-        <ThemeToggle />
       </nav>
 
-      <!-- Controles de mobile: toggle de tema siempre visible + botón hamburguesa. -->
+      <!-- Controles de mobile: menú de usuario o toggle de tema + botón hamburguesa. -->
       <div class="flex items-center gap-2 sm:hidden">
-        <ThemeToggle />
+        <UserMenu v-if="auth.isAuthenticated" />
+        <ThemeToggle v-else />
         <button
           type="button"
           class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text"
@@ -101,12 +95,6 @@ function closeMobile(): void {
             >
               Torneos
             </RouterLink>
-            <RouterLink to="/cuenta" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10" @click="closeMobile">
-              Mi cuenta
-            </RouterLink>
-            <button type="button" class="rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-text hover:bg-accent/10" @click="onLogout">
-              Cerrar sesión
-            </button>
           </template>
           <template v-else>
             <RouterLink to="/login" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10" @click="closeMobile">
