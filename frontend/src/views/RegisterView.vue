@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import axios from "axios";
 import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AuthLayout from "../components/AuthLayout.vue";
+import { extractErrorMessage } from "../lib/errors";
 import { registerUser, SELF_ASSIGNABLE_ROLES, type RegisterPayload, type SelfAssignableRole } from "../services/auth";
 
 const { t } = useI18n();
@@ -133,11 +133,7 @@ async function onSubmit(): Promise<void> {
     successMessage.value = t("register.successMessage", { email: user.email });
     resetForm();
   } catch (error) {
-    if (axios.isAxiosError(error) && typeof error.response?.data?.error === "string") {
-      serverError.value = error.response.data.error;
-    } else {
-      serverError.value = t("auth.serverError");
-    }
+    serverError.value = extractErrorMessage(error, t("auth.serverError"));
   } finally {
     submitting.value = false;
   }

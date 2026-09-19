@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import axios from "axios";
 import { onMounted, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../components/AppHeader.vue";
 import DateField from "../components/DateField.vue";
+import { extractErrorMessage } from "../lib/errors";
 import { DISABILITIES, GENDERS, type Disability, type Gender } from "../services/auth";
 import { useAuthStore } from "../stores/auth";
 
@@ -115,11 +115,7 @@ async function onSubmit(): Promise<void> {
     });
     successMessage.value = t("account.successMessage");
   } catch (error) {
-    if (axios.isAxiosError(error) && typeof error.response?.data?.error === "string") {
-      serverError.value = error.response.data.error;
-    } else {
-      serverError.value = t("account.genericServerError");
-    }
+    serverError.value = extractErrorMessage(error, t("account.genericServerError"));
   } finally {
     submitting.value = false;
   }

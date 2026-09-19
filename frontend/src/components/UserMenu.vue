@@ -100,6 +100,7 @@ onBeforeUnmount(() => {
         <div class="border-b border-border-soft px-3 py-2.5">
           <p class="truncate text-sm font-semibold text-text">{{ auth.user?.name }}</p>
           <p class="truncate text-xs text-text-soft">{{ auth.user?.email }}</p>
+          <p v-if="auth.user" class="truncate text-xs text-text-soft">{{ t(`roles.${auth.user.role}`) }}</p>
         </div>
 
         <div class="flex items-center justify-between px-3 py-2.5">

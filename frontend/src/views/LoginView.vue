@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import axios from "axios";
 import { reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 import AuthLayout from "../components/AuthLayout.vue";
+import { extractErrorMessage } from "../lib/errors";
 import { useAuthStore } from "../stores/auth";
 
 const router = useRouter();
@@ -49,11 +49,7 @@ async function onSubmit(): Promise<void> {
     await auth.login(form.email.trim(), form.password);
     router.push("/cuenta");
   } catch (error) {
-    if (axios.isAxiosError(error) && typeof error.response?.data?.error === "string") {
-      serverError.value = error.response.data.error;
-    } else {
-      serverError.value = t("auth.serverError");
-    }
+    serverError.value = extractErrorMessage(error, t("auth.serverError"));
   } finally {
     submitting.value = false;
   }
