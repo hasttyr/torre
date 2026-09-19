@@ -13,8 +13,8 @@ router.get("/health", (_req, res) => {
 
 router.use("/auth", authRouter);
 router.use("/users", usersRouter);
-router.use("/torneos", tournamentsRouter);
-router.use("/jugadores", playersRouter);
+router.use("/tournaments", tournamentsRouter);
+router.use("/players", playersRouter);
 
 // As future increments land, the rest of the domain routers (pairing,
 // results, ...) get mounted here.

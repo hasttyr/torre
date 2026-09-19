@@ -20,7 +20,7 @@ function badRequest(next: NextFunction, message: string): void {
   next(new HttpError(400, message));
 }
 
-/** GET /torneos/mios — tournaments the current user organizes. */
+/** GET /tournaments/mine — tournaments the current user organizes. */
 export async function listMine(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const tournaments = await listMyTournaments(prisma, req.user!.id, req.user!.rol);
@@ -30,7 +30,7 @@ export async function listMine(req: Request, res: Response, next: NextFunction):
   }
 }
 
-/** GET /torneos/disponibles — tournaments currently open for registration. */
+/** GET /tournaments/available — tournaments currently open for registration. */
 export async function listAvailable(_req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const tournaments = await listAvailableTournaments(prisma);
@@ -40,7 +40,7 @@ export async function listAvailable(_req: Request, res: Response, next: NextFunc
   }
 }
 
-/** GET /torneos/inscrito — tournaments the current user (as a player) is enrolled in. */
+/** GET /tournaments/enrolled — tournaments the current user (as a player) is enrolled in. */
 export async function listMyEnrollments(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const tournaments = await listEnrolledTournaments(prisma, req.user!.id);
@@ -50,7 +50,7 @@ export async function listMyEnrollments(req: Request, res: Response, next: NextF
   }
 }
 
-/** POST /torneos — creates a new tournament owned by the current user. */
+/** POST /tournaments — creates a new tournament owned by the current user. */
 export async function create(req: Request, res: Response, next: NextFunction): Promise<void> {
   const parsed = createTournamentSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -66,7 +66,7 @@ export async function create(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-/** GET /torneos/:id — a single tournament's detail. */
+/** GET /tournaments/:id — a single tournament's detail. */
 export async function get(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const tournament = await getTournament(prisma, String(req.params.id), req.user!.id, req.user!.rol);
@@ -76,7 +76,7 @@ export async function get(req: Request, res: Response, next: NextFunction): Prom
   }
 }
 
-/** PUT /torneos/:id/configuracion — updates rounds, time control, tiebreaks and eligibility. */
+/** PUT /tournaments/:id/configuration — updates rounds, time control, tiebreaks and eligibility. */
 export async function configure(req: Request, res: Response, next: NextFunction): Promise<void> {
   const parsed = configureTournamentSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -92,7 +92,7 @@ export async function configure(req: Request, res: Response, next: NextFunction)
   }
 }
 
-/** POST /torneos/:id/inscripciones/abrir — opens registration (HU06). */
+/** POST /tournaments/:id/registration/open — opens registration (HU06). */
 export async function open(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const tournament = await openRegistration(prisma, String(req.params.id), req.user!.id, req.user!.rol);
@@ -102,7 +102,7 @@ export async function open(req: Request, res: Response, next: NextFunction): Pro
   }
 }
 
-/** POST /torneos/:id/inscripciones/cerrar — closes registration (HU06). */
+/** POST /tournaments/:id/registration/close — closes registration (HU06). */
 export async function close(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const tournament = await closeRegistration(prisma, String(req.params.id), req.user!.id, req.user!.rol);
@@ -112,7 +112,7 @@ export async function close(req: Request, res: Response, next: NextFunction): Pr
   }
 }
 
-/** POST /torneos/:id/jugadores — enrolls a player into the tournament (HU07). */
+/** POST /tournaments/:id/players — enrolls a player into the tournament (HU07). */
 export async function enroll(req: Request, res: Response, next: NextFunction): Promise<void> {
   const parsed = enrollPlayerSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -124,7 +124,7 @@ export async function enroll(req: Request, res: Response, next: NextFunction): P
     const player = await enrollPlayer(
       prisma,
       String(req.params.id),
-      parsed.data.jugadorId,
+      parsed.data.playerId,
       req.user!.id,
       req.user!.rol,
     );
@@ -134,7 +134,7 @@ export async function enroll(req: Request, res: Response, next: NextFunction): P
   }
 }
 
-/** GET /torneos/:id/jugadores — lists the players enrolled in the tournament. */
+/** GET /tournaments/:id/players — lists the players enrolled in the tournament. */
 export async function listPlayers(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const players = await listEnrolledPlayers(prisma, String(req.params.id), req.user!.id, req.user!.rol);

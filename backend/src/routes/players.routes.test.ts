@@ -16,7 +16,7 @@ function tokenFor(rol: string): string {
   return jwt.sign({ sub: "usuario-1", rol }, "test-secret", { expiresIn: "1h" });
 }
 
-describe("GET /api/jugadores", () => {
+describe("GET /api/players", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -33,30 +33,30 @@ describe("GET /api/jugadores", () => {
     ]);
 
     const response = await request(createApp())
-      .get("/api/jugadores?q=Luis")
+      .get("/api/players?q=Luis")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZADOR")}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual([
       {
         id: "jugador-1",
-        nombre: "Luis Gómez",
+        name: "Luis Gómez",
         email: "luis@example.com",
-        codigoUniversitario: "U123",
-        programa: "Sistemas",
-        semestre: 5,
+        universityCode: "U123",
+        program: "Sistemas",
+        semester: 5,
       },
     ]);
   });
 
   it("responds 401 without a token", async () => {
-    const response = await request(createApp()).get("/api/jugadores?q=Luis");
+    const response = await request(createApp()).get("/api/players?q=Luis");
     expect(response.status).toBe(401);
   });
 
   it("responds 403 for a role without permission (JUGADOR)", async () => {
     const response = await request(createApp())
-      .get("/api/jugadores?q=Luis")
+      .get("/api/players?q=Luis")
       .set("Authorization", `Bearer ${tokenFor("JUGADOR")}`);
 
     expect(response.status).toBe(403);

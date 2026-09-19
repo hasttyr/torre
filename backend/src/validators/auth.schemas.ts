@@ -1,27 +1,27 @@
 import { z } from "zod";
 
 const baseFields = {
-  nombre: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres"),
+  name: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres"),
   email: z.string().trim().email("El correo no es válido"),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
 };
 
 // JUGADOR requires extra data because Jugador.codigoUniversitario, programa
 // and semestre are NOT NULL in the schema (see prisma/schema.prisma).
-export const registerSchema = z.discriminatedUnion("rol", [
+export const registerSchema = z.discriminatedUnion("role", [
   z.object({
     ...baseFields,
-    rol: z.literal("JUGADOR"),
-    codigoUniversitario: z.string().trim().min(1, "El código universitario es requerido"),
-    programa: z.string().trim().min(1, "El programa es requerido"),
-    semestre: z.number().int().positive("El semestre debe ser un entero positivo"),
+    role: z.literal("JUGADOR"),
+    universityCode: z.string().trim().min(1, "El código universitario es requerido"),
+    program: z.string().trim().min(1, "El programa es requerido"),
+    semester: z.number().int().positive("El semestre debe ser un entero positivo"),
   }),
   z.object({
     ...baseFields,
     // ADMINISTRADOR is deliberately excluded: an admin account must not be
     // creatable through self-registration; it's provisioned some other way
     // (seed, a future internal panel).
-    rol: z.enum(["ORGANIZADOR", "ARBITRO", "ENTRENADOR"]),
+    role: z.enum(["ORGANIZADOR", "ARBITRO", "ENTRENADOR"]),
   }),
 ]);
 

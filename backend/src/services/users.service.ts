@@ -5,12 +5,12 @@ import type { UpdateProfileSchemaInput } from "../validators/users.schemas";
 import { toUserDto, type UserDto } from "./user.mapper";
 
 const PLAYER_FIELDS = [
-  "codigoUniversitario",
-  "programa",
-  "semestre",
-  "fechaNacimiento",
-  "genero",
-  "discapacidad",
+  "universityCode",
+  "program",
+  "semester",
+  "birthDate",
+  "gender",
+  "disability",
 ] as const;
 
 /** Checks whether the update payload touches any player-profile field. */
@@ -21,12 +21,12 @@ function hasPlayerChanges(data: UpdateProfileSchemaInput): boolean {
 /** Builds the Prisma update payload for the player profile from the (partial) input. */
 function buildPlayerData(data: UpdateProfileSchemaInput): Prisma.JugadorUpdateWithoutUsuarioInput {
   return {
-    ...(data.codigoUniversitario !== undefined ? { codigoUniversitario: data.codigoUniversitario.trim() } : {}),
-    ...(data.programa !== undefined ? { programa: data.programa.trim() } : {}),
-    ...(data.semestre !== undefined ? { semestre: data.semestre } : {}),
-    ...(data.fechaNacimiento !== undefined ? { fechaNacimiento: data.fechaNacimiento } : {}),
-    ...(data.genero !== undefined ? { genero: data.genero } : {}),
-    ...(data.discapacidad !== undefined ? { discapacidad: data.discapacidad } : {}),
+    ...(data.universityCode !== undefined ? { codigoUniversitario: data.universityCode.trim() } : {}),
+    ...(data.program !== undefined ? { programa: data.program.trim() } : {}),
+    ...(data.semester !== undefined ? { semestre: data.semester } : {}),
+    ...(data.birthDate !== undefined ? { fechaNacimiento: data.birthDate } : {}),
+    ...(data.gender !== undefined ? { genero: data.gender } : {}),
+    ...(data.disability !== undefined ? { discapacidad: data.disability } : {}),
   };
 }
 
@@ -100,7 +100,7 @@ export async function updateOwnProfile(
   const user = await prisma.usuario.update({
     where: { id: userId },
     data: {
-      ...(data.nombre !== undefined ? { nombre: data.nombre.trim() } : {}),
+      ...(data.name !== undefined ? { nombre: data.name.trim() } : {}),
       ...(hasPlayerUpdates ? { jugador: { update: buildPlayerData(data) } } : {}),
     },
     include: { rol: true, jugador: true },

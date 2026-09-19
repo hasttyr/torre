@@ -26,21 +26,21 @@ const listEnrolledTournamentsMock = vi.mocked(listEnrolledTournaments);
 
 const AVAILABLE_TOURNAMENT = {
   id: "torneo-1",
-  nombre: "Copa Abierta",
-  fechaInicio: "2026-10-01",
-  fechaFin: "2026-10-03",
-  estado: "INSCRIPCIONES_ABIERTAS" as const,
-  formato: "suizo",
-  numeroRondas: null,
-  ritmo: null,
-  programaRestringido: null,
-  semestreMinimo: null,
-  organizadorId: "org-1",
-  criteriosDesempate: [],
+  name: "Copa Abierta",
+  startDate: "2026-10-01",
+  endDate: "2026-10-03",
+  status: "INSCRIPCIONES_ABIERTAS" as const,
+  format: "suizo",
+  roundsCount: null,
+  timeControl: null,
+  restrictedProgram: null,
+  minimumSemester: null,
+  organizerId: "org-1",
+  tiebreakCriteria: [],
   createdAt: "2026-09-17T00:00:00.000Z",
 };
 
-const ENROLLED_TOURNAMENT = { ...AVAILABLE_TOURNAMENT, id: "torneo-2", nombre: "Copa Interna", estado: "CREADO" as const };
+const ENROLLED_TOURNAMENT = { ...AVAILABLE_TOURNAMENT, id: "torneo-2", name: "Copa Interna", status: "CREADO" as const };
 
 async function mountView() {
   const router = createRouter({

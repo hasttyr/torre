@@ -41,17 +41,17 @@ const listEnrolledTournamentsMock = vi.mocked(listEnrolledTournaments);
 
 const TOURNAMENT = {
   id: "torneo-1",
-  nombre: "Copa Universitaria",
-  fechaInicio: "2026-10-01",
-  fechaFin: "2026-10-03",
-  estado: "CREADO" as const,
-  formato: "suizo",
-  numeroRondas: null,
-  ritmo: null,
-  programaRestringido: null,
-  semestreMinimo: null,
-  organizadorId: "org-1",
-  criteriosDesempate: [],
+  name: "Copa Universitaria",
+  startDate: "2026-10-01",
+  endDate: "2026-10-03",
+  status: "CREADO" as const,
+  format: "suizo",
+  roundsCount: null,
+  timeControl: null,
+  restrictedProgram: null,
+  minimumSemester: null,
+  organizerId: "org-1",
+  tiebreakCriteria: [],
   createdAt: "2026-09-17T00:00:00.000Z",
 };
 
@@ -65,7 +65,7 @@ describe("useTournamentsStore", () => {
     createTournamentMock.mockResolvedValue(TOURNAMENT);
     const store = useTournamentsStore();
 
-    const tournament = await store.create({ nombre: "Copa Universitaria", fechaInicio: "2026-10-01", fechaFin: "2026-10-03" });
+    const tournament = await store.create({ name: "Copa Universitaria", startDate: "2026-10-01", endDate: "2026-10-03" });
 
     expect(tournament).toEqual(TOURNAMENT);
     expect(store.current).toEqual(TOURNAMENT);
@@ -75,7 +75,7 @@ describe("useTournamentsStore", () => {
   it("load fetches the tournament and its enrolled players", async () => {
     getTournamentMock.mockResolvedValue(TOURNAMENT);
     listEnrolledPlayersMock.mockResolvedValue([
-      { jugadorId: "j1", nombre: "Luis", codigoUniversitario: "U1", programa: "Sistemas", semestre: 5, inscritoEn: "2026-09-17" },
+      { playerId: "j1", name: "Luis", universityCode: "U1", program: "Sistemas", semester: 5, enrolledAt: "2026-09-17" },
     ]);
     const store = useTournamentsStore();
 
@@ -86,42 +86,42 @@ describe("useTournamentsStore", () => {
   });
 
   it("configure updates the tournament with the backend's response", async () => {
-    configureTournamentMock.mockResolvedValue({ ...TOURNAMENT, numeroRondas: 7, ritmo: "90+30" });
+    configureTournamentMock.mockResolvedValue({ ...TOURNAMENT, roundsCount: 7, timeControl: "90+30" });
     const store = useTournamentsStore();
 
-    await store.configure("torneo-1", { numeroRondas: 7, ritmo: "90+30" });
+    await store.configure("torneo-1", { roundsCount: 7, timeControl: "90+30" });
 
-    expect(store.current?.numeroRondas).toBe(7);
-    expect(store.current?.ritmo).toBe("90+30");
+    expect(store.current?.roundsCount).toBe(7);
+    expect(store.current?.timeControl).toBe("90+30");
   });
 
   it("openRegistration and closeRegistration reflect the new state", async () => {
-    openRegistrationMock.mockResolvedValue({ ...TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
-    closeRegistrationMock.mockResolvedValue({ ...TOURNAMENT, estado: "INSCRIPCIONES_CERRADAS" });
+    openRegistrationMock.mockResolvedValue({ ...TOURNAMENT, status: "INSCRIPCIONES_ABIERTAS" });
+    closeRegistrationMock.mockResolvedValue({ ...TOURNAMENT, status: "INSCRIPCIONES_CERRADAS" });
     const store = useTournamentsStore();
 
     await store.openRegistration("torneo-1");
-    expect(store.current?.estado).toBe("INSCRIPCIONES_ABIERTAS");
+    expect(store.current?.status).toBe("INSCRIPCIONES_ABIERTAS");
 
     await store.closeRegistration("torneo-1");
-    expect(store.current?.estado).toBe("INSCRIPCIONES_CERRADAS");
+    expect(store.current?.status).toBe("INSCRIPCIONES_CERRADAS");
   });
 
   it("enrollPlayer adds the player to the list", async () => {
     enrollPlayerMock.mockResolvedValue({
-      jugadorId: "j1",
-      nombre: "Luis",
-      codigoUniversitario: "U1",
-      programa: "Sistemas",
-      semestre: 5,
-      inscritoEn: "2026-09-17",
+      playerId: "j1",
+      name: "Luis",
+      universityCode: "U1",
+      program: "Sistemas",
+      semester: 5,
+      enrolledAt: "2026-09-17",
     });
     const store = useTournamentsStore();
 
     await store.enrollPlayer("torneo-1", "j1");
 
     expect(store.enrolledPlayers).toEqual([
-      { jugadorId: "j1", nombre: "Luis", codigoUniversitario: "U1", programa: "Sistemas", semestre: 5, inscritoEn: "2026-09-17" },
+      { playerId: "j1", name: "Luis", universityCode: "U1", program: "Sistemas", semester: 5, enrolledAt: "2026-09-17" },
     ]);
   });
 

@@ -16,16 +16,16 @@ const ROLE_GLYPHS: Record<SelfAssignableRole, string> = {
 };
 
 const form = reactive({
-  nombre: "",
+  name: "",
   email: "",
   password: "",
-  rol: "JUGADOR" as SelfAssignableRole,
-  codigoUniversitario: "",
-  programa: "",
-  semestre: "",
+  role: "JUGADOR" as SelfAssignableRole,
+  universityCode: "",
+  program: "",
+  semester: "",
 });
 
-const isPlayer = computed(() => form.rol === "JUGADOR");
+const isPlayer = computed(() => form.role === "JUGADOR");
 
 /**
  * Checks whether a string has the basic shape of an email address.
@@ -62,8 +62,8 @@ function validate(): boolean {
     delete errors[key];
   }
 
-  if (form.nombre.trim().length < 2) {
-    errors.nombre = t("auth.nameMinLength");
+  if (form.name.trim().length < 2) {
+    errors.name = t("auth.nameMinLength");
   }
   if (!looksLikeEmail(form.email.trim())) {
     errors.email = t("auth.emailInvalid");
@@ -73,14 +73,14 @@ function validate(): boolean {
   }
 
   if (isPlayer.value) {
-    if (!form.codigoUniversitario.trim()) {
-      errors.codigoUniversitario = t("auth.universityCodeRequired");
+    if (!form.universityCode.trim()) {
+      errors.universityCode = t("auth.universityCodeRequired");
     }
-    if (!form.programa.trim()) {
-      errors.programa = t("auth.programRequired");
+    if (!form.program.trim()) {
+      errors.program = t("auth.programRequired");
     }
-    if (!Number.isInteger(Number(form.semestre)) || Number(form.semestre) <= 0) {
-      errors.semestre = t("auth.semesterPositive");
+    if (!Number.isInteger(Number(form.semester)) || Number(form.semester) <= 0) {
+      errors.semester = t("auth.semesterPositive");
     }
   }
 
@@ -90,32 +90,32 @@ function validate(): boolean {
 /** Builds the registration API payload from the form, shaped by the chosen role. */
 function buildPayload(): RegisterPayload {
   const base = {
-    nombre: form.nombre.trim(),
+    name: form.name.trim(),
     email: form.email.trim(),
     password: form.password,
   };
 
-  if (form.rol === "JUGADOR") {
+  if (form.role === "JUGADOR") {
     return {
       ...base,
-      rol: "JUGADOR",
-      codigoUniversitario: form.codigoUniversitario.trim(),
-      programa: form.programa.trim(),
-      semestre: Number(form.semestre),
+      role: "JUGADOR",
+      universityCode: form.universityCode.trim(),
+      program: form.program.trim(),
+      semester: Number(form.semester),
     };
   }
 
-  return { ...base, rol: form.rol };
+  return { ...base, role: form.role };
 }
 
 /** Clears the registration form back to its initial empty state. */
 function resetForm(): void {
-  form.nombre = "";
+  form.name = "";
   form.email = "";
   form.password = "";
-  form.codigoUniversitario = "";
-  form.programa = "";
-  form.semestre = "";
+  form.universityCode = "";
+  form.program = "";
+  form.semester = "";
 }
 
 /** Validates and submits the registration form to the backend. */
@@ -188,22 +188,22 @@ async function onSubmit(): Promise<void> {
             :key="role"
             class="flex cursor-pointer flex-col items-center gap-1 rounded-lg border px-3 py-3 text-center text-[0.78rem] font-semibold transition-colors"
             :class="
-              form.rol === role
+              form.role === role
                 ? 'border-accent bg-accent/15 text-text'
                 : 'border-border bg-surface-2 text-text-muted hover:border-accent/40'
             "
           >
-            <input v-model="form.rol" type="radio" name="rol" :value="role" class="sr-only" />
+            <input v-model="form.role" type="radio" name="role" :value="role" class="sr-only" />
             <span class="text-xl text-accent" aria-hidden="true">{{ ROLE_GLYPHS[role] }}</span>
             <span>{{ t(`roles.${role}`) }}</span>
           </label>
         </div>
       </div>
 
-      <div class="field" :class="{ 'has-error': errors.nombre }">
-        <label for="nombre">{{ t("register.nameLabel") }}</label>
-        <input id="nombre" v-model="form.nombre" type="text" autocomplete="name" :placeholder="t('register.namePlaceholder')" />
-        <span class="field-error">{{ errors.nombre }}</span>
+      <div class="field" :class="{ 'has-error': errors.name }">
+        <label for="name">{{ t("register.nameLabel") }}</label>
+        <input id="name" v-model="form.name" type="text" autocomplete="name" :placeholder="t('register.namePlaceholder')" />
+        <span class="field-error">{{ errors.name }}</span>
       </div>
 
       <div class="field" :class="{ 'has-error': errors.email }">
@@ -233,22 +233,22 @@ async function onSubmit(): Promise<void> {
         <fieldset v-if="isPlayer" class="m-0 flex flex-col gap-4 rounded-xl border border-dashed border-border p-4 pt-4">
           <legend class="px-1.5 text-[0.8rem] font-semibold text-text-muted">{{ t("register.playerDataLegend") }}</legend>
 
-          <div class="field" :class="{ 'has-error': errors.codigoUniversitario }">
-            <label for="codigo">{{ t("register.universityCodeLabel") }}</label>
-            <input id="codigo" v-model="form.codigoUniversitario" type="text" :placeholder="t('register.universityCodePlaceholder')" />
-            <span class="field-error">{{ errors.codigoUniversitario }}</span>
+          <div class="field" :class="{ 'has-error': errors.universityCode }">
+            <label for="universityCode">{{ t("register.universityCodeLabel") }}</label>
+            <input id="universityCode" v-model="form.universityCode" type="text" :placeholder="t('register.universityCodePlaceholder')" />
+            <span class="field-error">{{ errors.universityCode }}</span>
           </div>
 
-          <div class="field" :class="{ 'has-error': errors.programa }">
-            <label for="programa">{{ t("register.programLabel") }}</label>
-            <input id="programa" v-model="form.programa" type="text" :placeholder="t('register.programPlaceholder')" />
-            <span class="field-error">{{ errors.programa }}</span>
+          <div class="field" :class="{ 'has-error': errors.program }">
+            <label for="program">{{ t("register.programLabel") }}</label>
+            <input id="program" v-model="form.program" type="text" :placeholder="t('register.programPlaceholder')" />
+            <span class="field-error">{{ errors.program }}</span>
           </div>
 
-          <div class="field" :class="{ 'has-error': errors.semestre }">
-            <label for="semestre">{{ t("register.semesterLabel") }}</label>
-            <input id="semestre" v-model="form.semestre" type="number" min="1" :placeholder="t('register.semesterPlaceholder')" />
-            <span class="field-error">{{ errors.semestre }}</span>
+          <div class="field" :class="{ 'has-error': errors.semester }">
+            <label for="semester">{{ t("register.semesterLabel") }}</label>
+            <input id="semester" v-model="form.semester" type="number" min="1" :placeholder="t('register.semesterPlaceholder')" />
+            <span class="field-error">{{ errors.semester }}</span>
           </div>
         </fieldset>
       </Transition>

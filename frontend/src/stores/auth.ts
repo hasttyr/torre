@@ -62,11 +62,11 @@ export const useAuthStore = defineStore("auth", {
   actions: {
     /** Logs in with email and password and persists the resulting session. */
     async login(email: string, password: string): Promise<void> {
-      const { token, usuario } = await loginUser({ email, password });
+      const { token, user } = await loginUser({ email, password });
       this.token = token;
-      this.user = usuario;
+      this.user = user;
       setAuthToken(token);
-      writeStorage(token, usuario);
+      writeStorage(token, user);
     },
 
     /** Logs the current user out, both on the backend (best-effort) and locally. */

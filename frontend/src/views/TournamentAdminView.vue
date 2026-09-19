@@ -30,11 +30,11 @@ onMounted(async () => {
 // --- HU05: configure tournament (rounds, time control, tiebreaks) ---
 
 const configForm = reactive({
-  numeroRondas: "",
-  ritmo: "",
-  desempates: "Buchholz, Buchholz Cortado 1, Sonneborn-Berger, ARO",
-  programaRestringido: "",
-  semestreMinimo: "",
+  roundsCount: "",
+  timeControl: "",
+  tiebreaks: "Buchholz, Buchholz Cortado 1, Sonneborn-Berger, ARO",
+  restrictedProgram: "",
+  minimumSemester: "",
 });
 const configSubmitting = ref(false);
 const configError = ref<string | null>(null);
@@ -47,19 +47,19 @@ const configSuccess = ref<string | null>(null);
  */
 function populateConfigForm(): void {
   if (!tournaments.current) return;
-  configForm.numeroRondas = tournaments.current.numeroRondas != null ? String(tournaments.current.numeroRondas) : "";
-  configForm.ritmo = tournaments.current.ritmo ?? "";
-  if (tournaments.current.criteriosDesempate.length > 0) {
-    configForm.desempates = tournaments.current.criteriosDesempate.map((c) => c.nombre).join(", ");
+  configForm.roundsCount = tournaments.current.roundsCount != null ? String(tournaments.current.roundsCount) : "";
+  configForm.timeControl = tournaments.current.timeControl ?? "";
+  if (tournaments.current.tiebreakCriteria.length > 0) {
+    configForm.tiebreaks = tournaments.current.tiebreakCriteria.map((c) => c.name).join(", ");
   }
-  configForm.programaRestringido = tournaments.current.programaRestringido ?? "";
-  configForm.semestreMinimo = tournaments.current.semestreMinimo != null ? String(tournaments.current.semestreMinimo) : "";
+  configForm.restrictedProgram = tournaments.current.restrictedProgram ?? "";
+  configForm.minimumSemester = tournaments.current.minimumSemester != null ? String(tournaments.current.minimumSemester) : "";
 }
 
 // RN-05: the tiebreak order can only be changed while the tournament is in
 // its preliminary state (before round 1). The backend is what actually
 // decides; this only avoids a submit that is already known to fail.
-const canEditTiebreaks = computed(() => tournaments.current?.estado === "CREADO");
+const canEditTiebreaks = computed(() => tournaments.current?.status === "CREADO");
 
 /** Validates and submits the tournament configuration form. */
 async function onConfigure(): Promise<void> {
@@ -67,18 +67,18 @@ async function onConfigure(): Promise<void> {
   configSuccess.value = null;
   configSubmitting.value = true;
   try {
-    const tiebreakCriteria = configForm.desempates
+    const tiebreakCriteria = configForm.tiebreaks
       .split(",")
-      .map((nombre) => nombre.trim())
+      .map((name) => name.trim())
       .filter(Boolean)
-      .map((nombre, index) => ({ nombre, orden: index + 1 }));
+      .map((name, index) => ({ name, order: index + 1 }));
 
     await tournaments.configure(tournamentId, {
-      numeroRondas: configForm.numeroRondas ? Number(configForm.numeroRondas) : undefined,
-      ritmo: configForm.ritmo.trim() || undefined,
-      criteriosDesempate: canEditTiebreaks.value ? tiebreakCriteria : undefined,
-      programaRestringido: configForm.programaRestringido.trim() || null,
-      semestreMinimo: configForm.semestreMinimo ? Number(configForm.semestreMinimo) : null,
+      roundsCount: configForm.roundsCount ? Number(configForm.roundsCount) : undefined,
+      timeControl: configForm.timeControl.trim() || undefined,
+      tiebreakCriteria: canEditTiebreaks.value ? tiebreakCriteria : undefined,
+      restrictedProgram: configForm.restrictedProgram.trim() || null,
+      minimumSemester: configForm.minimumSemester ? Number(configForm.minimumSemester) : null,
     });
     configSuccess.value = t("tournamentAdmin.configSuccess");
   } catch (error) {
@@ -127,8 +127,8 @@ const searching = ref(false);
 const enrollSubmitting = ref(false);
 const enrollError = ref<string | null>(null);
 
-const registrationOpen = computed(() => tournaments.current?.estado === "INSCRIPCIONES_ABIERTAS");
-const enrolledIds = computed(() => new Set(tournaments.enrolledPlayers.map((p) => p.jugadorId)));
+const registrationOpen = computed(() => tournaments.current?.status === "INSCRIPCIONES_ABIERTAS");
+const enrolledIds = computed(() => new Set(tournaments.enrolledPlayers.map((p) => p.playerId)));
 
 let debounceHandle: ReturnType<typeof setTimeout> | undefined;
 
@@ -186,8 +186,8 @@ function extractError(error: unknown): string {
 
       <template v-else-if="tournaments.current">
         <header class="flex flex-wrap items-center justify-between gap-4">
-          <h1 class="text-2xl sm:text-3xl">{{ tournaments.current.nombre }}</h1>
-          <span class="pill">{{ t(`estados.${tournaments.current.estado}`) }}</span>
+          <h1 class="text-2xl sm:text-3xl">{{ tournaments.current.name }}</h1>
+          <span class="pill">{{ t(`estados.${tournaments.current.status}`) }}</span>
         </header>
 
         <!-- HU05 -->
@@ -215,20 +215,20 @@ function extractError(error: unknown): string {
           <form novalidate class="config-form flex flex-col gap-4" @submit.prevent="onConfigure">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="field">
-                <label for="numeroRondas">{{ t("tournamentAdmin.roundsCountLabel") }}</label>
-                <input id="numeroRondas" v-model="configForm.numeroRondas" type="number" min="1" placeholder="7" />
+                <label for="roundsCount">{{ t("tournamentAdmin.roundsCountLabel") }}</label>
+                <input id="roundsCount" v-model="configForm.roundsCount" type="number" min="1" placeholder="7" />
               </div>
               <div class="field">
-                <label for="ritmo">{{ t("tournamentAdmin.timeControlLabel") }}</label>
-                <input id="ritmo" v-model="configForm.ritmo" type="text" placeholder="90+30" />
+                <label for="timeControl">{{ t("tournamentAdmin.timeControlLabel") }}</label>
+                <input id="timeControl" v-model="configForm.timeControl" type="text" placeholder="90+30" />
               </div>
             </div>
 
             <div class="field">
-              <label for="desempates">{{ t("tournamentAdmin.tiebreaksLabel") }}</label>
+              <label for="tiebreaks">{{ t("tournamentAdmin.tiebreaksLabel") }}</label>
               <input
-                id="desempates"
-                v-model="configForm.desempates"
+                id="tiebreaks"
+                v-model="configForm.tiebreaks"
                 type="text"
                 :disabled="!canEditTiebreaks"
               />
@@ -241,19 +241,19 @@ function extractError(error: unknown): string {
               <p class="field-label mb-3">{{ t("tournamentAdmin.eligibilityLegend") }}</p>
               <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div class="field">
-                  <label for="programaRestringido">{{ t("tournamentAdmin.restrictedProgramLabel") }}</label>
+                  <label for="restrictedProgram">{{ t("tournamentAdmin.restrictedProgramLabel") }}</label>
                   <input
-                    id="programaRestringido"
-                    v-model="configForm.programaRestringido"
+                    id="restrictedProgram"
+                    v-model="configForm.restrictedProgram"
                     type="text"
                     :placeholder="t('tournamentAdmin.restrictedProgramPlaceholder')"
                   />
                 </div>
                 <div class="field">
-                  <label for="semestreMinimo">{{ t("tournamentAdmin.minimumSemesterLabel") }}</label>
+                  <label for="minimumSemester">{{ t("tournamentAdmin.minimumSemesterLabel") }}</label>
                   <input
-                    id="semestreMinimo"
-                    v-model="configForm.semestreMinimo"
+                    id="minimumSemester"
+                    v-model="configForm.minimumSemester"
                     type="number"
                     min="1"
                     :placeholder="t('tournamentAdmin.minimumSemesterPlaceholder')"
@@ -276,7 +276,7 @@ function extractError(error: unknown): string {
           <h2 class="mb-1 text-lg">{{ t("tournamentAdmin.registrationTitle") }}</h2>
           <p class="mb-4 text-sm">
             {{ t("tournamentAdmin.registrationSubtitle") }}
-            <strong class="text-text">{{ t(`estados.${tournaments.current.estado}`) }}</strong>
+            <strong class="text-text">{{ t(`estados.${tournaments.current.status}`) }}</strong>
           </p>
 
           <Transition
@@ -292,7 +292,7 @@ function extractError(error: unknown): string {
             <button
               type="button"
               class="btn btn-primary"
-              :disabled="registrationSubmitting || tournaments.current.estado !== 'CREADO'"
+              :disabled="registrationSubmitting || tournaments.current.status !== 'CREADO'"
               @click="onOpenRegistration"
             >
               {{ t("tournamentAdmin.openRegistration") }}
@@ -300,7 +300,7 @@ function extractError(error: unknown): string {
             <button
               type="button"
               class="btn btn-ghost"
-              :disabled="registrationSubmitting || tournaments.current.estado !== 'INSCRIPCIONES_ABIERTAS'"
+              :disabled="registrationSubmitting || tournaments.current.status !== 'INSCRIPCIONES_ABIERTAS'"
               @click="onCloseRegistration"
             >
               {{ t("tournamentAdmin.closeRegistration") }}
@@ -344,8 +344,8 @@ function extractError(error: unknown): string {
                   class="flex items-center justify-between gap-3 border-b border-border-soft px-3.5 py-2.5 last:border-b-0"
                 >
                   <div class="flex flex-col gap-0.5">
-                    <strong class="text-text">{{ player.nombre }}</strong>
-                    <span class="text-sm text-text-muted">{{ player.codigoUniversitario }} · {{ player.programa }}</span>
+                    <strong class="text-text">{{ player.name }}</strong>
+                    <span class="text-sm text-text-muted">{{ player.universityCode }} · {{ player.program }}</span>
                   </div>
                   <button
                     type="button"
@@ -375,11 +375,11 @@ function extractError(error: unknown): string {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="player in tournaments.enrolledPlayers" :key="player.jugadorId">
-                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.nombre }}</td>
-                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.codigoUniversitario }}</td>
-                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.programa }}</td>
-                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.semestre }}</td>
+                <tr v-for="player in tournaments.enrolledPlayers" :key="player.playerId">
+                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.name }}</td>
+                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.universityCode }}</td>
+                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.program }}</td>
+                  <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.semester }}</td>
                 </tr>
               </tbody>
             </table>

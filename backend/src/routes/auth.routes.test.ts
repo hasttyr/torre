@@ -37,23 +37,23 @@ describe("POST /api/auth/register", () => {
     });
 
     const response = await request(createApp()).post("/api/auth/register").send({
-      nombre: "Ana Torres",
+      name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
-      rol: "ORGANIZADOR",
+      role: "ORGANIZADOR",
     });
 
     expect(response.status).toBe(201);
-    expect(response.body).toMatchObject({ id: "usuario-1", email: "ana@example.com", rol: "ORGANIZADOR" });
+    expect(response.body).toMatchObject({ id: "usuario-1", email: "ana@example.com", role: "ORGANIZADOR" });
     expect(response.body.passwordHash).toBeUndefined();
   });
 
   it("responds 400 with an invalid email", async () => {
     const response = await request(createApp()).post("/api/auth/register").send({
-      nombre: "Ana Torres",
+      name: "Ana Torres",
       email: "no-es-un-correo",
       password: "password123",
-      rol: "ORGANIZADOR",
+      role: "ORGANIZADOR",
     });
 
     expect(response.status).toBe(400);
@@ -62,10 +62,10 @@ describe("POST /api/auth/register", () => {
 
   it("responds 400 when the player profile required for role JUGADOR is missing", async () => {
     const response = await request(createApp()).post("/api/auth/register").send({
-      nombre: "Luis Gómez",
+      name: "Luis Gómez",
       email: "luis@example.com",
       password: "password123",
-      rol: "JUGADOR",
+      role: "JUGADOR",
     });
 
     expect(response.status).toBe(400);
@@ -73,10 +73,10 @@ describe("POST /api/auth/register", () => {
 
   it("responds 400 when the role is ADMINISTRADOR (not self-assignable)", async () => {
     const response = await request(createApp()).post("/api/auth/register").send({
-      nombre: "Quiero Ser Admin",
+      name: "Quiero Ser Admin",
       email: "admin@example.com",
       password: "password123",
-      rol: "ADMINISTRADOR",
+      role: "ADMINISTRADOR",
     });
 
     expect(response.status).toBe(400);
@@ -88,13 +88,13 @@ describe("POST /api/auth/register", () => {
     prismaMock.usuario.findUnique.mockResolvedValue({ id: "usuario-existente" });
 
     const response = await request(createApp()).post("/api/auth/register").send({
-      nombre: "Luis Gómez",
+      name: "Luis Gómez",
       email: "luis@example.com",
       password: "password123",
-      rol: "JUGADOR",
-      codigoUniversitario: "U123",
-      programa: "Ingeniería",
-      semestre: 3,
+      role: "JUGADOR",
+      universityCode: "U123",
+      program: "Ingeniería",
+      semester: 3,
     });
 
     expect(response.status).toBe(409);
@@ -107,10 +107,10 @@ describe("POST /api/auth/register", () => {
     );
 
     const response = await request(createApp()).post("/api/auth/register").send({
-      nombre: "Ana Torres",
+      name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
-      rol: "ORGANIZADOR",
+      role: "ORGANIZADOR",
     });
 
     expect(response.status).toBe(500);
@@ -142,9 +142,9 @@ describe("POST /api/auth/login", () => {
       .send({ email: "ana@example.com", password: "password123" });
 
     expect(response.status).toBe(200);
-    expect(response.body.usuario).toMatchObject({ id: "usuario-1", email: "ana@example.com", rol: "ORGANIZADOR" });
+    expect(response.body.user).toMatchObject({ id: "usuario-1", email: "ana@example.com", role: "ORGANIZADOR" });
     expect(typeof response.body.token).toBe("string");
-    expect(response.body.usuario.passwordHash).toBeUndefined();
+    expect(response.body.user.passwordHash).toBeUndefined();
   });
 
   it("responds 401 with an incorrect password", async () => {

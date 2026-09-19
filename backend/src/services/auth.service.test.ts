@@ -38,18 +38,18 @@ describe("registerUser", () => {
     });
 
     const result = await registerUser(prisma as unknown as PrismaClient, {
-      nombre: "Ana Torres",
+      name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
-      rol: "ORGANIZADOR",
+      role: "ORGANIZADOR",
     });
 
     expect(result).toEqual({
       id: "usuario-1",
-      nombre: "Ana Torres",
+      name: "Ana Torres",
       email: "ana@example.com",
-      estado: "ACTIVO",
-      rol: "ORGANIZADOR",
+      status: "ACTIVO",
+      role: "ORGANIZADOR",
       createdAt: new Date("2026-01-01T00:00:00Z"),
     });
 
@@ -72,13 +72,13 @@ describe("registerUser", () => {
     });
 
     await registerUser(prisma as unknown as PrismaClient, {
-      nombre: "Luis Gómez",
+      name: "Luis Gómez",
       email: "luis@example.com",
       password: "password123",
-      rol: "JUGADOR",
-      codigoUniversitario: "U12345",
-      programa: "Ingeniería de Sistemas",
-      semestre: 5,
+      role: "JUGADOR",
+      universityCode: "U12345",
+      program: "Ingeniería de Sistemas",
+      semester: 5,
     });
 
     const createArgs = prisma.usuario.create.mock.calls[0][0];
@@ -102,10 +102,10 @@ describe("registerUser", () => {
     });
 
     await registerUser(prisma as unknown as PrismaClient, {
-      nombre: "  Ana  ",
+      name: "  Ana  ",
       email: "  Ana@Example.COM  ",
       password: "password123",
-      rol: "ARBITRO",
+      role: "ARBITRO",
     });
 
     expect(prisma.usuario.findUnique).toHaveBeenCalledWith({ where: { email: "ana@example.com" } });
@@ -119,13 +119,13 @@ describe("registerUser", () => {
 
     await expect(
       registerUser(prisma as unknown as PrismaClient, {
-        nombre: "Duplicado",
+        name: "Duplicado",
         email: "existe@example.com",
         password: "password123",
-        rol: "JUGADOR",
-        codigoUniversitario: "U1",
-        programa: "Ingeniería",
-        semestre: 1,
+        role: "JUGADOR",
+        universityCode: "U1",
+        program: "Ingeniería",
+        semester: 1,
       }),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
 
@@ -137,10 +137,10 @@ describe("registerUser", () => {
 
     await expect(
       registerUser(prisma as unknown as PrismaClient, {
-        nombre: "Alguien",
+        name: "Alguien",
         email: "alguien@example.com",
         password: "password123",
-        rol: "ORGANIZADOR",
+        role: "ORGANIZADOR",
       }),
     ).rejects.toMatchObject({ status: 400 } satisfies Partial<HttpError>);
   });
@@ -152,10 +152,10 @@ describe("registerUser", () => {
 
     await expect(
       registerUser(prisma as unknown as PrismaClient, {
-        nombre: "Carrera",
+        name: "Carrera",
         email: "carrera@example.com",
         password: "password123",
-        rol: "ORGANIZADOR",
+        role: "ORGANIZADOR",
       }),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
   });
@@ -185,12 +185,12 @@ describe("loginUser", () => {
       password: "password123",
     });
 
-    expect(result.usuario).toEqual({
+    expect(result.user).toEqual({
       id: "usuario-1",
-      nombre: "Ana Torres",
+      name: "Ana Torres",
       email: "ana@example.com",
-      estado: "ACTIVO",
-      rol: "ORGANIZADOR",
+      status: "ACTIVO",
+      role: "ORGANIZADOR",
       createdAt: new Date("2026-01-01T00:00:00Z"),
     });
 

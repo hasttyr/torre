@@ -60,12 +60,12 @@ describe("createTournament", () => {
     });
 
     const tournament = await createTournament(prisma as unknown as PrismaClient, "org-1", {
-      nombre: "Copa Universitaria",
-      fechaInicio: new Date("2026-10-01"),
-      fechaFin: new Date("2026-10-03"),
+      name: "Copa Universitaria",
+      startDate: new Date("2026-10-01"),
+      endDate: new Date("2026-10-03"),
     });
 
-    expect(tournament.estado).toBe("CREADO");
+    expect(tournament.status).toBe("CREADO");
     expect(prisma.torneo.create.mock.calls[0][0].data.organizadorId).toBe("org-1");
   });
 });
@@ -199,7 +199,7 @@ describe("listEnrolledTournaments", () => {
 
     expect(prisma.inscripcion.findMany.mock.calls[0][0].where).toEqual({ jugadorId: "jugador-1" });
     expect(tournaments).toEqual([
-      expect.objectContaining({ id: "tournament-1", nombre: "Copa Universitaria" }),
+      expect.objectContaining({ id: "tournament-1", name: "Copa Universitaria" }),
     ]);
   });
 });
@@ -216,7 +216,7 @@ describe("configureTournament", () => {
 
     await expect(
       configureTournament(prisma as unknown as PrismaClient, "tournament-1", "otro-usuario", "ORGANIZADOR", {
-        numeroRondas: 5,
+        roundsCount: 5,
       }),
     ).rejects.toMatchObject({ status: 403 } satisfies Partial<HttpError>);
   });
@@ -227,7 +227,7 @@ describe("configureTournament", () => {
 
     await expect(
       configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR", {
-        criteriosDesempate: [{ nombre: "Buchholz", orden: 1 }],
+        tiebreakCriteria: [{ name: "Buchholz", order: 1 }],
       }),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
 
@@ -252,14 +252,14 @@ describe("configureTournament", () => {
     });
 
     const tournament = await configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR", {
-      numeroRondas: 7,
-      ritmo: "90+30",
-      criteriosDesempate: [{ nombre: "Buchholz", orden: 1 }],
+      roundsCount: 7,
+      timeControl: "90+30",
+      tiebreakCriteria: [{ name: "Buchholz", order: 1 }],
     });
 
     expect(prisma.criterioDesempate.deleteMany).toHaveBeenCalledWith({ where: { torneoId: "tournament-1" } });
-    expect(tournament.numeroRondas).toBe(7);
-    expect(tournament.criteriosDesempate).toEqual([{ nombre: "Buchholz", orden: 1 }]);
+    expect(tournament.roundsCount).toBe(7);
+    expect(tournament.tiebreakCriteria).toEqual([{ name: "Buchholz", order: 1 }]);
   });
 
   it("an administrator can configure a tournament even without being the owning organizer", async () => {
@@ -280,9 +280,9 @@ describe("configureTournament", () => {
 
     await expect(
       configureTournament(prisma as unknown as PrismaClient, "tournament-1", "admin-1", "ADMINISTRADOR", {
-        numeroRondas: 3,
+        roundsCount: 3,
       }),
-    ).resolves.toMatchObject({ numeroRondas: 3 });
+    ).resolves.toMatchObject({ roundsCount: 3 });
   });
 });
 
@@ -311,7 +311,7 @@ describe("openRegistration / closeRegistration", () => {
 
     const tournament = await openRegistration(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR");
 
-    expect(tournament.estado).toBe("INSCRIPCIONES_ABIERTAS");
+    expect(tournament.status).toBe("INSCRIPCIONES_ABIERTAS");
   });
 
   it("rejects opening registration when the tournament is not in CREADO", async () => {
@@ -348,7 +348,7 @@ describe("openRegistration / closeRegistration", () => {
 
     const tournament = await closeRegistration(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR");
 
-    expect(tournament.estado).toBe("INSCRIPCIONES_CERRADAS");
+    expect(tournament.status).toBe("INSCRIPCIONES_CERRADAS");
   });
 
   it("rejects closing registration when it was never opened", async () => {
@@ -390,7 +390,7 @@ describe("enrollPlayer", () => {
       "ORGANIZADOR",
     );
 
-    expect(result).toMatchObject({ jugadorId: "jugador-1", nombre: "Luis Gómez" });
+    expect(result).toMatchObject({ playerId: "jugador-1", name: "Luis Gómez" });
   });
 
   it("rejects enrolling when the tournament doesn't have registration open", async () => {
@@ -440,7 +440,7 @@ describe("enrollPlayer", () => {
     ).rejects.toMatchObject({ status: 404 } satisfies Partial<HttpError>);
   });
 
-  it("rejects (409) a player from another program when the tournament has programaRestringido", async () => {
+  it("rejects (409) a player from another program when the tournament has restrictedProgram", async () => {
     prisma.torneo.findUnique.mockResolvedValue({
       id: "tournament-1",
       organizadorId: "org-1",
@@ -462,7 +462,7 @@ describe("enrollPlayer", () => {
     expect(prisma.inscripcion.create).not.toHaveBeenCalled();
   });
 
-  it("rejects (409) a player below the configured semestreMinimo", async () => {
+  it("rejects (409) a player below the configured minimumSemester", async () => {
     prisma.torneo.findUnique.mockResolvedValue({
       id: "tournament-1",
       organizadorId: "org-1",
@@ -502,7 +502,7 @@ describe("enrollPlayer", () => {
 
     await expect(
       enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "jugador-1", "org-1", "ORGANIZADOR"),
-    ).resolves.toMatchObject({ jugadorId: "jugador-1" });
+    ).resolves.toMatchObject({ playerId: "jugador-1" });
   });
 });
 
@@ -527,16 +527,16 @@ describe("configureTournament — eligibility restrictions", () => {
     });
 
     const tournament = await configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR", {
-      programaRestringido: "Sistemas",
-      semestreMinimo: 5,
+      restrictedProgram: "Sistemas",
+      minimumSemester: 5,
     });
 
     expect(prisma.torneo.update.mock.calls[0][0].data).toMatchObject({
       programaRestringido: "Sistemas",
       semestreMinimo: 5,
     });
-    expect(tournament.programaRestringido).toBe("Sistemas");
-    expect(tournament.semestreMinimo).toBe(5);
+    expect(tournament.restrictedProgram).toBe("Sistemas");
+    expect(tournament.minimumSemester).toBe(5);
   });
 
   it("allows clearing a restriction by sending an explicit null", async () => {
@@ -559,7 +559,7 @@ describe("configureTournament — eligibility restrictions", () => {
     });
 
     await configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZADOR", {
-      programaRestringido: null,
+      restrictedProgram: null,
     });
 
     expect(prisma.torneo.update.mock.calls[0][0].data).toMatchObject({ programaRestringido: null });

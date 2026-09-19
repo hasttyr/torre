@@ -18,7 +18,7 @@ const menuRef = ref<HTMLElement | null>(null);
 
 /** Derives a two-letter avatar label from the user's full name (e.g. "Nilson Aldair Molina Rengifo" -> "NM"). */
 const initials = computed((): string => {
-  const fullName = auth.user?.nombre?.trim() ?? "";
+  const fullName = auth.user?.name?.trim() ?? "";
   const words = fullName.split(/\s+/).filter(Boolean);
   if (words.length === 0) return "?";
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
@@ -79,7 +79,7 @@ onBeforeUnmount(() => {
       class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-[#17130a] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       :aria-expanded="open"
       aria-haspopup="true"
-      :aria-label="t('userMenu.menuAria', { name: auth.user?.nombre ?? '' })"
+      :aria-label="t('userMenu.menuAria', { name: auth.user?.name ?? '' })"
       @click="toggleMenu"
     >
       {{ initials }}
@@ -98,7 +98,7 @@ onBeforeUnmount(() => {
         class="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-lg border border-border bg-header shadow-lg"
       >
         <div class="border-b border-border-soft px-3 py-2.5">
-          <p class="truncate text-sm font-semibold text-text">{{ auth.user?.nombre }}</p>
+          <p class="truncate text-sm font-semibold text-text">{{ auth.user?.name }}</p>
           <p class="truncate text-xs text-text-soft">{{ auth.user?.email }}</p>
         </div>
 

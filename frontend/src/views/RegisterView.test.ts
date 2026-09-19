@@ -72,10 +72,10 @@ describe("RegisterView", () => {
   it("sends the correct payload and shows success for a valid player registration", async () => {
     registerUserMock.mockResolvedValue({
       id: "1",
-      nombre: "Ana Torres",
+      name: "Ana Torres",
       email: "ana@example.com",
-      estado: "ACTIVO",
-      rol: "JUGADOR",
+      status: "ACTIVO",
+      role: "JUGADOR",
       createdAt: "2026-01-01T00:00:00.000Z",
     });
 
@@ -92,13 +92,13 @@ describe("RegisterView", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(registerUserMock).toHaveBeenCalledWith({
-      nombre: "Ana Torres",
+      name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
-      rol: "JUGADOR",
-      codigoUniversitario: "U12345",
-      programa: "Ingeniería de Sistemas",
-      semestre: 5,
+      role: "JUGADOR",
+      universityCode: "U12345",
+      program: "Ingeniería de Sistemas",
+      semester: 5,
     });
     expect(wrapper.text()).toContain("Cuenta creada para ana@example.com");
   });
@@ -106,10 +106,10 @@ describe("RegisterView", () => {
   it("does not include player fields in the payload for other roles", async () => {
     registerUserMock.mockResolvedValue({
       id: "2",
-      nombre: "Carlos Ruiz",
+      name: "Carlos Ruiz",
       email: "carlos@example.com",
-      estado: "ACTIVO",
-      rol: "ORGANIZADOR",
+      status: "ACTIVO",
+      role: "ORGANIZADOR",
       createdAt: "2026-01-01T00:00:00.000Z",
     });
 
@@ -123,10 +123,10 @@ describe("RegisterView", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(registerUserMock).toHaveBeenCalledWith({
-      nombre: "Carlos Ruiz",
+      name: "Carlos Ruiz",
       email: "carlos@example.com",
       password: "password123",
-      rol: "ORGANIZADOR",
+      role: "ORGANIZADOR",
     });
   });
 

@@ -51,12 +51,12 @@ describe("LoginView", () => {
   it("logs in and navigates to /cuenta with valid credentials", async () => {
     loginUserMock.mockResolvedValue({
       token: "token-123",
-      usuario: {
+      user: {
         id: "usuario-1",
-        nombre: "Ana Torres",
+        name: "Ana Torres",
         email: "ana@example.com",
-        estado: "ACTIVO",
-        rol: "ORGANIZADOR",
+        status: "ACTIVO",
+        role: "ORGANIZADOR",
         createdAt: "2026-01-01T00:00:00.000Z",
       },
     });

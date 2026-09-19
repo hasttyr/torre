@@ -33,7 +33,7 @@ export async function updateProfile(req: Request, res: Response, next: NextFunct
   }
 }
 
-/** PATCH /users/:id/rol — changes a user's role (admin-only). */
+/** PATCH /users/:id/role — changes a user's role (admin-only). */
 export async function updateRole(req: Request, res: Response, next: NextFunction): Promise<void> {
   const parsed = updateRoleSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -42,7 +42,7 @@ export async function updateRole(req: Request, res: Response, next: NextFunction
   }
 
   try {
-    const user = await updateUserRole(prisma, String(req.params.id), parsed.data.rol);
+    const user = await updateUserRole(prisma, String(req.params.id), parsed.data.role);
     res.status(200).json(user);
   } catch (error) {
     next(error);

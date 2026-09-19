@@ -34,16 +34,16 @@ describe("getUserById", () => {
       },
     });
 
-    const usuario = await getUserById(prisma as unknown as PrismaClient, "usuario-1");
+    const user = await getUserById(prisma as unknown as PrismaClient, "usuario-1");
 
-    expect(usuario.jugador).toEqual({
-      codigoUniversitario: "U1",
-      programa: "Sistemas",
-      semestre: 5,
-      fechaNacimiento: null,
-      edad: null,
-      genero: null,
-      discapacidad: null,
+    expect(user.player).toEqual({
+      universityCode: "U1",
+      program: "Sistemas",
+      semester: 5,
+      birthDate: null,
+      age: null,
+      gender: null,
+      disability: null,
     });
   });
 
@@ -66,11 +66,11 @@ describe("getUserById", () => {
       },
     });
 
-    const usuario = await getUserById(prisma as unknown as PrismaClient, "usuario-1");
+    const user = await getUserById(prisma as unknown as PrismaClient, "usuario-1");
 
-    expect(usuario.jugador?.edad).toBe(calculateAge(new Date("2005-06-15")));
-    expect(usuario.jugador?.genero).toBe("MASCULINO");
-    expect(usuario.jugador?.discapacidad).toBe("NINGUNA");
+    expect(user.player?.age).toBe(calculateAge(new Date("2005-06-15")));
+    expect(user.player?.gender).toBe("MASCULINO");
+    expect(user.player?.disability).toBe("NINGUNA");
   });
 
   it("does not include jugador when the user doesn't have that profile", async () => {
@@ -85,9 +85,9 @@ describe("getUserById", () => {
       jugador: null,
     });
 
-    const usuario = await getUserById(prisma as unknown as PrismaClient, "usuario-1");
+    const user = await getUserById(prisma as unknown as PrismaClient, "usuario-1");
 
-    expect(usuario.jugador).toBeUndefined();
+    expect(user.player).toBeUndefined();
   });
 });
 
@@ -110,7 +110,7 @@ describe("updateOwnProfile", () => {
       jugador: null,
     });
 
-    await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { nombre: "Ana T." });
+    await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { name: "Ana T." });
 
     expect(prisma.usuario.update.mock.calls[0][0].data).toEqual({ nombre: "Ana T." });
   });
@@ -130,7 +130,7 @@ describe("updateOwnProfile", () => {
       jugador: { codigoUniversitario: "U1", programa: "Ingeniería", semestre: 6 },
     });
 
-    await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { programa: "Ingeniería", semestre: 6 });
+    await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { program: "Ingeniería", semester: 6 });
 
     expect(prisma.usuario.update.mock.calls[0][0].data.jugador.update).toEqual({
       programa: "Ingeniería",
@@ -142,7 +142,7 @@ describe("updateOwnProfile", () => {
     prisma.usuario.findUnique.mockResolvedValue({ id: "usuario-1", jugador: null });
 
     await expect(
-      updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { programa: "Ingeniería" }),
+      updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { program: "Ingeniería" }),
     ).rejects.toMatchObject({ status: 400 } satisfies Partial<HttpError>);
     expect(prisma.usuario.update).not.toHaveBeenCalled();
   });
@@ -151,7 +151,7 @@ describe("updateOwnProfile", () => {
     prisma.usuario.findUnique.mockResolvedValue(null);
 
     await expect(
-      updateOwnProfile(prisma as unknown as PrismaClient, "no-existe", { nombre: "X" }),
+      updateOwnProfile(prisma as unknown as PrismaClient, "no-existe", { name: "X" }),
     ).rejects.toMatchObject({ status: 404 } satisfies Partial<HttpError>);
   });
 
@@ -178,9 +178,9 @@ describe("updateOwnProfile", () => {
     });
 
     await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", {
-      fechaNacimiento: new Date("2005-06-15"),
-      genero: "MASCULINO",
-      discapacidad: "NINGUNA",
+      birthDate: new Date("2005-06-15"),
+      gender: "MASCULINO",
+      disability: "NINGUNA",
     });
 
     expect(prisma.usuario.update.mock.calls[0][0].data.jugador.update).toEqual({
@@ -205,7 +205,7 @@ describe("updateOwnProfile", () => {
       jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5, fechaNacimiento: null, genero: null, discapacidad: null },
     });
 
-    await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { genero: null, discapacidad: null });
+    await updateOwnProfile(prisma as unknown as PrismaClient, "usuario-1", { gender: null, disability: null });
 
     expect(prisma.usuario.update.mock.calls[0][0].data.jugador.update).toEqual({ genero: null, discapacidad: null });
   });

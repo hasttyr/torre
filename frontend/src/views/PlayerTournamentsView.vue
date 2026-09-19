@@ -58,10 +58,10 @@ function formatDate(date: string): string {
               class="flex flex-col items-start gap-2 rounded-2xl border border-border-soft bg-surface p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
               <div>
-                <h2 class="text-base">{{ tournament.nombre }}</h2>
-                <p class="mt-0.5 text-sm">{{ formatDate(tournament.fechaInicio) }} — {{ formatDate(tournament.fechaFin) }}</p>
+                <h2 class="text-base">{{ tournament.name }}</h2>
+                <p class="mt-0.5 text-sm">{{ formatDate(tournament.startDate) }} — {{ formatDate(tournament.endDate) }}</p>
               </div>
-              <span class="pill">{{ t(`estados.${tournament.estado}`) }}</span>
+              <span class="pill">{{ t(`estados.${tournament.status}`) }}</span>
             </li>
           </ul>
         </section>
@@ -86,10 +86,10 @@ function formatDate(date: string): string {
               class="flex flex-col items-start gap-2 rounded-2xl border border-border-soft bg-surface p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
               <div>
-                <h2 class="text-base">{{ tournament.nombre }}</h2>
-                <p class="mt-0.5 text-sm">{{ formatDate(tournament.fechaInicio) }} — {{ formatDate(tournament.fechaFin) }}</p>
+                <h2 class="text-base">{{ tournament.name }}</h2>
+                <p class="mt-0.5 text-sm">{{ formatDate(tournament.startDate) }} — {{ formatDate(tournament.endDate) }}</p>
               </div>
-              <span class="pill">{{ t(`estados.${tournament.estado}`) }}</span>
+              <span class="pill">{{ t(`estados.${tournament.status}`) }}</span>
             </li>
           </ul>
         </section>

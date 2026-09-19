@@ -9,20 +9,20 @@ import { toUserDto, type UserDto } from "./user.mapper";
 const SALT_ROUNDS = 10;
 
 interface RegisterUserBase {
-  nombre: string;
+  name: string;
   email: string;
   password: string;
 }
 
 interface RegisterPlayerInput extends RegisterUserBase {
-  rol: "JUGADOR";
-  codigoUniversitario: string;
-  programa: string;
-  semestre: number;
+  role: "JUGADOR";
+  universityCode: string;
+  program: string;
+  semester: number;
 }
 
 interface RegisterOtherRoleInput extends RegisterUserBase {
-  rol: "ORGANIZADOR" | "ARBITRO" | "ENTRENADOR";
+  role: "ORGANIZADOR" | "ARBITRO" | "ENTRENADOR";
 }
 
 export type RegisterUserInput = RegisterPlayerInput | RegisterOtherRoleInput;
@@ -34,7 +34,7 @@ export interface LoginUserInput {
 
 export interface AuthResult {
   token: string;
-  usuario: UserDto;
+  user: UserDto;
 }
 
 /** Checks whether a Prisma error is a unique-constraint violation (P2002). */
@@ -63,11 +63,11 @@ function signToken(user: { id: string; rol: { nombre: string } }): string {
  */
 export async function registerUser(prisma: PrismaClient, input: RegisterUserInput): Promise<UserDto> {
   const email = input.email.trim().toLowerCase();
-  const nombre = input.nombre.trim();
+  const name = input.name.trim();
 
-  const role = await prisma.rol.findUnique({ where: { nombre: input.rol } });
+  const role = await prisma.rol.findUnique({ where: { nombre: input.role } });
   if (!role) {
-    throw new HttpError(400, `El rol "${input.rol}" no existe. Verificá que el seed de roles se haya ejecutado.`);
+    throw new HttpError(400, `El rol "${input.role}" no existe. Verificá que el seed de roles se haya ejecutado.`);
   }
 
   const existingUser = await prisma.usuario.findUnique({ where: { email } });
@@ -80,17 +80,17 @@ export async function registerUser(prisma: PrismaClient, input: RegisterUserInpu
   try {
     const user = await prisma.usuario.create({
       data: {
-        nombre,
+        nombre: name,
         email,
         passwordHash,
         rolId: role.id,
-        ...(input.rol === "JUGADOR"
+        ...(input.role === "JUGADOR"
           ? {
               jugador: {
                 create: {
-                  codigoUniversitario: input.codigoUniversitario.trim(),
-                  programa: input.programa.trim(),
-                  semestre: input.semestre,
+                  codigoUniversitario: input.universityCode.trim(),
+                  programa: input.program.trim(),
+                  semestre: input.semester,
                 },
               },
             }
@@ -138,5 +138,5 @@ export async function loginUser(prisma: PrismaClient, input: LoginUserInput): Pr
     throw new HttpError(403, "La cuenta está inactiva");
   }
 
-  return { token: signToken(user), usuario: toUserDto(user) };
+  return { token: signToken(user), user: toUserDto(user) };
 }

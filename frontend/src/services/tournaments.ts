@@ -1,109 +1,109 @@
 import { api } from "./api";
 
 export interface TiebreakCriterion {
-  nombre: string;
-  orden: number;
+  name: string;
+  order: number;
 }
 
 export interface Tournament {
   id: string;
-  nombre: string;
-  fechaInicio: string;
-  fechaFin: string;
-  estado: "CREADO" | "INSCRIPCIONES_ABIERTAS" | "INSCRIPCIONES_CERRADAS" | "EN_CURSO" | "FINALIZADO";
-  formato: string;
-  numeroRondas: number | null;
-  ritmo: string | null;
+  name: string;
+  startDate: string;
+  endDate: string;
+  status: "CREADO" | "INSCRIPCIONES_ABIERTAS" | "INSCRIPCIONES_CERRADAS" | "EN_CURSO" | "FINALIZADO";
+  format: string;
+  roundsCount: number | null;
+  timeControl: string | null;
   // Registration eligibility (see comment in backend/prisma/schema.prisma):
   // null = no restriction on that criterion.
-  programaRestringido: string | null;
-  semestreMinimo: number | null;
-  organizadorId: string;
-  criteriosDesempate: TiebreakCriterion[];
+  restrictedProgram: string | null;
+  minimumSemester: number | null;
+  organizerId: string;
+  tiebreakCriteria: TiebreakCriterion[];
   createdAt: string;
 }
 
 export interface CreateTournamentPayload {
-  nombre: string;
-  fechaInicio: string;
-  fechaFin: string;
-  formato?: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  format?: string;
 }
 
 export interface ConfigureTournamentPayload {
-  numeroRondas?: number;
-  ritmo?: string;
-  criteriosDesempate?: TiebreakCriterion[];
+  roundsCount?: number;
+  timeControl?: string;
+  tiebreakCriteria?: TiebreakCriterion[];
   // An explicit null clears the restriction; omitting the field leaves it as-is.
-  programaRestringido?: string | null;
-  semestreMinimo?: number | null;
+  restrictedProgram?: string | null;
+  minimumSemester?: number | null;
 }
 
 export interface EnrolledPlayer {
-  jugadorId: string;
-  nombre: string;
-  codigoUniversitario: string;
-  programa: string;
-  semestre: number;
-  inscritoEn: string;
+  playerId: string;
+  name: string;
+  universityCode: string;
+  program: string;
+  semester: number;
+  enrolledAt: string;
 }
 
 /** Lists the tournaments the current user organizes. */
 export async function listMyTournaments(): Promise<Tournament[]> {
-  const { data } = await api.get<Tournament[]>("/torneos/mios");
+  const { data } = await api.get<Tournament[]>("/tournaments/mine");
   return data;
 }
 
 /** Lists tournaments currently open for registration. */
 export async function listAvailableTournaments(): Promise<Tournament[]> {
-  const { data } = await api.get<Tournament[]>("/torneos/disponibles");
+  const { data } = await api.get<Tournament[]>("/tournaments/available");
   return data;
 }
 
 /** Lists tournaments the current user (as a player) is enrolled in. */
 export async function listEnrolledTournaments(): Promise<Tournament[]> {
-  const { data } = await api.get<Tournament[]>("/torneos/inscrito");
+  const { data } = await api.get<Tournament[]>("/tournaments/enrolled");
   return data;
 }
 
 /** Creates a new tournament. */
 export async function createTournament(payload: CreateTournamentPayload): Promise<Tournament> {
-  const { data } = await api.post<Tournament>("/torneos", payload);
+  const { data } = await api.post<Tournament>("/tournaments", payload);
   return data;
 }
 
 /** Fetches a single tournament by id. */
 export async function getTournament(id: string): Promise<Tournament> {
-  const { data } = await api.get<Tournament>(`/torneos/${id}`);
+  const { data } = await api.get<Tournament>(`/tournaments/${id}`);
   return data;
 }
 
 /** Updates a tournament's rounds, time control, tiebreak order and eligibility rules. */
 export async function configureTournament(id: string, payload: ConfigureTournamentPayload): Promise<Tournament> {
-  const { data } = await api.put<Tournament>(`/torneos/${id}/configuracion`, payload);
+  const { data } = await api.put<Tournament>(`/tournaments/${id}/configuration`, payload);
   return data;
 }
 
 /** Opens registration for a tournament (HU06). */
 export async function openRegistration(id: string): Promise<Tournament> {
-  const { data } = await api.post<Tournament>(`/torneos/${id}/inscripciones/abrir`);
+  const { data } = await api.post<Tournament>(`/tournaments/${id}/registration/open`);
   return data;
 }
 
 /** Closes registration for a tournament (HU06). */
 export async function closeRegistration(id: string): Promise<Tournament> {
-  const { data } = await api.post<Tournament>(`/torneos/${id}/inscripciones/cerrar`);
+  const { data } = await api.post<Tournament>(`/tournaments/${id}/registration/close`);
   return data;
 }
 
 /** Enrolls a player into a tournament (HU07). */
 export async function enrollPlayer(tournamentId: string, playerId: string): Promise<EnrolledPlayer> {
-  const { data } = await api.post<EnrolledPlayer>(`/torneos/${tournamentId}/jugadores`, { jugadorId: playerId });
+  const { data } = await api.post<EnrolledPlayer>(`/tournaments/${tournamentId}/players`, { playerId });
   return data;
 }
 
 /** Lists the players enrolled in a tournament. */
 export async function listEnrolledPlayers(tournamentId: string): Promise<EnrolledPlayer[]> {
-  const { data } = await api.get<EnrolledPlayer[]>(`/torneos/${tournamentId}/jugadores`);
+  const { data } = await api.get<EnrolledPlayer[]>(`/tournaments/${tournamentId}/players`);
   return data;
 }

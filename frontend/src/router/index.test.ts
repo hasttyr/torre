@@ -25,10 +25,10 @@ describe("router guard for /cuenta", () => {
       token: "token",
       user: {
         id: "usuario-1",
-        nombre: "Ana",
+        name: "Ana",
         email: "ana@example.com",
-        estado: "ACTIVO",
-        rol: "ORGANIZADOR",
+        status: "ACTIVO",
+        role: "ORGANIZADOR",
         createdAt: "2026-01-01T00:00:00.000Z",
       },
     });

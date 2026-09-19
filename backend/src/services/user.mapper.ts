@@ -1,28 +1,28 @@
 import type { Jugador, Rol, Usuario } from "@prisma/client";
 
-export interface JugadorPerfilDto {
-  codigoUniversitario: string;
-  programa: string;
-  semestre: number;
-  fechaNacimiento: Date | null;
-  // Computed from fechaNacimiento, never stored (avoids it going stale).
+export interface PlayerProfileDto {
+  universityCode: string;
+  program: string;
+  semester: number;
+  birthDate: Date | null;
+  // Computed from birthDate, never stored (avoids it going stale).
   // null if no birth date is on file.
-  edad: number | null;
-  genero: string | null;
-  discapacidad: string | null;
+  age: number | null;
+  gender: string | null;
+  disability: string | null;
 }
 
 // DTO shared by registration, login and profile lookup: never includes
-// passwordHash. `jugador` is only present if the user has the JUGADOR role
+// passwordHash. `player` is only present if the user has the JUGADOR role
 // (1:1 profile, see schema.prisma).
 export interface UserDto {
   id: string;
-  nombre: string;
+  name: string;
   email: string;
-  estado: string;
-  rol: string;
+  status: string;
+  role: string;
   createdAt: Date;
-  jugador?: JugadorPerfilDto;
+  player?: PlayerProfileDto;
 }
 
 /** Computes age in whole years from a birth date, as of `today`. */
@@ -41,21 +41,21 @@ export function calculateAge(birthDate: Date, today: Date = new Date()): number 
 export function toUserDto(user: Usuario & { rol: Rol; jugador?: Jugador | null }): UserDto {
   return {
     id: user.id,
-    nombre: user.nombre,
+    name: user.nombre,
     email: user.email,
-    estado: user.estado,
-    rol: user.rol.nombre,
+    status: user.estado,
+    role: user.rol.nombre,
     createdAt: user.createdAt,
     ...(user.jugador
       ? {
-          jugador: {
-            codigoUniversitario: user.jugador.codigoUniversitario,
-            programa: user.jugador.programa,
-            semestre: user.jugador.semestre,
-            fechaNacimiento: user.jugador.fechaNacimiento,
-            edad: user.jugador.fechaNacimiento ? calculateAge(user.jugador.fechaNacimiento) : null,
-            genero: user.jugador.genero,
-            discapacidad: user.jugador.discapacidad,
+          player: {
+            universityCode: user.jugador.codigoUniversitario,
+            program: user.jugador.programa,
+            semester: user.jugador.semestre,
+            birthDate: user.jugador.fechaNacimiento,
+            age: user.jugador.fechaNacimiento ? calculateAge(user.jugador.fechaNacimiento) : null,
+            gender: user.jugador.genero,
+            disability: user.jugador.discapacidad,
           },
         }
       : {}),

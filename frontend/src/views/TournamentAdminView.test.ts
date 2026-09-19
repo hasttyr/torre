@@ -40,17 +40,17 @@ const searchPlayersMock = vi.mocked(searchPlayers);
 
 const CREATED_TOURNAMENT = {
   id: "torneo-1",
-  nombre: "Copa Universitaria",
-  fechaInicio: "2026-10-01",
-  fechaFin: "2026-10-03",
-  estado: "CREADO" as const,
-  formato: "suizo",
-  numeroRondas: null,
-  ritmo: null,
-  programaRestringido: null,
-  semestreMinimo: null,
-  organizadorId: "org-1",
-  criteriosDesempate: [],
+  name: "Copa Universitaria",
+  startDate: "2026-10-01",
+  endDate: "2026-10-03",
+  status: "CREADO" as const,
+  format: "suizo",
+  roundsCount: null,
+  timeControl: null,
+  restrictedProgram: null,
+  minimumSemester: null,
+  organizerId: "org-1",
+  tiebreakCriteria: [],
   createdAt: "2026-09-17T00:00:00.000Z",
 };
 
@@ -99,7 +99,7 @@ describe("TournamentAdminView", () => {
 
   it("opens registration and reflects the new state (HU06)", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
-    openRegistrationMock.mockResolvedValue({ ...CREATED_TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
+    openRegistrationMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "INSCRIPCIONES_ABIERTAS" });
 
     const { wrapper } = await mountView();
 
@@ -122,9 +122,9 @@ describe("TournamentAdminView", () => {
   });
 
   it("searches and shows results as you type (debounced)", async () => {
-    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "INSCRIPCIONES_ABIERTAS" });
     searchPlayersMock.mockResolvedValue([
-      { id: "j1", nombre: "Luis Gómez", email: "luis@example.com", codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
+      { id: "j1", name: "Luis Gómez", email: "luis@example.com", universityCode: "U1", program: "Sistemas", semester: 5 },
     ]);
 
     const { wrapper } = await mountView();
@@ -138,17 +138,17 @@ describe("TournamentAdminView", () => {
   });
 
   it("enrolls a player chosen from the search results (HU07)", async () => {
-    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "INSCRIPCIONES_ABIERTAS" });
     searchPlayersMock.mockResolvedValue([
-      { id: "j1", nombre: "Luis Gómez", email: "luis@example.com", codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
+      { id: "j1", name: "Luis Gómez", email: "luis@example.com", universityCode: "U1", program: "Sistemas", semester: 5 },
     ]);
     enrollPlayerMock.mockResolvedValue({
-      jugadorId: "j1",
-      nombre: "Luis Gómez",
-      codigoUniversitario: "U1",
-      programa: "Sistemas",
-      semestre: 5,
-      inscritoEn: "2026-09-17",
+      playerId: "j1",
+      name: "Luis Gómez",
+      universityCode: "U1",
+      program: "Sistemas",
+      semester: 5,
+      enrolledAt: "2026-09-17",
     });
 
     const { wrapper } = await mountView();
@@ -167,29 +167,29 @@ describe("TournamentAdminView", () => {
   });
 
   it("disables editing tiebreaks once it's no longer in preliminary state", async () => {
-    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "INSCRIPCIONES_ABIERTAS" });
 
     const { wrapper } = await mountView();
 
-    const tiebreaksInput = wrapper.get("#desempates");
+    const tiebreaksInput = wrapper.get("#tiebreaks");
     expect(tiebreaksInput.attributes("disabled")).toBeDefined();
   });
 
   it("saves the tournament configuration (HU05)", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
-    configureTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, numeroRondas: 7, ritmo: "90+30" });
+    configureTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, roundsCount: 7, timeControl: "90+30" });
 
     const { wrapper } = await mountView();
 
-    await wrapper.get("#numeroRondas").setValue("7");
-    await wrapper.get("#ritmo").setValue("90+30");
+    await wrapper.get("#roundsCount").setValue("7");
+    await wrapper.get("#timeControl").setValue("90+30");
     await wrapper.get(".config-form").trigger("submit.prevent");
     await new Promise((resolve) => setTimeout(resolve, 0));
     await wrapper.vm.$nextTick();
 
     expect(configureTournamentMock).toHaveBeenCalledWith(
       "torneo-1",
-      expect.objectContaining({ numeroRondas: 7, ritmo: "90+30" }),
+      expect.objectContaining({ roundsCount: 7, timeControl: "90+30" }),
     );
     expect(wrapper.text()).toContain("Configuración guardada");
   });

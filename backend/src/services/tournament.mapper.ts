@@ -2,17 +2,17 @@ import type { CriterioDesempate, Torneo } from "@prisma/client";
 
 export interface TournamentDto {
   id: string;
-  nombre: string;
-  fechaInicio: Date;
-  fechaFin: Date;
-  estado: string;
-  formato: string;
-  numeroRondas: number | null;
-  ritmo: string | null;
-  programaRestringido: string | null;
-  semestreMinimo: number | null;
-  organizadorId: string;
-  criteriosDesempate: { nombre: string; orden: number }[];
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  status: string;
+  format: string;
+  roundsCount: number | null;
+  timeControl: string | null;
+  restrictedProgram: string | null;
+  minimumSemester: number | null;
+  organizerId: string;
+  tiebreakCriteria: { name: string; order: number }[];
   createdAt: Date;
 }
 
@@ -20,20 +20,20 @@ export interface TournamentDto {
 export function toTournamentDto(tournament: Torneo & { criteriosDesempate?: CriterioDesempate[] }): TournamentDto {
   return {
     id: tournament.id,
-    nombre: tournament.nombre,
-    fechaInicio: tournament.fechaInicio,
-    fechaFin: tournament.fechaFin,
-    estado: tournament.estado,
-    formato: tournament.formato,
-    numeroRondas: tournament.numeroRondas,
-    ritmo: tournament.ritmo,
-    programaRestringido: tournament.programaRestringido,
-    semestreMinimo: tournament.semestreMinimo,
-    organizadorId: tournament.organizadorId,
-    criteriosDesempate: (tournament.criteriosDesempate ?? [])
+    name: tournament.nombre,
+    startDate: tournament.fechaInicio,
+    endDate: tournament.fechaFin,
+    status: tournament.estado,
+    format: tournament.formato,
+    roundsCount: tournament.numeroRondas,
+    timeControl: tournament.ritmo,
+    restrictedProgram: tournament.programaRestringido,
+    minimumSemester: tournament.semestreMinimo,
+    organizerId: tournament.organizadorId,
+    tiebreakCriteria: (tournament.criteriosDesempate ?? [])
       .slice()
       .sort((a, b) => a.orden - b.orden)
-      .map((criterion) => ({ nombre: criterion.nombre, orden: criterion.orden })),
+      .map((criterion) => ({ name: criterion.nombre, order: criterion.orden })),
     createdAt: tournament.createdAt,
   };
 }

@@ -19,19 +19,19 @@ function assertCanManageTournament(tournament: { organizadorId: string }, userId
   }
 }
 
-/** Creates a new tournament owned by `organizadorId`. */
+/** Creates a new tournament owned by `organizerId`. */
 export async function createTournament(
   prisma: PrismaClient,
-  organizadorId: string,
+  organizerId: string,
   data: CreateTournamentSchemaInput,
 ): Promise<TournamentDto> {
   const tournament = await prisma.torneo.create({
     data: {
-      nombre: data.nombre.trim(),
-      fechaInicio: data.fechaInicio,
-      fechaFin: data.fechaFin,
-      formato: data.formato?.trim() ?? "suizo",
-      organizadorId,
+      nombre: data.name.trim(),
+      fechaInicio: data.startDate,
+      fechaFin: data.endDate,
+      formato: data.format?.trim() ?? "suizo",
+      organizadorId: organizerId,
     },
     include: { criteriosDesempate: true },
   });
@@ -90,8 +90,8 @@ export async function listEnrolledTournaments(prisma: PrismaClient, userId: stri
 // Restricted to the owning organizer/an administrator: until HU18 exists
 // (role-filtered lookup), a specific tournament's detail —and the HU07
 // roster in listEnrolledPlayers, which exposes personal data— is only
-// visible to whoever manages it. See GET /torneos/disponibles and
-// /torneos/inscrito for what any role can query.
+// visible to whoever manages it. See GET /tournaments/available and
+// /tournaments/enrolled for what any role can query.
 /**
  * Fetches a single tournament by id.
  *
@@ -133,7 +133,7 @@ export async function configureTournament(
   }
   assertCanManageTournament(tournament, userId, rol);
 
-  if (data.criteriosDesempate) {
+  if (data.tiebreakCriteria) {
     // RN-05: the tiebreak order can only be changed while the tournament is
     // in its preliminary state, i.e. before round 1 exists.
     const firstRound = await prisma.ronda.findFirst({ where: { torneoId: tournamentId, numero: 1 } });
@@ -143,14 +143,14 @@ export async function configureTournament(
   }
 
   const updated = await prisma.$transaction(async (tx) => {
-    if (data.criteriosDesempate) {
+    if (data.tiebreakCriteria) {
       await tx.criterioDesempate.deleteMany({ where: { torneoId: tournamentId } });
-      if (data.criteriosDesempate.length > 0) {
+      if (data.tiebreakCriteria.length > 0) {
         await tx.criterioDesempate.createMany({
-          data: data.criteriosDesempate.map((criterion) => ({
+          data: data.tiebreakCriteria.map((criterion) => ({
             torneoId: tournamentId,
-            nombre: criterion.nombre,
-            orden: criterion.orden,
+            nombre: criterion.name,
+            orden: criterion.order,
           })),
         });
       }
@@ -159,10 +159,10 @@ export async function configureTournament(
     return tx.torneo.update({
       where: { id: tournamentId },
       data: {
-        ...(data.numeroRondas !== undefined ? { numeroRondas: data.numeroRondas } : {}),
-        ...(data.ritmo !== undefined ? { ritmo: data.ritmo } : {}),
-        ...(data.programaRestringido !== undefined ? { programaRestringido: data.programaRestringido } : {}),
-        ...(data.semestreMinimo !== undefined ? { semestreMinimo: data.semestreMinimo } : {}),
+        ...(data.roundsCount !== undefined ? { numeroRondas: data.roundsCount } : {}),
+        ...(data.timeControl !== undefined ? { ritmo: data.timeControl } : {}),
+        ...(data.restrictedProgram !== undefined ? { programaRestringido: data.restrictedProgram } : {}),
+        ...(data.minimumSemester !== undefined ? { semestreMinimo: data.minimumSemester } : {}),
       },
       include: { criteriosDesempate: true },
     });
@@ -225,12 +225,12 @@ export function closeRegistration(
 }
 
 export interface EnrolledPlayerDto {
-  jugadorId: string;
-  nombre: string;
-  codigoUniversitario: string;
-  programa: string;
-  semestre: number;
-  inscritoEn: Date;
+  playerId: string;
+  name: string;
+  universityCode: string;
+  program: string;
+  semester: number;
+  enrolledAt: Date;
 }
 
 /**
@@ -242,7 +242,7 @@ export interface EnrolledPlayerDto {
 export async function enrollPlayer(
   prisma: PrismaClient,
   tournamentId: string,
-  jugadorId: string,
+  playerId: string,
   userId: string,
   rol: string,
 ): Promise<EnrolledPlayerDto> {
@@ -257,12 +257,12 @@ export async function enrollPlayer(
     throw new HttpError(409, "El torneo no tiene las inscripciones abiertas");
   }
 
-  const player = await prisma.jugador.findUnique({ where: { id: jugadorId }, include: { usuario: true } });
+  const player = await prisma.jugador.findUnique({ where: { id: playerId }, include: { usuario: true } });
   if (!player) {
     throw new HttpError(404, "Jugador no encontrado");
   }
 
-  // Eligibility configured in HU05 (programaRestringido/semestreMinimo): validated
+  // Eligibility configured in HU05 (restrictedProgram/minimumSemester): validated
   // here, not in the zod schema, because it depends on tournament and player
   // data, not just the payload's shape.
   if (tournament.programaRestringido && player.programa !== tournament.programaRestringido) {
@@ -274,15 +274,15 @@ export async function enrollPlayer(
 
   try {
     const enrollment = await prisma.inscripcion.create({
-      data: { torneoId: tournamentId, jugadorId },
+      data: { torneoId: tournamentId, jugadorId: playerId },
     });
     return {
-      jugadorId: player.id,
-      nombre: player.usuario.nombre,
-      codigoUniversitario: player.codigoUniversitario,
-      programa: player.programa,
-      semestre: player.semestre,
-      inscritoEn: enrollment.createdAt,
+      playerId: player.id,
+      name: player.usuario.nombre,
+      universityCode: player.codigoUniversitario,
+      program: player.programa,
+      semester: player.semestre,
+      enrolledAt: enrollment.createdAt,
     };
   } catch (error) {
     // RN-01: a player cannot be enrolled twice into the same tournament.
@@ -313,11 +313,11 @@ export async function listEnrolledPlayers(
   });
 
   return enrollments.map((enrollment) => ({
-    jugadorId: enrollment.jugador.id,
-    nombre: enrollment.jugador.usuario.nombre,
-    codigoUniversitario: enrollment.jugador.codigoUniversitario,
-    programa: enrollment.jugador.programa,
-    semestre: enrollment.jugador.semestre,
-    inscritoEn: enrollment.createdAt,
+    playerId: enrollment.jugador.id,
+    name: enrollment.jugador.usuario.nombre,
+    universityCode: enrollment.jugador.codigoUniversitario,
+    program: enrollment.jugador.programa,
+    semester: enrollment.jugador.semestre,
+    enrolledAt: enrollment.createdAt,
   }));
 }

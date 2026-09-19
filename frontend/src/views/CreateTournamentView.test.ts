@@ -61,33 +61,33 @@ describe("CreateTournamentView", () => {
   it("creates the tournament and navigates to its admin panel", async () => {
     createTournamentMock.mockResolvedValue({
       id: "torneo-1",
-      nombre: "Copa Universitaria",
-      fechaInicio: "2026-10-01",
-      fechaFin: "2026-10-03",
-      estado: "CREADO",
-      formato: "suizo",
-      numeroRondas: null,
-      ritmo: null,
-  programaRestringido: null,
-  semestreMinimo: null,
-      organizadorId: "org-1",
-      criteriosDesempate: [],
+      name: "Copa Universitaria",
+      startDate: "2026-10-01",
+      endDate: "2026-10-03",
+      status: "CREADO",
+      format: "suizo",
+      roundsCount: null,
+      timeControl: null,
+  restrictedProgram: null,
+  minimumSemester: null,
+      organizerId: "org-1",
+      tiebreakCriteria: [],
       createdAt: "2026-09-17T00:00:00.000Z",
     });
 
     const { wrapper, router } = await mountView();
 
-    await wrapper.find("#nombre").setValue("Copa Universitaria");
-    await setDateField(wrapper, "fechaInicio", "2026-10-01");
-    await setDateField(wrapper, "fechaFin", "2026-10-03");
+    await wrapper.find("#name").setValue("Copa Universitaria");
+    await setDateField(wrapper, "startDate", "2026-10-01");
+    await setDateField(wrapper, "endDate", "2026-10-03");
     await wrapper.find("form").trigger("submit.prevent");
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(createTournamentMock).toHaveBeenCalledWith({
-      nombre: "Copa Universitaria",
-      fechaInicio: "2026-10-01",
-      fechaFin: "2026-10-03",
-      formato: "suizo",
+      name: "Copa Universitaria",
+      startDate: "2026-10-01",
+      endDate: "2026-10-03",
+      format: "suizo",
     });
     expect(router.currentRoute.value.path).toBe("/torneos/torneo-1");
   });
@@ -95,9 +95,9 @@ describe("CreateTournamentView", () => {
   it("rejects when the end date is earlier than the start date", async () => {
     const { wrapper } = await mountView();
 
-    await wrapper.find("#nombre").setValue("Copa Universitaria");
-    await setDateField(wrapper, "fechaInicio", "2026-10-05");
-    await setDateField(wrapper, "fechaFin", "2026-10-01");
+    await wrapper.find("#name").setValue("Copa Universitaria");
+    await setDateField(wrapper, "startDate", "2026-10-05");
+    await setDateField(wrapper, "endDate", "2026-10-01");
     await wrapper.find("form").trigger("submit.prevent");
 
     expect(wrapper.text()).toContain("La fecha de fin no puede ser anterior a la fecha de inicio");

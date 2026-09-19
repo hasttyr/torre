@@ -81,7 +81,7 @@ router.beforeEach((to) => {
   }
 
   const roles = to.meta.roles as string[] | undefined;
-  if (roles && !roles.includes(auth.user?.rol ?? "")) {
+  if (roles && !roles.includes(auth.user?.role ?? "")) {
     return { path: "/" };
   }
 

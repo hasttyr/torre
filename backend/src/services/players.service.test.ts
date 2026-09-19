@@ -39,11 +39,11 @@ describe("searchPlayers", () => {
     expect(result).toEqual([
       {
         id: "jugador-1",
-        nombre: "Luis Gómez",
+        name: "Luis Gómez",
         email: "luis@example.com",
-        codigoUniversitario: "U123",
-        programa: "Ingeniería de Sistemas",
-        semestre: 5,
+        universityCode: "U123",
+        program: "Ingeniería de Sistemas",
+        semester: 5,
       },
     ]);
   });

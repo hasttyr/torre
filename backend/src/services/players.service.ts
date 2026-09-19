@@ -2,18 +2,18 @@ import type { PrismaClient } from "@prisma/client";
 
 export interface PlayerSearchResultDto {
   id: string;
-  nombre: string;
+  name: string;
   email: string;
-  codigoUniversitario: string;
-  programa: string;
-  semestre: number;
+  universityCode: string;
+  program: string;
+  semester: number;
 }
 
 const RESULT_LIMIT = 10;
 
 // Supports HU07 in the UI: without this, the organizer has no way to learn
 // the Jugador id (different from the Usuario id) that POST
-// /torneos/:id/jugadores requires. Simple search by name, email or
+// /tournaments/:id/players requires. Simple search by name, email or
 // university code; there's no additional permission catalog beyond
 // requireRole on the route, because it doesn't expose data the organizer
 // couldn't already see in the resulting enrollment.
@@ -39,10 +39,10 @@ export async function searchPlayers(prisma: PrismaClient, query: string): Promis
 
   return players.map((player) => ({
     id: player.id,
-    nombre: player.usuario.nombre,
+    name: player.usuario.nombre,
     email: player.usuario.email,
-    codigoUniversitario: player.codigoUniversitario,
-    programa: player.programa,
-    semestre: player.semestre,
+    universityCode: player.codigoUniversitario,
+    program: player.programa,
+    semester: player.semestre,
   }));
 }

@@ -17,27 +17,27 @@ const todayIso = new Date().toISOString().slice(0, 10);
 // auth.user as soon as it arrives (onMounted and the watch below, in case
 // refreshUser resolves after the first render).
 const form = reactive({
-  nombre: "",
-  codigoUniversitario: "",
-  programa: "",
-  semestre: "",
-  fechaNacimiento: "",
-  genero: "" as Gender | "",
-  discapacidad: "" as Disability | "",
+  name: "",
+  universityCode: "",
+  program: "",
+  semester: "",
+  birthDate: "",
+  gender: "" as Gender | "",
+  disability: "" as Disability | "",
 });
 
 /** Fills the edit form from the currently loaded user, if any. */
 function populateForm(): void {
   if (!auth.user) return;
-  form.nombre = auth.user.nombre;
-  if (auth.user.jugador) {
-    form.codigoUniversitario = auth.user.jugador.codigoUniversitario;
-    form.programa = auth.user.jugador.programa;
-    form.semestre = String(auth.user.jugador.semestre);
+  form.name = auth.user.name;
+  if (auth.user.player) {
+    form.universityCode = auth.user.player.universityCode;
+    form.program = auth.user.player.program;
+    form.semester = String(auth.user.player.semester);
     // The date input expects "YYYY-MM-DD"; the backend returns a full ISO string.
-    form.fechaNacimiento = auth.user.jugador.fechaNacimiento?.slice(0, 10) ?? "";
-    form.genero = auth.user.jugador.genero ?? "";
-    form.discapacidad = auth.user.jugador.discapacidad ?? "";
+    form.birthDate = auth.user.player.birthDate?.slice(0, 10) ?? "";
+    form.gender = auth.user.player.gender ?? "";
+    form.disability = auth.user.player.disability ?? "";
   }
 }
 
@@ -67,22 +67,22 @@ function validate(): boolean {
     delete errors[key];
   }
 
-  if (form.nombre.trim().length < 2) {
-    errors.nombre = t("account.nameMinLength");
+  if (form.name.trim().length < 2) {
+    errors.name = t("account.nameMinLength");
   }
 
-  if (auth.user?.jugador) {
-    if (!form.codigoUniversitario.trim()) {
-      errors.codigoUniversitario = t("account.universityCodeRequired");
+  if (auth.user?.player) {
+    if (!form.universityCode.trim()) {
+      errors.universityCode = t("account.universityCodeRequired");
     }
-    if (!form.programa.trim()) {
-      errors.programa = t("account.programRequired");
+    if (!form.program.trim()) {
+      errors.program = t("account.programRequired");
     }
-    if (!Number.isInteger(Number(form.semestre)) || Number(form.semestre) <= 0) {
-      errors.semestre = t("account.semesterPositive");
+    if (!Number.isInteger(Number(form.semester)) || Number(form.semester) <= 0) {
+      errors.semester = t("account.semesterPositive");
     }
-    if (form.fechaNacimiento && form.fechaNacimiento > new Date().toISOString().slice(0, 10)) {
-      errors.fechaNacimiento = t("account.birthDateInFuture");
+    if (form.birthDate && form.birthDate > new Date().toISOString().slice(0, 10)) {
+      errors.birthDate = t("account.birthDateInFuture");
     }
   }
 
@@ -101,15 +101,15 @@ async function onSubmit(): Promise<void> {
   submitting.value = true;
   try {
     await auth.updateProfile({
-      nombre: form.nombre.trim(),
-      ...(auth.user?.jugador
+      name: form.name.trim(),
+      ...(auth.user?.player
         ? {
-            codigoUniversitario: form.codigoUniversitario.trim(),
-            programa: form.programa.trim(),
-            semestre: Number(form.semestre),
-            fechaNacimiento: form.fechaNacimiento || null,
-            genero: form.genero || null,
-            discapacidad: form.discapacidad || null,
+            universityCode: form.universityCode.trim(),
+            program: form.program.trim(),
+            semester: Number(form.semester),
+            birthDate: form.birthDate || null,
+            gender: form.gender || null,
+            disability: form.disability || null,
           }
         : {}),
     });
@@ -143,11 +143,11 @@ async function onSubmit(): Promise<void> {
           </div>
           <div class="flex justify-between gap-4 border-b border-border-soft py-3">
             <dt class="text-sm text-text-muted">{{ t("account.role") }}</dt>
-            <dd class="m-0 font-semibold">{{ t(`roles.${auth.user.rol}`) }}</dd>
+            <dd class="m-0 font-semibold">{{ t(`roles.${auth.user.role}`) }}</dd>
           </div>
           <div class="flex justify-between gap-4 py-3">
             <dt class="text-sm text-text-muted">{{ t("account.status") }}</dt>
-            <dd class="m-0 font-semibold">{{ auth.user.estado === "ACTIVO" ? t("account.active") : t("account.inactive") }}</dd>
+            <dd class="m-0 font-semibold">{{ auth.user.status === "ACTIVO" ? t("account.active") : t("account.inactive") }}</dd>
           </div>
         </dl>
       </section>
@@ -174,43 +174,43 @@ async function onSubmit(): Promise<void> {
         </Transition>
 
         <form novalidate class="flex flex-col gap-4" @submit.prevent="onSubmit">
-          <div class="field" :class="{ 'has-error': errors.nombre }">
-            <label for="nombre">{{ t("account.nameLabel") }}</label>
-            <input id="nombre" v-model="form.nombre" type="text" autocomplete="name" />
-            <span class="field-error">{{ errors.nombre }}</span>
+          <div class="field" :class="{ 'has-error': errors.name }">
+            <label for="name">{{ t("account.nameLabel") }}</label>
+            <input id="name" v-model="form.name" type="text" autocomplete="name" />
+            <span class="field-error">{{ errors.name }}</span>
           </div>
 
-          <template v-if="auth.user.jugador">
+          <template v-if="auth.user.player">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div class="field" :class="{ 'has-error': errors.codigoUniversitario }">
-                <label for="codigo">{{ t("account.universityCodeLabel") }}</label>
-                <input id="codigo" v-model="form.codigoUniversitario" type="text" />
-                <span class="field-error">{{ errors.codigoUniversitario }}</span>
+              <div class="field" :class="{ 'has-error': errors.universityCode }">
+                <label for="universityCode">{{ t("account.universityCodeLabel") }}</label>
+                <input id="universityCode" v-model="form.universityCode" type="text" />
+                <span class="field-error">{{ errors.universityCode }}</span>
               </div>
-              <div class="field" :class="{ 'has-error': errors.semestre }">
-                <label for="semestre">{{ t("account.semesterLabel") }}</label>
-                <input id="semestre" v-model="form.semestre" type="number" min="1" />
-                <span class="field-error">{{ errors.semestre }}</span>
+              <div class="field" :class="{ 'has-error': errors.semester }">
+                <label for="semester">{{ t("account.semesterLabel") }}</label>
+                <input id="semester" v-model="form.semester" type="number" min="1" />
+                <span class="field-error">{{ errors.semester }}</span>
               </div>
             </div>
-            <div class="field" :class="{ 'has-error': errors.programa }">
-              <label for="programa">{{ t("account.programLabel") }}</label>
-              <input id="programa" v-model="form.programa" type="text" />
-              <span class="field-error">{{ errors.programa }}</span>
+            <div class="field" :class="{ 'has-error': errors.program }">
+              <label for="program">{{ t("account.programLabel") }}</label>
+              <input id="program" v-model="form.program" type="text" />
+              <span class="field-error">{{ errors.program }}</span>
             </div>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div class="field" :class="{ 'has-error': errors.fechaNacimiento }">
-                <label for="fechaNacimiento">{{ t("account.birthDateLabel") }}</label>
-                <DateField id="fechaNacimiento" v-model="form.fechaNacimiento" :max-date="todayIso" />
-                <span class="field-error">{{ errors.fechaNacimiento }}</span>
-                <span v-if="auth.user.jugador.edad != null" class="text-sm text-text-muted">
-                  {{ t("account.currentAge", { age: auth.user.jugador.edad }) }}
+              <div class="field" :class="{ 'has-error': errors.birthDate }">
+                <label for="birthDate">{{ t("account.birthDateLabel") }}</label>
+                <DateField id="birthDate" v-model="form.birthDate" :max-date="todayIso" />
+                <span class="field-error">{{ errors.birthDate }}</span>
+                <span v-if="auth.user.player.age != null" class="text-sm text-text-muted">
+                  {{ t("account.currentAge", { age: auth.user.player.age }) }}
                 </span>
               </div>
               <div class="field">
-                <label for="genero">{{ t("account.genderLabel") }}</label>
-                <select id="genero" v-model="form.genero">
+                <label for="gender">{{ t("account.genderLabel") }}</label>
+                <select id="gender" v-model="form.gender">
                   <option value="">{{ t("account.genderPreferNotToSay") }}</option>
                   <option v-for="option in GENDERS" :key="option" :value="option">{{ t(`genero.${option}`) }}</option>
                 </select>
@@ -218,8 +218,8 @@ async function onSubmit(): Promise<void> {
             </div>
 
             <div class="field">
-              <label for="discapacidad">{{ t("account.disabilityLabel") }}</label>
-              <select id="discapacidad" v-model="form.discapacidad">
+              <label for="disability">{{ t("account.disabilityLabel") }}</label>
+              <select id="disability" v-model="form.disability">
                 <option value="">{{ t("account.disabilityNotSpecified") }}</option>
                 <option v-for="option in DISABILITIES" :key="option" :value="option">
                   {{ t(`discapacidad.${option}`) }}

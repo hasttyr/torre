@@ -9,20 +9,20 @@ export const SELF_ASSIGNABLE_ROLES = ["JUGADOR", "ENTRENADOR", "ARBITRO", "ORGAN
 export type SelfAssignableRole = (typeof SELF_ASSIGNABLE_ROLES)[number];
 
 interface RegisterBasePayload {
-  nombre: string;
+  name: string;
   email: string;
   password: string;
 }
 
 interface RegisterPlayerPayload extends RegisterBasePayload {
-  rol: "JUGADOR";
-  codigoUniversitario: string;
-  programa: string;
-  semestre: number;
+  role: "JUGADOR";
+  universityCode: string;
+  program: string;
+  semester: number;
 }
 
 interface RegisterOtherRolePayload extends RegisterBasePayload {
-  rol: "ENTRENADOR" | "ARBITRO" | "ORGANIZADOR";
+  role: "ENTRENADOR" | "ARBITRO" | "ORGANIZADOR";
 }
 
 export type RegisterPayload = RegisterPlayerPayload | RegisterOtherRolePayload;
@@ -45,37 +45,37 @@ export const DISABILITIES = [
 export type Disability = (typeof DISABILITIES)[number];
 
 export interface PlayerProfile {
-  codigoUniversitario: string;
-  programa: string;
-  semestre: number;
-  fechaNacimiento: string | null;
-  edad: number | null;
-  genero: Gender | null;
-  discapacidad: Disability | null;
+  universityCode: string;
+  program: string;
+  semester: number;
+  birthDate: string | null;
+  age: number | null;
+  gender: Gender | null;
+  disability: Disability | null;
 }
 
 export interface RegisteredUser {
   id: string;
-  nombre: string;
+  name: string;
   email: string;
-  estado: string;
-  rol: string;
+  status: string;
+  role: string;
   createdAt: string;
-  jugador?: PlayerProfile;
+  player?: PlayerProfile;
 }
 
 // HU20: every field is optional (only what is sent gets updated); it never
-// includes rol or email on purpose, same rule as
+// includes role or email on purpose, same rule as
 // backend/src/validators/users.schemas.ts. An explicit null clears
-// fechaNacimiento/genero/discapacidad; omitting the field leaves it as-is.
+// birthDate/gender/disability; omitting the field leaves it as-is.
 export interface UpdateProfilePayload {
-  nombre?: string;
-  codigoUniversitario?: string;
-  programa?: string;
-  semestre?: number;
-  fechaNacimiento?: string | null;
-  genero?: Gender | null;
-  discapacidad?: Disability | null;
+  name?: string;
+  universityCode?: string;
+  program?: string;
+  semester?: number;
+  birthDate?: string | null;
+  gender?: Gender | null;
+  disability?: Disability | null;
 }
 
 /**
@@ -97,7 +97,7 @@ export interface LoginPayload {
 
 export interface AuthResult {
   token: string;
-  usuario: RegisteredUser;
+  user: RegisteredUser;
 }
 
 /**
