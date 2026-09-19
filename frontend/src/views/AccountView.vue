@@ -68,21 +68,21 @@ function validate(): boolean {
   }
 
   if (form.nombre.trim().length < 2) {
-    errors.nombre = t("account.nombreMinLength");
+    errors.nombre = t("account.nameMinLength");
   }
 
   if (auth.user?.jugador) {
     if (!form.codigoUniversitario.trim()) {
-      errors.codigoUniversitario = t("account.codigoRequired");
+      errors.codigoUniversitario = t("account.universityCodeRequired");
     }
     if (!form.programa.trim()) {
-      errors.programa = t("account.programaRequired");
+      errors.programa = t("account.programRequired");
     }
     if (!Number.isInteger(Number(form.semestre)) || Number(form.semestre) <= 0) {
-      errors.semestre = t("account.semestrePositive");
+      errors.semestre = t("account.semesterPositive");
     }
     if (form.fechaNacimiento && form.fechaNacimiento > new Date().toISOString().slice(0, 10)) {
-      errors.fechaNacimiento = t("account.fechaNacimientoFutura");
+      errors.fechaNacimiento = t("account.birthDateInFuture");
     }
   }
 
@@ -138,16 +138,16 @@ async function onSubmit(): Promise<void> {
       <section v-if="auth.user" class="card mt-6">
         <dl class="m-0">
           <div class="flex justify-between gap-4 border-b border-border-soft py-3">
-            <dt class="text-sm text-text-muted">{{ t("account.correo") }}</dt>
+            <dt class="text-sm text-text-muted">{{ t("account.email") }}</dt>
             <dd class="m-0 font-semibold">{{ auth.user.email }}</dd>
           </div>
           <div class="flex justify-between gap-4 border-b border-border-soft py-3">
-            <dt class="text-sm text-text-muted">{{ t("account.rol") }}</dt>
+            <dt class="text-sm text-text-muted">{{ t("account.role") }}</dt>
             <dd class="m-0 font-semibold">{{ t(`roles.${auth.user.rol}`) }}</dd>
           </div>
           <div class="flex justify-between gap-4 py-3">
-            <dt class="text-sm text-text-muted">{{ t("account.estado") }}</dt>
-            <dd class="m-0 font-semibold">{{ auth.user.estado === "ACTIVO" ? t("account.activa") : t("account.inactiva") }}</dd>
+            <dt class="text-sm text-text-muted">{{ t("account.status") }}</dt>
+            <dd class="m-0 font-semibold">{{ auth.user.estado === "ACTIVO" ? t("account.active") : t("account.inactive") }}</dd>
           </div>
         </dl>
       </section>
@@ -175,7 +175,7 @@ async function onSubmit(): Promise<void> {
 
         <form novalidate class="flex flex-col gap-4" @submit.prevent="onSubmit">
           <div class="field" :class="{ 'has-error': errors.nombre }">
-            <label for="nombre">{{ t("account.nombreLabel") }}</label>
+            <label for="nombre">{{ t("account.nameLabel") }}</label>
             <input id="nombre" v-model="form.nombre" type="text" autocomplete="name" />
             <span class="field-error">{{ errors.nombre }}</span>
           </div>
@@ -183,44 +183,44 @@ async function onSubmit(): Promise<void> {
           <template v-if="auth.user.jugador">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="field" :class="{ 'has-error': errors.codigoUniversitario }">
-                <label for="codigo">{{ t("account.codigoLabel") }}</label>
+                <label for="codigo">{{ t("account.universityCodeLabel") }}</label>
                 <input id="codigo" v-model="form.codigoUniversitario" type="text" />
                 <span class="field-error">{{ errors.codigoUniversitario }}</span>
               </div>
               <div class="field" :class="{ 'has-error': errors.semestre }">
-                <label for="semestre">{{ t("account.semestreLabel") }}</label>
+                <label for="semestre">{{ t("account.semesterLabel") }}</label>
                 <input id="semestre" v-model="form.semestre" type="number" min="1" />
                 <span class="field-error">{{ errors.semestre }}</span>
               </div>
             </div>
             <div class="field" :class="{ 'has-error': errors.programa }">
-              <label for="programa">{{ t("account.programaLabel") }}</label>
+              <label for="programa">{{ t("account.programLabel") }}</label>
               <input id="programa" v-model="form.programa" type="text" />
               <span class="field-error">{{ errors.programa }}</span>
             </div>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="field" :class="{ 'has-error': errors.fechaNacimiento }">
-                <label for="fechaNacimiento">{{ t("account.fechaNacimientoLabel") }}</label>
+                <label for="fechaNacimiento">{{ t("account.birthDateLabel") }}</label>
                 <DateField id="fechaNacimiento" v-model="form.fechaNacimiento" :max-date="todayIso" />
                 <span class="field-error">{{ errors.fechaNacimiento }}</span>
                 <span v-if="auth.user.jugador.edad != null" class="text-sm text-text-muted">
-                  {{ t("account.edadActual", { edad: auth.user.jugador.edad }) }}
+                  {{ t("account.currentAge", { age: auth.user.jugador.edad }) }}
                 </span>
               </div>
               <div class="field">
-                <label for="genero">{{ t("account.generoLabel") }}</label>
+                <label for="genero">{{ t("account.genderLabel") }}</label>
                 <select id="genero" v-model="form.genero">
-                  <option value="">{{ t("account.generoPreferNo") }}</option>
+                  <option value="">{{ t("account.genderPreferNotToSay") }}</option>
                   <option v-for="option in GENDERS" :key="option" :value="option">{{ t(`genero.${option}`) }}</option>
                 </select>
               </div>
             </div>
 
             <div class="field">
-              <label for="discapacidad">{{ t("account.discapacidadLabel") }}</label>
+              <label for="discapacidad">{{ t("account.disabilityLabel") }}</label>
               <select id="discapacidad" v-model="form.discapacidad">
-                <option value="">{{ t("account.discapacidadSinEspecificar") }}</option>
+                <option value="">{{ t("account.disabilityNotSpecified") }}</option>
                 <option v-for="option in DISABILITIES" :key="option" :value="option">
                   {{ t(`discapacidad.${option}`) }}
                 </option>

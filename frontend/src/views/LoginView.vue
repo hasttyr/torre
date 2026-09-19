@@ -87,13 +87,13 @@ async function onSubmit(): Promise<void> {
 
     <form novalidate @submit.prevent="onSubmit">
       <div class="field" :class="{ 'has-error': errors.email }">
-        <label for="email">{{ t("auth.correo") }}</label>
+        <label for="email">{{ t("auth.email") }}</label>
         <input id="email" v-model="form.email" type="email" autocomplete="email" :placeholder="t('login.emailPlaceholder')" />
         <span class="field-error">{{ errors.email }}</span>
       </div>
 
       <div class="field" :class="{ 'has-error': errors.password }">
-        <label for="password">{{ t("auth.contrasena") }}</label>
+        <label for="password">{{ t("auth.password") }}</label>
         <input
           id="password"
           v-model="form.password"

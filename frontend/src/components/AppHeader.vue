@@ -38,14 +38,14 @@ function closeMobile(): void {
       <nav class="hidden items-center gap-2.5 sm:flex">
         <template v-if="auth.isAuthenticated">
           <RouterLink v-if="auth.user && ['ORGANIZADOR', 'ADMINISTRADOR'].includes(auth.user.rol)" to="/torneos" class="btn btn-ghost">
-            {{ t("header.misTorneos") }}
+            {{ t("header.myTournaments") }}
           </RouterLink>
-          <RouterLink v-if="auth.user?.rol === 'JUGADOR'" to="/mis-torneos" class="btn btn-ghost">{{ t("header.torneos") }}</RouterLink>
+          <RouterLink v-if="auth.user?.rol === 'JUGADOR'" to="/mis-torneos" class="btn btn-ghost">{{ t("header.tournaments") }}</RouterLink>
           <UserMenu />
         </template>
         <template v-else>
-          <RouterLink to="/login" class="btn btn-ghost">{{ t("header.iniciarSesion") }}</RouterLink>
-          <RouterLink to="/registro" class="btn btn-primary">{{ t("header.crearCuenta") }}</RouterLink>
+          <RouterLink to="/login" class="btn btn-ghost">{{ t("header.login") }}</RouterLink>
+          <RouterLink to="/registro" class="btn btn-primary">{{ t("header.createAccount") }}</RouterLink>
           <LocaleToggle />
           <ThemeToggle />
         </template>
@@ -62,7 +62,7 @@ function closeMobile(): void {
           type="button"
           class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text"
           :aria-expanded="mobileOpen"
-          :aria-label="mobileOpen ? t('header.cerrarMenu') : t('header.abrirMenu')"
+          :aria-label="mobileOpen ? t('header.closeMenu') : t('header.openMenu')"
           @click="mobileOpen = !mobileOpen"
         >
           <svg v-if="!mobileOpen" viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
@@ -93,7 +93,7 @@ function closeMobile(): void {
               class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
               @click="closeMobile"
             >
-              {{ t("header.misTorneos") }}
+              {{ t("header.myTournaments") }}
             </RouterLink>
             <RouterLink
               v-if="auth.user?.rol === 'JUGADOR'"
@@ -101,15 +101,15 @@ function closeMobile(): void {
               class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
               @click="closeMobile"
             >
-              {{ t("header.torneos") }}
+              {{ t("header.tournaments") }}
             </RouterLink>
           </template>
           <template v-else>
             <RouterLink to="/login" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10" @click="closeMobile">
-              {{ t("header.iniciarSesion") }}
+              {{ t("header.login") }}
             </RouterLink>
             <RouterLink to="/registro" class="rounded-lg bg-accent px-3 py-2.5 text-center text-sm font-semibold text-[#17130a]" @click="closeMobile">
-              {{ t("header.crearCuenta") }}
+              {{ t("header.createAccount") }}
             </RouterLink>
           </template>
         </div>

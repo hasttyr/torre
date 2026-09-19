@@ -63,7 +63,7 @@ function validate(): boolean {
   }
 
   if (form.nombre.trim().length < 2) {
-    errors.nombre = t("auth.nombreMinLength");
+    errors.nombre = t("auth.nameMinLength");
   }
   if (!looksLikeEmail(form.email.trim())) {
     errors.email = t("auth.emailInvalid");
@@ -74,13 +74,13 @@ function validate(): boolean {
 
   if (isPlayer.value) {
     if (!form.codigoUniversitario.trim()) {
-      errors.codigoUniversitario = t("auth.codigoRequired");
+      errors.codigoUniversitario = t("auth.universityCodeRequired");
     }
     if (!form.programa.trim()) {
-      errors.programa = t("auth.programaRequired");
+      errors.programa = t("auth.programRequired");
     }
     if (!Number.isInteger(Number(form.semestre)) || Number(form.semestre) <= 0) {
-      errors.semestre = t("auth.semestrePositive");
+      errors.semestre = t("auth.semesterPositive");
     }
   }
 
@@ -181,8 +181,8 @@ async function onSubmit(): Promise<void> {
 
     <form novalidate @submit.prevent="onSubmit">
       <div class="field">
-        <span class="field-label">{{ t("register.rolLabel") }}</span>
-        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4" role="radiogroup" :aria-label="t('register.rolLabel')">
+        <span class="field-label">{{ t("register.roleLabel") }}</span>
+        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4" role="radiogroup" :aria-label="t('register.roleLabel')">
           <label
             v-for="role in SELF_ASSIGNABLE_ROLES"
             :key="role"
@@ -201,19 +201,19 @@ async function onSubmit(): Promise<void> {
       </div>
 
       <div class="field" :class="{ 'has-error': errors.nombre }">
-        <label for="nombre">{{ t("register.nombreLabel") }}</label>
-        <input id="nombre" v-model="form.nombre" type="text" autocomplete="name" :placeholder="t('register.nombrePlaceholder')" />
+        <label for="nombre">{{ t("register.nameLabel") }}</label>
+        <input id="nombre" v-model="form.nombre" type="text" autocomplete="name" :placeholder="t('register.namePlaceholder')" />
         <span class="field-error">{{ errors.nombre }}</span>
       </div>
 
       <div class="field" :class="{ 'has-error': errors.email }">
-        <label for="email">{{ t("auth.correo") }}</label>
+        <label for="email">{{ t("auth.email") }}</label>
         <input id="email" v-model="form.email" type="email" autocomplete="email" :placeholder="t('register.emailPlaceholder')" />
         <span class="field-error">{{ errors.email }}</span>
       </div>
 
       <div class="field" :class="{ 'has-error': errors.password }">
-        <label for="password">{{ t("auth.contrasena") }}</label>
+        <label for="password">{{ t("auth.password") }}</label>
         <input
           id="password"
           v-model="form.password"
@@ -234,20 +234,20 @@ async function onSubmit(): Promise<void> {
           <legend class="px-1.5 text-[0.8rem] font-semibold text-text-muted">{{ t("register.playerDataLegend") }}</legend>
 
           <div class="field" :class="{ 'has-error': errors.codigoUniversitario }">
-            <label for="codigo">{{ t("register.codigoLabel") }}</label>
-            <input id="codigo" v-model="form.codigoUniversitario" type="text" :placeholder="t('register.codigoPlaceholder')" />
+            <label for="codigo">{{ t("register.universityCodeLabel") }}</label>
+            <input id="codigo" v-model="form.codigoUniversitario" type="text" :placeholder="t('register.universityCodePlaceholder')" />
             <span class="field-error">{{ errors.codigoUniversitario }}</span>
           </div>
 
           <div class="field" :class="{ 'has-error': errors.programa }">
-            <label for="programa">{{ t("register.programaLabel") }}</label>
-            <input id="programa" v-model="form.programa" type="text" :placeholder="t('register.programaPlaceholder')" />
+            <label for="programa">{{ t("register.programLabel") }}</label>
+            <input id="programa" v-model="form.programa" type="text" :placeholder="t('register.programPlaceholder')" />
             <span class="field-error">{{ errors.programa }}</span>
           </div>
 
           <div class="field" :class="{ 'has-error': errors.semestre }">
-            <label for="semestre">{{ t("register.semestreLabel") }}</label>
-            <input id="semestre" v-model="form.semestre" type="number" min="1" :placeholder="t('register.semestrePlaceholder')" />
+            <label for="semestre">{{ t("register.semesterLabel") }}</label>
+            <input id="semestre" v-model="form.semestre" type="number" min="1" :placeholder="t('register.semesterPlaceholder')" />
             <span class="field-error">{{ errors.semestre }}</span>
           </div>
         </fieldset>

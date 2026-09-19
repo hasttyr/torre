@@ -103,7 +103,7 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="flex items-center justify-between px-3 py-2.5">
-          <span class="text-sm text-text">{{ t("userMenu.tema") }}</span>
+          <span class="text-sm text-text">{{ t("userMenu.theme") }}</span>
           <button
             type="button"
             class="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-text transition-colors hover:border-accent/40 hover:bg-accent/10"
@@ -126,12 +126,12 @@ onBeforeUnmount(() => {
                 stroke-linejoin="round"
               />
             </svg>
-            {{ theme.theme === "dark" ? t("userMenu.oscuro") : t("userMenu.claro") }}
+            {{ theme.theme === "dark" ? t("userMenu.dark") : t("userMenu.light") }}
           </button>
         </div>
 
         <div class="flex items-center justify-between px-3 py-2.5">
-          <span class="text-sm text-text">{{ t("userMenu.idioma") }}</span>
+          <span class="text-sm text-text">{{ t("userMenu.language") }}</span>
           <button
             type="button"
             class="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-text transition-colors hover:border-accent/40 hover:bg-accent/10"
@@ -147,14 +147,14 @@ onBeforeUnmount(() => {
             class="block w-full px-3 py-2 text-left text-sm font-medium text-text hover:bg-accent/10"
             @click="goToProfile"
           >
-            {{ t("userMenu.miPerfil") }}
+            {{ t("userMenu.myProfile") }}
           </button>
           <button
             type="button"
             class="block w-full px-3 py-2 text-left text-sm font-medium text-red-500 hover:bg-red-500/10"
             @click="onLogout"
           >
-            {{ t("userMenu.cerrarSesion") }}
+            {{ t("userMenu.logout") }}
           </button>
         </div>
       </div>

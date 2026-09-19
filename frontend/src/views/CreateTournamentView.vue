@@ -35,16 +35,16 @@ function validate(): boolean {
   }
 
   if (form.nombre.trim().length < 2) {
-    errors.nombre = t("createTournament.nombreMinLength");
+    errors.nombre = t("createTournament.nameMinLength");
   }
   if (!form.fechaInicio) {
-    errors.fechaInicio = t("createTournament.fechaInicioRequired");
+    errors.fechaInicio = t("createTournament.startDateRequired");
   }
   if (!form.fechaFin) {
-    errors.fechaFin = t("createTournament.fechaFinRequired");
+    errors.fechaFin = t("createTournament.endDateRequired");
   }
   if (form.fechaInicio && form.fechaFin && form.fechaFin < form.fechaInicio) {
-    errors.fechaFin = t("createTournament.fechaFinAnterior");
+    errors.fechaFin = t("createTournament.endDateBeforeStart");
   }
 
   return Object.keys(errors).length === 0;
@@ -98,28 +98,28 @@ async function onSubmit(): Promise<void> {
 
       <form novalidate class="mt-6 flex flex-col gap-4" @submit.prevent="onSubmit">
         <div class="field" :class="{ 'has-error': errors.nombre }">
-          <label for="nombre">{{ t("createTournament.nombreLabel") }}</label>
-          <input id="nombre" v-model="form.nombre" type="text" :placeholder="t('createTournament.nombrePlaceholder')" />
+          <label for="nombre">{{ t("createTournament.nameLabel") }}</label>
+          <input id="nombre" v-model="form.nombre" type="text" :placeholder="t('createTournament.namePlaceholder')" />
           <span class="field-error">{{ errors.nombre }}</span>
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="field" :class="{ 'has-error': errors.fechaInicio }">
-            <label for="fechaInicio">{{ t("createTournament.fechaInicioLabel") }}</label>
+            <label for="fechaInicio">{{ t("createTournament.startDateLabel") }}</label>
             <DateField id="fechaInicio" v-model="form.fechaInicio" />
             <span class="field-error">{{ errors.fechaInicio }}</span>
           </div>
 
           <div class="field" :class="{ 'has-error': errors.fechaFin }">
-            <label for="fechaFin">{{ t("createTournament.fechaFinLabel") }}</label>
+            <label for="fechaFin">{{ t("createTournament.endDateLabel") }}</label>
             <DateField id="fechaFin" v-model="form.fechaFin" />
             <span class="field-error">{{ errors.fechaFin }}</span>
           </div>
         </div>
 
         <div class="field">
-          <label for="formato">{{ t("createTournament.formatoLabel") }}</label>
-          <input id="formato" v-model="form.formato" type="text" :placeholder="t('createTournament.formatoPlaceholder')" />
+          <label for="formato">{{ t("createTournament.formatLabel") }}</label>
+          <input id="formato" v-model="form.formato" type="text" :placeholder="t('createTournament.formatPlaceholder')" />
         </div>
 
         <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
