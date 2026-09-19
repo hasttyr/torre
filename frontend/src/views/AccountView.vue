@@ -144,7 +144,9 @@ async function onSubmit(): Promise<void> {
           </div>
           <div class="flex justify-between gap-4 py-3">
             <dt class="text-sm text-text-muted">{{ t("account.status") }}</dt>
-            <dd class="m-0 font-semibold">{{ auth.user.status === "ACTIVE" ? t("account.active") : t("account.inactive") }}</dd>
+            <dd class="m-0 font-semibold">
+              {{ auth.user.status === "ACTIVE" ? t("account.active") : t("account.inactive") }}
+            </dd>
           </div>
         </dl>
       </section>

@@ -107,7 +107,12 @@ const STEPS = [
       <div class="container flex flex-wrap items-center justify-between gap-4 text-sm text-text-muted">
         <AppLogo size="md" />
         <p>{{ t("home.footerText") }}</p>
-        <a href="https://github.com/hasttyr/torre" target="_blank" rel="noopener" class="text-text-muted no-underline hover:text-accent">
+        <a
+          href="https://github.com/hasttyr/torre"
+          target="_blank"
+          rel="noopener"
+          class="text-text-muted no-underline hover:text-accent"
+        >
           GitHub
         </a>
       </div>

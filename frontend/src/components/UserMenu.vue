@@ -110,7 +110,14 @@ onBeforeUnmount(() => {
             class="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-text transition-colors hover:border-accent/40 hover:bg-accent/10"
             @click="theme.toggle()"
           >
-            <svg v-if="theme.theme === 'dark'" viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true">
+            <svg
+              v-if="theme.theme === 'dark'"
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              aria-hidden="true"
+            >
               <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.75" />
               <path
                 d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.55 1.55M18.25 18.25l1.55 1.55M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.55-1.55M18.25 5.75l1.55-1.55"

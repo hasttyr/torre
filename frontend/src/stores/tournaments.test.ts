@@ -65,7 +65,11 @@ describe("useTournamentsStore", () => {
     createTournamentMock.mockResolvedValue(TOURNAMENT);
     const store = useTournamentsStore();
 
-    const tournament = await store.create({ name: "Copa Universitaria", startDate: "2026-10-01", endDate: "2026-10-03" });
+    const tournament = await store.create({
+      name: "Copa Universitaria",
+      startDate: "2026-10-01",
+      endDate: "2026-10-03",
+    });
 
     expect(tournament).toEqual(TOURNAMENT);
     expect(store.current).toEqual(TOURNAMENT);
@@ -75,7 +79,14 @@ describe("useTournamentsStore", () => {
   it("load fetches the tournament and its enrolled players", async () => {
     getTournamentMock.mockResolvedValue(TOURNAMENT);
     listEnrolledPlayersMock.mockResolvedValue([
-      { playerId: "j1", name: "Luis", universityCode: "U1", program: "Sistemas", semester: 5, enrolledAt: "2026-09-17" },
+      {
+        playerId: "j1",
+        name: "Luis",
+        universityCode: "U1",
+        program: "Sistemas",
+        semester: 5,
+        enrolledAt: "2026-09-17",
+      },
     ]);
     const store = useTournamentsStore();
 
@@ -121,7 +132,14 @@ describe("useTournamentsStore", () => {
     await store.enrollPlayer("tournament-1", "j1");
 
     expect(store.enrolledPlayers).toEqual([
-      { playerId: "j1", name: "Luis", universityCode: "U1", program: "Sistemas", semester: 5, enrolledAt: "2026-09-17" },
+      {
+        playerId: "j1",
+        name: "Luis",
+        universityCode: "U1",
+        program: "Sistemas",
+        semester: 5,
+        enrolledAt: "2026-09-17",
+      },
     ]);
   });
 

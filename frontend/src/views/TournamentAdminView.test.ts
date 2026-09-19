@@ -124,7 +124,14 @@ describe("TournamentAdminView", () => {
   it("searches and shows results as you type (debounced)", async () => {
     getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
     searchPlayersMock.mockResolvedValue([
-      { id: "j1", name: "Luis Gómez", email: "luis@example.com", universityCode: "U1", program: "Sistemas", semester: 5 },
+      {
+        id: "j1",
+        name: "Luis Gómez",
+        email: "luis@example.com",
+        universityCode: "U1",
+        program: "Sistemas",
+        semester: 5,
+      },
     ]);
 
     const { wrapper } = await mountView();
@@ -140,7 +147,14 @@ describe("TournamentAdminView", () => {
   it("enrolls a player chosen from the search results (HU07)", async () => {
     getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
     searchPlayersMock.mockResolvedValue([
-      { id: "j1", name: "Luis Gómez", email: "luis@example.com", universityCode: "U1", program: "Sistemas", semester: 5 },
+      {
+        id: "j1",
+        name: "Luis Gómez",
+        email: "luis@example.com",
+        universityCode: "U1",
+        program: "Sistemas",
+        semester: 5,
+      },
     ]);
     enrollPlayerMock.mockResolvedValue({
       playerId: "j1",

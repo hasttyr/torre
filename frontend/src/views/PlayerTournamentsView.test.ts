@@ -40,7 +40,12 @@ const AVAILABLE_TOURNAMENT = {
   createdAt: "2026-09-17T00:00:00.000Z",
 };
 
-const ENROLLED_TOURNAMENT = { ...AVAILABLE_TOURNAMENT, id: "tournament-2", name: "Copa Interna", status: "CREATED" as const };
+const ENROLLED_TOURNAMENT = {
+  ...AVAILABLE_TOURNAMENT,
+  id: "tournament-2",
+  name: "Copa Interna",
+  status: "CREATED" as const,
+};
 
 async function mountView() {
   const router = createRouter({

@@ -37,10 +37,16 @@ function closeMobile(): void {
       <!-- Desktop nav: hidden below sm, visible from sm upward. -->
       <nav class="hidden items-center gap-2.5 sm:flex">
         <template v-if="auth.isAuthenticated">
-          <RouterLink v-if="auth.user && ['ORGANIZER', 'ADMINISTRATOR'].includes(auth.user.role)" to="/torneos" class="btn btn-ghost">
+          <RouterLink
+            v-if="auth.user && ['ORGANIZER', 'ADMINISTRATOR'].includes(auth.user.role)"
+            to="/torneos"
+            class="btn btn-ghost"
+          >
             {{ t("header.myTournaments") }}
           </RouterLink>
-          <RouterLink v-if="auth.user?.role === 'PLAYER'" to="/mis-torneos" class="btn btn-ghost">{{ t("header.tournaments") }}</RouterLink>
+          <RouterLink v-if="auth.user?.role === 'PLAYER'" to="/mis-torneos" class="btn btn-ghost">{{
+            t("header.tournaments")
+          }}</RouterLink>
           <UserMenu />
         </template>
         <template v-else>
@@ -105,10 +111,18 @@ function closeMobile(): void {
             </RouterLink>
           </template>
           <template v-else>
-            <RouterLink to="/login" class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10" @click="closeMobile">
+            <RouterLink
+              to="/login"
+              class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
+              @click="closeMobile"
+            >
               {{ t("header.login") }}
             </RouterLink>
-            <RouterLink to="/registro" class="rounded-lg bg-accent px-3 py-2.5 text-center text-sm font-semibold text-[#17130a]" @click="closeMobile">
+            <RouterLink
+              to="/registro"
+              class="rounded-lg bg-accent px-3 py-2.5 text-center text-sm font-semibold text-[#17130a]"
+              @click="closeMobile"
+            >
               {{ t("header.createAccount") }}
             </RouterLink>
           </template>

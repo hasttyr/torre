@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 /* stores/theme.ts alterna [data-theme] en <html>; este custom variant hace
    que las utilidades dark: de Tailwind respondan a ese atributo en vez del
@@ -28,8 +28,8 @@
   --color-success: var(--success);
   --color-error: var(--error);
 
-  --font-display: 'Fraunces', 'Georgia', serif;
-  --font-sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-display: "Fraunces", "Georgia", serif;
+  --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
 
   --radius-sm: 8px;
   --radius-md: 14px;
@@ -41,7 +41,7 @@
 
 /* Tema oscuro: por defecto y explícito vía [data-theme="dark"]. */
 :root,
-:root[data-theme='dark'] {
+:root[data-theme="dark"] {
   --bg: #0f1115;
   --bg-elevated: #14171d;
   --surface: #191d25;
@@ -66,7 +66,7 @@
   color-scheme: dark;
 }
 
-:root[data-theme='light'] {
+:root[data-theme="light"] {
   --bg: #f7f5f0;
   --bg-elevated: #ffffff;
   --surface: #ffffff;

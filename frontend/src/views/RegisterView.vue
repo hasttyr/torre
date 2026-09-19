@@ -161,7 +161,13 @@ async function onSubmit(): Promise<void> {
         <output v-if="successMessage" class="banner banner--success">
           <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true" class="mt-0.5 shrink-0">
             <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5" />
-            <path d="M6 10.5l2.5 2.5L14 7.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+            <path
+              d="M6 10.5l2.5 2.5L14 7.5"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
           <span>{{ successMessage }}</span>
         </output>
@@ -207,13 +213,25 @@ async function onSubmit(): Promise<void> {
 
       <div class="field" :class="{ 'has-error': errors.name }">
         <label for="name">{{ t("register.nameLabel") }}</label>
-        <input id="name" v-model="form.name" type="text" autocomplete="name" :placeholder="t('register.namePlaceholder')" />
+        <input
+          id="name"
+          v-model="form.name"
+          type="text"
+          autocomplete="name"
+          :placeholder="t('register.namePlaceholder')"
+        />
         <span class="field-error">{{ errors.name }}</span>
       </div>
 
       <div class="field" :class="{ 'has-error': errors.email }">
         <label for="email">{{ t("auth.email") }}</label>
-        <input id="email" v-model="form.email" type="email" autocomplete="email" :placeholder="t('register.emailPlaceholder')" />
+        <input
+          id="email"
+          v-model="form.email"
+          type="email"
+          autocomplete="email"
+          :placeholder="t('register.emailPlaceholder')"
+        />
         <span class="field-error">{{ errors.email }}</span>
       </div>
 
@@ -235,12 +253,22 @@ async function onSubmit(): Promise<void> {
         leave-active-class="transition duration-180 ease-in"
         leave-to-class="opacity-0 -translate-y-1.5"
       >
-        <fieldset v-if="isPlayer" class="m-0 flex flex-col gap-4 rounded-xl border border-dashed border-border p-4 pt-4">
-          <legend class="px-1.5 text-[0.8rem] font-semibold text-text-muted">{{ t("register.playerDataLegend") }}</legend>
+        <fieldset
+          v-if="isPlayer"
+          class="m-0 flex flex-col gap-4 rounded-xl border border-dashed border-border p-4 pt-4"
+        >
+          <legend class="px-1.5 text-[0.8rem] font-semibold text-text-muted">
+            {{ t("register.playerDataLegend") }}
+          </legend>
 
           <div class="field" :class="{ 'has-error': errors.universityCode }">
             <label for="universityCode">{{ t("register.universityCodeLabel") }}</label>
-            <input id="universityCode" v-model="form.universityCode" type="text" :placeholder="t('register.universityCodePlaceholder')" />
+            <input
+              id="universityCode"
+              v-model="form.universityCode"
+              type="text"
+              :placeholder="t('register.universityCodePlaceholder')"
+            />
             <span class="field-error">{{ errors.universityCode }}</span>
           </div>
 
@@ -252,7 +280,13 @@ async function onSubmit(): Promise<void> {
 
           <div class="field" :class="{ 'has-error': errors.semester }">
             <label for="semester">{{ t("register.semesterLabel") }}</label>
-            <input id="semester" v-model="form.semester" type="number" min="1" :placeholder="t('register.semesterPlaceholder')" />
+            <input
+              id="semester"
+              v-model="form.semester"
+              type="number"
+              min="1"
+              :placeholder="t('register.semesterPlaceholder')"
+            />
             <span class="field-error">{{ errors.semester }}</span>
           </div>
         </fieldset>
@@ -267,7 +301,15 @@ async function onSubmit(): Promise<void> {
       </div>
 
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
-        <svg v-if="submitting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+        <svg
+          v-if="submitting"
+          class="h-4 w-4 animate-spin"
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          aria-hidden="true"
+        >
           <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" opacity="0.25" />
           <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
         </svg>
@@ -275,6 +317,8 @@ async function onSubmit(): Promise<void> {
       </button>
     </form>
 
-    <template #footer><RouterLink to="/">{{ t("common.backToHome") }}</RouterLink></template>
+    <template #footer
+      ><RouterLink to="/">{{ t("common.backToHome") }}</RouterLink></template
+    >
   </AuthLayout>
 </template>

@@ -57,7 +57,9 @@ function formatDate(date: string): string {
           >
             <div>
               <h2 class="text-base">{{ tournament.name }}</h2>
-              <p class="mt-0.5 text-sm">{{ formatDate(tournament.startDate) }} — {{ formatDate(tournament.endDate) }}</p>
+              <p class="mt-0.5 text-sm">
+                {{ formatDate(tournament.startDate) }} — {{ formatDate(tournament.endDate) }}
+              </p>
             </div>
             <span class="pill">{{ t(`estados.${tournament.status}`) }}</span>
           </RouterLink>

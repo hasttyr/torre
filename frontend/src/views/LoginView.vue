@@ -84,7 +84,13 @@ async function onSubmit(): Promise<void> {
     <form novalidate @submit.prevent="onSubmit">
       <div class="field" :class="{ 'has-error': errors.email }">
         <label for="email">{{ t("auth.email") }}</label>
-        <input id="email" v-model="form.email" type="email" autocomplete="email" :placeholder="t('login.emailPlaceholder')" />
+        <input
+          id="email"
+          v-model="form.email"
+          type="email"
+          autocomplete="email"
+          :placeholder="t('login.emailPlaceholder')"
+        />
         <span class="field-error">{{ errors.email }}</span>
       </div>
 
@@ -105,7 +111,15 @@ async function onSubmit(): Promise<void> {
       </RouterLink>
 
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
-        <svg v-if="submitting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+        <svg
+          v-if="submitting"
+          class="h-4 w-4 animate-spin"
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          aria-hidden="true"
+        >
           <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" opacity="0.25" />
           <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
         </svg>

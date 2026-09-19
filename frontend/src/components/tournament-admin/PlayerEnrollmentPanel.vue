@@ -120,10 +120,18 @@ async function onEnroll(player: PlayerSearchResult): Promise<void> {
       <table class="w-full min-w-md border-collapse">
         <thead>
           <tr>
-            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">{{ t("tournamentAdmin.tableName") }}</th>
-            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">{{ t("tournamentAdmin.tableCode") }}</th>
-            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">{{ t("tournamentAdmin.tableProgram") }}</th>
-            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">{{ t("tournamentAdmin.tableSemester") }}</th>
+            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
+              {{ t("tournamentAdmin.tableName") }}
+            </th>
+            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
+              {{ t("tournamentAdmin.tableCode") }}
+            </th>
+            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
+              {{ t("tournamentAdmin.tableProgram") }}
+            </th>
+            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
+              {{ t("tournamentAdmin.tableSemester") }}
+            </th>
           </tr>
         </thead>
         <tbody>

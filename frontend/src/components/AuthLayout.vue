@@ -46,7 +46,10 @@ withDefaults(defineProps<{ title: string; subtitle?: string; quote?: string; quo
             <slot />
           </div>
 
-          <p v-if="$slots.footer" class="mt-5 text-center text-sm [&_a]:text-text-muted [&_a]:no-underline [&_a:hover]:text-accent">
+          <p
+            v-if="$slots.footer"
+            class="mt-5 text-center text-sm [&_a]:text-text-muted [&_a]:no-underline [&_a:hover]:text-accent"
+          >
             <slot name="footer" />
           </p>
         </section>
