@@ -24,7 +24,7 @@ describe("POST /api/auth/register", () => {
     vi.clearAllMocks();
   });
 
-  it("registra un organizador válido y devuelve 201 sin exponer el hash", async () => {
+  it("registers a valid organizer and returns 201 without exposing the hash", async () => {
     prismaMock.rol.findUnique.mockResolvedValue({ id: "rol-1", nombre: "ORGANIZADOR" });
     prismaMock.usuario.findUnique.mockResolvedValue(null);
     prismaMock.usuario.create.mockResolvedValue({
@@ -48,7 +48,7 @@ describe("POST /api/auth/register", () => {
     expect(response.body.passwordHash).toBeUndefined();
   });
 
-  it("responde 400 con un correo inválido", async () => {
+  it("responds 400 with an invalid email", async () => {
     const response = await request(createApp()).post("/api/auth/register").send({
       nombre: "Ana Torres",
       email: "no-es-un-correo",
@@ -60,7 +60,7 @@ describe("POST /api/auth/register", () => {
     expect(prismaMock.usuario.create).not.toHaveBeenCalled();
   });
 
-  it("responde 400 si falta el perfil de jugador requerido para rol JUGADOR", async () => {
+  it("responds 400 when the player profile required for role JUGADOR is missing", async () => {
     const response = await request(createApp()).post("/api/auth/register").send({
       nombre: "Luis Gómez",
       email: "luis@example.com",
@@ -71,7 +71,7 @@ describe("POST /api/auth/register", () => {
     expect(response.status).toBe(400);
   });
 
-  it("responde 400 si el rol es ADMINISTRADOR (no autoasignable)", async () => {
+  it("responds 400 when the role is ADMINISTRADOR (not self-assignable)", async () => {
     const response = await request(createApp()).post("/api/auth/register").send({
       nombre: "Quiero Ser Admin",
       email: "admin@example.com",
@@ -83,7 +83,7 @@ describe("POST /api/auth/register", () => {
     expect(prismaMock.usuario.create).not.toHaveBeenCalled();
   });
 
-  it("responde 409 si el correo ya está registrado", async () => {
+  it("responds 409 when the email is already registered", async () => {
     prismaMock.rol.findUnique.mockResolvedValue({ id: "rol-1", nombre: "JUGADOR" });
     prismaMock.usuario.findUnique.mockResolvedValue({ id: "usuario-existente" });
 
@@ -100,7 +100,7 @@ describe("POST /api/auth/register", () => {
     expect(response.status).toBe(409);
   });
 
-  it("no expone detalles internos cuando falla algo no controlado (p. ej. la base de datos)", async () => {
+  it("does not expose internal details when something uncontrolled fails (e.g. the database)", async () => {
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
     prismaMock.rol.findUnique.mockRejectedValue(
       new Error("Can't reach database server at `localhost:5432` (ruta interna: /home/app/src/x.ts)"),
@@ -125,7 +125,7 @@ describe("POST /api/auth/login", () => {
     vi.clearAllMocks();
   });
 
-  it("autentica con credenciales válidas y devuelve token + usuario", async () => {
+  it("authenticates with valid credentials and returns token + user", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
     prismaMock.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
@@ -147,7 +147,7 @@ describe("POST /api/auth/login", () => {
     expect(response.body.usuario.passwordHash).toBeUndefined();
   });
 
-  it("responde 401 con contraseña incorrecta", async () => {
+  it("responds 401 with an incorrect password", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
     prismaMock.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
@@ -164,7 +164,7 @@ describe("POST /api/auth/login", () => {
     expect(response.status).toBe(401);
   });
 
-  it("responde 401 con un correo que no existe", async () => {
+  it("responds 401 with an email that doesn't exist", async () => {
     prismaMock.usuario.findUnique.mockResolvedValue(null);
 
     const response = await request(createApp())
@@ -174,7 +174,7 @@ describe("POST /api/auth/login", () => {
     expect(response.status).toBe(401);
   });
 
-  it("responde 400 si falta la contraseña", async () => {
+  it("responds 400 when the password is missing", async () => {
     const response = await request(createApp()).post("/api/auth/login").send({ email: "ana@example.com" });
 
     expect(response.status).toBe(400);
@@ -183,7 +183,7 @@ describe("POST /api/auth/login", () => {
 });
 
 describe("POST /api/auth/logout", () => {
-  it("responde 204 con un token válido", async () => {
+  it("responds 204 with a valid token", async () => {
     const token = jwt.sign({ sub: "usuario-1", rol: "ORGANIZADOR" }, "test-secret", { expiresIn: "1h" });
 
     const response = await request(createApp()).post("/api/auth/logout").set("Authorization", `Bearer ${token}`);
@@ -191,7 +191,7 @@ describe("POST /api/auth/logout", () => {
     expect(response.status).toBe(204);
   });
 
-  it("responde 401 sin token", async () => {
+  it("responds 401 without a token", async () => {
     const response = await request(createApp()).post("/api/auth/logout");
 
     expect(response.status).toBe(401);

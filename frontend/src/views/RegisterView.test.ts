@@ -31,14 +31,14 @@ describe("RegisterView", () => {
     registerUserMock.mockReset();
   });
 
-  it("muestra los campos de jugador por default (rol inicial JUGADOR)", () => {
+  it("shows player fields by default (initial role JUGADOR)", () => {
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
 
     expect(wrapper.find("fieldset").exists()).toBe(true);
     expect(wrapper.text()).toContain("Datos de jugador");
   });
 
-  it("oculta los campos de jugador cuando se elige otro rol", async () => {
+  it("hides player fields when another role is chosen", async () => {
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
 
     await selectRol(wrapper, "ORGANIZADOR");
@@ -46,7 +46,7 @@ describe("RegisterView", () => {
     expect(wrapper.find("fieldset").exists()).toBe(false);
   });
 
-  it("muestra errores de validación y no llama al backend si el formulario está vacío", async () => {
+  it("shows validation errors and does not call the backend when the form is empty", async () => {
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
 
     await selectRol(wrapper, "ORGANIZADOR");
@@ -58,7 +58,7 @@ describe("RegisterView", () => {
     expect(registerUserMock).not.toHaveBeenCalled();
   });
 
-  it("valida los campos adicionales de jugador antes de enviar", async () => {
+  it("validates the additional player fields before submitting", async () => {
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
 
     await fillBaseFields(wrapper);
@@ -69,7 +69,7 @@ describe("RegisterView", () => {
     expect(registerUserMock).not.toHaveBeenCalled();
   });
 
-  it("envía el payload correcto y muestra éxito para un registro de jugador válido", async () => {
+  it("sends the correct payload and shows success for a valid player registration", async () => {
     registerUserMock.mockResolvedValue({
       id: "1",
       nombre: "Ana Torres",
@@ -103,7 +103,7 @@ describe("RegisterView", () => {
     expect(wrapper.text()).toContain("Cuenta creada para ana@example.com");
   });
 
-  it("no incluye campos de jugador en el payload para otros roles", async () => {
+  it("does not include player fields in the payload for other roles", async () => {
     registerUserMock.mockResolvedValue({
       id: "2",
       nombre: "Carlos Ruiz",
@@ -130,7 +130,7 @@ describe("RegisterView", () => {
     });
   });
 
-  it("muestra el mensaje de error que devuelve el backend (p. ej. correo duplicado)", async () => {
+  it("shows the error message returned by the backend (e.g. duplicate email)", async () => {
     registerUserMock.mockRejectedValue({
       isAxiosError: true,
       response: { data: { error: "Ya existe una cuenta registrada con ese correo" } },
@@ -149,7 +149,7 @@ describe("RegisterView", () => {
     expect(wrapper.text()).toContain("Ya existe una cuenta registrada con ese correo");
   });
 
-  it("muestra un mensaje genérico si no hay respuesta del servidor (error de red)", async () => {
+  it("shows a generic message when there is no response from the server (network error)", async () => {
     registerUserMock.mockRejectedValue(new Error("Network Error"));
 
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });

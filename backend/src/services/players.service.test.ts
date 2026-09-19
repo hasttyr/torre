@@ -12,7 +12,7 @@ function buildPrismaMock() {
 }
 
 describe("searchPlayers", () => {
-  it("devuelve lista vacía sin llamar a la base de datos si el texto está vacío", async () => {
+  it("returns an empty list without calling the database when the text is empty", async () => {
     const prisma = buildPrismaMock();
 
     const result = await searchPlayers(prisma as unknown as PrismaClient, "   ");
@@ -21,7 +21,7 @@ describe("searchPlayers", () => {
     expect(prisma.jugador.findMany).not.toHaveBeenCalled();
   });
 
-  it("busca por nombre, correo o código universitario y mapea el DTO", async () => {
+  it("searches by name, email or university code and maps the DTO", async () => {
     const prisma = buildPrismaMock();
     prisma.jugador.findMany.mockResolvedValue([
       {

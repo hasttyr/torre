@@ -76,7 +76,7 @@ describe("TournamentAdminView", () => {
     searchPlayersMock.mockResolvedValue([]);
   });
 
-  it("carga y muestra el torneo con su estado", async () => {
+  it("loads and shows the tournament with its status", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
 
     const { wrapper } = await mountView();
@@ -85,7 +85,7 @@ describe("TournamentAdminView", () => {
     expect(wrapper.text()).toContain("Preliminar");
   });
 
-  it("habilita abrir inscripciones solo cuando el torneo está en CREADO", async () => {
+  it("enables opening registration only when the tournament is in CREADO", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
 
     const { wrapper } = await mountView();
@@ -97,7 +97,7 @@ describe("TournamentAdminView", () => {
     expect(closeBtn.attributes("disabled")).toBeDefined();
   });
 
-  it("abre inscripciones y refleja el nuevo estado (HU06)", async () => {
+  it("opens registration and reflects the new state (HU06)", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
     openRegistrationMock.mockResolvedValue({ ...CREATED_TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
 
@@ -112,7 +112,7 @@ describe("TournamentAdminView", () => {
     expect(wrapper.text()).toContain("Inscripciones abiertas");
   });
 
-  it("bloquea el campo de búsqueda de jugador cuando las inscripciones no están abiertas", async () => {
+  it("blocks the player search field when registration is not open", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
 
     const { wrapper } = await mountView();
@@ -121,7 +121,7 @@ describe("TournamentAdminView", () => {
     expect(playerQueryInput.attributes("disabled")).toBeDefined();
   });
 
-  it("busca y muestra resultados a medida que se escribe (debounced)", async () => {
+  it("searches and shows results as you type (debounced)", async () => {
     getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
     searchPlayersMock.mockResolvedValue([
       { id: "j1", nombre: "Luis Gómez", email: "luis@example.com", codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
@@ -137,7 +137,7 @@ describe("TournamentAdminView", () => {
     expect(wrapper.text()).toContain("Luis Gómez");
   });
 
-  it("inscribe un jugador elegido de los resultados de búsqueda (HU07)", async () => {
+  it("enrolls a player chosen from the search results (HU07)", async () => {
     getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
     searchPlayersMock.mockResolvedValue([
       { id: "j1", nombre: "Luis Gómez", email: "luis@example.com", codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
@@ -166,7 +166,7 @@ describe("TournamentAdminView", () => {
     expect(wrapper.text()).toContain("Luis Gómez");
   });
 
-  it("deshabilita la edición de desempates si ya no está en estado preliminar", async () => {
+  it("disables editing tiebreaks once it's no longer in preliminary state", async () => {
     getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
 
     const { wrapper } = await mountView();
@@ -175,7 +175,7 @@ describe("TournamentAdminView", () => {
     expect(tiebreaksInput.attributes("disabled")).toBeDefined();
   });
 
-  it("guarda la configuración del torneo (HU05)", async () => {
+  it("saves the tournament configuration (HU05)", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
     configureTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, numeroRondas: 7, ritmo: "90+30" });
 
@@ -194,7 +194,7 @@ describe("TournamentAdminView", () => {
     expect(wrapper.text()).toContain("Configuración guardada");
   });
 
-  it("no llama a closeRegistration cuando el torneo no está en INSCRIPCIONES_ABIERTAS", async () => {
+  it("does not call closeRegistration when the tournament is not in INSCRIPCIONES_ABIERTAS", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
 
     const { wrapper } = await mountView();

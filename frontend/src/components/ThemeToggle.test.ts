@@ -18,7 +18,7 @@ describe("ThemeToggle", () => {
     setActivePinia(createPinia());
   });
 
-  it("arranca en modo oscuro y cambia a claro al hacer click", async () => {
+  it("starts in dark mode and switches to light on click", async () => {
     const wrapper = mount(ThemeToggle, { global: { plugins: [i18n] } });
 
     expect(wrapper.attributes("title")).toBe("Modo claro");
@@ -29,7 +29,7 @@ describe("ThemeToggle", () => {
     expect(document.documentElement.dataset.theme).toBe("light");
   });
 
-  it("persiste la selección en localStorage", async () => {
+  it("persists the selection in localStorage", async () => {
     const wrapper = mount(ThemeToggle, { global: { plugins: [i18n] } });
 
     await wrapper.trigger("click");

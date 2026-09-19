@@ -15,7 +15,7 @@ function buildPrismaMock() {
 }
 
 describe("getUserById", () => {
-  it("incluye el perfil de jugador cuando existe", async () => {
+  it("includes the player profile when it exists", async () => {
     const prisma = buildPrismaMock();
     prisma.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
@@ -47,7 +47,7 @@ describe("getUserById", () => {
     });
   });
 
-  it("calcula la edad a partir de fechaNacimiento", async () => {
+  it("calculates age from fechaNacimiento", async () => {
     const prisma = buildPrismaMock();
     prisma.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
@@ -73,7 +73,7 @@ describe("getUserById", () => {
     expect(usuario.jugador?.discapacidad).toBe("NINGUNA");
   });
 
-  it("no incluye jugador cuando el usuario no tiene ese perfil", async () => {
+  it("does not include jugador when the user doesn't have that profile", async () => {
     const prisma = buildPrismaMock();
     prisma.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
@@ -98,7 +98,7 @@ describe("updateOwnProfile", () => {
     prisma = buildPrismaMock();
   });
 
-  it("actualiza el nombre sin tocar el perfil de jugador si no se envían esos campos", async () => {
+  it("updates the name without touching the player profile when those fields aren't sent", async () => {
     prisma.usuario.findUnique.mockResolvedValue({ id: "usuario-1", jugador: null });
     prisma.usuario.update.mockResolvedValue({
       id: "usuario-1",
@@ -115,7 +115,7 @@ describe("updateOwnProfile", () => {
     expect(prisma.usuario.update.mock.calls[0][0].data).toEqual({ nombre: "Ana T." });
   });
 
-  it("actualiza los campos de jugador cuando el usuario tiene ese perfil", async () => {
+  it("updates player fields when the user has that profile", async () => {
     prisma.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
       jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
@@ -138,7 +138,7 @@ describe("updateOwnProfile", () => {
     });
   });
 
-  it("rechaza (400) actualizar campos de jugador si el usuario no tiene ese perfil", async () => {
+  it("rejects (400) updating player fields when the user doesn't have that profile", async () => {
     prisma.usuario.findUnique.mockResolvedValue({ id: "usuario-1", jugador: null });
 
     await expect(
@@ -147,7 +147,7 @@ describe("updateOwnProfile", () => {
     expect(prisma.usuario.update).not.toHaveBeenCalled();
   });
 
-  it("responde 404 si el usuario no existe", async () => {
+  it("responds 404 when the user doesn't exist", async () => {
     prisma.usuario.findUnique.mockResolvedValue(null);
 
     await expect(
@@ -155,7 +155,7 @@ describe("updateOwnProfile", () => {
     ).rejects.toMatchObject({ status: 404 } satisfies Partial<HttpError>);
   });
 
-  it("actualiza fechaNacimiento, genero y discapacidad", async () => {
+  it("updates fechaNacimiento, genero and discapacidad", async () => {
     prisma.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
       jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
@@ -190,7 +190,7 @@ describe("updateOwnProfile", () => {
     });
   });
 
-  it("permite limpiar genero/discapacidad enviando null explícito", async () => {
+  it("allows clearing genero/discapacidad by sending an explicit null", async () => {
     prisma.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
       jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
@@ -212,15 +212,15 @@ describe("updateOwnProfile", () => {
 });
 
 describe("calculateAge", () => {
-  it("calcula la edad cuando ya pasó el cumpleaños este año", () => {
+  it("calculates age when the birthday has already passed this year", () => {
     expect(calculateAge(new Date("2000-01-01"), new Date("2026-06-01"))).toBe(26);
   });
 
-  it("no suma el año todavía si el cumpleaños no llegó", () => {
+  it("doesn't add the year yet if the birthday hasn't arrived", () => {
     expect(calculateAge(new Date("2000-12-31"), new Date("2026-06-01"))).toBe(25);
   });
 
-  it("calcula correctamente el día exacto del cumpleaños", () => {
+  it("correctly calculates the exact birthday date", () => {
     expect(calculateAge(new Date("2000-06-01"), new Date("2026-06-01"))).toBe(26);
   });
 });

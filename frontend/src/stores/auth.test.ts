@@ -33,7 +33,7 @@ describe("useAuthStore", () => {
     vi.clearAllMocks();
   });
 
-  it("arranca sin sesión cuando localStorage está vacío", () => {
+  it("starts with no session when localStorage is empty", () => {
     const store = useAuthStore();
 
     expect(store.isAuthenticated).toBe(false);
@@ -41,7 +41,7 @@ describe("useAuthStore", () => {
     expect(api.defaults.headers.common.Authorization).toBeUndefined();
   });
 
-  it("hidrata la sesión desde localStorage al crear el store", () => {
+  it("hydrates the session from localStorage when the store is created", () => {
     localStorage.setItem("torre.token", "token-guardado");
     localStorage.setItem("torre.usuario", JSON.stringify(USER));
 
@@ -52,7 +52,7 @@ describe("useAuthStore", () => {
     expect(api.defaults.headers.common.Authorization).toBe("Bearer token-guardado");
   });
 
-  it("login guarda token/usuario, persiste en localStorage y setea el header de axios", async () => {
+  it("login stores the token/user, persists to localStorage and sets the axios header", async () => {
     loginUserMock.mockResolvedValue({ token: "nuevo-token", usuario: USER });
     const store = useAuthStore();
 
@@ -65,7 +65,7 @@ describe("useAuthStore", () => {
     expect(api.defaults.headers.common.Authorization).toBe("Bearer nuevo-token");
   });
 
-  it("login no modifica el estado si el backend rechaza las credenciales", async () => {
+  it("login does not change state when the backend rejects the credentials", async () => {
     loginUserMock.mockRejectedValue(new Error("Credenciales inválidas"));
     const store = useAuthStore();
 
@@ -75,7 +75,7 @@ describe("useAuthStore", () => {
     expect(localStorage.getItem("torre.token")).toBeNull();
   });
 
-  it("logout limpia el estado, localStorage y el header de axios", async () => {
+  it("logout clears state, localStorage and the axios header", async () => {
     loginUserMock.mockResolvedValue({ token: "token", usuario: USER });
     logoutUserMock.mockResolvedValue(undefined);
     const store = useAuthStore();
@@ -90,7 +90,7 @@ describe("useAuthStore", () => {
     expect(api.defaults.headers.common.Authorization).toBeUndefined();
   });
 
-  it("logout limpia la sesión local aunque la llamada al backend falle", async () => {
+  it("logout clears the local session even if the backend call fails", async () => {
     loginUserMock.mockResolvedValue({ token: "token", usuario: USER });
     logoutUserMock.mockRejectedValue(new Error("Network Error"));
     const store = useAuthStore();
@@ -102,7 +102,7 @@ describe("useAuthStore", () => {
     expect(localStorage.getItem("torre.token")).toBeNull();
   });
 
-  it("refreshUser actualiza el perfil desde /users/me", async () => {
+  it("refreshUser updates the profile from /users/me", async () => {
     loginUserMock.mockResolvedValue({ token: "token", usuario: USER });
     const store = useAuthStore();
     await store.login("ana@example.com", "password123");
@@ -116,7 +116,7 @@ describe("useAuthStore", () => {
     expect(JSON.parse(localStorage.getItem("torre.usuario")!)).toEqual(updated);
   });
 
-  it("updateProfile guarda el usuario devuelto por el backend (HU20)", async () => {
+  it("updateProfile stores the user returned by the backend (HU20)", async () => {
     loginUserMock.mockResolvedValue({ token: "token", usuario: USER });
     const store = useAuthStore();
     await store.login("ana@example.com", "password123");

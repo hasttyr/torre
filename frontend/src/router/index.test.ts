@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { useAuthStore } from "../stores/auth";
 import { router } from "./index";
 
-describe("router guard de /cuenta", () => {
+describe("router guard for /cuenta", () => {
   beforeEach(async () => {
     localStorage.clear();
     setActivePinia(createPinia());
@@ -12,14 +12,14 @@ describe("router guard de /cuenta", () => {
     await router.isReady();
   });
 
-  it("redirige a /login cuando no hay sesión", async () => {
+  it("redirects to /login when there is no session", async () => {
     await router.push("/cuenta");
 
     expect(router.currentRoute.value.path).toBe("/login");
     expect(router.currentRoute.value.query.redirect).toBe("/cuenta");
   });
 
-  it("deja pasar cuando hay una sesión activa", async () => {
+  it("lets the request through when there is an active session", async () => {
     const auth = useAuthStore();
     auth.$patch({
       token: "token",

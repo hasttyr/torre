@@ -21,7 +21,7 @@ describe("GET /api/jugadores", () => {
     vi.clearAllMocks();
   });
 
-  it("busca jugadores y responde 200 con el DTO esperado", async () => {
+  it("searches players and responds 200 with the expected DTO", async () => {
     prismaMock.jugador.findMany.mockResolvedValue([
       {
         id: "jugador-1",
@@ -49,12 +49,12 @@ describe("GET /api/jugadores", () => {
     ]);
   });
 
-  it("responde 401 sin token", async () => {
+  it("responds 401 without a token", async () => {
     const response = await request(createApp()).get("/api/jugadores?q=Luis");
     expect(response.status).toBe(401);
   });
 
-  it("responde 403 para un rol sin permiso (JUGADOR)", async () => {
+  it("responds 403 for a role without permission (JUGADOR)", async () => {
     const response = await request(createApp())
       .get("/api/jugadores?q=Luis")
       .set("Authorization", `Bearer ${tokenFor("JUGADOR")}`);

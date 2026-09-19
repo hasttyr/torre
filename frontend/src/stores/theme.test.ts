@@ -23,7 +23,7 @@ describe("useThemeStore", () => {
     vi.restoreAllMocks();
   });
 
-  it("usa 'dark' por defecto cuando no hay preferencia guardada ni del sistema", () => {
+  it("defaults to 'dark' when there is no saved or system preference", () => {
     mockMatchMedia(false);
 
     const store = useThemeStore();
@@ -32,7 +32,7 @@ describe("useThemeStore", () => {
     expect(document.documentElement.dataset.theme).toBe("dark");
   });
 
-  it("respeta la preferencia del sistema (claro) si no hay nada guardado", () => {
+  it("respects the system preference (light) when nothing is saved", () => {
     mockMatchMedia(true);
 
     const store = useThemeStore();
@@ -41,7 +41,7 @@ describe("useThemeStore", () => {
     expect(document.documentElement.dataset.theme).toBe("light");
   });
 
-  it("prioriza el tema guardado en localStorage sobre la preferencia del sistema", () => {
+  it("prioritizes the theme saved in localStorage over the system preference", () => {
     mockMatchMedia(true);
     localStorage.setItem("torre.theme", "dark");
 
@@ -50,7 +50,7 @@ describe("useThemeStore", () => {
     expect(store.theme).toBe("dark");
   });
 
-  it("setTheme actualiza el estado, el atributo del documento y localStorage", () => {
+  it("setTheme updates the state, the document attribute and localStorage", () => {
     mockMatchMedia(false);
     const store = useThemeStore();
 
@@ -61,7 +61,7 @@ describe("useThemeStore", () => {
     expect(localStorage.getItem("torre.theme")).toBe("light");
   });
 
-  it("toggle alterna entre 'dark' y 'light'", () => {
+  it("toggle switches between 'dark' and 'light'", () => {
     mockMatchMedia(false);
     const store = useThemeStore();
 

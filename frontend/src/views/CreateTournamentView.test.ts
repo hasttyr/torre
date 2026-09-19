@@ -49,7 +49,7 @@ describe("CreateTournamentView", () => {
     vi.clearAllMocks();
   });
 
-  it("muestra errores de validación y no llama al backend con campos vacíos", async () => {
+  it("shows validation errors and does not call the backend with empty fields", async () => {
     const { wrapper } = await mountView();
 
     await wrapper.find("form").trigger("submit.prevent");
@@ -58,7 +58,7 @@ describe("CreateTournamentView", () => {
     expect(createTournamentMock).not.toHaveBeenCalled();
   });
 
-  it("crea el torneo y navega a su panel de administración", async () => {
+  it("creates the tournament and navigates to its admin panel", async () => {
     createTournamentMock.mockResolvedValue({
       id: "torneo-1",
       nombre: "Copa Universitaria",
@@ -92,7 +92,7 @@ describe("CreateTournamentView", () => {
     expect(router.currentRoute.value.path).toBe("/torneos/torneo-1");
   });
 
-  it("rechaza cuando la fecha de fin es anterior a la de inicio", async () => {
+  it("rejects when the end date is earlier than the start date", async () => {
     const { wrapper } = await mountView();
 
     await wrapper.find("#nombre").setValue("Copa Universitaria");

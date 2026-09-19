@@ -62,7 +62,7 @@ describe("PlayerTournamentsView", () => {
     vi.clearAllMocks();
   });
 
-  it("muestra estados vacíos cuando no hay disponibles ni inscripciones", async () => {
+  it("shows empty states when there are no available tournaments or registrations", async () => {
     listAvailableTournamentsMock.mockResolvedValue([]);
     listEnrolledTournamentsMock.mockResolvedValue([]);
 
@@ -72,7 +72,7 @@ describe("PlayerTournamentsView", () => {
     expect(wrapper.text()).toContain("No hay torneos con inscripción abierta");
   });
 
-  it("lista los torneos disponibles y las inscripciones del jugador por separado", async () => {
+  it("lists available tournaments and the player's registrations separately", async () => {
     listAvailableTournamentsMock.mockResolvedValue([AVAILABLE_TOURNAMENT]);
     listEnrolledTournamentsMock.mockResolvedValue([ENROLLED_TOURNAMENT]);
 
@@ -82,7 +82,7 @@ describe("PlayerTournamentsView", () => {
     expect(wrapper.text()).toContain("Copa Interna");
   });
 
-  it("muestra un error si falla la carga", async () => {
+  it("shows an error when loading fails", async () => {
     listAvailableTournamentsMock.mockRejectedValue(new Error("network error"));
     listEnrolledTournamentsMock.mockResolvedValue([]);
 

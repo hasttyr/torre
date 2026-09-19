@@ -38,7 +38,7 @@ describe("LoginView", () => {
     vi.clearAllMocks();
   });
 
-  it("muestra errores de validación y no llama al backend con campos vacíos", async () => {
+  it("shows validation errors and does not call the backend with empty fields", async () => {
     const { wrapper } = await mountLoginView();
 
     await wrapper.find("form").trigger("submit.prevent");
@@ -48,7 +48,7 @@ describe("LoginView", () => {
     expect(loginUserMock).not.toHaveBeenCalled();
   });
 
-  it("hace login y navega a /cuenta con credenciales válidas", async () => {
+  it("logs in and navigates to /cuenta with valid credentials", async () => {
     loginUserMock.mockResolvedValue({
       token: "token-123",
       usuario: {
@@ -72,7 +72,7 @@ describe("LoginView", () => {
     expect(router.currentRoute.value.path).toBe("/cuenta");
   });
 
-  it("muestra el mensaje de error del backend con credenciales inválidas", async () => {
+  it("shows the backend error message with invalid credentials", async () => {
     loginUserMock.mockRejectedValue({
       isAxiosError: true,
       response: { data: { error: "Credenciales inválidas" } },
@@ -90,7 +90,7 @@ describe("LoginView", () => {
     expect(router.currentRoute.value.path).not.toBe("/cuenta");
   });
 
-  it("muestra un mensaje genérico ante un error de red", async () => {
+  it("shows a generic message on a network error", async () => {
     loginUserMock.mockRejectedValue(new Error("Network Error"));
 
     const { wrapper } = await mountLoginView();

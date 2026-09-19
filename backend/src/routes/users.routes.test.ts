@@ -22,12 +22,12 @@ describe("GET /api/users/me", () => {
     vi.clearAllMocks();
   });
 
-  it("responde 401 sin token", async () => {
+  it("responds 401 without a token", async () => {
     const response = await request(createApp()).get("/api/users/me");
     expect(response.status).toBe(401);
   });
 
-  it("devuelve el perfil del usuario autenticado", async () => {
+  it("returns the authenticated user's profile", async () => {
     prismaMock.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
       nombre: "Ana Torres",
@@ -49,7 +49,7 @@ describe("GET /api/users/me", () => {
     });
   });
 
-  it("responde 404 si el usuario del token ya no existe", async () => {
+  it("responds 404 when the token's user no longer exists", async () => {
     prismaMock.usuario.findUnique.mockResolvedValue(null);
 
     const response = await request(createApp())
@@ -65,7 +65,7 @@ describe("PUT /api/users/me", () => {
     vi.clearAllMocks();
   });
 
-  it("actualiza el propio perfil (HU20)", async () => {
+  it("updates the user's own profile (HU20)", async () => {
     prismaMock.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
       jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
@@ -89,7 +89,7 @@ describe("PUT /api/users/me", () => {
     expect(response.body.jugador).toMatchObject({ codigoUniversitario: "U1", programa: "Ingeniería", semestre: 6 });
   });
 
-  it("ignora cualquier intento de enviar 'rol' en el body (no es un campo válido del schema)", async () => {
+  it("ignores any attempt to send 'rol' in the body (not a valid schema field)", async () => {
     prismaMock.usuario.findUnique.mockResolvedValue({ id: "usuario-1", jugador: null });
     prismaMock.usuario.update.mockResolvedValue({
       id: "usuario-1",
@@ -111,12 +111,12 @@ describe("PUT /api/users/me", () => {
     expect(prismaMock.usuario.update.mock.calls[0][0].data).not.toHaveProperty("rolId");
   });
 
-  it("responde 401 sin token", async () => {
+  it("responds 401 without a token", async () => {
     const response = await request(createApp()).put("/api/users/me").send({ nombre: "X" });
     expect(response.status).toBe(401);
   });
 
-  it("responde 400 con un nombre demasiado corto", async () => {
+  it("responds 400 with a name that's too short", async () => {
     const response = await request(createApp())
       .put("/api/users/me")
       .set("Authorization", `Bearer ${tokenFor("JUGADOR", "usuario-1")}`)
@@ -126,7 +126,7 @@ describe("PUT /api/users/me", () => {
     expect(prismaMock.usuario.update).not.toHaveBeenCalled();
   });
 
-  it("actualiza fechaNacimiento, genero y discapacidad desde el catálogo cerrado", async () => {
+  it("updates fechaNacimiento, genero and discapacidad from the closed catalog", async () => {
     prismaMock.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
       jugador: { codigoUniversitario: "U1", programa: "Sistemas", semestre: 5 },
@@ -159,7 +159,7 @@ describe("PUT /api/users/me", () => {
     expect(typeof response.body.jugador.edad).toBe("number");
   });
 
-  it("responde 400 con un género fuera del catálogo (no acepta texto libre)", async () => {
+  it("responds 400 with a gender outside the catalog (doesn't accept free text)", async () => {
     const response = await request(createApp())
       .put("/api/users/me")
       .set("Authorization", `Bearer ${tokenFor("JUGADOR", "usuario-1")}`)
@@ -169,7 +169,7 @@ describe("PUT /api/users/me", () => {
     expect(prismaMock.usuario.update).not.toHaveBeenCalled();
   });
 
-  it("responde 400 con una fecha de nacimiento futura", async () => {
+  it("responds 400 with a future birth date", async () => {
     const response = await request(createApp())
       .put("/api/users/me")
       .set("Authorization", `Bearer ${tokenFor("JUGADOR", "usuario-1")}`)
@@ -185,12 +185,12 @@ describe("PATCH /api/users/:id/rol", () => {
     vi.clearAllMocks();
   });
 
-  it("responde 401 sin token", async () => {
+  it("responds 401 without a token", async () => {
     const response = await request(createApp()).patch("/api/users/usuario-2/rol").send({ rol: "ARBITRO" });
     expect(response.status).toBe(401);
   });
 
-  it("responde 403 si quien pide el cambio no es ADMINISTRADOR", async () => {
+  it("responds 403 when whoever requests the change isn't ADMINISTRADOR", async () => {
     const response = await request(createApp())
       .patch("/api/users/usuario-2/rol")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZADOR")}`)
@@ -200,7 +200,7 @@ describe("PATCH /api/users/:id/rol", () => {
     expect(prismaMock.usuario.update).not.toHaveBeenCalled();
   });
 
-  it("permite a un ADMINISTRADOR cambiar el rol de otro usuario", async () => {
+  it("allows an ADMINISTRADOR to change another user's role", async () => {
     prismaMock.rol.findUnique.mockResolvedValue({ id: "rol-arbitro", nombre: "ARBITRO" });
     prismaMock.usuario.findUnique.mockResolvedValue({ id: "usuario-2" });
     prismaMock.usuario.update.mockResolvedValue({
@@ -226,7 +226,7 @@ describe("PATCH /api/users/:id/rol", () => {
     });
   });
 
-  it("responde 400 si el rol enviado no es uno de los válidos", async () => {
+  it("responds 400 when the sent role isn't one of the valid ones", async () => {
     const response = await request(createApp())
       .patch("/api/users/usuario-2/rol")
       .set("Authorization", `Bearer ${tokenFor("ADMINISTRADOR")}`)
@@ -236,7 +236,7 @@ describe("PATCH /api/users/:id/rol", () => {
     expect(prismaMock.usuario.update).not.toHaveBeenCalled();
   });
 
-  it("responde 404 si el usuario objetivo no existe", async () => {
+  it("responds 404 when the target user doesn't exist", async () => {
     prismaMock.rol.findUnique.mockResolvedValue({ id: "rol-arbitro", nombre: "ARBITRO" });
     prismaMock.usuario.findUnique.mockResolvedValue(null);
 

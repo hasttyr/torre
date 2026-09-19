@@ -25,7 +25,7 @@ describe("registerUser", () => {
     prisma = buildPrismaMock();
   });
 
-  it("crea una cuenta con datos válidos para un rol sin perfil adicional", async () => {
+  it("creates an account with valid data for a role without an additional profile", async () => {
     prisma.rol.findUnique.mockResolvedValue({ id: "rol-organizador", nombre: "ORGANIZADOR" });
     prisma.usuario.findUnique.mockResolvedValue(null);
     prisma.usuario.create.mockResolvedValue({
@@ -59,7 +59,7 @@ describe("registerUser", () => {
     expect(createArgs.data.jugador).toBeUndefined();
   });
 
-  it("crea la cuenta y el perfil de jugador anidado cuando rol es JUGADOR", async () => {
+  it("creates the account and the nested player profile when the role is JUGADOR", async () => {
     prisma.rol.findUnique.mockResolvedValue({ id: "rol-jugador", nombre: "JUGADOR" });
     prisma.usuario.findUnique.mockResolvedValue(null);
     prisma.usuario.create.mockResolvedValue({
@@ -89,7 +89,7 @@ describe("registerUser", () => {
     });
   });
 
-  it("normaliza el correo a minúsculas y sin espacios", async () => {
+  it("normalizes the email to lowercase and trims spaces", async () => {
     prisma.rol.findUnique.mockResolvedValue({ id: "rol-arbitro", nombre: "ARBITRO" });
     prisma.usuario.findUnique.mockResolvedValue(null);
     prisma.usuario.create.mockResolvedValue({
@@ -113,7 +113,7 @@ describe("registerUser", () => {
     expect(prisma.usuario.create.mock.calls[0][0].data.nombre).toBe("Ana");
   });
 
-  it("rechaza un correo ya registrado", async () => {
+  it("rejects an already registered email", async () => {
     prisma.rol.findUnique.mockResolvedValue({ id: "rol-jugador", nombre: "JUGADOR" });
     prisma.usuario.findUnique.mockResolvedValue({ id: "usuario-existente" });
 
@@ -132,7 +132,7 @@ describe("registerUser", () => {
     expect(prisma.usuario.create).not.toHaveBeenCalled();
   });
 
-  it("rechaza un rol que no existe en la base de datos", async () => {
+  it("rejects a role that doesn't exist in the database", async () => {
     prisma.rol.findUnique.mockResolvedValue(null);
 
     await expect(
@@ -145,7 +145,7 @@ describe("registerUser", () => {
     ).rejects.toMatchObject({ status: 400 } satisfies Partial<HttpError>);
   });
 
-  it("convierte una violación de unicidad concurrente (P2002) en 409", async () => {
+  it("turns a concurrent uniqueness violation (P2002) into a 409", async () => {
     prisma.rol.findUnique.mockResolvedValue({ id: "rol-organizador", nombre: "ORGANIZADOR" });
     prisma.usuario.findUnique.mockResolvedValue(null);
     prisma.usuario.create.mockRejectedValue({ code: "P2002" });
@@ -168,7 +168,7 @@ describe("loginUser", () => {
     prisma = buildPrismaMock();
   });
 
-  it("autentica con credenciales válidas y devuelve un token firmado", async () => {
+  it("authenticates with valid credentials and returns a signed token", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
     prisma.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
@@ -199,7 +199,7 @@ describe("loginUser", () => {
     expect(payload.rol).toBe("ORGANIZADOR");
   });
 
-  it("rechaza una contraseña incorrecta con un mensaje genérico", async () => {
+  it("rejects an incorrect password with a generic message", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
     prisma.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
@@ -214,7 +214,7 @@ describe("loginUser", () => {
     ).rejects.toMatchObject({ status: 401, message: "Credenciales inválidas" } satisfies Partial<HttpError>);
   });
 
-  it("rechaza un correo inexistente con el mismo mensaje genérico (no revela si la cuenta existe)", async () => {
+  it("rejects a nonexistent email with the same generic message (doesn't reveal whether the account exists)", async () => {
     prisma.usuario.findUnique.mockResolvedValue(null);
 
     await expect(
@@ -222,7 +222,7 @@ describe("loginUser", () => {
     ).rejects.toMatchObject({ status: 401, message: "Credenciales inválidas" } satisfies Partial<HttpError>);
   });
 
-  it("rechaza a un usuario inactivo aunque la contraseña sea correcta", async () => {
+  it("rejects an inactive user even when the password is correct", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
     prisma.usuario.findUnique.mockResolvedValue({
       id: "usuario-1",
@@ -237,7 +237,7 @@ describe("loginUser", () => {
     ).rejects.toMatchObject({ status: 403 } satisfies Partial<HttpError>);
   });
 
-  it("normaliza el correo a minúsculas antes de buscar", async () => {
+  it("normalizes the email to lowercase before looking it up", async () => {
     prisma.usuario.findUnique.mockResolvedValue(null);
 
     await expect(

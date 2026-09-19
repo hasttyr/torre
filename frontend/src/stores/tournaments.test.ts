@@ -61,7 +61,7 @@ describe("useTournamentsStore", () => {
     vi.clearAllMocks();
   });
 
-  it("create guarda el torneo devuelto y reinicia la lista de jugadores", async () => {
+  it("create stores the returned tournament and resets the player list", async () => {
     createTournamentMock.mockResolvedValue(TOURNAMENT);
     const store = useTournamentsStore();
 
@@ -72,7 +72,7 @@ describe("useTournamentsStore", () => {
     expect(store.enrolledPlayers).toEqual([]);
   });
 
-  it("load trae el torneo y sus jugadores inscritos", async () => {
+  it("load fetches the tournament and its enrolled players", async () => {
     getTournamentMock.mockResolvedValue(TOURNAMENT);
     listEnrolledPlayersMock.mockResolvedValue([
       { jugadorId: "j1", nombre: "Luis", codigoUniversitario: "U1", programa: "Sistemas", semestre: 5, inscritoEn: "2026-09-17" },
@@ -85,7 +85,7 @@ describe("useTournamentsStore", () => {
     expect(store.enrolledPlayers).toHaveLength(1);
   });
 
-  it("configure actualiza el torneo con la respuesta del backend", async () => {
+  it("configure updates the tournament with the backend's response", async () => {
     configureTournamentMock.mockResolvedValue({ ...TOURNAMENT, numeroRondas: 7, ritmo: "90+30" });
     const store = useTournamentsStore();
 
@@ -95,7 +95,7 @@ describe("useTournamentsStore", () => {
     expect(store.current?.ritmo).toBe("90+30");
   });
 
-  it("openRegistration y closeRegistration reflejan el nuevo estado", async () => {
+  it("openRegistration and closeRegistration reflect the new state", async () => {
     openRegistrationMock.mockResolvedValue({ ...TOURNAMENT, estado: "INSCRIPCIONES_ABIERTAS" });
     closeRegistrationMock.mockResolvedValue({ ...TOURNAMENT, estado: "INSCRIPCIONES_CERRADAS" });
     const store = useTournamentsStore();
@@ -107,7 +107,7 @@ describe("useTournamentsStore", () => {
     expect(store.current?.estado).toBe("INSCRIPCIONES_CERRADAS");
   });
 
-  it("enrollPlayer agrega el jugador a la lista", async () => {
+  it("enrollPlayer adds the player to the list", async () => {
     enrollPlayerMock.mockResolvedValue({
       jugadorId: "j1",
       nombre: "Luis",
@@ -125,7 +125,7 @@ describe("useTournamentsStore", () => {
     ]);
   });
 
-  it("loadMyTournaments guarda el listado del organizador", async () => {
+  it("loadMyTournaments stores the organizer's listing", async () => {
     listMyTournamentsMock.mockResolvedValue([TOURNAMENT]);
     const store = useTournamentsStore();
 
@@ -134,7 +134,7 @@ describe("useTournamentsStore", () => {
     expect(store.mine).toEqual([TOURNAMENT]);
   });
 
-  it("loadPlayerTournaments guarda disponibles e inscritos", async () => {
+  it("loadPlayerTournaments stores available and enrolled tournaments", async () => {
     listAvailableTournamentsMock.mockResolvedValue([TOURNAMENT]);
     listEnrolledTournamentsMock.mockResolvedValue([{ ...TOURNAMENT, id: "torneo-2" }]);
     const store = useTournamentsStore();

@@ -72,7 +72,7 @@ describe("AccountView", () => {
     vi.clearAllMocks();
   });
 
-  it("muestra los datos del usuario guardados en el store mientras refresca el perfil", async () => {
+  it("shows the user data saved in the store while refreshing the profile", async () => {
     const auth = useAuthStore();
     auth.$patch({ token: "token", user: USUARIO });
     fetchMeMock.mockResolvedValue(USUARIO);
@@ -85,7 +85,7 @@ describe("AccountView", () => {
     expect(wrapper.text()).toContain("Organizador");
   });
 
-  it("muestra un aviso si falla la actualización del perfil, sin perder los datos ya cargados", async () => {
+  it("shows a notice when refreshing the profile fails, without losing the already loaded data", async () => {
     const auth = useAuthStore();
     auth.$patch({ token: "token", user: USUARIO });
     fetchMeMock.mockRejectedValue(new Error("Network Error"));
@@ -98,7 +98,7 @@ describe("AccountView", () => {
     expect((wrapper.get("#nombre").element as HTMLInputElement).value).toBe("Ana Torres");
   });
 
-  it("no muestra campos de jugador para un usuario sin ese perfil", async () => {
+  it("does not show player fields for a user without that profile", async () => {
     const auth = useAuthStore();
     auth.$patch({ token: "token", user: USUARIO });
     fetchMeMock.mockResolvedValue(USUARIO);
@@ -109,7 +109,7 @@ describe("AccountView", () => {
     expect(wrapper.find("#codigo").exists()).toBe(false);
   });
 
-  it("precarga los campos de jugador cuando el usuario tiene ese perfil", async () => {
+  it("preloads player fields when the user has that profile", async () => {
     const auth = useAuthStore();
     auth.$patch({ token: "token", user: JUGADOR });
     fetchMeMock.mockResolvedValue(JUGADOR);
@@ -122,7 +122,7 @@ describe("AccountView", () => {
     expect((wrapper.get("#semestre").element as HTMLInputElement).value).toBe("5");
   });
 
-  it("precarga fecha de nacimiento/género/discapacidad y muestra la edad calculada", async () => {
+  it("preloads birth date/gender/disability and shows the calculated age", async () => {
     const auth = useAuthStore();
     const jugadorConDatos = {
       ...JUGADOR,
@@ -146,7 +146,7 @@ describe("AccountView", () => {
     expect(wrapper.text()).toContain("Edad actual: 21 años");
   });
 
-  it("solo ofrece género y discapacidad del catálogo cerrado (no hay input de texto libre)", async () => {
+  it("only offers gender and disability from the closed catalog (no free-text input)", async () => {
     const auth = useAuthStore();
     auth.$patch({ token: "token", user: JUGADOR });
     fetchMeMock.mockResolvedValue(JUGADOR);
@@ -159,7 +159,7 @@ describe("AccountView", () => {
     expect(wrapper.findAll("#genero option").length).toBeGreaterThan(1);
   });
 
-  it("envía fechaNacimiento/genero/discapacidad al guardar (HU20)", async () => {
+  it("sends fechaNacimiento/genero/discapacidad when saving (HU20)", async () => {
     const auth = useAuthStore();
     auth.$patch({ token: "token", user: JUGADOR });
     fetchMeMock.mockResolvedValue(JUGADOR);
@@ -184,7 +184,7 @@ describe("AccountView", () => {
     );
   });
 
-  it("guarda los cambios del perfil y muestra un mensaje de éxito (HU20)", async () => {
+  it("saves profile changes and shows a success message (HU20)", async () => {
     const auth = useAuthStore();
     auth.$patch({ token: "token", user: USUARIO });
     fetchMeMock.mockResolvedValue(USUARIO);
@@ -202,7 +202,7 @@ describe("AccountView", () => {
     expect(wrapper.text()).toContain("Perfil actualizado");
   });
 
-  it("muestra el error del backend si falla guardar el perfil", async () => {
+  it("shows the backend error when saving the profile fails", async () => {
     const auth = useAuthStore();
     auth.$patch({ token: "token", user: USUARIO });
     fetchMeMock.mockResolvedValue(USUARIO);

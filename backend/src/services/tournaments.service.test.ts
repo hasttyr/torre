@@ -43,7 +43,7 @@ function buildPrismaMock() {
 }
 
 describe("createTournament", () => {
-  it("crea un torneo en estado preliminar (CREADO) con datos válidos", async () => {
+  it("creates a tournament in preliminary state (CREADO) with valid data", async () => {
     const prisma = buildPrismaMock();
     prisma.torneo.create.mockResolvedValue({
       id: "tournament-1",
@@ -71,7 +71,7 @@ describe("createTournament", () => {
 });
 
 describe("listMyTournaments", () => {
-  it("un organizador solo ve los torneos que le pertenecen", async () => {
+  it("an organizer only sees the tournaments they own", async () => {
     const prisma = buildPrismaMock();
     prisma.torneo.findMany.mockResolvedValue([]);
 
@@ -80,7 +80,7 @@ describe("listMyTournaments", () => {
     expect(prisma.torneo.findMany.mock.calls[0][0].where).toEqual({ organizadorId: "org-1" });
   });
 
-  it("un administrador ve todos los torneos", async () => {
+  it("an administrator sees all tournaments", async () => {
     const prisma = buildPrismaMock();
     prisma.torneo.findMany.mockResolvedValue([]);
 
@@ -91,7 +91,7 @@ describe("listMyTournaments", () => {
 });
 
 describe("getTournament", () => {
-  it("el organizador dueño puede ver el detalle", async () => {
+  it("the owning organizer can see the detail", async () => {
     const prisma = buildPrismaMock();
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1", criteriosDesempate: [] });
 
@@ -100,7 +100,7 @@ describe("getTournament", () => {
     expect(tournament.id).toBe("tournament-1");
   });
 
-  it("un administrador puede ver cualquier torneo", async () => {
+  it("an administrator can see any tournament", async () => {
     const prisma = buildPrismaMock();
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1", criteriosDesempate: [] });
 
@@ -109,7 +109,7 @@ describe("getTournament", () => {
     ).resolves.toMatchObject({ id: "tournament-1" });
   });
 
-  it("rechaza (403) a un usuario que no es el dueño ni administrador", async () => {
+  it("rejects (403) a user who is neither the owner nor an administrator", async () => {
     const prisma = buildPrismaMock();
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1", criteriosDesempate: [] });
 
@@ -118,7 +118,7 @@ describe("getTournament", () => {
     ).rejects.toMatchObject({ status: 403 } satisfies Partial<HttpError>);
   });
 
-  it("responde 404 si el torneo no existe", async () => {
+  it("responds 404 when the tournament doesn't exist", async () => {
     const prisma = buildPrismaMock();
     prisma.torneo.findUnique.mockResolvedValue(null);
 
@@ -129,7 +129,7 @@ describe("getTournament", () => {
 });
 
 describe("listEnrolledPlayers", () => {
-  it("el organizador dueño puede ver el roster", async () => {
+  it("the owning organizer can see the roster", async () => {
     const prisma = buildPrismaMock();
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
     prisma.inscripcion.findMany.mockResolvedValue([]);
@@ -139,7 +139,7 @@ describe("listEnrolledPlayers", () => {
     ).resolves.toEqual([]);
   });
 
-  it("rechaza (403) a un jugador ajeno al torneo", async () => {
+  it("rejects (403) a player unrelated to the tournament", async () => {
     const prisma = buildPrismaMock();
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
 
@@ -151,7 +151,7 @@ describe("listEnrolledPlayers", () => {
 });
 
 describe("listAvailableTournaments", () => {
-  it("solo devuelve torneos con inscripciones abiertas", async () => {
+  it("only returns tournaments with open registration", async () => {
     const prisma = buildPrismaMock();
     prisma.torneo.findMany.mockResolvedValue([]);
 
@@ -162,7 +162,7 @@ describe("listAvailableTournaments", () => {
 });
 
 describe("listEnrolledTournaments", () => {
-  it("devuelve lista vacía si el usuario no tiene perfil de jugador", async () => {
+  it("returns an empty list when the user has no player profile", async () => {
     const prisma = buildPrismaMock();
     prisma.jugador.findUnique.mockResolvedValue(null);
 
@@ -172,7 +172,7 @@ describe("listEnrolledTournaments", () => {
     expect(prisma.inscripcion.findMany).not.toHaveBeenCalled();
   });
 
-  it("devuelve los torneos donde el jugador está inscrito", async () => {
+  it("returns the tournaments where the player is enrolled", async () => {
     const prisma = buildPrismaMock();
     prisma.jugador.findUnique.mockResolvedValue({ id: "jugador-1", usuarioId: "usuario-1" });
     prisma.inscripcion.findMany.mockResolvedValue([
@@ -211,7 +211,7 @@ describe("configureTournament", () => {
     prisma = buildPrismaMock();
   });
 
-  it("rechaza cuando el usuario no es el organizador dueño ni administrador", async () => {
+  it("rejects when the user is neither the owning organizer nor an administrator", async () => {
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
 
     await expect(
@@ -221,7 +221,7 @@ describe("configureTournament", () => {
     ).rejects.toMatchObject({ status: 403 } satisfies Partial<HttpError>);
   });
 
-  it("bloquea cambios en el orden de desempates si ya existe la ronda 1", async () => {
+  it("blocks changes to the tiebreak order once round 1 already exists", async () => {
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
     prisma.ronda.findFirst.mockResolvedValue({ id: "ronda-1", numero: 1 });
 
@@ -234,7 +234,7 @@ describe("configureTournament", () => {
     expect(prisma.criterioDesempate.deleteMany).not.toHaveBeenCalled();
   });
 
-  it("guarda la configuración cuando no existe todavía la ronda 1", async () => {
+  it("saves the configuration when round 1 doesn't exist yet", async () => {
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
     prisma.ronda.findFirst.mockResolvedValue(null);
     prisma.torneo.update.mockResolvedValue({
@@ -262,7 +262,7 @@ describe("configureTournament", () => {
     expect(tournament.criteriosDesempate).toEqual([{ nombre: "Buchholz", orden: 1 }]);
   });
 
-  it("un administrador puede configurar un torneo aunque no sea el organizador dueño", async () => {
+  it("an administrator can configure a tournament even without being the owning organizer", async () => {
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
     prisma.torneo.update.mockResolvedValue({
       id: "tournament-1",
@@ -293,7 +293,7 @@ describe("openRegistration / closeRegistration", () => {
     prisma = buildPrismaMock();
   });
 
-  it("abre inscripciones desde CREADO", async () => {
+  it("opens registration from CREADO", async () => {
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1", estado: "CREADO" });
     prisma.torneo.update.mockResolvedValue({
       id: "tournament-1",
@@ -314,7 +314,7 @@ describe("openRegistration / closeRegistration", () => {
     expect(tournament.estado).toBe("INSCRIPCIONES_ABIERTAS");
   });
 
-  it("rechaza abrir inscripciones si el torneo no está en CREADO", async () => {
+  it("rejects opening registration when the tournament is not in CREADO", async () => {
     prisma.torneo.findUnique.mockResolvedValue({
       id: "tournament-1",
       organizadorId: "org-1",
@@ -326,7 +326,7 @@ describe("openRegistration / closeRegistration", () => {
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
   });
 
-  it("cierra inscripciones desde INSCRIPCIONES_ABIERTAS", async () => {
+  it("closes registration from INSCRIPCIONES_ABIERTAS", async () => {
     prisma.torneo.findUnique.mockResolvedValue({
       id: "tournament-1",
       organizadorId: "org-1",
@@ -351,7 +351,7 @@ describe("openRegistration / closeRegistration", () => {
     expect(tournament.estado).toBe("INSCRIPCIONES_CERRADAS");
   });
 
-  it("rechaza cerrar inscripciones si nunca estuvieron abiertas", async () => {
+  it("rejects closing registration when it was never opened", async () => {
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1", estado: "CREADO" });
 
     await expect(
@@ -367,7 +367,7 @@ describe("enrollPlayer", () => {
     prisma = buildPrismaMock();
   });
 
-  it("inscribe un jugador cuando las inscripciones están abiertas", async () => {
+  it("enrolls a player when registration is open", async () => {
     prisma.torneo.findUnique.mockResolvedValue({
       id: "tournament-1",
       organizadorId: "org-1",
@@ -393,7 +393,7 @@ describe("enrollPlayer", () => {
     expect(result).toMatchObject({ jugadorId: "jugador-1", nombre: "Luis Gómez" });
   });
 
-  it("rechaza inscribir si el torneo no tiene inscripciones abiertas", async () => {
+  it("rejects enrolling when the tournament doesn't have registration open", async () => {
     prisma.torneo.findUnique.mockResolvedValue({
       id: "tournament-1",
       organizadorId: "org-1",
@@ -407,7 +407,7 @@ describe("enrollPlayer", () => {
     expect(prisma.inscripcion.create).not.toHaveBeenCalled();
   });
 
-  it("rechaza (RN-01) un intento de inscripción duplicada en el mismo torneo", async () => {
+  it("rejects (RN-01) a duplicate enrollment attempt in the same tournament", async () => {
     prisma.torneo.findUnique.mockResolvedValue({
       id: "tournament-1",
       organizadorId: "org-1",
@@ -427,7 +427,7 @@ describe("enrollPlayer", () => {
     ).rejects.toMatchObject({ status: 409, message: "El jugador ya está inscrito en este torneo" } satisfies Partial<HttpError>);
   });
 
-  it("responde 404 si el jugador no existe", async () => {
+  it("responds 404 when the player doesn't exist", async () => {
     prisma.torneo.findUnique.mockResolvedValue({
       id: "tournament-1",
       organizadorId: "org-1",
@@ -440,7 +440,7 @@ describe("enrollPlayer", () => {
     ).rejects.toMatchObject({ status: 404 } satisfies Partial<HttpError>);
   });
 
-  it("rechaza (409) un jugador de otro programa cuando el torneo tiene programaRestringido", async () => {
+  it("rejects (409) a player from another program when the tournament has programaRestringido", async () => {
     prisma.torneo.findUnique.mockResolvedValue({
       id: "tournament-1",
       organizadorId: "org-1",
@@ -462,7 +462,7 @@ describe("enrollPlayer", () => {
     expect(prisma.inscripcion.create).not.toHaveBeenCalled();
   });
 
-  it("rechaza (409) un jugador por debajo del semestreMinimo configurado", async () => {
+  it("rejects (409) a player below the configured semestreMinimo", async () => {
     prisma.torneo.findUnique.mockResolvedValue({
       id: "tournament-1",
       organizadorId: "org-1",
@@ -483,7 +483,7 @@ describe("enrollPlayer", () => {
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
   });
 
-  it("permite inscribir cuando el jugador cumple programa y semestre mínimo exigidos", async () => {
+  it("allows enrolling when the player meets the required program and minimum semester", async () => {
     prisma.torneo.findUnique.mockResolvedValue({
       id: "tournament-1",
       organizadorId: "org-1",
@@ -506,8 +506,8 @@ describe("enrollPlayer", () => {
   });
 });
 
-describe("configureTournament — restricciones de elegibilidad", () => {
-  it("persiste programaRestringido y semestreMinimo", async () => {
+describe("configureTournament — eligibility restrictions", () => {
+  it("persists programaRestringido and semestreMinimo", async () => {
     const prisma = buildPrismaMock();
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
     prisma.torneo.update.mockResolvedValue({
@@ -539,7 +539,7 @@ describe("configureTournament — restricciones de elegibilidad", () => {
     expect(tournament.semestreMinimo).toBe(5);
   });
 
-  it("permite limpiar una restricción enviando null explícito", async () => {
+  it("allows clearing a restriction by sending an explicit null", async () => {
     const prisma = buildPrismaMock();
     prisma.torneo.findUnique.mockResolvedValue({ id: "tournament-1", organizadorId: "org-1" });
     prisma.torneo.update.mockResolvedValue({

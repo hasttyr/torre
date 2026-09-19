@@ -45,7 +45,7 @@ describe("DashboardView", () => {
     vi.clearAllMocks();
   });
 
-  it("muestra un estado vacío cuando el organizador no tiene torneos", async () => {
+  it("shows an empty state when the organizer has no tournaments", async () => {
     listMyTournamentsMock.mockResolvedValue([]);
 
     const { wrapper } = await mountView();
@@ -53,7 +53,7 @@ describe("DashboardView", () => {
     expect(wrapper.text()).toContain("Todavía no administras ningún torneo");
   });
 
-  it("lista los torneos del organizador con su estado", async () => {
+  it("lists the organizer's tournaments with their status", async () => {
     listMyTournamentsMock.mockResolvedValue([
       {
         id: "torneo-1",
@@ -78,7 +78,7 @@ describe("DashboardView", () => {
     expect(wrapper.text()).toContain("Inscripciones abiertas");
   });
 
-  it("navega al panel del torneo al hacer click en la tarjeta", async () => {
+  it("navigates to the tournament panel when clicking the card", async () => {
     listMyTournamentsMock.mockResolvedValue([
       {
         id: "torneo-1",
