@@ -150,9 +150,9 @@ describe("updateOwnProfile", () => {
   it("responds 404 when the user doesn't exist", async () => {
     prisma.user.findUnique.mockResolvedValue(null);
 
-    await expect(
-      updateOwnProfile(prisma as unknown as PrismaClient, "no-existe", { name: "X" }),
-    ).rejects.toMatchObject({ status: 404 } satisfies Partial<HttpError>);
+    await expect(updateOwnProfile(prisma as unknown as PrismaClient, "no-existe", { name: "X" })).rejects.toMatchObject(
+      { status: 404 } satisfies Partial<HttpError>,
+    );
   });
 
   it("updates birthDate, gender and disability", async () => {
@@ -202,7 +202,14 @@ describe("updateOwnProfile", () => {
       status: "ACTIVE",
       createdAt: new Date("2026-01-01"),
       role: { name: "PLAYER" },
-      player: { universityCode: "U1", program: "Sistemas", semester: 5, birthDate: null, gender: null, disability: null },
+      player: {
+        universityCode: "U1",
+        program: "Sistemas",
+        semester: 5,
+        birthDate: null,
+        gender: null,
+        disability: null,
+      },
     });
 
     await updateOwnProfile(prisma as unknown as PrismaClient, "user-1", { gender: null, disability: null });

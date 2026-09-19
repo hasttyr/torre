@@ -198,9 +198,7 @@ describe("listEnrolledTournaments", () => {
     const tournaments = await listEnrolledTournaments(prisma as unknown as PrismaClient, "user-1");
 
     expect(prisma.enrollment.findMany.mock.calls[0][0].where).toEqual({ playerId: "player-1" });
-    expect(tournaments).toEqual([
-      expect.objectContaining({ id: "tournament-1", name: "Copa Universitaria" }),
-    ]);
+    expect(tournaments).toEqual([expect.objectContaining({ id: "tournament-1", name: "Copa Universitaria" })]);
   });
 });
 
@@ -251,11 +249,17 @@ describe("configureTournament", () => {
       tiebreakCriteria: [{ id: "c1", tournamentId: "tournament-1", name: "Buchholz", order: 1 }],
     });
 
-    const tournament = await configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZER", {
-      roundsCount: 7,
-      timeControl: "90+30",
-      tiebreakCriteria: [{ name: "Buchholz", order: 1 }],
-    });
+    const tournament = await configureTournament(
+      prisma as unknown as PrismaClient,
+      "tournament-1",
+      "org-1",
+      "ORGANIZER",
+      {
+        roundsCount: 7,
+        timeControl: "90+30",
+        tiebreakCriteria: [{ name: "Buchholz", order: 1 }],
+      },
+    );
 
     expect(prisma.tiebreakCriterion.deleteMany).toHaveBeenCalledWith({ where: { tournamentId: "tournament-1" } });
     expect(tournament.roundsCount).toBe(7);
@@ -424,7 +428,10 @@ describe("enrollPlayer", () => {
 
     await expect(
       enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "player-1", "org-1", "ORGANIZER"),
-    ).rejects.toMatchObject({ status: 409, message: "El jugador ya está inscrito en este torneo" } satisfies Partial<HttpError>);
+    ).rejects.toMatchObject({
+      status: 409,
+      message: "El jugador ya está inscrito en este torneo",
+    } satisfies Partial<HttpError>);
   });
 
   it("responds 404 when the player doesn't exist", async () => {
@@ -526,10 +533,16 @@ describe("configureTournament — eligibility restrictions", () => {
       tiebreakCriteria: [],
     });
 
-    const tournament = await configureTournament(prisma as unknown as PrismaClient, "tournament-1", "org-1", "ORGANIZER", {
-      restrictedProgram: "Sistemas",
-      minimumSemester: 5,
-    });
+    const tournament = await configureTournament(
+      prisma as unknown as PrismaClient,
+      "tournament-1",
+      "org-1",
+      "ORGANIZER",
+      {
+        restrictedProgram: "Sistemas",
+        minimumSemester: 5,
+      },
+    );
 
     expect(prisma.tournament.update.mock.calls[0][0].data).toMatchObject({
       restrictedProgram: "Sistemas",

@@ -1,4 +1,5 @@
 const tseslint = require("typescript-eslint");
+const eslintConfigPrettier = require("eslint-config-prettier");
 
 module.exports = tseslint.config(
   {
@@ -13,4 +14,7 @@ module.exports = tseslint.config(
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
     },
   },
+  // Debe ir al final: apaga cualquier regla de estilo que choque con
+  // Prettier (el formato es responsabilidad de Prettier, no de ESLint).
+  eslintConfigPrettier,
 );

@@ -20,12 +20,7 @@ export function notFoundHandler(_req: Request, res: Response): void {
  * to the client with their own status and message; anything else is logged
  * server-side and reported as a generic 500.
  */
-export function errorHandler(
-  err: unknown,
-  _req: Request,
-  res: Response,
-  _next: NextFunction,
-): void {
+export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
   if (err instanceof HttpError) {
     res.status(err.status).json({ error: err.message });
     return;

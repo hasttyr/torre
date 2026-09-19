@@ -6,8 +6,6 @@ export const updateRoleSchema = z.object({
   role: z.enum(["ORGANIZER", "ARBITER", "PLAYER", "COACH", "ADMINISTRATOR"]),
 });
 
-export type UpdateRoleSchemaInput = z.infer<typeof updateRoleSchema>;
-
 // Closed catalogs — mirror the Gender/Disability enums in
 // prisma/schema.prisma. Listed here too (not only in the Prisma enum) so
 // zod returns a readable validation message instead of a generic type error.
@@ -41,10 +39,7 @@ export const updateProfileSchema = z.object({
     .nullable()
     .optional(),
   gender: z.enum(GENDERS, { message: "El género no es una opción válida" }).nullable().optional(),
-  disability: z
-    .enum(DISABILITIES, { message: "La discapacidad no es una opción válida" })
-    .nullable()
-    .optional(),
+  disability: z.enum(DISABILITIES, { message: "La discapacidad no es una opción válida" }).nullable().optional(),
 });
 
 export type UpdateProfileSchemaInput = z.infer<typeof updateProfileSchema>;

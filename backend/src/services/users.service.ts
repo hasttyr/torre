@@ -4,14 +4,7 @@ import { HttpError } from "../middlewares/errorHandler";
 import type { UpdateProfileSchemaInput } from "../validators/users.schemas";
 import { toUserDto, type UserDto } from "./user.mapper";
 
-const PLAYER_FIELDS = [
-  "universityCode",
-  "program",
-  "semester",
-  "birthDate",
-  "gender",
-  "disability",
-] as const;
+const PLAYER_FIELDS = ["universityCode", "program", "semester", "birthDate", "gender", "disability"] as const;
 
 /** Checks whether the update payload touches any player-profile field. */
 function hasPlayerChanges(data: UpdateProfileSchemaInput): boolean {

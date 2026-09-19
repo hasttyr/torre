@@ -210,9 +210,7 @@ describe("POST /api/auth/password/forgot", () => {
     prismaMock.passwordResetRequest.create.mockResolvedValue({ id: "request-1" });
     const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
-    const response = await request(createApp())
-      .post("/api/auth/password/forgot")
-      .send({ email: "ana@example.com" });
+    const response = await request(createApp()).post("/api/auth/password/forgot").send({ email: "ana@example.com" });
 
     expect(response.status).toBe(200);
     expect(prismaMock.passwordResetRequest.create).toHaveBeenCalledTimes(1);

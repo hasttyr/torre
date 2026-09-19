@@ -77,9 +77,7 @@ describe("confirmPasswordReset", () => {
     await confirmPasswordReset(prisma as unknown as PrismaClient, "un-token-valido", "nuevaPassword123");
 
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(prisma.user.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "user-1" } }),
-    );
+    expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "user-1" } }));
     expect(prisma.passwordResetRequest.update).toHaveBeenCalledWith(
       expect.objectContaining({ where: { id: "request-1" } }),
     );

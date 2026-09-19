@@ -13,7 +13,11 @@ import {
   openRegistration,
   getTournament,
 } from "../services/tournaments.service";
-import { configureTournamentSchema, createTournamentSchema, enrollPlayerSchema } from "../validators/tournaments.schemas";
+import {
+  configureTournamentSchema,
+  createTournamentSchema,
+  enrollPlayerSchema,
+} from "../validators/tournaments.schemas";
 
 /** GET /tournaments/mine — tournaments the current user organizes. */
 export const listMine = asyncHandler(async (req, res) => {
@@ -57,7 +61,13 @@ export const configure = asyncHandler(async (req, res) => {
     throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join("; "));
   }
 
-  const tournament = await configureTournament(prisma, String(req.params.id), req.user!.id, req.user!.role, parsed.data);
+  const tournament = await configureTournament(
+    prisma,
+    String(req.params.id),
+    req.user!.id,
+    req.user!.role,
+    parsed.data,
+  );
   res.status(200).json(tournament);
 });
 

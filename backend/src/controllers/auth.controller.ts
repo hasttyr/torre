@@ -5,7 +5,12 @@ import { asyncHandler } from "../middlewares/asyncHandler";
 import { HttpError } from "../middlewares/errorHandler";
 import { loginUser, registerUser } from "../services/auth.service";
 import { confirmPasswordReset, requestPasswordReset } from "../services/passwordReset.service";
-import { confirmPasswordResetSchema, loginSchema, registerSchema, requestPasswordResetSchema } from "../validators/auth.schemas";
+import {
+  confirmPasswordResetSchema,
+  loginSchema,
+  registerSchema,
+  requestPasswordResetSchema,
+} from "../validators/auth.schemas";
 
 /** POST /auth/register — creates a new user account. */
 export const register = asyncHandler(async (req, res) => {
@@ -46,7 +51,9 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   await requestPasswordReset(prisma, parsed.data.email);
   // Generic response regardless of whether the email is registered (CA HU19).
-  res.status(200).json({ message: "Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña" });
+  res
+    .status(200)
+    .json({ message: "Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña" });
 });
 
 /** POST /auth/password/reset — confirms a password reset with a one-time token (HU19). */

@@ -37,5 +37,3 @@ export type ConfigureTournamentSchemaInput = z.infer<typeof configureTournamentS
 export const enrollPlayerSchema = z.object({
   playerId: z.string().uuid("El id de jugador no es válido"),
 });
-
-export type EnrollPlayerSchemaInput = z.infer<typeof enrollPlayerSchema>;
