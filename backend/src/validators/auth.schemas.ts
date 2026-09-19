@@ -6,8 +6,8 @@ const baseFields = {
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
 };
 
-// JUGADOR requiere datos adicionales porque Jugador.codigoUniversitario,
-// programa y semestre son NOT NULL en el esquema (ver prisma/schema.prisma).
+// JUGADOR requires extra data because Jugador.codigoUniversitario, programa
+// and semestre are NOT NULL in the schema (see prisma/schema.prisma).
 export const registerSchema = z.discriminatedUnion("rol", [
   z.object({
     ...baseFields,
@@ -18,9 +18,9 @@ export const registerSchema = z.discriminatedUnion("rol", [
   }),
   z.object({
     ...baseFields,
-    // ADMINISTRADOR queda fuera a propósito: una cuenta administradora no
-    // debe poder crearse por autoregistro; se aprovisiona por otro medio
-    // (seed, panel interno futuro).
+    // ADMINISTRADOR is deliberately excluded: an admin account must not be
+    // creatable through self-registration; it's provisioned some other way
+    // (seed, a future internal panel).
     rol: z.enum(["ORGANIZADOR", "ARBITRO", "ENTRENADOR"]),
   }),
 ]);

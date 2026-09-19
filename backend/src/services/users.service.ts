@@ -4,7 +4,7 @@ import { HttpError } from "../middlewares/errorHandler";
 import type { UpdateProfileSchemaInput } from "../validators/users.schemas";
 import { toUserDto, type UserDto } from "./user.mapper";
 
-const CAMPOS_JUGADOR = [
+const PLAYER_FIELDS = [
   "codigoUniversitario",
   "programa",
   "semestre",
@@ -13,11 +13,13 @@ const CAMPOS_JUGADOR = [
   "discapacidad",
 ] as const;
 
-function tieneCambiosJugador(data: UpdateProfileSchemaInput): boolean {
-  return CAMPOS_JUGADOR.some((campo) => data[campo] !== undefined);
+/** Checks whether the update payload touches any player-profile field. */
+function hasPlayerChanges(data: UpdateProfileSchemaInput): boolean {
+  return PLAYER_FIELDS.some((field) => data[field] !== undefined);
 }
 
-function construirDatosJugador(data: UpdateProfileSchemaInput): Prisma.JugadorUpdateWithoutUsuarioInput {
+/** Builds the Prisma update payload for the player profile from the (partial) input. */
+function buildPlayerData(data: UpdateProfileSchemaInput): Prisma.JugadorUpdateWithoutUsuarioInput {
   return {
     ...(data.codigoUniversitario !== undefined ? { codigoUniversitario: data.codigoUniversitario.trim() } : {}),
     ...(data.programa !== undefined ? { programa: data.programa.trim() } : {}),
@@ -28,65 +30,81 @@ function construirDatosJugador(data: UpdateProfileSchemaInput): Prisma.JugadorUp
   };
 }
 
+/**
+ * Fetches a user by id.
+ *
+ * @throws {HttpError} 404 if no user exists with that id.
+ */
 export async function getUserById(prisma: PrismaClient, id: string): Promise<UserDto> {
-  const usuario = await prisma.usuario.findUnique({ where: { id }, include: { rol: true, jugador: true } });
-  if (!usuario) {
+  const user = await prisma.usuario.findUnique({ where: { id }, include: { rol: true, jugador: true } });
+  if (!user) {
     throw new HttpError(404, "Usuario no encontrado");
   }
-  return toUserDto(usuario);
+  return toUserDto(user);
 }
 
-export async function updateUserRole(prisma: PrismaClient, id: string, nuevoRol: string): Promise<UserDto> {
-  const rol = await prisma.rol.findUnique({ where: { nombre: nuevoRol } });
-  if (!rol) {
-    throw new HttpError(400, `El rol "${nuevoRol}" no existe`);
+/**
+ * Changes a user's role (admin action).
+ *
+ * @throws {HttpError} 400 if the role doesn't exist, 404 if the user doesn't exist.
+ */
+export async function updateUserRole(prisma: PrismaClient, id: string, newRole: string): Promise<UserDto> {
+  const role = await prisma.rol.findUnique({ where: { nombre: newRole } });
+  if (!role) {
+    throw new HttpError(400, `El rol "${newRole}" no existe`);
   }
 
-  const existente = await prisma.usuario.findUnique({ where: { id } });
-  if (!existente) {
+  const existingUser = await prisma.usuario.findUnique({ where: { id } });
+  if (!existingUser) {
     throw new HttpError(404, "Usuario no encontrado");
   }
 
-  const usuario = await prisma.usuario.update({
+  const user = await prisma.usuario.update({
     where: { id },
-    data: { rolId: rol.id },
+    data: { rolId: role.id },
     include: { rol: true, jugador: true },
   });
 
-  // RN-11 exige registrar este cambio en la bitácora de auditoría; la
-  // entidad Bitacora todavía no existe (llega en S13, incremento 9 del
-  // roadmap). Cuando exista, este es el punto donde se escribe el registro.
-  return toUserDto(usuario);
+  // RN-11 requires logging this change in the audit trail; the Bitacora
+  // entity doesn't exist yet (lands in S13, roadmap increment 9). Once it
+  // does, this is where the record gets written.
+  return toUserDto(user);
 }
 
-// HU20: el usuario solo edita SU propio perfil (el :id nunca viene del
-// body, siempre de req.user.id en el controller) y nunca su rol — el
-// payload de esta función ni siquiera acepta ese campo (ver
-// validators/users.schemas.ts). Los campos de Jugador solo se actualizan
-// si el usuario tiene ese perfil.
+// HU20: the user only edits THEIR OWN profile (the :id never comes from the
+// body, always from req.user.id in the controller) and never their role —
+// this function's payload doesn't even accept that field (see
+// validators/users.schemas.ts). Jugador fields are only updated if the
+// user has that profile.
+/**
+ * Updates the current user's own profile.
+ *
+ * @throws {HttpError} 404 if the user doesn't exist, 400 if player fields
+ * are sent for a user without a player profile.
+ */
 export async function updateOwnProfile(
   prisma: PrismaClient,
   userId: string,
   data: UpdateProfileSchemaInput,
 ): Promise<UserDto> {
-  const existente = await prisma.usuario.findUnique({ where: { id: userId }, include: { jugador: true } });
-  if (!existente) {
+  const existingUser = await prisma.usuario.findUnique({ where: { id: userId }, include: { jugador: true } });
+  if (!existingUser) {
     throw new HttpError(404, "Usuario no encontrado");
   }
 
-  const hayCambiosJugador = tieneCambiosJugador(data);
-  if (hayCambiosJugador && !existente.jugador) {
+  const hasPlayerUpdates = hasPlayerChanges(data);
+  if (hasPlayerUpdates && !existingUser.jugador) {
     throw new HttpError(400, "Este usuario no tiene un perfil de jugador para actualizar");
   }
 
-  const usuario = await prisma.usuario.update({
+  const user = await prisma.usuario.update({
     where: { id: userId },
     data: {
       ...(data.nombre !== undefined ? { nombre: data.nombre.trim() } : {}),
-      ...(hayCambiosJugador ? { jugador: { update: construirDatosJugador(data) } } : {}),
+      ...(hasPlayerUpdates ? { jugador: { update: buildPlayerData(data) } } : {}),
     },
     include: { rol: true, jugador: true },
   });
 
-  return toUserDto(usuario);
+  return toUserDto(user);
 }

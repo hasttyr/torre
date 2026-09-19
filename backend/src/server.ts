@@ -14,5 +14,5 @@ const io = new Server(httpServer, {
 registerSocketHandlers(io);
 
 httpServer.listen(env.port, () => {
-  console.log(`Torre Central Hub API escuchando en http://localhost:${env.port}`);
+  console.log(`Torre Central Hub API listening on http://localhost:${env.port}`);
 });

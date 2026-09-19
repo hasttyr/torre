@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
-import { buscarJugadores } from "./jugadores.service";
+import { searchPlayers } from "./players.service";
 
 function buildPrismaMock() {
   return {
@@ -11,13 +11,13 @@ function buildPrismaMock() {
   };
 }
 
-describe("buscarJugadores", () => {
+describe("searchPlayers", () => {
   it("devuelve lista vacía sin llamar a la base de datos si el texto está vacío", async () => {
     const prisma = buildPrismaMock();
 
-    const resultado = await buscarJugadores(prisma as unknown as PrismaClient, "   ");
+    const result = await searchPlayers(prisma as unknown as PrismaClient, "   ");
 
-    expect(resultado).toEqual([]);
+    expect(result).toEqual([]);
     expect(prisma.jugador.findMany).not.toHaveBeenCalled();
   });
 
@@ -33,10 +33,10 @@ describe("buscarJugadores", () => {
       },
     ]);
 
-    const resultado = await buscarJugadores(prisma as unknown as PrismaClient, "Luis");
+    const result = await searchPlayers(prisma as unknown as PrismaClient, "Luis");
 
     expect(prisma.jugador.findMany.mock.calls[0][0].where.OR).toHaveLength(3);
-    expect(resultado).toEqual([
+    expect(result).toEqual([
       {
         id: "jugador-1",
         nombre: "Luis Gómez",

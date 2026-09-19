@@ -2,7 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HttpError } from "../middlewares/errorHandler";
-import { calcularEdad } from "./user.mapper";
+import { calculateAge } from "./user.mapper";
 import { getUserById, updateOwnProfile } from "./users.service";
 
 function buildPrismaMock() {
@@ -68,7 +68,7 @@ describe("getUserById", () => {
 
     const usuario = await getUserById(prisma as unknown as PrismaClient, "usuario-1");
 
-    expect(usuario.jugador?.edad).toBe(calcularEdad(new Date("2005-06-15")));
+    expect(usuario.jugador?.edad).toBe(calculateAge(new Date("2005-06-15")));
     expect(usuario.jugador?.genero).toBe("MASCULINO");
     expect(usuario.jugador?.discapacidad).toBe("NINGUNA");
   });
@@ -211,16 +211,16 @@ describe("updateOwnProfile", () => {
   });
 });
 
-describe("calcularEdad", () => {
+describe("calculateAge", () => {
   it("calcula la edad cuando ya pasó el cumpleaños este año", () => {
-    expect(calcularEdad(new Date("2000-01-01"), new Date("2026-06-01"))).toBe(26);
+    expect(calculateAge(new Date("2000-01-01"), new Date("2026-06-01"))).toBe(26);
   });
 
   it("no suma el año todavía si el cumpleaños no llegó", () => {
-    expect(calcularEdad(new Date("2000-12-31"), new Date("2026-06-01"))).toBe(25);
+    expect(calculateAge(new Date("2000-12-31"), new Date("2026-06-01"))).toBe(25);
   });
 
   it("calcula correctamente el día exacto del cumpleaños", () => {
-    expect(calcularEdad(new Date("2000-06-01"), new Date("2026-06-01"))).toBe(26);
+    expect(calculateAge(new Date("2000-06-01"), new Date("2026-06-01"))).toBe(26);
   });
 });

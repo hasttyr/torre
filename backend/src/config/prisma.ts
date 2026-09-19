@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 
-// En desarrollo, `tsx watch` recarga este módulo en cada cambio; sin este
-// cacheo en globalThis, cada recarga crearía un PrismaClient nuevo sin
-// cerrar el anterior y agotaría el pool de conexiones a PostgreSQL.
+// In development, `tsx watch` reloads this module on every change; without
+// this caching on globalThis, each reload would create a new PrismaClient
+// without closing the previous one, exhausting the PostgreSQL connection pool.
 // https://www.prisma.io/docs/orm/prisma-client/setup-and-configuration/databases-connections#prevent-hot-reloading-from-creating-new-instances-of-prismaclient
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 

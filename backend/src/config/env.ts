@@ -1,9 +1,10 @@
 import "dotenv/config";
 
+/** Reads a required environment variable, throwing at startup if it's missing. */
 function required(name: string): string {
   const value = process.env[name];
   if (!value) {
-    throw new Error(`Falta la variable de entorno requerida: ${name}`);
+    throw new Error(`Missing required environment variable: ${name}`);
   }
   return value;
 }

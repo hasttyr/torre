@@ -12,7 +12,7 @@ const { prismaMock } = vi.hoisted(() => ({
 
 vi.mock("../config/prisma", () => ({ prisma: prismaMock }));
 
-function tokenPara(rol: string): string {
+function tokenFor(rol: string): string {
   return jwt.sign({ sub: "usuario-1", rol }, "test-secret", { expiresIn: "1h" });
 }
 
@@ -34,7 +34,7 @@ describe("GET /api/jugadores", () => {
 
     const response = await request(createApp())
       .get("/api/jugadores?q=Luis")
-      .set("Authorization", `Bearer ${tokenPara("ORGANIZADOR")}`);
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZADOR")}`);
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual([
@@ -57,7 +57,7 @@ describe("GET /api/jugadores", () => {
   it("responde 403 para un rol sin permiso (JUGADOR)", async () => {
     const response = await request(createApp())
       .get("/api/jugadores?q=Luis")
-      .set("Authorization", `Bearer ${tokenPara("JUGADOR")}`);
+      .set("Authorization", `Bearer ${tokenFor("JUGADOR")}`);
 
     expect(response.status).toBe(403);
   });

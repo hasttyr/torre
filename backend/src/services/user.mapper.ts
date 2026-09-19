@@ -5,16 +5,16 @@ export interface JugadorPerfilDto {
   programa: string;
   semestre: number;
   fechaNacimiento: Date | null;
-  // Calculada a partir de fechaNacimiento, nunca almacenada (evita que se
-  // desactualice). null si no hay fecha de nacimiento cargada.
+  // Computed from fechaNacimiento, never stored (avoids it going stale).
+  // null if no birth date is on file.
   edad: number | null;
   genero: string | null;
   discapacidad: string | null;
 }
 
-// DTO compartido por registro, login y consulta de perfil: nunca incluye
-// passwordHash. `jugador` solo está presente si el usuario tiene rol
-// JUGADOR (perfil 1:1, ver schema.prisma).
+// DTO shared by registration, login and profile lookup: never includes
+// passwordHash. `jugador` is only present if the user has the JUGADOR role
+// (1:1 profile, see schema.prisma).
 export interface UserDto {
   id: string;
   nombre: string;
@@ -25,35 +25,37 @@ export interface UserDto {
   jugador?: JugadorPerfilDto;
 }
 
-export function calcularEdad(fechaNacimiento: Date, hoy: Date = new Date()): number {
-  let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
-  const aunNoCumple =
-    hoy.getMonth() < fechaNacimiento.getMonth() ||
-    (hoy.getMonth() === fechaNacimiento.getMonth() && hoy.getDate() < fechaNacimiento.getDate());
-  if (aunNoCumple) {
-    edad -= 1;
+/** Computes age in whole years from a birth date, as of `today`. */
+export function calculateAge(birthDate: Date, today: Date = new Date()): number {
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const hasNotHadBirthdayYet =
+    today.getMonth() < birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate());
+  if (hasNotHadBirthdayYet) {
+    age -= 1;
   }
-  return edad;
+  return age;
 }
 
-export function toUserDto(usuario: Usuario & { rol: Rol; jugador?: Jugador | null }): UserDto {
+/** Maps a Prisma user (with its role and optional player profile) to the public {@link UserDto} shape. */
+export function toUserDto(user: Usuario & { rol: Rol; jugador?: Jugador | null }): UserDto {
   return {
-    id: usuario.id,
-    nombre: usuario.nombre,
-    email: usuario.email,
-    estado: usuario.estado,
-    rol: usuario.rol.nombre,
-    createdAt: usuario.createdAt,
-    ...(usuario.jugador
+    id: user.id,
+    nombre: user.nombre,
+    email: user.email,
+    estado: user.estado,
+    rol: user.rol.nombre,
+    createdAt: user.createdAt,
+    ...(user.jugador
       ? {
           jugador: {
-            codigoUniversitario: usuario.jugador.codigoUniversitario,
-            programa: usuario.jugador.programa,
-            semestre: usuario.jugador.semestre,
-            fechaNacimiento: usuario.jugador.fechaNacimiento,
-            edad: usuario.jugador.fechaNacimiento ? calcularEdad(usuario.jugador.fechaNacimiento) : null,
-            genero: usuario.jugador.genero,
-            discapacidad: usuario.jugador.discapacidad,
+            codigoUniversitario: user.jugador.codigoUniversitario,
+            programa: user.jugador.programa,
+            semestre: user.jugador.semestre,
+            fechaNacimiento: user.jugador.fechaNacimiento,
+            edad: user.jugador.fechaNacimiento ? calculateAge(user.jugador.fechaNacimiento) : null,
+            genero: user.jugador.genero,
+            discapacidad: user.jugador.discapacidad,
           },
         }
       : {}),

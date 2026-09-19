@@ -1,8 +1,8 @@
 import { Router } from "express";
 
 import { authRouter } from "./auth.routes";
-import { jugadoresRouter } from "./jugadores.routes";
-import { torneosRouter } from "./torneos.routes";
+import { playersRouter } from "./players.routes";
+import { tournamentsRouter } from "./tournaments.routes";
 import { usersRouter } from "./users.routes";
 
 export const router = Router();
@@ -13,8 +13,8 @@ router.get("/health", (_req, res) => {
 
 router.use("/auth", authRouter);
 router.use("/users", usersRouter);
-router.use("/torneos", torneosRouter);
-router.use("/jugadores", jugadoresRouter);
+router.use("/torneos", tournamentsRouter);
+router.use("/jugadores", playersRouter);
 
-// A medida que avancen los incrementos se montan aquí el resto de routers
-// de dominio (emparejamiento, resultados, ...).
+// As future increments land, the rest of the domain routers (pairing,
+// results, ...) get mounted here.

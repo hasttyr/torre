@@ -5,17 +5,19 @@ import { HttpError } from "../middlewares/errorHandler";
 import { getUserById, updateOwnProfile, updateUserRole } from "../services/users.service";
 import { updateProfileSchema, updateRoleSchema } from "../validators/users.schemas";
 
+/** GET /users/me — returns the currently authenticated user's profile. */
 export async function me(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    // req.user siempre existe acá: la ruta pasa por requireAuth antes.
-    const usuario = await getUserById(prisma, req.user!.id);
-    res.status(200).json(usuario);
+    // req.user always exists here: the route goes through requireAuth first.
+    const user = await getUserById(prisma, req.user!.id);
+    res.status(200).json(user);
   } catch (error) {
     next(error);
   }
 }
 
-export async function actualizarPerfil(req: Request, res: Response, next: NextFunction): Promise<void> {
+/** PUT /users/me — updates the currently authenticated user's own profile. */
+export async function updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
   const parsed = updateProfileSchema.safeParse(req.body);
   if (!parsed.success) {
     next(new HttpError(400, parsed.error.issues.map((issue) => issue.message).join("; ")));
@@ -23,14 +25,15 @@ export async function actualizarPerfil(req: Request, res: Response, next: NextFu
   }
 
   try {
-    // req.user!.id, nunca req.params.id: HU20 es "editar MI propio perfil".
-    const usuario = await updateOwnProfile(prisma, req.user!.id, parsed.data);
-    res.status(200).json(usuario);
+    // req.user!.id, never req.params.id: HU20 is "edit MY OWN profile".
+    const user = await updateOwnProfile(prisma, req.user!.id, parsed.data);
+    res.status(200).json(user);
   } catch (error) {
     next(error);
   }
 }
 
+/** PATCH /users/:id/rol — changes a user's role (admin-only). */
 export async function updateRole(req: Request, res: Response, next: NextFunction): Promise<void> {
   const parsed = updateRoleSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -39,8 +42,8 @@ export async function updateRole(req: Request, res: Response, next: NextFunction
   }
 
   try {
-    const usuario = await updateUserRole(prisma, String(req.params.id), parsed.data.rol);
-    res.status(200).json(usuario);
+    const user = await updateUserRole(prisma, String(req.params.id), parsed.data.rol);
+    res.status(200).json(user);
   } catch (error) {
     next(error);
   }

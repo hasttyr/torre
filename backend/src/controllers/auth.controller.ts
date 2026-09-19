@@ -5,6 +5,7 @@ import { HttpError } from "../middlewares/errorHandler";
 import { loginUser, registerUser } from "../services/auth.service";
 import { loginSchema, registerSchema } from "../validators/auth.schemas";
 
+/** POST /auth/register — creates a new user account. */
 export async function register(req: Request, res: Response, next: NextFunction): Promise<void> {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -13,13 +14,14 @@ export async function register(req: Request, res: Response, next: NextFunction):
   }
 
   try {
-    const usuario = await registerUser(prisma, parsed.data);
-    res.status(201).json(usuario);
+    const user = await registerUser(prisma, parsed.data);
+    res.status(201).json(user);
   } catch (error) {
     next(error);
   }
 }
 
+/** POST /auth/login — authenticates a user and returns a session token. */
 export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
   const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -35,9 +37,10 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
   }
 }
 
-// JWT sin estado: no hay nada que invalidar en el servidor. El endpoint
-// existe por simetría de la API y para que el cliente confirme que el
-// token que tenía era válido antes de descartarlo.
+// Stateless JWT: there's nothing to invalidate server-side. The endpoint
+// exists for API symmetry and so the client can confirm the token it had
+// was valid before discarding it.
+/** POST /auth/logout — no-op confirmation endpoint (see comment above). */
 export function logout(_req: Request, res: Response): void {
   res.status(204).send();
 }
