@@ -4,10 +4,12 @@ import { useAuthStore } from "../stores/auth";
 import AccountView from "../views/AccountView.vue";
 import CreateTournamentView from "../views/CreateTournamentView.vue";
 import DashboardView from "../views/DashboardView.vue";
+import ForgotPasswordView from "../views/ForgotPasswordView.vue";
 import HomeView from "../views/HomeView.vue";
 import LoginView from "../views/LoginView.vue";
 import PlayerTournamentsView from "../views/PlayerTournamentsView.vue";
 import RegisterView from "../views/RegisterView.vue";
+import ResetPasswordView from "../views/ResetPasswordView.vue";
 import TournamentAdminView from "../views/TournamentAdminView.vue";
 
 // Roles that manage tournaments (HU04-HU07). Mirrors
@@ -31,6 +33,16 @@ export const router = createRouter({
       path: "/login",
       name: "login",
       component: LoginView,
+    },
+    {
+      path: "/olvide-password",
+      name: "forgot-password",
+      component: ForgotPasswordView,
+    },
+    {
+      path: "/restablecer-password",
+      name: "reset-password",
+      component: ResetPasswordView,
     },
     {
       path: "/cuenta",

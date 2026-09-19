@@ -1,8 +1,9 @@
 import { prisma } from "../config/prisma";
 import { asyncHandler } from "../middlewares/asyncHandler";
 import { HttpError } from "../middlewares/errorHandler";
+import { exerciseDataRight } from "../services/dataRights.service";
 import { getUserById, updateOwnProfile, updateUserRole } from "../services/users.service";
-import { updateProfileSchema, updateRoleSchema } from "../validators/users.schemas";
+import { dataRequestSchema, updateProfileSchema, updateRoleSchema } from "../validators/users.schemas";
 
 /** GET /users/me — returns the currently authenticated user's profile. */
 export const me = asyncHandler(async (req, res) => {
@@ -32,4 +33,15 @@ export const updateRole = asyncHandler(async (req, res) => {
 
   const user = await updateUserRole(prisma, String(req.params.id), parsed.data.role);
   res.status(200).json(user);
+});
+
+/** POST /users/me/data-requests — exercises an ARCO data-subject right (HU22, Ley 1581 de 2012). */
+export const exerciseRight = asyncHandler(async (req, res) => {
+  const parsed = dataRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join("; "));
+  }
+
+  const result = await exerciseDataRight(prisma, req.user!.id, parsed.data);
+  res.status(200).json(result);
 });

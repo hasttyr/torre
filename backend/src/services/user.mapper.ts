@@ -12,6 +12,15 @@ export interface PlayerProfileDto {
   disability: string | null;
 }
 
+// HU22 ("conocer"): expuesto en el perfil para que el titular pueda ver, sin
+// pedirlo aparte, cuándo y bajo qué versión de la política aceptó el
+// tratamiento de sus datos (RN-10/HU21).
+export interface DataConsentDto {
+  accepted: boolean;
+  date: Date | null;
+  version: string | null;
+}
+
 // DTO shared by registration, login and profile lookup: never includes
 // passwordHash. `player` is only present if the user has the JUGADOR role
 // (1:1 profile, see schema.prisma).
@@ -22,6 +31,7 @@ export interface UserDto {
   status: string;
   role: string;
   createdAt: Date;
+  dataConsent: DataConsentDto;
   player?: PlayerProfileDto;
 }
 
@@ -46,6 +56,11 @@ export function toUserDto(user: Usuario & { rol: Rol; jugador?: Jugador | null }
     status: user.estado,
     role: user.rol.nombre,
     createdAt: user.createdAt,
+    dataConsent: {
+      accepted: user.consentimientoAceptado,
+      date: user.consentimientoFecha,
+      version: user.consentimientoVersion,
+    },
     ...(user.jugador
       ? {
           player: {

@@ -4,6 +4,10 @@ const baseFields = {
   name: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres"),
   email: z.string().trim().email("El correo no es válido"),
   password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  // RN-10/HU21: el registro no se completa sin esta aceptación explícita.
+  acceptDataPolicy: z.literal(true, {
+    message: "Debés aceptar la política de tratamiento de datos personales",
+  }),
 };
 
 // JUGADOR requires extra data because Jugador.codigoUniversitario, programa
@@ -33,3 +37,18 @@ export const loginSchema = z.object({
 });
 
 export type LoginSchemaInput = z.infer<typeof loginSchema>;
+
+// HU19: solicitud de restablecimiento de contraseña.
+export const requestPasswordResetSchema = z.object({
+  email: z.string().trim().email("El correo no es válido"),
+});
+
+export type RequestPasswordResetSchemaInput = z.infer<typeof requestPasswordResetSchema>;
+
+// HU19: confirmación con el token de un solo uso enviado en la solicitud.
+export const confirmPasswordResetSchema = z.object({
+  token: z.string().min(1, "El token es requerido"),
+  newPassword: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+});
+
+export type ConfirmPasswordResetSchemaInput = z.infer<typeof confirmPasswordResetSchema>;

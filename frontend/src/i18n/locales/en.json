@@ -125,7 +125,29 @@
     "submit": "Log in",
     "submitting": "Logging in...",
     "noAccount": "Don't have an account?",
-    "createOne": "Create one"
+    "createOne": "Create one",
+    "forgotPassword": "Forgot your password?"
+  },
+  "forgotPassword": {
+    "title": "Recover access",
+    "subtitle": "Enter your email and we'll send you instructions to reset your password.",
+    "submit": "Send instructions",
+    "submitting": "Sending...",
+    "successMessage": "If the email is registered, you'll receive instructions to reset your password.",
+    "backToLogin": "Back to log in"
+  },
+  "resetPassword": {
+    "title": "Reset password",
+    "subtitle": "Choose a new password for your account.",
+    "newPasswordLabel": "New password",
+    "confirmPasswordLabel": "Confirm password",
+    "passwordMismatch": "Passwords don't match",
+    "submit": "Reset password",
+    "submitting": "Resetting...",
+    "successMessage": "Password updated successfully. You can now log in.",
+    "invalidTokenError": "The reset link is invalid or has expired",
+    "missingTokenError": "This link doesn't include a valid reset token",
+    "goToLogin": "Go to log in"
   },
   "register": {
     "title": "Create account",
@@ -144,7 +166,9 @@
     "semesterPlaceholder": "5",
     "submit": "Create account",
     "submitting": "Creating account...",
-    "successMessage": "Account created for {email}. You can now log in."
+    "successMessage": "Account created for {email}. You can now log in.",
+    "acceptDataPolicyLabel": "I accept the personal data treatment policy, in accordance with Colombian Law 1581 of 2012.",
+    "acceptDataPolicyRequired": "You must accept the personal data treatment policy"
   },
   "account": {
     "title": "My account",
@@ -174,7 +198,16 @@
     "universityCodeRequired": "University code is required",
     "programRequired": "Program is required",
     "semesterPositive": "Semester must be a positive whole number",
-    "birthDateInFuture": "Date of birth cannot be in the future"
+    "birthDateInFuture": "Date of birth cannot be in the future",
+    "privacyTitle": "Privacy and personal data",
+    "privacySubtitle": "Exercise your rights over your personal data under Colombian Law 1581 of 2012.",
+    "privacyConsentInfo": "You accepted the data treatment policy on {date} (version {version}).",
+    "privacyDownloadButton": "Download my data",
+    "privacyDownloading": "Downloading...",
+    "privacyDeleteButton": "Delete my data",
+    "privacyDeleting": "Processing...",
+    "privacyDeleteConfirm": "Are you sure you want to request deletion of your personal data? Your session will be closed.",
+    "privacyGenericError": "Could not connect to the server"
   },
   "dashboard": {
     "title": "My tournaments",

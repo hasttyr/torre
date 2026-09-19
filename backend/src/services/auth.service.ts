@@ -1,17 +1,19 @@
 import type { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+import { DATA_POLICY_VERSION } from "../config/dataPolicy";
 import { env } from "../config/env";
 import { HttpError } from "../middlewares/errorHandler";
+import { comparePassword, hashPassword } from "./password";
 import { toUserDto, type UserDto } from "./user.mapper";
-
-const SALT_ROUNDS = 10;
 
 interface RegisterUserBase {
   name: string;
   email: string;
   password: string;
+  // RN-10/HU21: garantizado `true` por registerSchema (z.literal(true)); el
+  // servicio no vuelve a validarlo, solo lo persiste con fecha y versión.
+  acceptDataPolicy: true;
 }
 
 interface RegisterPlayerInput extends RegisterUserBase {
@@ -75,7 +77,7 @@ export async function registerUser(prisma: PrismaClient, input: RegisterUserInpu
     throw new HttpError(409, "Ya existe una cuenta registrada con ese correo");
   }
 
-  const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
+  const passwordHash = await hashPassword(input.password);
 
   try {
     const user = await prisma.usuario.create({
@@ -84,6 +86,9 @@ export async function registerUser(prisma: PrismaClient, input: RegisterUserInpu
         email,
         passwordHash,
         rolId: role.id,
+        consentimientoAceptado: true,
+        consentimientoFecha: new Date(),
+        consentimientoVersion: DATA_POLICY_VERSION,
         ...(input.role === "JUGADOR"
           ? {
               jugador: {
@@ -129,7 +134,7 @@ export async function loginUser(prisma: PrismaClient, input: LoginUserInput): Pr
     throw new HttpError(401, "Credenciales inválidas");
   }
 
-  const isPasswordValid = await bcrypt.compare(input.password, user.passwordHash);
+  const isPasswordValid = await comparePassword(input.password, user.passwordHash);
   if (!isPasswordValid) {
     throw new HttpError(401, "Credenciales inválidas");
   }

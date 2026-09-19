@@ -12,6 +12,8 @@ interface RegisterBasePayload {
   name: string;
   email: string;
   password: string;
+  // RN-10/HU21: el registro no se completa sin esta aceptación explícita.
+  acceptDataPolicy: true;
 }
 
 interface RegisterPlayerPayload extends RegisterBasePayload {
@@ -54,6 +56,14 @@ export interface PlayerProfile {
   disability: Disability | null;
 }
 
+// HU22 ("conocer"): cuándo y bajo qué versión de la política el titular
+// aceptó el tratamiento de sus datos (RN-10/HU21).
+export interface DataConsent {
+  accepted: boolean;
+  date: string | null;
+  version: string | null;
+}
+
 export interface RegisteredUser {
   id: string;
   name: string;
@@ -61,6 +71,7 @@ export interface RegisteredUser {
   status: string;
   role: string;
   createdAt: string;
+  dataConsent: DataConsent;
   player?: PlayerProfile;
 }
 
@@ -141,4 +152,20 @@ export async function fetchMe(): Promise<RegisteredUser> {
 export async function updateProfile(payload: UpdateProfilePayload): Promise<RegisteredUser> {
   const { data } = await api.put<RegisteredUser>("/users/me", payload);
   return data;
+}
+
+/**
+ * Requests a password-reset link for the given email (HU19).
+ *
+ * @remarks
+ * The backend always responds the same way whether or not the email is
+ * registered, so this never reveals whether an account exists.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  await api.post("/auth/password/forgot", { email });
+}
+
+/** Confirms a password reset with the one-time token from the reset link (HU19). */
+export async function confirmPasswordReset(token: string, newPassword: string): Promise<void> {
+  await api.post("/auth/password/reset", { token, newPassword });
 }

@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import PrivacyDataRights from "../components/account/PrivacyDataRights.vue";
 import AppHeader from "../components/AppHeader.vue";
 import DateField from "../components/DateField.vue";
 import { extractErrorMessage } from "../lib/errors";
@@ -229,6 +230,8 @@ async function onSubmit(): Promise<void> {
           </button>
         </form>
       </section>
+
+      <PrivacyDataRights v-if="auth.user" />
     </main>
   </div>
 </template>

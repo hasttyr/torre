@@ -48,3 +48,14 @@ export const updateProfileSchema = z.object({
 });
 
 export type UpdateProfileSchemaInput = z.infer<typeof updateProfileSchema>;
+
+// HU22/Ley 1581 de 2012: derechos ARCO ejercidos por el titular sobre sus
+// propios datos. RECTIFICACION reutiliza updateProfileSchema (mismo shape
+// que HU20) en vez de duplicar sus reglas de validación.
+export const dataRequestSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("ACCESO") }),
+  z.object({ type: z.literal("RECTIFICACION"), data: updateProfileSchema }),
+  z.object({ type: z.literal("SUPRESION"), reason: z.string().trim().min(1).optional() }),
+]);
+
+export type DataRequestSchemaInput = z.infer<typeof dataRequestSchema>;

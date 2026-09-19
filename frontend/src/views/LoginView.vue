@@ -100,6 +100,10 @@ async function onSubmit(): Promise<void> {
         <span class="field-error">{{ errors.password }}</span>
       </div>
 
+      <RouterLink to="/olvide-password" class="-mt-2 self-end text-sm text-text-muted hover:text-accent">
+        {{ t("login.forgotPassword") }}
+      </RouterLink>
+
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
         <svg v-if="submitting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
           <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" opacity="0.25" />

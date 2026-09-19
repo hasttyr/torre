@@ -26,6 +26,10 @@ async function selectRol(wrapper: ReturnType<typeof mount>, rol: string) {
   await wrapper.find(`input[type="radio"][value="${rol}"]`).setValue();
 }
 
+async function acceptDataPolicy(wrapper: ReturnType<typeof mount>) {
+  await wrapper.find('input[type="checkbox"]').setValue(true);
+}
+
 describe("RegisterView", () => {
   beforeEach(() => {
     registerUserMock.mockReset();
@@ -69,6 +73,21 @@ describe("RegisterView", () => {
     expect(registerUserMock).not.toHaveBeenCalled();
   });
 
+  it("requires accepting the data-treatment policy before submitting (RN-10/HU21)", async () => {
+    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
+
+    await fillBaseFields(wrapper);
+    const [codigoInput, programaInput, semestreInput] = wrapper.findAll("fieldset input");
+    await codigoInput.setValue("U12345");
+    await programaInput.setValue("Ingeniería de Sistemas");
+    await semestreInput.setValue("5");
+
+    await wrapper.find("form").trigger("submit.prevent");
+
+    expect(wrapper.text()).toContain("Debés aceptar la política de tratamiento de datos personales");
+    expect(registerUserMock).not.toHaveBeenCalled();
+  });
+
   it("sends the correct payload and shows success for a valid player registration", async () => {
     registerUserMock.mockResolvedValue({
       id: "1",
@@ -77,6 +96,7 @@ describe("RegisterView", () => {
       status: "ACTIVO",
       role: "JUGADOR",
       createdAt: "2026-01-01T00:00:00.000Z",
+      dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
     });
 
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
@@ -86,6 +106,7 @@ describe("RegisterView", () => {
     await codigoInput.setValue("U12345");
     await programaInput.setValue("Ingeniería de Sistemas");
     await semestreInput.setValue("5");
+    await acceptDataPolicy(wrapper);
 
     await wrapper.find("form").trigger("submit.prevent");
     await wrapper.vm.$nextTick();
@@ -95,6 +116,7 @@ describe("RegisterView", () => {
       name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
+      acceptDataPolicy: true,
       role: "JUGADOR",
       universityCode: "U12345",
       program: "Ingeniería de Sistemas",
@@ -111,6 +133,7 @@ describe("RegisterView", () => {
       status: "ACTIVO",
       role: "ORGANIZADOR",
       createdAt: "2026-01-01T00:00:00.000Z",
+      dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
     });
 
     const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
@@ -118,6 +141,7 @@ describe("RegisterView", () => {
     await wrapper.find('input[type="text"]').setValue("Carlos Ruiz");
     await wrapper.find('input[type="email"]').setValue("carlos@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
+    await acceptDataPolicy(wrapper);
 
     await wrapper.find("form").trigger("submit.prevent");
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -126,6 +150,7 @@ describe("RegisterView", () => {
       name: "Carlos Ruiz",
       email: "carlos@example.com",
       password: "password123",
+      acceptDataPolicy: true,
       role: "ORGANIZADOR",
     });
   });
@@ -141,6 +166,7 @@ describe("RegisterView", () => {
     await wrapper.find('input[type="text"]').setValue("Ana Torres");
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
+    await acceptDataPolicy(wrapper);
 
     await wrapper.find("form").trigger("submit.prevent");
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -157,6 +183,7 @@ describe("RegisterView", () => {
     await wrapper.find('input[type="text"]').setValue("Ana Torres");
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
+    await acceptDataPolicy(wrapper);
 
     await wrapper.find("form").trigger("submit.prevent");
     await new Promise((resolve) => setTimeout(resolve, 0));

@@ -35,6 +35,9 @@ describe("registerUser", () => {
       estado: "ACTIVO",
       createdAt: new Date("2026-01-01T00:00:00Z"),
       rol: { id: "rol-organizador", nombre: "ORGANIZADOR" },
+      consentimientoAceptado: true,
+      consentimientoFecha: new Date("2026-01-01T00:00:00Z"),
+      consentimientoVersion: "2026-08-01",
     });
 
     const result = await registerUser(prisma as unknown as PrismaClient, {
@@ -42,6 +45,7 @@ describe("registerUser", () => {
       email: "ana@example.com",
       password: "password123",
       role: "ORGANIZADOR",
+      acceptDataPolicy: true,
     });
 
     expect(result).toEqual({
@@ -51,12 +55,19 @@ describe("registerUser", () => {
       status: "ACTIVO",
       role: "ORGANIZADOR",
       createdAt: new Date("2026-01-01T00:00:00Z"),
+      dataConsent: {
+        accepted: true,
+        date: new Date("2026-01-01T00:00:00Z"),
+        version: "2026-08-01",
+      },
     });
 
     const createArgs = prisma.usuario.create.mock.calls[0][0];
     expect(createArgs.data.email).toBe("ana@example.com");
     expect(createArgs.data.passwordHash).not.toBe("password123");
     expect(createArgs.data.jugador).toBeUndefined();
+    expect(createArgs.data.consentimientoAceptado).toBe(true);
+    expect(createArgs.data.consentimientoVersion).toBe("2026-08-01");
   });
 
   it("creates the account and the nested player profile when the role is JUGADOR", async () => {
@@ -79,6 +90,7 @@ describe("registerUser", () => {
       universityCode: "U12345",
       program: "Ingeniería de Sistemas",
       semester: 5,
+      acceptDataPolicy: true,
     });
 
     const createArgs = prisma.usuario.create.mock.calls[0][0];
@@ -106,6 +118,7 @@ describe("registerUser", () => {
       email: "  Ana@Example.COM  ",
       password: "password123",
       role: "ARBITRO",
+      acceptDataPolicy: true,
     });
 
     expect(prisma.usuario.findUnique).toHaveBeenCalledWith({ where: { email: "ana@example.com" } });
@@ -126,6 +139,7 @@ describe("registerUser", () => {
         universityCode: "U1",
         program: "Ingeniería",
         semester: 1,
+        acceptDataPolicy: true,
       }),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
 
@@ -141,6 +155,7 @@ describe("registerUser", () => {
         email: "alguien@example.com",
         password: "password123",
         role: "ORGANIZADOR",
+        acceptDataPolicy: true,
       }),
     ).rejects.toMatchObject({ status: 400 } satisfies Partial<HttpError>);
   });
@@ -156,6 +171,7 @@ describe("registerUser", () => {
         email: "carrera@example.com",
         password: "password123",
         role: "ORGANIZADOR",
+        acceptDataPolicy: true,
       }),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
   });
@@ -178,6 +194,9 @@ describe("loginUser", () => {
       passwordHash,
       createdAt: new Date("2026-01-01T00:00:00Z"),
       rol: { id: "rol-organizador", nombre: "ORGANIZADOR" },
+      consentimientoAceptado: true,
+      consentimientoFecha: new Date("2026-01-01T00:00:00Z"),
+      consentimientoVersion: "2026-08-01",
     });
 
     const result = await loginUser(prisma as unknown as PrismaClient, {
@@ -192,6 +211,11 @@ describe("loginUser", () => {
       status: "ACTIVO",
       role: "ORGANIZADOR",
       createdAt: new Date("2026-01-01T00:00:00Z"),
+      dataConsent: {
+        accepted: true,
+        date: new Date("2026-01-01T00:00:00Z"),
+        version: "2026-08-01",
+      },
     });
 
     const payload = jwt.verify(result.token, "test-secret") as jwt.JwtPayload;

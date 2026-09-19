@@ -8,6 +8,9 @@ const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     rol: { findUnique: vi.fn() },
     usuario: { findUnique: vi.fn(), update: vi.fn() },
+    jugador: { findUnique: vi.fn() },
+    inscripcion: { findFirst: vi.fn() },
+    solicitudDatosPersonales: { create: vi.fn() },
   },
 }));
 
@@ -177,6 +180,70 @@ describe("PUT /api/users/me", () => {
 
     expect(response.status).toBe(400);
     expect(prismaMock.usuario.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/users/me/data-requests", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("responds 401 without a token", async () => {
+    const response = await request(createApp()).post("/api/users/me/data-requests").send({ type: "ACCESO" });
+    expect(response.status).toBe(401);
+  });
+
+  it("ACCESO: returns the user's own data", async () => {
+    prismaMock.usuario.findUnique.mockResolvedValue({
+      id: "usuario-1",
+      nombre: "Ana Torres",
+      email: "ana@example.com",
+      estado: "ACTIVO",
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      rol: { id: "rol-1", nombre: "JUGADOR" },
+      jugador: null,
+    });
+
+    const response = await request(createApp())
+      .post("/api/users/me/data-requests")
+      .set("Authorization", `Bearer ${tokenFor("JUGADOR", "usuario-1")}`)
+      .send({ type: "ACCESO" });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ type: "ACCESO", status: "RESUELTA" });
+    expect(response.body.user.email).toBe("ana@example.com");
+  });
+
+  it("SUPRESION: blocks the account instead of deleting it when a tournament is in progress", async () => {
+    prismaMock.jugador.findUnique.mockResolvedValue({ id: "jugador-1", usuarioId: "usuario-1" });
+    prismaMock.inscripcion.findFirst.mockResolvedValue({ id: "inscripcion-1" });
+    prismaMock.usuario.update.mockResolvedValue({
+      id: "usuario-1",
+      nombre: "Ana Torres",
+      email: "ana@example.com",
+      estado: "INACTIVO",
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      rol: { id: "rol-1", nombre: "JUGADOR" },
+      jugador: null,
+    });
+
+    const response = await request(createApp())
+      .post("/api/users/me/data-requests")
+      .set("Authorization", `Bearer ${tokenFor("JUGADOR", "usuario-1")}`)
+      .send({ type: "SUPRESION" });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ type: "SUPRESION", status: "BLOQUEADA" });
+    expect(prismaMock.usuario.update.mock.calls[0][0].data).toEqual({ estado: "INACTIVO" });
+  });
+
+  it("responds 400 with an unknown request type", async () => {
+    const response = await request(createApp())
+      .post("/api/users/me/data-requests")
+      .set("Authorization", `Bearer ${tokenFor("JUGADOR", "usuario-1")}`)
+      .send({ type: "OTRO" });
+
+    expect(response.status).toBe(400);
   });
 });
 

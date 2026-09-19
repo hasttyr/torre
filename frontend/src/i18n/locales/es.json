@@ -125,7 +125,29 @@
     "submit": "Ingresar",
     "submitting": "Ingresando...",
     "noAccount": "¿No tienes cuenta?",
-    "createOne": "Crea una"
+    "createOne": "Crea una",
+    "forgotPassword": "¿Olvidaste tu contraseña?"
+  },
+  "forgotPassword": {
+    "title": "Recuperar acceso",
+    "subtitle": "Ingresa tu correo y te enviaremos instrucciones para restablecer tu contraseña.",
+    "submit": "Enviar instrucciones",
+    "submitting": "Enviando...",
+    "successMessage": "Si el correo está registrado, recibirás instrucciones para restablecer tu contraseña.",
+    "backToLogin": "Volver a iniciar sesión"
+  },
+  "resetPassword": {
+    "title": "Restablecer contraseña",
+    "subtitle": "Elige una nueva contraseña para tu cuenta.",
+    "newPasswordLabel": "Nueva contraseña",
+    "confirmPasswordLabel": "Confirmar contraseña",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "submit": "Restablecer contraseña",
+    "submitting": "Restableciendo...",
+    "successMessage": "Contraseña actualizada correctamente. Ya puedes iniciar sesión.",
+    "invalidTokenError": "El enlace de restablecimiento no es válido o ya expiró",
+    "missingTokenError": "Este enlace no incluye un token de restablecimiento válido",
+    "goToLogin": "Ir a iniciar sesión"
   },
   "register": {
     "title": "Crear cuenta",
@@ -144,7 +166,9 @@
     "semesterPlaceholder": "5",
     "submit": "Crear cuenta",
     "submitting": "Creando cuenta...",
-    "successMessage": "Cuenta creada para {email}. Ya puedes iniciar sesión."
+    "successMessage": "Cuenta creada para {email}. Ya puedes iniciar sesión.",
+    "acceptDataPolicyLabel": "Acepto la política de tratamiento de datos personales, conforme a la Ley 1581 de 2012.",
+    "acceptDataPolicyRequired": "Debés aceptar la política de tratamiento de datos personales"
   },
   "account": {
     "title": "Mi cuenta",
@@ -174,7 +198,16 @@
     "universityCodeRequired": "El código universitario es requerido",
     "programRequired": "El programa es requerido",
     "semesterPositive": "El semestre debe ser un entero positivo",
-    "birthDateInFuture": "La fecha de nacimiento no puede ser futura"
+    "birthDateInFuture": "La fecha de nacimiento no puede ser futura",
+    "privacyTitle": "Privacidad y datos personales",
+    "privacySubtitle": "Ejerce tus derechos sobre tus datos personales conforme a la Ley 1581 de 2012.",
+    "privacyConsentInfo": "Aceptaste la política de tratamiento de datos el {date} (versión {version}).",
+    "privacyDownloadButton": "Descargar mis datos",
+    "privacyDownloading": "Descargando...",
+    "privacyDeleteButton": "Eliminar mis datos",
+    "privacyDeleting": "Procesando...",
+    "privacyDeleteConfirm": "¿Seguro que quieres solicitar la eliminación de tus datos personales? Se cerrará tu sesión.",
+    "privacyGenericError": "No se pudo conectar con el servidor"
   },
   "dashboard": {
     "title": "Mis torneos",

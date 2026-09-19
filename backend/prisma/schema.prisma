@@ -75,11 +75,66 @@ model Usuario {
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
 
-  rol                Rol      @relation(fields: [rolId], references: [id])
-  jugador            Jugador?
-  torneosOrganizados Torneo[] @relation("TorneoOrganizador")
+  // HU21/RN-10: no se completa el registro sin esta aceptación explícita, y
+  // fecha/versión quedan almacenadas (CA HU21, P23). consentimientoVersion
+  // referencia DATA_POLICY_VERSION en config/dataPolicy.ts.
+  consentimientoAceptado Boolean   @default(false) @map("consentimiento_aceptado")
+  consentimientoFecha    DateTime? @map("consentimiento_fecha")
+  consentimientoVersion  String?   @map("consentimiento_version")
+
+  rol                      Rol                        @relation(fields: [rolId], references: [id])
+  jugador                  Jugador?
+  torneosOrganizados       Torneo[]                   @relation("TorneoOrganizador")
+  solicitudesRecuperacion  SolicitudRecuperacion[]
+  solicitudesDatos         SolicitudDatosPersonales[]
 
   @@map("usuarios")
+}
+
+// HU19/RF11: el token en texto plano nunca se persiste, solo su hash — un
+// volcado de la base no alcanza para restablecer una cuenta. Sin
+// infraestructura de correo en la arquitectura documentada, el envío se
+// simula (ver services/passwordReset.service.ts); el modelo ya queda listo
+// para conectar un proveedor real sin cambios de esquema.
+model SolicitudRecuperacion {
+  id        String    @id @default(uuid())
+  usuarioId String    @map("usuario_id")
+  tokenHash String    @unique @map("token_hash")
+  expiraEn  DateTime  @map("expira_en")
+  usadoEn   DateTime? @map("usado_en")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("solicitudes_recuperacion")
+}
+
+// HU22/Ley 1581 de 2012, art. 8: derechos ARCO (Acceso, Rectificación,
+// Cancelación/Supresión) ejercidos por el titular sobre sus propios datos.
+enum TipoSolicitudDatos {
+  ACCESO
+  RECTIFICACION
+  SUPRESION
+}
+
+// BLOQUEADA: la supresión se pidió pero hay datos indispensables para un
+// torneo en curso (CA HU22), así que se bloquea la cuenta en vez de borrarla.
+enum EstadoSolicitudDatos {
+  RESUELTA
+  BLOQUEADA
+}
+
+model SolicitudDatosPersonales {
+  id        String               @id @default(uuid())
+  usuarioId String               @map("usuario_id")
+  tipo      TipoSolicitudDatos
+  estado    EstadoSolicitudDatos
+  detalle   String?
+  createdAt DateTime             @default(now()) @map("created_at")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("solicitudes_datos_personales")
 }
 
 // Catálogo cerrado (DANE) en vez de texto libre: evita que el campo se

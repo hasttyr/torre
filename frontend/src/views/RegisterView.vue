@@ -23,6 +23,7 @@ const form = reactive({
   universityCode: "",
   program: "",
   semester: "",
+  acceptDataPolicy: false,
 });
 
 const isPlayer = computed(() => form.role === "JUGADOR");
@@ -84,6 +85,11 @@ function validate(): boolean {
     }
   }
 
+  // RN-10/HU21: el registro no se completa sin esta aceptación explícita.
+  if (!form.acceptDataPolicy) {
+    errors.acceptDataPolicy = t("register.acceptDataPolicyRequired");
+  }
+
   return Object.keys(errors).length === 0;
 }
 
@@ -93,6 +99,8 @@ function buildPayload(): RegisterPayload {
     name: form.name.trim(),
     email: form.email.trim(),
     password: form.password,
+    // Garantizado `true` por validate(): el submit se detiene si no lo está.
+    acceptDataPolicy: true as const,
   };
 
   if (form.role === "JUGADOR") {
@@ -116,6 +124,7 @@ function resetForm(): void {
   form.universityCode = "";
   form.program = "";
   form.semester = "";
+  form.acceptDataPolicy = false;
 }
 
 /** Validates and submits the registration form to the backend. */
@@ -248,6 +257,14 @@ async function onSubmit(): Promise<void> {
           </div>
         </fieldset>
       </Transition>
+
+      <div class="field" :class="{ 'has-error': errors.acceptDataPolicy }">
+        <label class="flex cursor-pointer items-start gap-2 text-sm font-normal">
+          <input v-model="form.acceptDataPolicy" type="checkbox" class="mt-0.5" />
+          <span>{{ t("register.acceptDataPolicyLabel") }}</span>
+        </label>
+        <span class="field-error">{{ errors.acceptDataPolicy }}</span>
+      </div>
 
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
         <svg v-if="submitting" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
