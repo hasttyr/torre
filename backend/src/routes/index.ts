@@ -1,6 +1,8 @@
 import { Router } from "express";
 
 import { authRouter } from "./auth.routes";
+import { clubsRouter } from "./clubs.routes";
+import { coachesRouter } from "./coaches.routes";
 import { playersRouter } from "./players.routes";
 import { tournamentsRouter } from "./tournaments.routes";
 import { usersRouter } from "./users.routes";
@@ -15,6 +17,8 @@ router.use("/auth", authRouter);
 router.use("/users", usersRouter);
 router.use("/tournaments", tournamentsRouter);
 router.use("/players", playersRouter);
+router.use("/clubs", clubsRouter);
+router.use("/coaches", coachesRouter);
 
 // As future increments land, the rest of the domain routers (pairing,
 // results, ...) get mounted here.

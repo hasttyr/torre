@@ -44,8 +44,18 @@ function closeMobile(): void {
           >
             {{ t("header.myTournaments") }}
           </RouterLink>
+          <RouterLink
+            v-if="auth.user && ['ORGANIZER', 'ADMINISTRATOR'].includes(auth.user.role)"
+            to="/clubes"
+            class="btn btn-ghost"
+          >
+            {{ t("header.clubs") }}
+          </RouterLink>
           <RouterLink v-if="auth.user?.role === 'PLAYER'" to="/mis-torneos" class="btn btn-ghost">{{
             t("header.tournaments")
+          }}</RouterLink>
+          <RouterLink v-if="auth.user?.role === 'COACH'" to="/mis-jugadores" class="btn btn-ghost">{{
+            t("header.myPlayers")
           }}</RouterLink>
           <UserMenu />
         </template>
@@ -102,12 +112,28 @@ function closeMobile(): void {
               {{ t("header.myTournaments") }}
             </RouterLink>
             <RouterLink
+              v-if="auth.user && ['ORGANIZER', 'ADMINISTRATOR'].includes(auth.user.role)"
+              to="/clubes"
+              class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
+              @click="closeMobile"
+            >
+              {{ t("header.clubs") }}
+            </RouterLink>
+            <RouterLink
               v-if="auth.user?.role === 'PLAYER'"
               to="/mis-torneos"
               class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
               @click="closeMobile"
             >
               {{ t("header.tournaments") }}
+            </RouterLink>
+            <RouterLink
+              v-if="auth.user?.role === 'COACH'"
+              to="/mis-jugadores"
+              class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
+              @click="closeMobile"
+            >
+              {{ t("header.myPlayers") }}
             </RouterLink>
           </template>
           <template v-else>

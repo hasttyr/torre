@@ -5,6 +5,7 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 
 export const playersRouter = Router();
 
-// Same roles that manage tournament registration in tournaments.routes.ts:
-// whoever can enroll players is who needs to search for them.
-playersRouter.get("/", requireAuth, requireRole("ORGANIZER", "ADMINISTRATOR"), search);
+// ORGANIZER/ADMINISTRATOR: same roles that manage tournament registration in
+// tournaments.routes.ts, who need to search players to enroll them. COACH:
+// needs to search players to link with them (HU24).
+playersRouter.get("/", requireAuth, requireRole("ORGANIZER", "ADMINISTRATOR", "COACH"), search);

@@ -91,6 +91,7 @@ model User {
   organizedTournaments  Tournament[]           @relation("TournamentOrganizer")
   passwordResetRequests PasswordResetRequest[]
   dataRequests          DataRequest[]
+  coachLinks            CoachPlayer[]          @relation("CoachLinks")
 
   @@map("users")
 }
@@ -130,14 +131,47 @@ model Player {
   birthDate      DateTime?   @map("birth_date")
   gender         Gender?
   disability     Disability?
+  // HU23: a player belongs to at most one club at a time. Optional because
+  // club membership isn't part of registration (HU01).
+  clubId         String?     @map("club_id")
 
-  user           User         @relation(fields: [userId], references: [id])
+  user           User          @relation(fields: [userId], references: [id])
+  club           Club?         @relation(fields: [clubId], references: [id])
   standings      Standing[]
-  matchesAsWhite Match[]      @relation("MatchWhite")
-  matchesAsBlack Match[]      @relation("MatchBlack")
+  matchesAsWhite Match[]       @relation("MatchWhite")
+  matchesAsBlack Match[]       @relation("MatchBlack")
   enrollments    Enrollment[]
+  coachLinks     CoachPlayer[]
 
   @@map("players")
+}
+
+// HU23: a club is just a named group a player can belong to — no
+// standalone admin beyond create/rename and enrolling/removing players.
+model Club {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+
+  players Player[]
+
+  @@map("clubs")
+}
+
+// HU24: a coach follows a player's progress by linking to them directly (no
+// tournament/club scoping — that's out of the documented scope for this HU).
+// Either side can unlink; re-linking after that is just a new row.
+model CoachPlayer {
+  id        String   @id @default(uuid())
+  coachId   String   @map("coach_id")
+  playerId  String   @map("player_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  coach  User   @relation("CoachLinks", fields: [coachId], references: [id])
+  player Player @relation(fields: [playerId], references: [id])
+
+  @@unique([coachId, playerId])
+  @@map("coach_players")
 }
 
 model Tournament {

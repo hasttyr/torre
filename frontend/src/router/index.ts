@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import { useAuthStore } from "../stores/auth";
 import AccountView from "../views/AccountView.vue";
+import ClubsView from "../views/ClubsView.vue";
+import CoachPlayersView from "../views/CoachPlayersView.vue";
 import CreateTournamentView from "../views/CreateTournamentView.vue";
 import DashboardView from "../views/DashboardView.vue";
 import ForgotPasswordView from "../views/ForgotPasswordView.vue";
@@ -73,6 +75,18 @@ export const router = createRouter({
       name: "tournaments-player",
       component: PlayerTournamentsView,
       meta: { requiresAuth: true, roles: ["PLAYER"] },
+    },
+    {
+      path: "/clubes",
+      name: "clubs",
+      component: ClubsView,
+      meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
+    },
+    {
+      path: "/mis-jugadores",
+      name: "coach-players",
+      component: CoachPlayersView,
+      meta: { requiresAuth: true, roles: ["COACH"] },
     },
   ],
 });
