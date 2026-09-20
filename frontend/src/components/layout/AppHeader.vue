@@ -3,10 +3,10 @@ import { ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
-import { useAuthStore } from "../stores/auth";
+import { useAuthStore } from "../../stores/auth";
 import AppLogo from "./AppLogo.vue";
-import LocaleToggle from "./LocaleToggle.vue";
-import ThemeToggle from "./ThemeToggle.vue";
+import LocaleToggle from "../ui/LocaleToggle.vue";
+import ThemeToggle from "../ui/ThemeToggle.vue";
 import UserMenu from "./UserMenu.vue";
 
 const auth = useAuthStore();

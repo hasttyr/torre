@@ -2,7 +2,7 @@ import { mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { i18n } from "../i18n";
+import { i18n } from "../../i18n";
 import ThemeToggle from "./ThemeToggle.vue";
 
 describe("ThemeToggle", () => {

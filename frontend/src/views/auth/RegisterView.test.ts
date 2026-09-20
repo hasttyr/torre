@@ -3,11 +3,11 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
-import { i18n } from "../i18n";
+import { i18n } from "../../i18n";
 import RegisterView from "./RegisterView.vue";
 
-vi.mock("../services/auth", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../services/auth")>();
+vi.mock("../../services/auth", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../services/auth")>();
   return {
     ...actual,
     registerUser: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock("../services/auth", async (importOriginal) => {
   };
 });
 
-import { loginUser, registerUser } from "../services/auth";
+import { loginUser, registerUser } from "../../services/auth";
 
 const registerUserMock = vi.mocked(registerUser);
 const loginUserMock = vi.mocked(loginUser);

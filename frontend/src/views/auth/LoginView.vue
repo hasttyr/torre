@@ -3,10 +3,10 @@ import { reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
-import AuthLayout from "../components/AuthLayout.vue";
-import { extractErrorMessage } from "../lib/errors";
-import { roleHomePath } from "../lib/roleHome";
-import { useAuthStore } from "../stores/auth";
+import AuthLayout from "../../components/layout/AuthLayout.vue";
+import { extractErrorMessage } from "../../lib/errors";
+import { roleHomePath } from "../../lib/roleHome";
+import { useAuthStore } from "../../stores/auth";
 
 const router = useRouter();
 const route = useRoute();

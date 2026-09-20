@@ -1,18 +1,18 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 import { useAuthStore } from "../stores/auth";
+import ForgotPasswordView from "../views/auth/ForgotPasswordView.vue";
+import LoginView from "../views/auth/LoginView.vue";
+import RegisterView from "../views/auth/RegisterView.vue";
+import ResetPasswordView from "../views/auth/ResetPasswordView.vue";
 import AccountView from "../views/AccountView.vue";
-import ClubsView from "../views/ClubsView.vue";
-import CoachPlayersView from "../views/CoachPlayersView.vue";
-import CreateTournamentView from "../views/CreateTournamentView.vue";
-import DashboardView from "../views/DashboardView.vue";
-import ForgotPasswordView from "../views/ForgotPasswordView.vue";
+import CoachPlayersView from "../views/coach/CoachPlayersView.vue";
 import HomeView from "../views/HomeView.vue";
-import LoginView from "../views/LoginView.vue";
-import PlayerTournamentsView from "../views/PlayerTournamentsView.vue";
-import RegisterView from "../views/RegisterView.vue";
-import ResetPasswordView from "../views/ResetPasswordView.vue";
-import TournamentAdminView from "../views/TournamentAdminView.vue";
+import ClubsView from "../views/organizer/ClubsView.vue";
+import CreateTournamentView from "../views/organizer/CreateTournamentView.vue";
+import DashboardView from "../views/organizer/DashboardView.vue";
+import TournamentAdminView from "../views/organizer/TournamentAdminView.vue";
+import PlayerTournamentsView from "../views/player/PlayerTournamentsView.vue";
 
 // Roles that manage tournaments (HU04-HU07). Mirrors
 // backend/src/routes/tournaments.routes.ts (requireRole("ORGANIZER", "ADMINISTRATOR")).

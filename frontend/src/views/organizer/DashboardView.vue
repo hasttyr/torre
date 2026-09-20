@@ -2,9 +2,9 @@
 import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import AppHeader from "../components/AppHeader.vue";
-import { useLocaleStore } from "../stores/locale";
-import { useTournamentsStore } from "../stores/tournaments";
+import AppHeader from "../../components/layout/AppHeader.vue";
+import { useLocaleStore } from "../../stores/locale";
+import { useTournamentsStore } from "../../stores/tournaments";
 
 const tournaments = useTournamentsStore();
 const locale = useLocaleStore();

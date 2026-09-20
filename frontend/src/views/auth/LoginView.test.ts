@@ -3,16 +3,16 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
-import { i18n } from "../i18n";
+import { i18n } from "../../i18n";
 import LoginView from "./LoginView.vue";
 
-vi.mock("../services/auth", () => ({
+vi.mock("../../services/auth", () => ({
   loginUser: vi.fn(),
   logoutUser: vi.fn(),
   fetchMe: vi.fn(),
 }));
 
-import { loginUser } from "../services/auth";
+import { loginUser } from "../../services/auth";
 
 const loginUserMock = vi.mocked(loginUser);
 

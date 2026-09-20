@@ -2,9 +2,9 @@
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import AuthLayout from "../components/AuthLayout.vue";
-import { extractErrorMessage } from "../lib/errors";
-import { requestPasswordReset } from "../services/auth";
+import AuthLayout from "../../components/layout/AuthLayout.vue";
+import { extractErrorMessage } from "../../lib/errors";
+import { requestPasswordReset } from "../../services/auth";
 
 const { t } = useI18n();
 

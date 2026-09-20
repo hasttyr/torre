@@ -2,11 +2,11 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import AppHeader from "../components/AppHeader.vue";
-import { extractErrorMessage } from "../lib/errors";
-import { searchPlayers, type PlayerSearchResult } from "../services/players";
-import { useCoachesStore } from "../stores/coaches";
-import { useLocaleStore } from "../stores/locale";
+import AppHeader from "../../components/layout/AppHeader.vue";
+import { extractErrorMessage } from "../../lib/errors";
+import { searchPlayers, type PlayerSearchResult } from "../../services/players";
+import { useCoachesStore } from "../../stores/coaches";
+import { useLocaleStore } from "../../stores/locale";
 
 const coaches = useCoachesStore();
 const locale = useLocaleStore();

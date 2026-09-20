@@ -3,10 +3,10 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
-import { i18n } from "../i18n";
+import { i18n } from "../../i18n";
 import PlayerTournamentsView from "./PlayerTournamentsView.vue";
 
-vi.mock("../services/tournaments", () => ({
+vi.mock("../../services/tournaments", () => ({
   createTournament: vi.fn(),
   getTournament: vi.fn(),
   configureTournament: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock("../services/tournaments", () => ({
   listEnrolledTournaments: vi.fn(),
 }));
 
-import { listAvailableTournaments, listEnrolledTournaments } from "../services/tournaments";
+import { listAvailableTournaments, listEnrolledTournaments } from "../../services/tournaments";
 
 const listAvailableTournamentsMock = vi.mocked(listAvailableTournaments);
 const listEnrolledTournamentsMock = vi.mocked(listEnrolledTournaments);

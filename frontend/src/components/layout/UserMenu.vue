@@ -3,9 +3,9 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
-import { useAuthStore } from "../stores/auth";
-import { useLocaleStore } from "../stores/locale";
-import { useThemeStore } from "../stores/theme";
+import { useAuthStore } from "../../stores/auth";
+import { useLocaleStore } from "../../stores/locale";
+import { useThemeStore } from "../../stores/theme";
 
 const auth = useAuthStore();
 const theme = useThemeStore();

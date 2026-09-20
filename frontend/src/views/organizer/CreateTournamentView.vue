@@ -3,10 +3,10 @@ import { reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
-import AppHeader from "../components/AppHeader.vue";
-import DateField from "../components/DateField.vue";
-import { extractErrorMessage } from "../lib/errors";
-import { useTournamentsStore } from "../stores/tournaments";
+import AppHeader from "../../components/layout/AppHeader.vue";
+import DateField from "../../components/ui/DateField.vue";
+import { extractErrorMessage } from "../../lib/errors";
+import { useTournamentsStore } from "../../stores/tournaments";
 
 const router = useRouter();
 const tournaments = useTournamentsStore();

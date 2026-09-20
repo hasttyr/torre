@@ -3,9 +3,9 @@ import { reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
-import AuthLayout from "../components/AuthLayout.vue";
-import { extractErrorMessage } from "../lib/errors";
-import { confirmPasswordReset } from "../services/auth";
+import AuthLayout from "../../components/layout/AuthLayout.vue";
+import { extractErrorMessage } from "../../lib/errors";
+import { confirmPasswordReset } from "../../services/auth";
 
 const route = useRoute();
 const { t } = useI18n();

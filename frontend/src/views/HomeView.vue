@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 
-import AppHeader from "../components/AppHeader.vue";
-import AppLogo from "../components/AppLogo.vue";
+import AppHeader from "../components/layout/AppHeader.vue";
+import AppLogo from "../components/layout/AppLogo.vue";
 
 const { t } = useI18n();
 

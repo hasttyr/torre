@@ -3,21 +3,21 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
-import { i18n } from "../i18n";
+import { i18n } from "../../i18n";
 import CoachPlayersView from "./CoachPlayersView.vue";
 
-vi.mock("../services/players", () => ({
+vi.mock("../../services/players", () => ({
   searchPlayers: vi.fn(),
 }));
 
-vi.mock("../services/coaches", () => ({
+vi.mock("../../services/coaches", () => ({
   linkPlayer: vi.fn(),
   listLinkedPlayers: vi.fn(),
   unlinkPlayer: vi.fn(),
   listCoachTournaments: vi.fn(),
 }));
 
-import { listCoachTournaments, listLinkedPlayers } from "../services/coaches";
+import { listCoachTournaments, listLinkedPlayers } from "../../services/coaches";
 
 const listLinkedPlayersMock = vi.mocked(listLinkedPlayers);
 const listCoachTournamentsMock = vi.mocked(listCoachTournaments);

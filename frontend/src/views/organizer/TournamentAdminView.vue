@@ -3,11 +3,11 @@ import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
-import AppHeader from "../components/AppHeader.vue";
-import PlayerEnrollmentPanel from "../components/tournament-admin/PlayerEnrollmentPanel.vue";
-import RegistrationControls from "../components/tournament-admin/RegistrationControls.vue";
-import TournamentConfigForm from "../components/tournament-admin/TournamentConfigForm.vue";
-import { useTournamentsStore } from "../stores/tournaments";
+import AppHeader from "../../components/layout/AppHeader.vue";
+import PlayerEnrollmentPanel from "../../components/tournament-admin/PlayerEnrollmentPanel.vue";
+import RegistrationControls from "../../components/tournament-admin/RegistrationControls.vue";
+import TournamentConfigForm from "../../components/tournament-admin/TournamentConfigForm.vue";
+import { useTournamentsStore } from "../../stores/tournaments";
 
 const route = useRoute();
 const tournaments = useTournamentsStore();

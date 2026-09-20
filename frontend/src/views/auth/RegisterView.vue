@@ -3,11 +3,16 @@ import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
-import AuthLayout from "../components/AuthLayout.vue";
-import { extractErrorMessage } from "../lib/errors";
-import { roleHomePath } from "../lib/roleHome";
-import { registerUser, SELF_ASSIGNABLE_ROLES, type RegisterPayload, type SelfAssignableRole } from "../services/auth";
-import { useAuthStore } from "../stores/auth";
+import AuthLayout from "../../components/layout/AuthLayout.vue";
+import { extractErrorMessage } from "../../lib/errors";
+import { roleHomePath } from "../../lib/roleHome";
+import {
+  registerUser,
+  SELF_ASSIGNABLE_ROLES,
+  type RegisterPayload,
+  type SelfAssignableRole,
+} from "../../services/auth";
+import { useAuthStore } from "../../stores/auth";
 
 const router = useRouter();
 const auth = useAuthStore();

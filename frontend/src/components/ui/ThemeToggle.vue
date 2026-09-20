@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 
-import { useThemeStore } from "../stores/theme";
+import { useThemeStore } from "../../stores/theme";
 
 const theme = useThemeStore();
 const { t } = useI18n();

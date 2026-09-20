@@ -2,10 +2,10 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
-import AppHeader from "../components/AppHeader.vue";
-import { extractErrorMessage } from "../lib/errors";
-import { searchPlayers, type PlayerSearchResult } from "../services/players";
-import { useClubsStore } from "../stores/clubs";
+import AppHeader from "../../components/layout/AppHeader.vue";
+import { extractErrorMessage } from "../../lib/errors";
+import { searchPlayers, type PlayerSearchResult } from "../../services/players";
+import { useClubsStore } from "../../stores/clubs";
 
 const clubs = useClubsStore();
 const { t } = useI18n();

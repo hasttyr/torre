@@ -6,8 +6,8 @@ import { es } from "date-fns/locale/es";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { useLocaleStore } from "../stores/locale";
-import { useThemeStore } from "../stores/theme";
+import { useLocaleStore } from "../../stores/locale";
+import { useThemeStore } from "../../stores/theme";
 
 const theme = useThemeStore();
 const locale = useLocaleStore();

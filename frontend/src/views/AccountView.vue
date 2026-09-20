@@ -4,8 +4,8 @@ import { useI18n } from "vue-i18n";
 
 import PlayerAffiliations from "../components/account/PlayerAffiliations.vue";
 import PrivacyDataRights from "../components/account/PrivacyDataRights.vue";
-import AppHeader from "../components/AppHeader.vue";
-import DateField from "../components/DateField.vue";
+import AppHeader from "../components/layout/AppHeader.vue";
+import DateField from "../components/ui/DateField.vue";
 import { extractErrorMessage } from "../lib/errors";
 import { DISABILITIES, GENDERS, type Disability, type Gender } from "../services/auth";
 import { useAuthStore } from "../stores/auth";
