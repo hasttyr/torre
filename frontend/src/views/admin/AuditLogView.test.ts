@@ -56,7 +56,8 @@ describe("AuditLogView", () => {
 
     const { wrapper } = await mountView();
 
-    expect(wrapper.text()).toContain("ROLE_CHANGED");
+    expect(wrapper.text()).toContain("Cambio de rol");
+    expect(wrapper.text()).not.toContain("ROLE_CHANGED");
     expect(wrapper.text()).toContain("Admin Demo");
     expect(wrapper.text()).toContain("Carlos (PLAYER -> ARBITER)");
   });

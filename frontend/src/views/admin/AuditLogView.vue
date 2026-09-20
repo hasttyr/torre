@@ -8,7 +8,7 @@ import { listAuditLogs, type AuditLogEntry } from "../../services/auditLogs";
 import { useLocaleStore } from "../../stores/locale";
 
 const locale = useLocaleStore();
-const { t } = useI18n();
+const { t, te } = useI18n();
 
 const logs = ref<AuditLogEntry[]>([]);
 const loading = ref(true);
@@ -23,6 +23,12 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+/** Falls back to the raw action code if no translation exists yet for it. */
+function actionLabel(action: string): string {
+  const key = `auditLog.actions.${action}`;
+  return te(key) ? t(key) : action;
+}
 
 /** Formats an ISO date string using the active locale, including the time. */
 function formatDate(date: string): string {
@@ -63,7 +69,7 @@ function formatDate(date: string): string {
           class="flex flex-col gap-1 rounded-2xl border border-border-soft bg-surface p-4"
         >
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="pill">{{ log.action }}</span>
+            <span class="pill">{{ actionLabel(log.action) }}</span>
             <span class="text-sm text-text-muted">{{ formatDate(log.createdAt) }}</span>
           </div>
           <p class="text-sm">

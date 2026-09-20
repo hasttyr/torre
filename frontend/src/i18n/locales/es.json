@@ -357,7 +357,12 @@
     "subtitle": "Acciones administrativas críticas del sistema, con usuario, fecha y motivo.",
     "loading": "Cargando bitácora…",
     "loadError": "No se pudo cargar la bitácora de auditoría",
-    "empty": "Todavía no hay acciones registradas."
+    "empty": "Todavía no hay acciones registradas.",
+    "actions": {
+      "ROLE_CHANGED": "Cambio de rol",
+      "PLAYER_WITHDRAWN": "Retiro de jugador",
+      "ACCOUNT_STATUS_CHANGED": "Cambio de estado de cuenta"
+    }
   },
   "adminUsers": {
     "title": "Usuarios",

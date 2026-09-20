@@ -357,7 +357,12 @@
     "subtitle": "Critical administrative actions across the system, with user, date and reason.",
     "loading": "Loading audit log…",
     "loadError": "Could not load the audit log",
-    "empty": "No actions recorded yet."
+    "empty": "No actions recorded yet.",
+    "actions": {
+      "ROLE_CHANGED": "Role changed",
+      "PLAYER_WITHDRAWN": "Player withdrawn",
+      "ACCOUNT_STATUS_CHANGED": "Account status changed"
+    }
   },
   "adminUsers": {
     "title": "Users",
