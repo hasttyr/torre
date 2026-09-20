@@ -6,6 +6,14 @@ export const updateRoleSchema = z.object({
   role: z.enum(["ORGANIZER", "ARBITER", "PLAYER", "COACH", "ADMINISTRATOR"]),
 });
 
+// Admin-only account activation/deactivation. Deliberately doesn't allow
+// deleting a user (would cascade-break tournaments, enrollments, audit
+// history, ...); INACTIVE is the system's equivalent of "off" for an
+// account, already used by HU22's suppression flow.
+export const updateStatusSchema = z.object({
+  status: z.enum(["ACTIVE", "INACTIVE"]),
+});
+
 // Closed catalogs — mirror the Gender/Disability enums in
 // prisma/schema.prisma. Listed here too (not only in the Prisma enum) so
 // zod returns a readable validation message instead of a generic type error.

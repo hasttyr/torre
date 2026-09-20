@@ -14,16 +14,18 @@ vi.mock("../../services/clubs", () => ({
   listClubs: vi.fn(),
   createClub: vi.fn(),
   updateClub: vi.fn(),
+  deleteClub: vi.fn(),
   listClubPlayers: vi.fn(),
   assignPlayerToClub: vi.fn(),
   removePlayerFromClub: vi.fn(),
 }));
 
-import { createClub, listClubPlayers, listClubs } from "../../services/clubs";
+import { createClub, deleteClub, listClubPlayers, listClubs } from "../../services/clubs";
 import { searchPlayers } from "../../services/players";
 
 const listClubsMock = vi.mocked(listClubs);
 const createClubMock = vi.mocked(createClub);
+const deleteClubMock = vi.mocked(deleteClub);
 const listClubPlayersMock = vi.mocked(listClubPlayers);
 const searchPlayersMock = vi.mocked(searchPlayers);
 
@@ -140,5 +142,51 @@ describe("ClubsView", () => {
 
     expect(searchPlayersMock).toHaveBeenCalledWith("Luis");
     expect(wrapper.text()).toContain("Luis Gómez");
+  });
+
+  it("deletes the selected club after confirmation", async () => {
+    listClubsMock.mockResolvedValue([CLUB]);
+    listClubPlayersMock.mockResolvedValue([]);
+    deleteClubMock.mockResolvedValue(undefined);
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    const { wrapper } = await mountView();
+    await selectClubByName(wrapper, CLUB.name);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    const deleteBtn = wrapper.findAll("button").find((btn) => btn.text() === "Eliminar club")!;
+    await deleteBtn.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    expect(deleteClubMock).toHaveBeenCalledWith("club-1");
+    expect(wrapper.text()).not.toContain("Club Ajedrez Central");
+
+    confirmSpy.mockRestore();
+  });
+
+  it("shows an error when a club can't be deleted (still has players)", async () => {
+    listClubsMock.mockResolvedValue([CLUB]);
+    listClubPlayersMock.mockResolvedValue([]);
+    deleteClubMock.mockRejectedValue({
+      isAxiosError: true,
+      response: { data: { error: "No se puede eliminar un club con jugadores asignados; quítalos primero" } },
+    });
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    const { wrapper } = await mountView();
+    await selectClubByName(wrapper, CLUB.name);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    const deleteBtn = wrapper.findAll("button").find((btn) => btn.text() === "Eliminar club")!;
+    await deleteBtn.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain("No se puede eliminar un club con jugadores asignados");
+
+    confirmSpy.mockRestore();
   });
 });

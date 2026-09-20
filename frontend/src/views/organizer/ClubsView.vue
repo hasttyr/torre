@@ -152,6 +152,29 @@ async function onRemove(playerId: string): Promise<void> {
     rosterError.value = extractErrorMessage(error, t("clubs.genericServerError"));
   }
 }
+
+// --- delete club ---
+
+const deleting = ref(false);
+
+/** Deletes the selected club, after confirmation. */
+async function onDelete(): Promise<void> {
+  if (!selectedClub.value) return;
+  if (!window.confirm(t("clubs.deleteConfirm", { name: selectedClub.value.name }))) {
+    return;
+  }
+
+  rosterError.value = null;
+  deleting.value = true;
+  try {
+    await clubs.deleteClub(selectedClub.value.id);
+    selectedClubId.value = null;
+  } catch (error) {
+    rosterError.value = extractErrorMessage(error, t("clubs.genericServerError"));
+  } finally {
+    deleting.value = false;
+  }
+}
 </script>
 
 <template>
@@ -214,9 +237,14 @@ async function onRemove(playerId: string): Promise<void> {
         <section v-if="selectedClub" class="card">
           <div class="mb-1 flex items-center justify-between gap-2">
             <h2 class="text-lg">{{ selectedClub.name }}</h2>
-            <button type="button" class="btn btn-ghost" @click="renaming = !renaming">
-              {{ t("clubs.renameButton") }}
-            </button>
+            <div class="flex gap-2">
+              <button type="button" class="btn btn-ghost" @click="renaming = !renaming">
+                {{ t("clubs.renameButton") }}
+              </button>
+              <button type="button" class="btn btn-ghost" :disabled="deleting" @click="onDelete">
+                {{ t("clubs.deleteButton") }}
+              </button>
+            </div>
           </div>
 
           <form v-if="renaming" class="mb-4 flex gap-2" novalidate @submit.prevent="onRename">

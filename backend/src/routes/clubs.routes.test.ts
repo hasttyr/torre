@@ -6,8 +6,8 @@ import { createApp } from "../app";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
-    club: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
-    player: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+    club: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn(), delete: vi.fn() },
+    player: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn(), count: vi.fn() },
   },
 }));
 
@@ -123,5 +123,59 @@ describe("POST /api/clubs/:id/players", () => {
       .send({ playerId: "player-1" });
 
     expect(response.status).toBe(404);
+  });
+});
+
+describe("DELETE /api/clubs/:id", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("deletes an empty club", async () => {
+    prismaMock.club.findUnique.mockResolvedValue(clubBase);
+    prismaMock.player.count.mockResolvedValue(0);
+    prismaMock.club.delete.mockResolvedValue(clubBase);
+
+    const response = await request(createApp())
+      .delete("/api/clubs/club-1")
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`);
+
+    expect(response.status).toBe(204);
+    expect(prismaMock.club.delete).toHaveBeenCalledWith({ where: { id: "club-1" } });
+  });
+
+  it("responds 409 when the club still has players assigned", async () => {
+    prismaMock.club.findUnique.mockResolvedValue(clubBase);
+    prismaMock.player.count.mockResolvedValue(2);
+
+    const response = await request(createApp())
+      .delete("/api/clubs/club-1")
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`);
+
+    expect(response.status).toBe(409);
+    expect(prismaMock.club.delete).not.toHaveBeenCalled();
+  });
+
+  it("responds 404 when the club doesn't exist", async () => {
+    prismaMock.club.findUnique.mockResolvedValue(null);
+
+    const response = await request(createApp())
+      .delete("/api/clubs/missing-club")
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`);
+
+    expect(response.status).toBe(404);
+  });
+
+  it("responds 403 for a role without permission (PLAYER)", async () => {
+    const response = await request(createApp())
+      .delete("/api/clubs/club-1")
+      .set("Authorization", `Bearer ${tokenFor("PLAYER")}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("responds 401 without a token", async () => {
+    const response = await request(createApp()).delete("/api/clubs/club-1");
+    expect(response.status).toBe(401);
   });
 });

@@ -4,6 +4,7 @@ import { HttpError } from "../middlewares/errorHandler";
 import {
   assignPlayerToClub,
   createClub,
+  deleteClub,
   listClubPlayers,
   listClubs,
   removePlayerFromClub,
@@ -37,6 +38,12 @@ export const update = asyncHandler(async (req, res) => {
 
   const club = await updateClub(prisma, String(req.params.id), parsed.data);
   res.status(200).json(club);
+});
+
+/** DELETE /clubs/:id — deletes a club (must be empty). */
+export const remove = asyncHandler(async (req, res) => {
+  await deleteClub(prisma, String(req.params.id));
+  res.status(204).send();
 });
 
 /** GET /clubs/:id/players — lists the players belonging to a club. */

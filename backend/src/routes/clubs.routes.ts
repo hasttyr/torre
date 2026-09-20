@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { assignPlayer, create, list, listPlayers, removePlayer, update } from "../controllers/clubs.controller";
+import { assignPlayer, create, list, listPlayers, remove, removePlayer, update } from "../controllers/clubs.controller";
 import { requireAuth, requireRole } from "../middlewares/auth";
 
 export const clubsRouter = Router();
@@ -12,6 +12,7 @@ const canManage = requireRole("ORGANIZER", "ADMINISTRATOR");
 clubsRouter.get("/", requireAuth, list);
 clubsRouter.post("/", requireAuth, canManage, create);
 clubsRouter.put("/:id", requireAuth, canManage, update);
+clubsRouter.delete("/:id", requireAuth, canManage, remove);
 clubsRouter.get("/:id/players", requireAuth, listPlayers);
 clubsRouter.post("/:id/players", requireAuth, canManage, assignPlayer);
 clubsRouter.delete("/:id/players/:playerId", requireAuth, canManage, removePlayer);

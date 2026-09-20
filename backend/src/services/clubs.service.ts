@@ -68,6 +68,27 @@ export async function updateClub(prisma: PrismaClient, id: string, data: UpdateC
   }
 }
 
+/**
+ * Deletes a club.
+ *
+ * @throws {HttpError} 404 if it doesn't exist, 409 if it still has players
+ * assigned (they must be moved out first — deleting it out from under them
+ * would silently orphan their club reference).
+ */
+export async function deleteClub(prisma: PrismaClient, id: string): Promise<void> {
+  const club = await prisma.club.findUnique({ where: { id } });
+  if (!club) {
+    throw new HttpError(404, "Club no encontrado");
+  }
+
+  const memberCount = await prisma.player.count({ where: { clubId: id } });
+  if (memberCount > 0) {
+    throw new HttpError(409, "No se puede eliminar un club con jugadores asignados; quítalos primero");
+  }
+
+  await prisma.club.delete({ where: { id } });
+}
+
 export interface ClubPlayerDto {
   playerId: string;
   name: string;

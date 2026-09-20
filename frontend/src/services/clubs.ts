@@ -32,6 +32,11 @@ export async function updateClub(id: string, name: string): Promise<Club> {
   return data;
 }
 
+/** Deletes a club (must have no players assigned). */
+export async function deleteClub(id: string): Promise<void> {
+  await api.delete(`/clubs/${id}`);
+}
+
 /** Lists the players belonging to a club. */
 export async function listClubPlayers(id: string): Promise<ClubPlayer[]> {
   const { data } = await api.get<ClubPlayer[]>(`/clubs/${id}/players`);

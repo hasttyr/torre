@@ -45,6 +45,7 @@
     "tournaments": "Tournaments",
     "clubs": "Clubs",
     "myPlayers": "My players",
+    "users": "Users",
     "auditLog": "Audit log",
     "login": "Log in",
     "createAccount": "Create account",
@@ -305,6 +306,8 @@
     "nameMinLength": "Name must be at least 2 characters long",
     "empty": "No clubs registered yet.",
     "renameButton": "Rename",
+    "deleteButton": "Delete club",
+    "deleteConfirm": "Are you sure you want to delete the club \"{name}\"? Only possible if it has no players.",
     "saveButton": "Save",
     "saving": "Saving...",
     "rosterSubtitle": "Players belonging to this club.",
@@ -343,5 +346,23 @@
     "loading": "Loading audit log…",
     "loadError": "Could not load the audit log",
     "empty": "No actions recorded yet."
+  },
+  "adminUsers": {
+    "title": "Users",
+    "subtitle": "Manage the role and status of any account in the system.",
+    "loading": "Loading users…",
+    "loadError": "Could not load users",
+    "genericServerError": "Could not connect to the server",
+    "tableName": "Name",
+    "tableEmail": "Email",
+    "tableRole": "Role",
+    "tableStatus": "Status",
+    "status": {
+      "ACTIVE": "Active",
+      "INACTIVE": "Inactive"
+    },
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "toggleConfirm": "Are you sure you want to change {name}'s status to \"{status}\"?"
   }
 }

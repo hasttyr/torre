@@ -57,6 +57,9 @@ function closeMobile(): void {
           <RouterLink v-if="auth.user?.role === 'COACH'" to="/mis-jugadores" class="btn btn-ghost">{{
             t("header.myPlayers")
           }}</RouterLink>
+          <RouterLink v-if="auth.user?.role === 'ADMINISTRATOR'" to="/usuarios" class="btn btn-ghost">{{
+            t("header.users")
+          }}</RouterLink>
           <RouterLink v-if="auth.user?.role === 'ADMINISTRATOR'" to="/auditoria" class="btn btn-ghost">{{
             t("header.auditLog")
           }}</RouterLink>
@@ -137,6 +140,14 @@ function closeMobile(): void {
               @click="closeMobile"
             >
               {{ t("header.myPlayers") }}
+            </RouterLink>
+            <RouterLink
+              v-if="auth.user?.role === 'ADMINISTRATOR'"
+              to="/usuarios"
+              class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
+              @click="closeMobile"
+            >
+              {{ t("header.users") }}
             </RouterLink>
             <RouterLink
               v-if="auth.user?.role === 'ADMINISTRATOR'"

@@ -45,6 +45,7 @@
     "tournaments": "Torneos",
     "clubs": "Clubes",
     "myPlayers": "Mis jugadores",
+    "users": "Usuarios",
     "auditLog": "Auditoría",
     "login": "Iniciar sesión",
     "createAccount": "Crear cuenta",
@@ -305,6 +306,8 @@
     "nameMinLength": "El nombre debe tener al menos 2 caracteres",
     "empty": "Todavía no hay clubes registrados.",
     "renameButton": "Renombrar",
+    "deleteButton": "Eliminar club",
+    "deleteConfirm": "¿Seguro que quieres eliminar el club \"{name}\"? Solo se puede si no tiene jugadores.",
     "saveButton": "Guardar",
     "saving": "Guardando...",
     "rosterSubtitle": "Jugadores que pertenecen a este club.",
@@ -343,5 +346,23 @@
     "loading": "Cargando bitácora…",
     "loadError": "No se pudo cargar la bitácora de auditoría",
     "empty": "Todavía no hay acciones registradas."
+  },
+  "adminUsers": {
+    "title": "Usuarios",
+    "subtitle": "Gestiona el rol y el estado de cualquier cuenta del sistema.",
+    "loading": "Cargando usuarios…",
+    "loadError": "No se pudieron cargar los usuarios",
+    "genericServerError": "No se pudo conectar con el servidor",
+    "tableName": "Nombre",
+    "tableEmail": "Correo",
+    "tableRole": "Rol",
+    "tableStatus": "Estado",
+    "status": {
+      "ACTIVE": "Activa",
+      "INACTIVE": "Inactiva"
+    },
+    "activate": "Activar",
+    "deactivate": "Desactivar",
+    "toggleConfirm": "¿Seguro que quieres cambiar el estado de {name} a \"{status}\"?"
   }
 }

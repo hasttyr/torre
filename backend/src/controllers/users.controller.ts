@@ -2,8 +2,26 @@ import { prisma } from "../config/prisma";
 import { asyncHandler } from "../middlewares/asyncHandler";
 import { HttpError } from "../middlewares/errorHandler";
 import { exerciseDataRight } from "../services/dataRights.service";
-import { getUserById, listMyCoaches, updateOwnProfile, updateUserRole } from "../services/users.service";
-import { dataRequestSchema, updateProfileSchema, updateRoleSchema } from "../validators/users.schemas";
+import {
+  getUserById,
+  listMyCoaches,
+  listUsers,
+  updateOwnProfile,
+  updateUserRole,
+  updateUserStatus,
+} from "../services/users.service";
+import {
+  dataRequestSchema,
+  updateProfileSchema,
+  updateRoleSchema,
+  updateStatusSchema,
+} from "../validators/users.schemas";
+
+/** GET /users — lists every user in the system (admin-only). */
+export const list = asyncHandler(async (_req, res) => {
+  const users = await listUsers(prisma);
+  res.status(200).json(users);
+});
 
 /** GET /users/me — returns the currently authenticated user's profile. */
 export const me = asyncHandler(async (req, res) => {
@@ -32,6 +50,17 @@ export const updateRole = asyncHandler(async (req, res) => {
   }
 
   const user = await updateUserRole(prisma, String(req.params.id), parsed.data.role, req.user!.id);
+  res.status(200).json(user);
+});
+
+/** PATCH /users/:id/status — activates or deactivates a user account (admin-only). */
+export const updateStatus = asyncHandler(async (req, res) => {
+  const parsed = updateStatusSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join("; "));
+  }
+
+  const user = await updateUserStatus(prisma, String(req.params.id), parsed.data.status, req.user!.id);
   res.status(200).json(user);
 });
 

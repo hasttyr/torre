@@ -7,7 +7,7 @@ import { createApp } from "../app";
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     role: { findUnique: vi.fn() },
-    user: { findUnique: vi.fn(), update: vi.fn() },
+    user: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
     player: { findUnique: vi.fn() },
     coachPlayer: { findMany: vi.fn() },
     enrollment: { findFirst: vi.fn() },
@@ -379,5 +379,120 @@ describe("PATCH /api/users/:id/role", () => {
       .send({ role: "ARBITER" });
 
     expect(response.status).toBe(404);
+  });
+});
+
+describe("GET /api/users", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("lists every user for an administrator", async () => {
+    prismaMock.user.findMany.mockResolvedValue([
+      {
+        id: "user-1",
+        name: "Ana Torres",
+        email: "ana@example.com",
+        status: "ACTIVE",
+        createdAt: new Date("2026-01-01T00:00:00Z"),
+        role: { id: "role-1", name: "ORGANIZER" },
+        player: null,
+      },
+    ]);
+
+    const response = await request(createApp())
+      .get("/api/users")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR")}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0]).toMatchObject({ id: "user-1", role: "ORGANIZER" });
+  });
+
+  it("responds 403 for a role without permission (ORGANIZER)", async () => {
+    const response = await request(createApp())
+      .get("/api/users")
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("responds 401 without a token", async () => {
+    const response = await request(createApp()).get("/api/users");
+    expect(response.status).toBe(401);
+  });
+});
+
+describe("PATCH /api/users/:id/status", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("allows an ADMINISTRATOR to deactivate another user and records the audit trail", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ id: "user-2", name: "Carlos" });
+    prismaMock.user.update.mockResolvedValue({
+      id: "user-2",
+      name: "Carlos",
+      email: "carlos@example.com",
+      status: "INACTIVE",
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      role: { id: "role-1", name: "PLAYER" },
+    });
+
+    const response = await request(createApp())
+      .patch("/api/users/user-2/status")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "admin-user")}`)
+      .send({ status: "INACTIVE" });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ id: "user-2", status: "INACTIVE" });
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith({
+      data: { userId: "admin-user", action: "ACCOUNT_STATUS_CHANGED", detail: "Carlos -> INACTIVE" },
+      select: { id: true },
+    });
+  });
+
+  it("responds 409 when the admin targets their own account", async () => {
+    const response = await request(createApp())
+      .patch("/api/users/admin-user/status")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "admin-user")}`)
+      .send({ status: "INACTIVE" });
+
+    expect(response.status).toBe(409);
+    expect(prismaMock.user.update).not.toHaveBeenCalled();
+  });
+
+  it("responds 404 when the target user doesn't exist", async () => {
+    prismaMock.user.findUnique.mockResolvedValue(null);
+
+    const response = await request(createApp())
+      .patch("/api/users/no-existe/status")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "admin-user")}`)
+      .send({ status: "ACTIVE" });
+
+    expect(response.status).toBe(404);
+  });
+
+  it("responds 400 with an invalid status", async () => {
+    const response = await request(createApp())
+      .patch("/api/users/user-2/status")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "admin-user")}`)
+      .send({ status: "SUSPENDED" });
+
+    expect(response.status).toBe(400);
+  });
+
+  it("responds 403 for a role without permission (ORGANIZER)", async () => {
+    const response = await request(createApp())
+      .patch("/api/users/user-2/status")
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`)
+      .send({ status: "INACTIVE" });
+
+    expect(response.status).toBe(403);
+  });
+
+  it("responds 401 without a token", async () => {
+    const response = await request(createApp()).patch("/api/users/user-2/status").send({ status: "INACTIVE" });
+    expect(response.status).toBe(401);
   });
 });

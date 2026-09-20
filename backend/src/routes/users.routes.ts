@@ -1,12 +1,25 @@
 import { Router } from "express";
 
-import { exerciseRight, me, myCoaches, updateProfile, updateRole } from "../controllers/users.controller";
+import {
+  exerciseRight,
+  list,
+  me,
+  myCoaches,
+  updateProfile,
+  updateRole,
+  updateStatus,
+} from "../controllers/users.controller";
 import { requireAuth, requireRole } from "../middlewares/auth";
 
 export const usersRouter = Router();
 
+const isAdmin = requireRole("ADMINISTRATOR");
+
+// Before "/:id/...": otherwise Express would try to resolve "me" as an :id.
 usersRouter.get("/me", requireAuth, me);
 usersRouter.put("/me", requireAuth, updateProfile);
 usersRouter.get("/me/coaches", requireAuth, myCoaches);
 usersRouter.post("/me/data-requests", requireAuth, exerciseRight);
-usersRouter.patch("/:id/role", requireAuth, requireRole("ADMINISTRATOR"), updateRole);
+usersRouter.get("/", requireAuth, isAdmin, list);
+usersRouter.patch("/:id/role", requireAuth, isAdmin, updateRole);
+usersRouter.patch("/:id/status", requireAuth, isAdmin, updateStatus);

@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import {
   assignPlayerToClub,
   createClub as createClubRequest,
+  deleteClub as deleteClubRequest,
   listClubPlayers,
   listClubs,
   removePlayerFromClub,
@@ -41,6 +42,12 @@ export const useClubsStore = defineStore("clubs", {
       if (index !== -1) {
         this.clubs[index] = club;
       }
+    },
+
+    /** Deletes a club and removes it from the list. */
+    async deleteClub(id: string): Promise<void> {
+      await deleteClubRequest(id);
+      this.clubs = this.clubs.filter((club) => club.id !== id);
     },
 
     /** Loads the players belonging to a club. */

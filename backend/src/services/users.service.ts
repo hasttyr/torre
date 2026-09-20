@@ -24,6 +24,18 @@ function buildPlayerData(data: UpdateProfileSchemaInput): Prisma.PlayerUpdateWit
   };
 }
 
+// Admin-only oversight (HU03 completion): without this, an administrator
+// has no way to discover a user's id to act on it (PATCH .../role,
+// .../status) other than looking directly at the database.
+/** Lists every user in the system, most recently created first. */
+export async function listUsers(prisma: PrismaClient): Promise<UserDto[]> {
+  const users = await prisma.user.findMany({
+    include: { role: true, player: { include: { club: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+  return users.map(toUserDto);
+}
+
 /**
  * Fetches a user by id.
  *
@@ -74,6 +86,40 @@ export async function updateUserRole(
     "ROLE_CHANGED",
     `${existingUser.name} (${existingUser.role.name} -> ${newRole})`,
   );
+
+  return toUserDto(user);
+}
+
+/**
+ * Activates or deactivates a user account (admin action).
+ *
+ * @throws {HttpError} 404 if the user doesn't exist, 409 if the admin
+ * targets their own account (would risk locking out the only admin).
+ */
+export async function updateUserStatus(
+  prisma: PrismaClient,
+  id: string,
+  status: "ACTIVE" | "INACTIVE",
+  actingAdminId: string,
+): Promise<UserDto> {
+  if (id === actingAdminId) {
+    throw new HttpError(409, "No podés cambiar el estado de tu propia cuenta");
+  }
+
+  const existingUser = await prisma.user.findUnique({ where: { id } });
+  if (!existingUser) {
+    throw new HttpError(404, "Usuario no encontrado");
+  }
+
+  const user = await prisma.user.update({
+    where: { id },
+    data: { status },
+    include: { role: true, player: { include: { club: true } } },
+  });
+
+  // Blocking/reactivating an account is a critical administrative action,
+  // same trust boundary as a role change.
+  await recordAuditLog(prisma, actingAdminId, "ACCOUNT_STATUS_CHANGED", `${existingUser.name} -> ${status}`);
 
   return toUserDto(user);
 }
