@@ -3,11 +3,13 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import { searchPlayers, type PlayerSearchResult } from "../../services/players";
 import { useClubsStore } from "../../stores/clubs";
 
 const clubs = useClubsStore();
+const confirm = useConfirm();
 const { t } = useI18n();
 
 const loading = ref(true);
@@ -160,7 +162,13 @@ const deleting = ref(false);
 /** Deletes the selected club, after confirmation. */
 async function onDelete(): Promise<void> {
   if (!selectedClub.value) return;
-  if (!window.confirm(t("clubs.deleteConfirm", { name: selectedClub.value.name }))) {
+  const confirmed = await confirm({
+    title: t("clubs.deleteButton"),
+    message: t("clubs.deleteConfirm", { name: selectedClub.value.name }),
+    confirmLabel: t("clubs.deleteButton"),
+    danger: true,
+  });
+  if (!confirmed) {
     return;
   }
 

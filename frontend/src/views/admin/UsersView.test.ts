@@ -5,6 +5,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
 import { useAuthStore } from "../../stores/auth";
+import { clickConfirmDialogButton, mountConfirmDialogHost } from "../../test-support/confirmDialog";
 import UsersView from "./UsersView.vue";
 
 vi.mock("../../services/adminUsers", async (importOriginal) => {
@@ -95,20 +96,21 @@ describe("UsersView", () => {
   it("deactivates a user after confirmation", async () => {
     listUsersMock.mockResolvedValue([ADMIN, ORGANIZER]);
     updateUserStatusMock.mockResolvedValue({ ...ORGANIZER, status: "INACTIVE" });
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    mountConfirmDialogHost();
 
     const { wrapper } = await mountView();
 
     // buttons[0] is the ADMIN row's own (disabled) toggle; buttons[1] is the organizer's.
     const deactivateBtn = wrapper.findAll("tbody button")[1];
     await deactivateBtn.trigger("click");
+    await wrapper.vm.$nextTick();
+    await clickConfirmDialogButton("Desactivar");
     await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
     await wrapper.vm.$nextTick();
 
     expect(updateUserStatusMock).toHaveBeenCalledWith("user-2", "INACTIVE");
     expect(wrapper.text()).toContain("Inactiva");
-
-    confirmSpy.mockRestore();
   });
 
   it("disables role and status controls for the current admin's own row", async () => {

@@ -140,6 +140,10 @@
     @apply border-border bg-transparent text-text hover:border-accent/40 hover:bg-accent/10;
   }
 
+  .btn-danger {
+    @apply bg-error text-white hover:-translate-y-px hover:bg-error/85 hover:shadow-md;
+  }
+
   .btn-block {
     @apply w-full;
   }

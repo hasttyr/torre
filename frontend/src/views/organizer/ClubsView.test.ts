@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
+import { clickConfirmDialogButton, mountConfirmDialogHost } from "../../test-support/confirmDialog";
 import ClubsView from "./ClubsView.vue";
 
 vi.mock("../../services/players", () => ({
@@ -148,7 +149,7 @@ describe("ClubsView", () => {
     listClubsMock.mockResolvedValue([CLUB]);
     listClubPlayersMock.mockResolvedValue([]);
     deleteClubMock.mockResolvedValue(undefined);
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    mountConfirmDialogHost();
 
     const { wrapper } = await mountView();
     await selectClubByName(wrapper, CLUB.name);
@@ -157,13 +158,13 @@ describe("ClubsView", () => {
 
     const deleteBtn = wrapper.findAll("button").find((btn) => btn.text() === "Eliminar club")!;
     await deleteBtn.trigger("click");
+    await wrapper.vm.$nextTick();
+    await clickConfirmDialogButton("Eliminar club");
     await new Promise((resolve) => setTimeout(resolve, 0));
     await wrapper.vm.$nextTick();
 
     expect(deleteClubMock).toHaveBeenCalledWith("club-1");
     expect(wrapper.text()).not.toContain("Club Ajedrez Central");
-
-    confirmSpy.mockRestore();
   });
 
   it("shows an error when a club can't be deleted (still has players)", async () => {
@@ -173,7 +174,7 @@ describe("ClubsView", () => {
       isAxiosError: true,
       response: { data: { error: "No se puede eliminar un club con jugadores asignados; quítalos primero" } },
     });
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    mountConfirmDialogHost();
 
     const { wrapper } = await mountView();
     await selectClubByName(wrapper, CLUB.name);
@@ -182,11 +183,11 @@ describe("ClubsView", () => {
 
     const deleteBtn = wrapper.findAll("button").find((btn) => btn.text() === "Eliminar club")!;
     await deleteBtn.trigger("click");
+    await wrapper.vm.$nextTick();
+    await clickConfirmDialogButton("Eliminar club");
     await new Promise((resolve) => setTimeout(resolve, 0));
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("No se puede eliminar un club con jugadores asignados");
-
-    confirmSpy.mockRestore();
   });
 });

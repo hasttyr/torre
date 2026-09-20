@@ -3,6 +3,7 @@ import { createColumnHelper } from "@tanstack/vue-table";
 import { computed, h, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import { searchPlayers, type PlayerSearchResult } from "../../services/players";
 import { type EnrolledPlayer } from "../../services/tournaments";
@@ -12,6 +13,7 @@ import DataTable from "../ui/DataTable.vue";
 const props = defineProps<{ tournamentId: string }>();
 
 const tournaments = useTournamentsStore();
+const confirm = useConfirm();
 const { t } = useI18n();
 
 // --- HU07: enroll player ---
@@ -68,7 +70,13 @@ const withdrawing = ref<string | null>(null);
 
 /** Withdraws an enrolled player from the tournament, after confirmation. */
 async function onWithdraw(player: { playerId: string; name: string }): Promise<void> {
-  if (!window.confirm(t("tournamentAdmin.withdrawConfirm", { name: player.name }))) {
+  const confirmed = await confirm({
+    title: t("tournamentAdmin.withdraw"),
+    message: t("tournamentAdmin.withdrawConfirm", { name: player.name }),
+    confirmLabel: t("tournamentAdmin.withdraw"),
+    danger: true,
+  });
+  if (!confirmed) {
     return;
   }
 

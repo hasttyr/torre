@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
+import { clickConfirmDialogButton, mountConfirmDialogHost } from "../../test-support/confirmDialog";
 import TournamentAdminView from "./TournamentAdminView.vue";
 
 vi.mock("../../services/tournaments", () => ({
@@ -196,21 +197,20 @@ describe("TournamentAdminView", () => {
       },
     ]);
     withdrawPlayerMock.mockResolvedValue(undefined);
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    mountConfirmDialogHost();
 
     const { wrapper } = await mountView();
     expect(wrapper.text()).toContain("Luis Gómez");
 
     const withdrawBtn = wrapper.findAll("button").find((btn) => btn.text() === "Retirar")!;
     await withdrawBtn.trigger("click");
+    await wrapper.vm.$nextTick();
+    await clickConfirmDialogButton("Retirar");
     await new Promise((resolve) => setTimeout(resolve, 0));
     await wrapper.vm.$nextTick();
 
-    expect(confirmSpy).toHaveBeenCalled();
     expect(withdrawPlayerMock).toHaveBeenCalledWith("tournament-1", "j1", undefined);
     expect(wrapper.text()).not.toContain("Luis Gómez");
-
-    confirmSpy.mockRestore();
   });
 
   it("does not withdraw a player when the confirmation is dismissed", async () => {
@@ -225,15 +225,16 @@ describe("TournamentAdminView", () => {
         enrolledAt: "2026-09-17",
       },
     ]);
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    mountConfirmDialogHost();
 
     const { wrapper } = await mountView();
     const withdrawBtn = wrapper.findAll("button").find((btn) => btn.text() === "Retirar")!;
     await withdrawBtn.trigger("click");
+    await wrapper.vm.$nextTick();
+    await clickConfirmDialogButton("Cancelar");
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(withdrawPlayerMock).not.toHaveBeenCalled();
-
-    confirmSpy.mockRestore();
   });
 
   it("disables editing tiebreaks once it's no longer in preliminary state", async () => {

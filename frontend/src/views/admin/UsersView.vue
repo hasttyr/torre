@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
 import DataTable from "../../components/ui/DataTable.vue";
+import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import {
   ALL_ROLES,
@@ -17,6 +18,7 @@ import {
 import { useAuthStore } from "../../stores/auth";
 
 const auth = useAuthStore();
+const confirm = useConfirm();
 const { t } = useI18n();
 
 const users = ref<AdminUser[]>([]);
@@ -59,9 +61,13 @@ async function onRoleChange(user: AdminUser, role: AnyRole): Promise<void> {
 /** Toggles a user's account between ACTIVE and INACTIVE. */
 async function onToggleStatus(user: AdminUser): Promise<void> {
   const nextStatus = user.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-  if (
-    !window.confirm(t("adminUsers.toggleConfirm", { name: user.name, status: t(`adminUsers.status.${nextStatus}`) }))
-  ) {
+  const confirmed = await confirm({
+    title: nextStatus === "INACTIVE" ? t("adminUsers.deactivate") : t("adminUsers.activate"),
+    message: t("adminUsers.toggleConfirm", { name: user.name, status: t(`adminUsers.status.${nextStatus}`) }),
+    confirmLabel: nextStatus === "INACTIVE" ? t("adminUsers.deactivate") : t("adminUsers.activate"),
+    danger: nextStatus === "INACTIVE",
+  });
+  if (!confirmed) {
     return;
   }
 

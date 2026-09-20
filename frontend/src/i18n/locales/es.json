@@ -3,6 +3,10 @@
     "appName": "Torre Central Hub",
     "backToHome": "← Volver al inicio"
   },
+  "confirmDialog": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar"
+  },
   "dataTable": {
     "searchLabel": "Buscar…",
     "noResults": "Sin resultados.",

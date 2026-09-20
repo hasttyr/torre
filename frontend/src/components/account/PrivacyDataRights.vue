@@ -3,12 +3,14 @@ import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
+import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import { requestDataAccess, requestDataSuppression } from "../../services/dataRights";
 import { useAuthStore } from "../../stores/auth";
 
 const auth = useAuthStore();
 const router = useRouter();
+const confirm = useConfirm();
 const { t } = useI18n();
 
 // HU22/Ley 1581 de 2012: derechos ARCO. "Rectificar" ya tiene su propio
@@ -50,7 +52,13 @@ const deleteMessage = ref<string | null>(null);
  * the session is closed right after the confirmation is shown.
  */
 async function onDeleteData(): Promise<void> {
-  if (!window.confirm(t("account.privacyDeleteConfirm"))) {
+  const confirmed = await confirm({
+    title: t("account.privacyDeleteButton"),
+    message: t("account.privacyDeleteConfirm"),
+    confirmLabel: t("account.privacyDeleteButton"),
+    danger: true,
+  });
+  if (!confirmed) {
     return;
   }
 
