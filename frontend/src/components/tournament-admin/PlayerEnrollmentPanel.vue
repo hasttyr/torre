@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { createColumnHelper } from "@tanstack/vue-table";
+import { computed, h, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { extractErrorMessage } from "../../lib/errors";
 import { searchPlayers, type PlayerSearchResult } from "../../services/players";
+import { type EnrolledPlayer } from "../../services/tournaments";
 import { useTournamentsStore } from "../../stores/tournaments";
+import DataTable from "../ui/DataTable.vue";
 
 const props = defineProps<{ tournamentId: string }>();
 
@@ -79,6 +82,31 @@ async function onWithdraw(player: { playerId: string; name: string }): Promise<v
     withdrawing.value = null;
   }
 }
+
+const columnHelper = createColumnHelper<EnrolledPlayer>();
+
+const columns = [
+  columnHelper.accessor("name", { header: () => t("tournamentAdmin.tableName") }),
+  columnHelper.accessor("universityCode", { header: () => t("tournamentAdmin.tableCode") }),
+  columnHelper.accessor("program", { header: () => t("tournamentAdmin.tableProgram") }),
+  columnHelper.accessor("semester", { header: () => t("tournamentAdmin.tableSemester") }),
+  columnHelper.display({
+    id: "actions",
+    header: "",
+    enableSorting: false,
+    cell: ({ row }) =>
+      h(
+        "button",
+        {
+          type: "button",
+          class: "btn btn-ghost",
+          disabled: withdrawing.value === row.original.playerId,
+          onClick: () => onWithdraw(row.original),
+        },
+        t("tournamentAdmin.withdraw"),
+      ),
+  }),
+];
 </script>
 
 <template>
@@ -137,45 +165,12 @@ async function onWithdraw(player: { playerId: string; name: string }): Promise<v
       {{ t("tournamentAdmin.registrationClosedHint") }}
     </p>
 
-    <div v-if="tournaments.enrolledPlayers.length > 0" class="mt-4 -mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
-      <table class="w-full min-w-md border-collapse">
-        <thead>
-          <tr>
-            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
-              {{ t("tournamentAdmin.tableName") }}
-            </th>
-            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
-              {{ t("tournamentAdmin.tableCode") }}
-            </th>
-            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
-              {{ t("tournamentAdmin.tableProgram") }}
-            </th>
-            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
-              {{ t("tournamentAdmin.tableSemester") }}
-            </th>
-            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="player in tournaments.enrolledPlayers" :key="player.playerId">
-            <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.name }}</td>
-            <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.universityCode }}</td>
-            <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.program }}</td>
-            <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.semester }}</td>
-            <td class="border-b border-border-soft px-2.5 py-2 text-sm">
-              <button
-                type="button"
-                class="btn btn-ghost"
-                :disabled="withdrawing === player.playerId"
-                @click="onWithdraw(player)"
-              >
-                {{ t("tournamentAdmin.withdraw") }}
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p v-else class="text-sm text-text-muted">{{ t("tournamentAdmin.noPlayers") }}</p>
+    <DataTable
+      class="mt-4"
+      :columns="columns"
+      :data="tournaments.enrolledPlayers"
+      :search-placeholder="t('tournamentAdmin.tableSearchPlaceholder')"
+      :empty-message="t('tournamentAdmin.noPlayers')"
+    />
   </section>
 </template>

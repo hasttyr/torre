@@ -3,6 +3,13 @@
     "appName": "Torre Central Hub",
     "backToHome": "← Volver al inicio"
   },
+  "dataTable": {
+    "searchLabel": "Buscar…",
+    "noResults": "Sin resultados.",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "pageStatus": "Página {current} de {total}"
+  },
   "authLayout": {
     "defaultQuote": "El ajedrez no perdona ni la más pequeña falla.",
     "defaultQuoteAuthor": "José Raúl Capablanca"
@@ -280,6 +287,7 @@
     "playersSubtitle": "Listado oficial de participantes del torneo.",
     "searchLabel": "Buscar jugador (nombre, correo o código)",
     "searchPlaceholder": "Luis Gómez",
+    "tableSearchPlaceholder": "Buscar en inscritos…",
     "searching": "Buscando…",
     "noResults": "Sin resultados",
     "alreadyEnrolled": "Ya inscrito",
@@ -353,6 +361,8 @@
     "loading": "Cargando usuarios…",
     "loadError": "No se pudieron cargar los usuarios",
     "genericServerError": "No se pudo conectar con el servidor",
+    "searchPlaceholder": "Buscar por nombre, correo, rol…",
+    "empty": "Todavía no hay usuarios registrados.",
     "tableName": "Nombre",
     "tableEmail": "Correo",
     "tableRole": "Rol",

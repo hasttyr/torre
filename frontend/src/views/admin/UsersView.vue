@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { createColumnHelper } from "@tanstack/vue-table";
+import { h, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import DataTable from "../../components/ui/DataTable.vue";
 import { extractErrorMessage } from "../../lib/errors";
-import { useAuthStore } from "../../stores/auth";
 import {
   ALL_ROLES,
   listUsers,
@@ -13,6 +14,7 @@ import {
   type AdminUser,
   type AnyRole,
 } from "../../services/adminUsers";
+import { useAuthStore } from "../../stores/auth";
 
 const auth = useAuthStore();
 const { t } = useI18n();
@@ -32,6 +34,11 @@ onMounted(async () => {
     loading.value = false;
   }
 });
+
+/** Whether the given row's controls should be disabled (in-flight save, or the admin's own row). */
+function isRowLocked(user: AdminUser): boolean {
+  return savingId.value === user.id || user.id === auth.user?.id;
+}
 
 /** Changes a user's role from the row's selector. */
 async function onRoleChange(user: AdminUser, role: AnyRole): Promise<void> {
@@ -70,6 +77,47 @@ async function onToggleStatus(user: AdminUser): Promise<void> {
     savingId.value = null;
   }
 }
+
+const columnHelper = createColumnHelper<AdminUser>();
+
+const columns = [
+  columnHelper.accessor("name", { header: () => t("adminUsers.tableName") }),
+  columnHelper.accessor("email", { header: () => t("adminUsers.tableEmail") }),
+  columnHelper.accessor("role", {
+    header: () => t("adminUsers.tableRole"),
+    enableSorting: false,
+    cell: ({ row }) =>
+      h(
+        "select",
+        {
+          value: row.original.role,
+          disabled: isRowLocked(row.original),
+          onChange: (event: Event) => onRoleChange(row.original, (event.target as HTMLSelectElement).value as AnyRole),
+        },
+        ALL_ROLES.map((role) => h("option", { value: role }, t(`roles.${role}`))),
+      ),
+  }),
+  columnHelper.accessor("status", {
+    header: () => t("adminUsers.tableStatus"),
+    cell: ({ getValue }) => t(`adminUsers.status.${getValue()}`),
+  }),
+  columnHelper.display({
+    id: "actions",
+    header: "",
+    enableSorting: false,
+    cell: ({ row }) =>
+      h(
+        "button",
+        {
+          type: "button",
+          class: "btn btn-ghost",
+          disabled: isRowLocked(row.original),
+          onClick: () => onToggleStatus(row.original),
+        },
+        row.original.status === "ACTIVE" ? t("adminUsers.deactivate") : t("adminUsers.activate"),
+      ),
+  }),
+];
 </script>
 
 <template>
@@ -95,55 +143,12 @@ async function onToggleStatus(user: AdminUser): Promise<void> {
           <p v-if="actionError" role="alert" class="banner banner--error mb-4">{{ actionError }}</p>
         </Transition>
 
-        <div class="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
-          <table class="w-full min-w-2xl border-collapse">
-            <thead>
-              <tr>
-                <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
-                  {{ t("adminUsers.tableName") }}
-                </th>
-                <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
-                  {{ t("adminUsers.tableEmail") }}
-                </th>
-                <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
-                  {{ t("adminUsers.tableRole") }}
-                </th>
-                <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
-                  {{ t("adminUsers.tableStatus") }}
-                </th>
-                <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="user in users" :key="user.id">
-                <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ user.name }}</td>
-                <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ user.email }}</td>
-                <td class="border-b border-border-soft px-2.5 py-2 text-sm">
-                  <select
-                    :value="user.role"
-                    :disabled="savingId === user.id || user.id === auth.user?.id"
-                    @change="onRoleChange(user, ($event.target as HTMLSelectElement).value as AnyRole)"
-                  >
-                    <option v-for="role in ALL_ROLES" :key="role" :value="role">{{ t(`roles.${role}`) }}</option>
-                  </select>
-                </td>
-                <td class="border-b border-border-soft px-2.5 py-2 text-sm">
-                  {{ user.status === "ACTIVE" ? t("adminUsers.status.ACTIVE") : t("adminUsers.status.INACTIVE") }}
-                </td>
-                <td class="border-b border-border-soft px-2.5 py-2 text-sm">
-                  <button
-                    type="button"
-                    class="btn btn-ghost"
-                    :disabled="savingId === user.id || user.id === auth.user?.id"
-                    @click="onToggleStatus(user)"
-                  >
-                    {{ user.status === "ACTIVE" ? t("adminUsers.deactivate") : t("adminUsers.activate") }}
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          :columns="columns"
+          :data="users"
+          :search-placeholder="t('adminUsers.searchPlaceholder')"
+          :empty-message="t('adminUsers.empty')"
+        />
       </section>
     </main>
   </div>
