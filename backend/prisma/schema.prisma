@@ -256,6 +256,12 @@ model Match {
   @@index([roundId])
   @@index([whiteId])
   @@index([blackId])
+  // A board number identifies a match within its round (it's what gets
+  // printed/displayed) — nothing today stops a pairing-generation bug from
+  // inserting two matches on the same board in the same round. Catching
+  // that at the database is cheaper than a duplicate-board incident once
+  // real tournament data exists.
+  @@unique([roundId, board])
   @@map("matches")
 }
 
