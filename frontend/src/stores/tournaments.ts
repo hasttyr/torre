@@ -11,6 +11,7 @@ import {
   listEnrolledTournaments,
   listMyTournaments,
   openRegistration as openTournamentRegistration,
+  withdrawPlayer as withdrawTournamentPlayer,
   type ConfigureTournamentPayload,
   type CreateTournamentPayload,
   type EnrolledPlayer,
@@ -81,6 +82,12 @@ export const useTournamentsStore = defineStore("tournaments", {
     async enrollPlayer(id: string, playerId: string): Promise<void> {
       const enrolledPlayer = await enrollTournamentPlayer(id, playerId);
       this.enrolledPlayers.push(enrolledPlayer);
+    },
+
+    /** Withdraws a player from a tournament and removes it from the enrolled list (HU27). */
+    async withdrawPlayer(id: string, playerId: string, reason?: string): Promise<void> {
+      await withdrawTournamentPlayer(id, playerId, reason);
+      this.enrolledPlayers = this.enrolledPlayers.filter((player) => player.playerId !== playerId);
     },
   },
 });

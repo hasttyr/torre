@@ -12,6 +12,7 @@ const { prismaMock } = vi.hoisted(() => ({
     coachPlayer: { findMany: vi.fn() },
     enrollment: { findFirst: vi.fn() },
     dataRequest: { create: vi.fn() },
+    auditLog: { create: vi.fn() },
   },
 }));
 
@@ -330,7 +331,7 @@ describe("PATCH /api/users/:id/role", () => {
 
   it("allows an ADMINISTRATOR to change another user's role", async () => {
     prismaMock.role.findUnique.mockResolvedValue({ id: "role-arbiter", name: "ARBITER" });
-    prismaMock.user.findUnique.mockResolvedValue({ id: "user-2" });
+    prismaMock.user.findUnique.mockResolvedValue({ id: "user-2", name: "Carlos", role: { name: "PLAYER" } });
     prismaMock.user.update.mockResolvedValue({
       id: "user-2",
       name: "Carlos",
@@ -351,6 +352,10 @@ describe("PATCH /api/users/:id/role", () => {
       where: { id: "user-2" },
       data: { roleId: "role-arbiter" },
       include: { role: true, player: { include: { club: true } } },
+    });
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith({
+      data: { userId: "admin-user", action: "ROLE_CHANGED", detail: "Carlos (PLAYER -> ARBITER)" },
+      select: { id: true },
     });
   });
 

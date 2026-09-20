@@ -2,6 +2,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { HttpError } from "../middlewares/errorHandler";
 import type { UpdateProfileSchemaInput } from "../validators/users.schemas";
+import { recordAuditLog } from "./auditLog.service";
 import { toUserDto, type UserDto } from "./user.mapper";
 
 const PLAYER_FIELDS = ["universityCode", "program", "semester", "birthDate", "gender", "disability"] as const;
@@ -44,13 +45,18 @@ export async function getUserById(prisma: PrismaClient, id: string): Promise<Use
  *
  * @throws {HttpError} 400 if the role doesn't exist, 404 if the user doesn't exist.
  */
-export async function updateUserRole(prisma: PrismaClient, id: string, newRole: string): Promise<UserDto> {
+export async function updateUserRole(
+  prisma: PrismaClient,
+  id: string,
+  newRole: string,
+  actingAdminId: string,
+): Promise<UserDto> {
   const role = await prisma.role.findUnique({ where: { name: newRole } });
   if (!role) {
     throw new HttpError(400, `El rol "${newRole}" no existe`);
   }
 
-  const existingUser = await prisma.user.findUnique({ where: { id } });
+  const existingUser = await prisma.user.findUnique({ where: { id }, include: { role: true } });
   if (!existingUser) {
     throw new HttpError(404, "Usuario no encontrado");
   }
@@ -61,9 +67,14 @@ export async function updateUserRole(prisma: PrismaClient, id: string, newRole: 
     include: { role: true, player: { include: { club: true } } },
   });
 
-  // RN-11 requires logging this change in the audit trail; the AuditLog
-  // entity doesn't exist yet (lands in S13, roadmap increment 9). Once it
-  // does, this is where the record gets written.
+  // RN-11: role changes are a critical administrative action.
+  await recordAuditLog(
+    prisma,
+    actingAdminId,
+    "ROLE_CHANGED",
+    `${existingUser.name} (${existingUser.role.name} -> ${newRole})`,
+  );
+
   return toUserDto(user);
 }
 

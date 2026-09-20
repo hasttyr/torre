@@ -107,3 +107,8 @@ export async function listEnrolledPlayers(tournamentId: string): Promise<Enrolle
   const { data } = await api.get<EnrolledPlayer[]>(`/tournaments/${tournamentId}/players`);
   return data;
 }
+
+/** Withdraws a player from a tournament (HU27). */
+export async function withdrawPlayer(tournamentId: string, playerId: string, reason?: string): Promise<void> {
+  await api.post(`/tournaments/${tournamentId}/players/${playerId}/withdraw`, reason ? { reason } : {});
+}

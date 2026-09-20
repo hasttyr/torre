@@ -45,6 +45,7 @@
     "tournaments": "Tournaments",
     "clubs": "Clubs",
     "myPlayers": "My players",
+    "auditLog": "Audit log",
     "login": "Log in",
     "createAccount": "Create account",
     "openMenu": "Open menu",
@@ -287,7 +288,9 @@
     "tableCode": "Code",
     "tableProgram": "Program",
     "tableSemester": "Semester",
-    "noPlayers": "No players registered yet."
+    "noPlayers": "No players registered yet.",
+    "withdraw": "Withdraw",
+    "withdrawConfirm": "Are you sure you want to withdraw {name} from the tournament?"
   },
   "clubs": {
     "title": "Clubs",
@@ -333,5 +336,12 @@
     "tournamentsSubtitle": "Tournaments where one of your linked players is enrolled.",
     "tournamentsEmpty": "None of your linked players are enrolled in a tournament yet.",
     "myPlayersLabel": "Your enrolled players"
+  },
+  "auditLog": {
+    "title": "Audit log",
+    "subtitle": "Critical administrative actions across the system, with user, date and reason.",
+    "loading": "Loading audit log…",
+    "loadError": "Could not load the audit log",
+    "empty": "No actions recorded yet."
   }
 }

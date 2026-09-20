@@ -45,6 +45,7 @@
     "tournaments": "Torneos",
     "clubs": "Clubes",
     "myPlayers": "Mis jugadores",
+    "auditLog": "Auditoría",
     "login": "Iniciar sesión",
     "createAccount": "Crear cuenta",
     "openMenu": "Abrir menú",
@@ -287,7 +288,9 @@
     "tableCode": "Código",
     "tableProgram": "Programa",
     "tableSemester": "Semestre",
-    "noPlayers": "Todavía no hay jugadores inscritos."
+    "noPlayers": "Todavía no hay jugadores inscritos.",
+    "withdraw": "Retirar",
+    "withdrawConfirm": "¿Seguro que quieres retirar a {name} del torneo?"
   },
   "clubs": {
     "title": "Clubes",
@@ -333,5 +336,12 @@
     "tournamentsSubtitle": "Torneos donde alguno de tus jugadores vinculados está inscrito.",
     "tournamentsEmpty": "Ninguno de tus jugadores vinculados está inscrito en un torneo todavía.",
     "myPlayersLabel": "Tus jugadores inscritos"
+  },
+  "auditLog": {
+    "title": "Bitácora de auditoría",
+    "subtitle": "Acciones administrativas críticas del sistema, con usuario, fecha y motivo.",
+    "loading": "Cargando bitácora…",
+    "loadError": "No se pudo cargar la bitácora de auditoría",
+    "empty": "Todavía no hay acciones registradas."
   }
 }

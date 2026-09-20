@@ -31,7 +31,7 @@ export const updateRole = asyncHandler(async (req, res) => {
     throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join("; "));
   }
 
-  const user = await updateUserRole(prisma, String(req.params.id), parsed.data.role);
+  const user = await updateUserRole(prisma, String(req.params.id), parsed.data.role, req.user!.id);
   res.status(200).json(user);
 });
 

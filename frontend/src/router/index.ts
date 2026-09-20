@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 import { useAuthStore } from "../stores/auth";
+import AuditLogView from "../views/admin/AuditLogView.vue";
 import ForgotPasswordView from "../views/auth/ForgotPasswordView.vue";
 import LoginView from "../views/auth/LoginView.vue";
 import RegisterView from "../views/auth/RegisterView.vue";
@@ -87,6 +88,12 @@ export const router = createRouter({
       name: "coach-players",
       component: CoachPlayersView,
       meta: { requiresAuth: true, roles: ["COACH"] },
+    },
+    {
+      path: "/auditoria",
+      name: "audit-log",
+      component: AuditLogView,
+      meta: { requiresAuth: true, roles: ["ADMINISTRATOR"] },
     },
   ],
 });

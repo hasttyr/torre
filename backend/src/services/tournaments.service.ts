@@ -1,7 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { HttpError } from "../middlewares/errorHandler";
-import type { ConfigureTournamentSchemaInput, CreateTournamentSchemaInput } from "../validators/tournaments.schemas";
+import type {
+  ConfigureTournamentSchemaInput,
+  CreateTournamentSchemaInput,
+  WithdrawPlayerSchemaInput,
+} from "../validators/tournaments.schemas";
+import { recordAuditLog } from "./auditLog.service";
 import { toTournamentDto, type TournamentDto } from "./tournament.mapper";
 
 /** Checks whether a Prisma error is a unique-constraint violation (P2002). */
@@ -307,7 +312,8 @@ export async function listEnrolledPlayers(
   assertCanManageTournament(tournament, userId, role);
 
   const enrollments = await prisma.enrollment.findMany({
-    where: { tournamentId },
+    // HU27: a withdrawn player isn't part of the active roster anymore.
+    where: { tournamentId, withdrawnAt: null },
     include: { player: { include: { user: true } } },
     orderBy: { createdAt: "asc" },
   });
@@ -320,4 +326,41 @@ export async function listEnrolledPlayers(
     semester: enrollment.player.semester,
     enrolledAt: enrollment.createdAt,
   }));
+}
+
+/**
+ * Withdraws a player from a tournament (HU27): their enrollment is kept for
+ * history but excluded from the active roster and future pairings.
+ *
+ * @throws {HttpError} 404 if the tournament doesn't exist or the player
+ * isn't (actively) enrolled, 403 if not allowed to manage the tournament.
+ */
+export async function withdrawPlayer(
+  prisma: PrismaClient,
+  tournamentId: string,
+  playerId: string,
+  userId: string,
+  role: string,
+  data: WithdrawPlayerSchemaInput,
+): Promise<void> {
+  const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
+  if (!tournament) {
+    throw new HttpError(404, "Torneo no encontrado");
+  }
+  assertCanManageTournament(tournament, userId, role);
+
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { tournamentId_playerId: { tournamentId, playerId } },
+    include: { player: { include: { user: true } } },
+  });
+  if (!enrollment || enrollment.withdrawnAt) {
+    throw new HttpError(404, "El jugador no está inscrito activamente en este torneo");
+  }
+
+  await prisma.enrollment.update({ where: { id: enrollment.id }, data: { withdrawnAt: new Date() } });
+
+  // RN-11: a player withdrawal is a critical administrative action.
+  const reasonSuffix = data.reason ? ` — ${data.reason}` : "";
+  const detail = `${enrollment.player.user.name} de "${tournament.name}"${reasonSuffix}`;
+  await recordAuditLog(prisma, userId, "PLAYER_WITHDRAWN", detail);
 }

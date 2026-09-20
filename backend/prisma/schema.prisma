@@ -92,6 +92,7 @@ model User {
   passwordResetRequests PasswordResetRequest[]
   dataRequests          DataRequest[]
   coachLinks            CoachPlayer[]          @relation("CoachLinks")
+  auditLogs             AuditLog[]
 
   @@map("users")
 }
@@ -291,10 +292,14 @@ model Standing {
 // to Standing), but it's needed before a Standing exists: it's where RN-01
 // is enforced (a player can't enroll twice in the same tournament).
 model Enrollment {
-  id           String   @id @default(uuid())
-  tournamentId String   @map("tournament_id")
-  playerId     String   @map("player_id")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id           String    @id @default(uuid())
+  tournamentId String    @map("tournament_id")
+  playerId     String    @map("player_id")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  // HU27: a withdrawn player keeps their enrollment row (history, past
+  // matches) but is excluded from the active roster and from future
+  // pairings. null = still an active participant.
+  withdrawnAt  DateTime? @map("withdrawn_at")
 
   tournament Tournament @relation(fields: [tournamentId], references: [id])
   player     Player     @relation(fields: [playerId], references: [id])
@@ -335,6 +340,24 @@ enum DataRequestType {
 enum DataRequestStatus {
   RESOLVED
   BLOCKED
+}
+
+// HU31/RN-11: trazabilidad de acciones administrativas críticas (cambio de
+// rol, corrección de resultado, ajuste manual de emparejamiento, retiro de
+// jugador). `action` is a short machine-readable code (e.g.
+// "ROLE_CHANGED", "PLAYER_WITHDRAWN"), not a closed enum: the set of
+// critical actions grows as later HUs (result correction, pairing
+// adjustment) land, and a new one shouldn't require a migration.
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  action    String
+  detail    String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
 }
 
 model DataRequest {

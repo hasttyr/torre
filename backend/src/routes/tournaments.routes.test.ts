@@ -9,8 +9,9 @@ const { prismaMock } = vi.hoisted(() => ({
     tournament: { create: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
     round: { findFirst: vi.fn() },
     player: { findUnique: vi.fn() },
-    enrollment: { create: vi.fn(), findMany: vi.fn() },
+    enrollment: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
     tiebreakCriterion: { deleteMany: vi.fn(), createMany: vi.fn() },
+    auditLog: { create: vi.fn() },
     $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn(prismaMock)),
   },
 }));
@@ -224,6 +225,10 @@ describe("GET /api/tournaments/:id/players", () => {
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`);
 
     expect(response.status).toBe(200);
+    expect(prismaMock.enrollment.findMany.mock.calls[0][0].where).toEqual({
+      tournamentId: "tournament-1",
+      withdrawnAt: null,
+    });
   });
 
   it("responds 403 for a PLAYER querying the roster of an unrelated tournament", async () => {
@@ -335,5 +340,84 @@ describe("POST /api/tournaments/:id/players", () => {
 
     expect(response.status).toBe(409);
     expect(prismaMock.enrollment.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /api/tournaments/:id/players/:playerId/withdraw", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("withdraws an actively enrolled player and records the audit trail (HU27/RN-11)", async () => {
+    prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
+    prismaMock.enrollment.findUnique.mockResolvedValue({
+      id: "enrollment-1",
+      withdrawnAt: null,
+      player: { user: { name: "Luis Gómez" } },
+    });
+
+    const response = await request(createApp())
+      .post("/api/tournaments/tournament-1/players/player-1/withdraw")
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`)
+      .send({ reason: "Motivos personales" });
+
+    expect(response.status).toBe(204);
+    expect(prismaMock.enrollment.update.mock.calls[0][0]).toMatchObject({
+      where: { id: "enrollment-1" },
+      data: { withdrawnAt: expect.any(Date) },
+    });
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith({
+      data: {
+        userId: "user-1",
+        action: "PLAYER_WITHDRAWN",
+        detail: 'Luis Gómez de "Copa Universitaria" — Motivos personales',
+      },
+      select: { id: true },
+    });
+  });
+
+  it("responds 404 when the player isn't actively enrolled", async () => {
+    prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
+    prismaMock.enrollment.findUnique.mockResolvedValue(null);
+
+    const response = await request(createApp())
+      .post("/api/tournaments/tournament-1/players/player-1/withdraw")
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`)
+      .send({});
+
+    expect(response.status).toBe(404);
+    expect(prismaMock.enrollment.update).not.toHaveBeenCalled();
+  });
+
+  it("responds 404 when the player was already withdrawn", async () => {
+    prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
+    prismaMock.enrollment.findUnique.mockResolvedValue({
+      id: "enrollment-1",
+      withdrawnAt: new Date("2026-09-01"),
+      player: { user: { name: "Luis Gómez" } },
+    });
+
+    const response = await request(createApp())
+      .post("/api/tournaments/tournament-1/players/player-1/withdraw")
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`)
+      .send({});
+
+    expect(response.status).toBe(404);
+  });
+
+  it("responds 403 for an organizer who doesn't own the tournament", async () => {
+    prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
+
+    const response = await request(createApp())
+      .post("/api/tournaments/tournament-1/players/player-1/withdraw")
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "other-user")}`)
+      .send({});
+
+    expect(response.status).toBe(403);
+  });
+
+  it("responds 401 without a token", async () => {
+    const response = await request(createApp()).post("/api/tournaments/tournament-1/players/player-1/withdraw");
+    expect(response.status).toBe(401);
   });
 });

@@ -37,3 +37,12 @@ export type ConfigureTournamentSchemaInput = z.infer<typeof configureTournamentS
 export const enrollPlayerSchema = z.object({
   playerId: z.string().uuid("El id de jugador no es válido"),
 });
+
+// HU27/RN-11: the reason is optional (the HU doesn't make it mandatory,
+// unlike RN-09 for manual pairing adjustments) but recorded in the audit
+// trail when given.
+export const withdrawPlayerSchema = z.object({
+  reason: z.string().trim().min(1, "El motivo no puede quedar vacío").optional(),
+});
+
+export type WithdrawPlayerSchemaInput = z.infer<typeof withdrawPlayerSchema>;

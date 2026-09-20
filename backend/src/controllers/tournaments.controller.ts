@@ -12,11 +12,13 @@ import {
   listMyTournaments,
   openRegistration,
   getTournament,
+  withdrawPlayer,
 } from "../services/tournaments.service";
 import {
   configureTournamentSchema,
   createTournamentSchema,
   enrollPlayerSchema,
+  withdrawPlayerSchema,
 } from "../validators/tournaments.schemas";
 
 /** GET /tournaments/mine — tournaments the current user organizes. */
@@ -98,4 +100,22 @@ export const enroll = asyncHandler(async (req, res) => {
 export const listPlayers = asyncHandler(async (req, res) => {
   const players = await listEnrolledPlayers(prisma, String(req.params.id), req.user!.id, req.user!.role);
   res.status(200).json(players);
+});
+
+/** POST /tournaments/:id/players/:playerId/withdraw — withdraws a player from the tournament (HU27). */
+export const withdraw = asyncHandler(async (req, res) => {
+  const parsed = withdrawPlayerSchema.safeParse(req.body);
+  if (!parsed.success) {
+    throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join("; "));
+  }
+
+  await withdrawPlayer(
+    prisma,
+    String(req.params.id),
+    String(req.params.playerId),
+    req.user!.id,
+    req.user!.role,
+    parsed.data,
+  );
+  res.status(204).send();
 });

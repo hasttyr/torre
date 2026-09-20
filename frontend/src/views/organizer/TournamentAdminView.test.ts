@@ -14,6 +14,7 @@ vi.mock("../../services/tournaments", () => ({
   closeRegistration: vi.fn(),
   enrollPlayer: vi.fn(),
   listEnrolledPlayers: vi.fn(),
+  withdrawPlayer: vi.fn(),
 }));
 
 vi.mock("../../services/players", () => ({
@@ -26,6 +27,7 @@ import {
   configureTournament,
   enrollPlayer,
   listEnrolledPlayers,
+  withdrawPlayer,
   getTournament,
 } from "../../services/tournaments";
 import { searchPlayers } from "../../services/players";
@@ -36,6 +38,7 @@ const configureTournamentMock = vi.mocked(configureTournament);
 const openRegistrationMock = vi.mocked(openRegistration);
 const closeRegistrationMock = vi.mocked(closeRegistration);
 const enrollPlayerMock = vi.mocked(enrollPlayer);
+const withdrawPlayerMock = vi.mocked(withdrawPlayer);
 const searchPlayersMock = vi.mocked(searchPlayers);
 
 const CREATED_TOURNAMENT = {
@@ -178,6 +181,59 @@ describe("TournamentAdminView", () => {
 
     expect(enrollPlayerMock).toHaveBeenCalledWith("tournament-1", "j1");
     expect(wrapper.text()).toContain("Luis Gómez");
+  });
+
+  it("withdraws an enrolled player after confirmation (HU27)", async () => {
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
+    listEnrolledPlayersMock.mockResolvedValue([
+      {
+        playerId: "j1",
+        name: "Luis Gómez",
+        universityCode: "U1",
+        program: "Sistemas",
+        semester: 5,
+        enrolledAt: "2026-09-17",
+      },
+    ]);
+    withdrawPlayerMock.mockResolvedValue(undefined);
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    const { wrapper } = await mountView();
+    expect(wrapper.text()).toContain("Luis Gómez");
+
+    const withdrawBtn = wrapper.findAll("button").find((btn) => btn.text() === "Retirar")!;
+    await withdrawBtn.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    expect(confirmSpy).toHaveBeenCalled();
+    expect(withdrawPlayerMock).toHaveBeenCalledWith("tournament-1", "j1", undefined);
+    expect(wrapper.text()).not.toContain("Luis Gómez");
+
+    confirmSpy.mockRestore();
+  });
+
+  it("does not withdraw a player when the confirmation is dismissed", async () => {
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
+    listEnrolledPlayersMock.mockResolvedValue([
+      {
+        playerId: "j1",
+        name: "Luis Gómez",
+        universityCode: "U1",
+        program: "Sistemas",
+        semester: 5,
+        enrolledAt: "2026-09-17",
+      },
+    ]);
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+
+    const { wrapper } = await mountView();
+    const withdrawBtn = wrapper.findAll("button").find((btn) => btn.text() === "Retirar")!;
+    await withdrawBtn.trigger("click");
+
+    expect(withdrawPlayerMock).not.toHaveBeenCalled();
+
+    confirmSpy.mockRestore();
   });
 
   it("disables editing tiebreaks once it's no longer in preliminary state", async () => {

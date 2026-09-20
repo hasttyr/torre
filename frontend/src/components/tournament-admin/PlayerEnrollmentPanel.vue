@@ -58,6 +58,27 @@ async function onEnroll(player: PlayerSearchResult): Promise<void> {
     submitting.value = false;
   }
 }
+
+// --- HU27: withdraw player ---
+
+const withdrawing = ref<string | null>(null);
+
+/** Withdraws an enrolled player from the tournament, after confirmation. */
+async function onWithdraw(player: { playerId: string; name: string }): Promise<void> {
+  if (!window.confirm(t("tournamentAdmin.withdrawConfirm", { name: player.name }))) {
+    return;
+  }
+
+  error.value = null;
+  withdrawing.value = player.playerId;
+  try {
+    await tournaments.withdrawPlayer(props.tournamentId, player.playerId);
+  } catch (submitError) {
+    error.value = extractErrorMessage(submitError, t("tournamentAdmin.genericServerError"));
+  } finally {
+    withdrawing.value = null;
+  }
+}
 </script>
 
 <template>
@@ -132,6 +153,7 @@ async function onEnroll(player: PlayerSearchResult): Promise<void> {
             <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm">
               {{ t("tournamentAdmin.tableSemester") }}
             </th>
+            <th class="border-b border-border-soft px-2.5 py-2 text-left text-sm"></th>
           </tr>
         </thead>
         <tbody>
@@ -140,6 +162,16 @@ async function onEnroll(player: PlayerSearchResult): Promise<void> {
             <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.universityCode }}</td>
             <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.program }}</td>
             <td class="border-b border-border-soft px-2.5 py-2 text-sm">{{ player.semester }}</td>
+            <td class="border-b border-border-soft px-2.5 py-2 text-sm">
+              <button
+                type="button"
+                class="btn btn-ghost"
+                :disabled="withdrawing === player.playerId"
+                @click="onWithdraw(player)"
+              >
+                {{ t("tournamentAdmin.withdraw") }}
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>

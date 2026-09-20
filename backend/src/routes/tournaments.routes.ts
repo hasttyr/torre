@@ -11,6 +11,7 @@ import {
   listMyEnrollments,
   listPlayers,
   open,
+  withdraw,
 } from "../controllers/tournaments.controller";
 import { requireAuth, requireRole } from "../middlewares/auth";
 
@@ -33,3 +34,4 @@ tournamentsRouter.post("/:id/registration/open", requireAuth, canManage, open);
 tournamentsRouter.post("/:id/registration/close", requireAuth, canManage, close);
 tournamentsRouter.post("/:id/players", requireAuth, canManage, enroll);
 tournamentsRouter.get("/:id/players", requireAuth, canManage, listPlayers);
+tournamentsRouter.post("/:id/players/:playerId/withdraw", requireAuth, canManage, withdraw);
