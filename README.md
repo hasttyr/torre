@@ -13,6 +13,7 @@ Torre Central Hub automatiza el ciclo completo de un torneo de ajedrez universit
 - [Roadmap](#roadmap)
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [Puesta en marcha](#puesta-en-marcha)
+- [Datos de prueba](#datos-de-prueba)
 - [Documentación](#documentación)
 - [Autor](#autor)
 
@@ -131,6 +132,25 @@ npm install
 cp .env.example .env
 npm run dev                # http://localhost:5173
 ```
+
+## Datos de prueba
+
+`backend/prisma/seed.ts` crea el catálogo de roles y una cuenta de prueba por cada rol, para no tener que registrar manualmente un usuario de cada tipo:
+
+```bash
+cd backend
+npm run prisma:seed
+```
+
+| Rol | Correo | Contraseña |
+|---|---|---|
+| Administrador | admin@test.com | Test1234 |
+| Organizador | organizer@test.com | Test1234 |
+| Árbitro | arbiter@test.com | Test1234 |
+| Entrenador | coach@test.com | Test1234 |
+| Jugador | player@test.com | Test1234 |
+
+El seed es idempotente (`upsert` con `update: {}`): correrlo de nuevo no sobrescribe contraseñas ni datos que hayas modificado a mano mientras pruebas, solo crea lo que falte. Son cuentas de solo desarrollo local — no ejecutar contra una base de producción.
 
 ## Documentación
 
