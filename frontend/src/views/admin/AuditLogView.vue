@@ -74,7 +74,7 @@ function formatDate(date: string): string {
           </div>
           <p class="text-sm">
             <strong>{{ log.userName }}</strong>
-            <span v-if="log.detail"> — {{ log.detail }}</span>
+            <span v-if="log.detail"> - {{ log.detail }}</span>
           </p>
         </li>
       </ul>
