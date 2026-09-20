@@ -144,6 +144,9 @@ model Player {
   enrollments    Enrollment[]
   coachLinks     CoachPlayer[]
 
+  // Powers listClubPlayers/deleteClub's player.count today; Prisma doesn't
+  // index a plain FK column on its own.
+  @@index([clubId])
   @@map("players")
 }
 
@@ -171,7 +174,12 @@ model CoachPlayer {
   coach  User   @relation("CoachLinks", fields: [coachId], references: [id])
   player Player @relation(fields: [playerId], references: [id])
 
+  // @@unique([coachId, playerId]) already indexes coachId as its leading
+  // column (used by listLinkedPlayers); playerId needs its own index for
+  // listMyCoaches's WHERE playerId, a B-tree can't use a composite index's
+  // trailing column on its own.
   @@unique([coachId, playerId])
+  @@index([playerId])
   @@map("coach_players")
 }
 
@@ -203,6 +211,8 @@ model Tournament {
   standings        Standing[]
   enrollments      Enrollment[]
 
+  // Powers listMyTournaments's WHERE organizerId for a non-admin organizer.
+  @@index([organizerId])
   @@map("tournaments")
 }
 
@@ -239,6 +249,13 @@ model Match {
   black  Player? @relation("MatchBlack", fields: [blackId], references: [id])
   result Result?
 
+  // The pairing engine (HU08) will constantly query "matches in this
+  // round" and "has this player already faced X" (RN: no repeated
+  // pairings) — none of these three FKs are covered by any unique
+  // constraint, so each needs its own index.
+  @@index([roundId])
+  @@index([whiteId])
+  @@index([blackId])
   @@map("matches")
 }
 
@@ -283,7 +300,11 @@ model Standing {
   tournament Tournament @relation(fields: [tournamentId], references: [id])
   player     Player     @relation(fields: [playerId], references: [id])
 
+  // @@unique([tournamentId, playerId]) covers tournamentId-only lookups
+  // (leading column); playerId needs its own index for a player's
+  // cross-tournament history/stats (HU15/HU16).
   @@unique([tournamentId, playerId])
+  @@index([playerId])
   @@map("standings")
 }
 
@@ -304,7 +325,11 @@ model Enrollment {
   tournament Tournament @relation(fields: [tournamentId], references: [id])
   player     Player     @relation(fields: [playerId], references: [id])
 
+  // @@unique([tournamentId, playerId]) covers tournamentId-only lookups
+  // (leading column); playerId needs its own index for
+  // listEnrolledTournaments's WHERE playerId (a player's own registrations).
   @@unique([tournamentId, playerId])
+  @@index([playerId])
   @@map("enrollments")
 }
 
