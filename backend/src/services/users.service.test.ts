@@ -44,6 +44,7 @@ describe("getUserById", () => {
       age: null,
       gender: null,
       disability: null,
+      club: null,
     });
   });
 

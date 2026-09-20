@@ -9,6 +9,7 @@ const { prismaMock } = vi.hoisted(() => ({
     role: { findUnique: vi.fn() },
     user: { findUnique: vi.fn(), update: vi.fn() },
     player: { findUnique: vi.fn() },
+    coachPlayer: { findMany: vi.fn() },
     enrollment: { findFirst: vi.fn() },
     dataRequest: { create: vi.fn() },
   },
@@ -48,8 +49,32 @@ describe("GET /api/users/me", () => {
     expect(response.body).toMatchObject({ id: "user-1", email: "ana@example.com", role: "ORGANIZER" });
     expect(prismaMock.user.findUnique).toHaveBeenCalledWith({
       where: { id: "user-1" },
-      include: { role: true, player: true },
+      include: { role: true, player: { include: { club: true } } },
     });
+  });
+
+  it("includes the player's club when they belong to one (HU23)", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      name: "Luis Gómez",
+      email: "luis@example.com",
+      status: "ACTIVE",
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      role: { id: "role-1", name: "PLAYER" },
+      player: {
+        universityCode: "U1",
+        program: "Sistemas",
+        semester: 5,
+        club: { id: "club-1", name: "Club Ajedrez Central" },
+      },
+    });
+
+    const response = await request(createApp())
+      .get("/api/users/me")
+      .set("Authorization", `Bearer ${tokenFor("PLAYER", "user-1")}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body.player.club).toEqual({ id: "club-1", name: "Club Ajedrez Central" });
   });
 
   it("responds 404 when the token's user no longer exists", async () => {
@@ -60,6 +85,42 @@ describe("GET /api/users/me", () => {
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`);
 
     expect(response.status).toBe(404);
+  });
+});
+
+describe("GET /api/users/me/coaches", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("responds 401 without a token", async () => {
+    const response = await request(createApp()).get("/api/users/me/coaches");
+    expect(response.status).toBe(401);
+  });
+
+  it("lists the coaches linked to the current player", async () => {
+    prismaMock.player.findUnique.mockResolvedValue({ id: "player-1", userId: "user-1" });
+    prismaMock.coachPlayer.findMany.mockResolvedValue([
+      { coach: { id: "coach-1", name: "Marta Ríos", email: "marta@example.com" } },
+    ]);
+
+    const response = await request(createApp())
+      .get("/api/users/me/coaches")
+      .set("Authorization", `Bearer ${tokenFor("PLAYER", "user-1")}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([{ id: "coach-1", name: "Marta Ríos", email: "marta@example.com" }]);
+  });
+
+  it("returns an empty list when the user has no player profile", async () => {
+    prismaMock.player.findUnique.mockResolvedValue(null);
+
+    const response = await request(createApp())
+      .get("/api/users/me/coaches")
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([]);
   });
 });
 
@@ -289,7 +350,7 @@ describe("PATCH /api/users/:id/role", () => {
     expect(prismaMock.user.update).toHaveBeenCalledWith({
       where: { id: "user-2" },
       data: { roleId: "role-arbiter" },
-      include: { role: true, player: true },
+      include: { role: true, player: { include: { club: true } } },
     });
   });
 

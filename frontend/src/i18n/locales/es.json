@@ -168,7 +168,6 @@
     "semesterPlaceholder": "5",
     "submit": "Crear cuenta",
     "submitting": "Creando cuenta...",
-    "successMessage": "Cuenta creada para {email}. Ya puedes iniciar sesión.",
     "acceptDataPolicyLabel": "Acepto la política de tratamiento de datos personales, conforme a la Ley 1581 de 2012.",
     "acceptDataPolicyRequired": "Debés aceptar la política de tratamiento de datos personales"
   },
@@ -209,7 +208,15 @@
     "privacyDeleteButton": "Eliminar mis datos",
     "privacyDeleting": "Procesando...",
     "privacyDeleteConfirm": "¿Seguro que quieres solicitar la eliminación de tus datos personales? Se cerrará tu sesión.",
-    "privacyGenericError": "No se pudo conectar con el servidor"
+    "privacyGenericError": "No se pudo conectar con el servidor",
+    "affiliationsTitle": "Mi club y entrenadores",
+    "affiliationsSubtitle": "Información de solo lectura; la administra tu club u organizador.",
+    "affiliationsLoadError": "No se pudieron cargar tus entrenadores vinculados",
+    "clubLabel": "Club",
+    "noClub": "Sin club asignado",
+    "coachesLabel": "Entrenadores",
+    "coachesLoading": "Cargando…",
+    "noCoaches": "Todavía no tienes ningún entrenador vinculado."
   },
   "dashboard": {
     "title": "Mis torneos",
@@ -321,6 +328,10 @@
     "alreadyLinked": "Ya vinculado",
     "link": "Vincular",
     "unlink": "Desvincular",
-    "empty": "Todavía no estás vinculado con ningún jugador."
+    "empty": "Todavía no estás vinculado con ningún jugador.",
+    "tournamentsTitle": "Torneos de mis jugadores",
+    "tournamentsSubtitle": "Torneos donde alguno de tus jugadores vinculados está inscrito.",
+    "tournamentsEmpty": "Ninguno de tus jugadores vinculados está inscrito en un torneo todavía.",
+    "myPlayersLabel": "Tus jugadores inscritos"
   }
 }

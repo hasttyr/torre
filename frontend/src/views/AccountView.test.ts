@@ -15,13 +15,15 @@ vi.mock("../services/auth", async (importOriginal) => {
     logoutUser: vi.fn(),
     fetchMe: vi.fn(),
     updateProfile: vi.fn(),
+    listMyCoaches: vi.fn(),
   };
 });
 
-import { fetchMe, updateProfile } from "../services/auth";
+import { fetchMe, listMyCoaches, updateProfile } from "../services/auth";
 
 const fetchMeMock = vi.mocked(fetchMe);
 const updateProfileMock = vi.mocked(updateProfile);
+const listMyCoachesMock = vi.mocked(listMyCoaches);
 
 const DATA_CONSENT = { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" };
 
@@ -51,6 +53,7 @@ const PLAYER = {
     age: null,
     gender: null,
     disability: null,
+    club: null,
   },
 };
 
@@ -74,6 +77,7 @@ describe("AccountView", () => {
     localStorage.clear();
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    listMyCoachesMock.mockResolvedValue([]);
   });
 
   it("shows the user data saved in the store while refreshing the profile", async () => {
@@ -204,6 +208,38 @@ describe("AccountView", () => {
 
     expect(updateProfileMock).toHaveBeenCalledWith({ name: "Ana T." });
     expect(wrapper.text()).toContain("Perfil actualizado");
+  });
+
+  it("shows the player's club and linked coaches (HU23/HU24)", async () => {
+    const auth = useAuthStore();
+    const playerWithClub = {
+      ...PLAYER,
+      player: { ...PLAYER.player, club: { id: "club-1", name: "Club Ajedrez Central" } },
+    };
+    auth.$patch({ token: "token", user: playerWithClub });
+    fetchMeMock.mockResolvedValue(playerWithClub);
+    listMyCoachesMock.mockResolvedValue([{ id: "coach-1", name: "Marta Ríos", email: "marta@example.com" }]);
+
+    const wrapper = await mountAccountView();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain("Club Ajedrez Central");
+    expect(wrapper.text()).toContain("Marta Ríos");
+  });
+
+  it("shows an empty-state message when the player has no club or coaches", async () => {
+    const auth = useAuthStore();
+    auth.$patch({ token: "token", user: PLAYER });
+    fetchMeMock.mockResolvedValue(PLAYER);
+    listMyCoachesMock.mockResolvedValue([]);
+
+    const wrapper = await mountAccountView();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain("Sin club asignado");
+    expect(wrapper.text()).toContain("Todavía no tienes ningún entrenador vinculado");
   });
 
   it("shows the backend error when saving the profile fails", async () => {

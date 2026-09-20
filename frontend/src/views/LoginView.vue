@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import AuthLayout from "../components/AuthLayout.vue";
 import { extractErrorMessage } from "../lib/errors";
+import { roleHomePath } from "../lib/roleHome";
 import { useAuthStore } from "../stores/auth";
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 const { t } = useI18n();
 
@@ -47,7 +49,12 @@ async function onSubmit(): Promise<void> {
   submitting.value = true;
   try {
     await auth.login(form.email.trim(), form.password);
-    router.push("/cuenta");
+    const redirect = route.query.redirect;
+    // Only honor an internal, single-slash path: the redirect query comes
+    // from the router guard, but it's still user-controlled input via the
+    // URL bar, and "//evil.com" is browser-parsed as an external URL.
+    const isSafeInternalPath = typeof redirect === "string" && redirect.startsWith("/") && !redirect.startsWith("//");
+    router.push(isSafeInternalPath ? redirect : roleHomePath(auth.user!.role));
   } catch (error) {
     serverError.value = extractErrorMessage(error, t("auth.serverError"));
   } finally {

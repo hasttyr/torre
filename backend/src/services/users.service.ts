@@ -29,7 +29,10 @@ function buildPlayerData(data: UpdateProfileSchemaInput): Prisma.PlayerUpdateWit
  * @throws {HttpError} 404 if no user exists with that id.
  */
 export async function getUserById(prisma: PrismaClient, id: string): Promise<UserDto> {
-  const user = await prisma.user.findUnique({ where: { id }, include: { role: true, player: true } });
+  const user = await prisma.user.findUnique({
+    where: { id },
+    include: { role: true, player: { include: { club: true } } },
+  });
   if (!user) {
     throw new HttpError(404, "Usuario no encontrado");
   }
@@ -55,7 +58,7 @@ export async function updateUserRole(prisma: PrismaClient, id: string, newRole: 
   const user = await prisma.user.update({
     where: { id },
     data: { roleId: role.id },
-    include: { role: true, player: true },
+    include: { role: true, player: { include: { club: true } } },
   });
 
   // RN-11 requires logging this change in the audit trail; the AuditLog
@@ -96,8 +99,33 @@ export async function updateOwnProfile(
       ...(data.name !== undefined ? { name: data.name.trim() } : {}),
       ...(hasPlayerUpdates ? { player: { update: buildPlayerData(data) } } : {}),
     },
-    include: { role: true, player: true },
+    include: { role: true, player: { include: { club: true } } },
   });
 
   return toUserDto(user);
+}
+
+export interface MyCoachDto {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// HU24 (the player's side of the link): a player can see who follows their
+// progress. Empty for a user without a player profile, same rule as
+// listEnrolledTournaments in tournaments.service.ts.
+/** Lists the coaches linked to the current user (as a player). */
+export async function listMyCoaches(prisma: PrismaClient, userId: string): Promise<MyCoachDto[]> {
+  const player = await prisma.player.findUnique({ where: { userId } });
+  if (!player) {
+    return [];
+  }
+
+  const links = await prisma.coachPlayer.findMany({
+    where: { playerId: player.id },
+    include: { coach: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return links.map((link) => ({ id: link.coach.id, name: link.coach.name, email: link.coach.email }));
 }

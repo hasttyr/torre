@@ -1,4 +1,9 @@
-import type { Player, Role, User } from "@prisma/client";
+import type { Club, Player, Role, User } from "@prisma/client";
+
+export interface PlayerClubDto {
+  id: string;
+  name: string;
+}
 
 export interface PlayerProfileDto {
   universityCode: string;
@@ -10,6 +15,8 @@ export interface PlayerProfileDto {
   age: number | null;
   gender: string | null;
   disability: string | null;
+  // HU23: null when the player isn't currently in a club.
+  club: PlayerClubDto | null;
 }
 
 // HU22 ("access"): exposed on the profile so the data subject can see, without
@@ -48,7 +55,7 @@ export function calculateAge(birthDate: Date, today: Date = new Date()): number 
 }
 
 /** Maps a Prisma user (with its role and optional player profile) to the public {@link UserDto} shape. */
-export function toUserDto(user: User & { role: Role; player?: Player | null }): UserDto {
+export function toUserDto(user: User & { role: Role; player?: (Player & { club?: Club | null }) | null }): UserDto {
   return {
     id: user.id,
     name: user.name,
@@ -71,6 +78,7 @@ export function toUserDto(user: User & { role: Role; player?: Player | null }): 
             age: user.player.birthDate ? calculateAge(user.player.birthDate) : null,
             gender: user.player.gender,
             disability: user.player.disability,
+            club: user.player.club ? { id: user.player.club.id, name: user.player.club.name } : null,
           },
         }
       : {}),

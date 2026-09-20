@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 
 import { HttpError } from "../middlewares/errorHandler";
 import type { LinkPlayerSchemaInput } from "../validators/coaches.schemas";
+import { toTournamentDto, type TournamentDto } from "./tournament.mapper";
 
 /** Checks whether a Prisma error is a unique-constraint violation (P2002). */
 function isUniqueConstraintError(error: unknown): boolean {
@@ -82,4 +83,53 @@ export async function unlinkPlayer(prisma: PrismaClient, coachId: string, player
   }
 
   await prisma.coachPlayer.delete({ where: { id: link.id } });
+}
+
+export interface CoachTournamentPlayerDto {
+  playerId: string;
+  name: string;
+}
+
+export interface CoachTournamentDto extends TournamentDto {
+  // Only the coach's own linked players enrolled in this tournament — not
+  // the full roster (that stays restricted to the organizer/admin, see
+  // listEnrolledPlayers in tournaments.service.ts).
+  myPlayers: CoachTournamentPlayerDto[];
+}
+
+/**
+ * Lists the tournaments where at least one of the coach's linked players is
+ * enrolled, together with which of their players are enrolled in each one.
+ */
+export async function listCoachTournaments(prisma: PrismaClient, coachId: string): Promise<CoachTournamentDto[]> {
+  const links = await prisma.coachPlayer.findMany({ where: { coachId }, select: { playerId: true } });
+  const playerIds = links.map((link) => link.playerId);
+  if (playerIds.length === 0) {
+    return [];
+  }
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: { playerId: { in: playerIds } },
+    include: {
+      tournament: { include: { tiebreakCriteria: true } },
+      player: { include: { user: true } },
+    },
+    orderBy: { tournament: { startDate: "asc" } },
+  });
+
+  const byTournament = new Map<string, CoachTournamentDto>();
+  for (const enrollment of enrollments) {
+    const playerEntry = { playerId: enrollment.player.id, name: enrollment.player.user.name };
+    const existing = byTournament.get(enrollment.tournament.id);
+    if (existing) {
+      existing.myPlayers.push(playerEntry);
+    } else {
+      byTournament.set(enrollment.tournament.id, {
+        ...toTournamentDto(enrollment.tournament),
+        myPlayers: [playerEntry],
+      });
+    }
+  }
+
+  return Array.from(byTournament.values());
 }

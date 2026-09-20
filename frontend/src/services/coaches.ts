@@ -1,4 +1,5 @@
 import { api } from "./api";
+import type { Tournament } from "./tournaments";
 
 export interface LinkedPlayer {
   playerId: string;
@@ -24,4 +25,20 @@ export async function linkPlayer(playerId: string): Promise<LinkedPlayer> {
 /** Unlinks a player from the current coach (HU24). */
 export async function unlinkPlayer(playerId: string): Promise<void> {
   await api.delete(`/coaches/players/${playerId}`);
+}
+
+export interface CoachTournamentPlayer {
+  playerId: string;
+  name: string;
+}
+
+export interface CoachTournament extends Tournament {
+  // Only the coach's own linked players enrolled in this tournament.
+  myPlayers: CoachTournamentPlayer[];
+}
+
+/** Lists the tournaments where at least one of the coach's linked players is enrolled. */
+export async function listCoachTournaments(): Promise<CoachTournament[]> {
+  const { data } = await api.get<CoachTournament[]>("/coaches/tournaments");
+  return data;
 }

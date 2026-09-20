@@ -8,6 +8,7 @@ const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     player: { findUnique: vi.fn() },
     coachPlayer: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), delete: vi.fn() },
+    enrollment: { findMany: vi.fn() },
   },
 }));
 
@@ -124,5 +125,72 @@ describe("DELETE /api/coaches/players/:playerId", () => {
       .set("Authorization", `Bearer ${tokenFor("COACH")}`);
 
     expect(response.status).toBe(404);
+  });
+});
+
+describe("GET /api/coaches/tournaments", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const tournamentBase = {
+    id: "tournament-1",
+    name: "Copa Universitaria",
+    startDate: new Date("2026-10-01"),
+    endDate: new Date("2026-10-03"),
+    status: "REGISTRATION_OPEN",
+    format: "swiss",
+    roundsCount: null,
+    timeControl: null,
+    restrictedProgram: null,
+    minimumSemester: null,
+    organizerId: "organizer-1",
+    createdAt: new Date("2026-09-17"),
+    tiebreakCriteria: [],
+  };
+
+  it("groups the coach's players enrolled in the same tournament", async () => {
+    prismaMock.coachPlayer.findMany.mockResolvedValue([{ playerId: "player-1" }, { playerId: "player-2" }]);
+    prismaMock.enrollment.findMany.mockResolvedValue([
+      { tournament: tournamentBase, player: { id: "player-1", user: { name: "Luis Gómez" } } },
+      { tournament: tournamentBase, player: { id: "player-2", user: { name: "Ana Torres" } } },
+    ]);
+
+    const response = await request(createApp())
+      .get("/api/coaches/tournaments")
+      .set("Authorization", `Bearer ${tokenFor("COACH")}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0].id).toBe("tournament-1");
+    expect(response.body[0].myPlayers).toEqual([
+      { playerId: "player-1", name: "Luis Gómez" },
+      { playerId: "player-2", name: "Ana Torres" },
+    ]);
+  });
+
+  it("returns an empty list when the coach has no linked players", async () => {
+    prismaMock.coachPlayer.findMany.mockResolvedValue([]);
+
+    const response = await request(createApp())
+      .get("/api/coaches/tournaments")
+      .set("Authorization", `Bearer ${tokenFor("COACH")}`);
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual([]);
+    expect(prismaMock.enrollment.findMany).not.toHaveBeenCalled();
+  });
+
+  it("responds 403 for a role without permission (PLAYER)", async () => {
+    const response = await request(createApp())
+      .get("/api/coaches/tournaments")
+      .set("Authorization", `Bearer ${tokenFor("PLAYER")}`);
+
+    expect(response.status).toBe(403);
+  });
+
+  it("responds 401 without a token", async () => {
+    const response = await request(createApp()).get("/api/coaches/tournaments");
+    expect(response.status).toBe(401);
   });
 });

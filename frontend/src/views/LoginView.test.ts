@@ -22,6 +22,9 @@ async function mountLoginView() {
     routes: [
       { path: "/", component: { template: "<div />" } },
       { path: "/cuenta", component: { template: "<div />" } },
+      { path: "/torneos", component: { template: "<div />" } },
+      { path: "/mis-torneos", component: { template: "<div />" } },
+      { path: "/mis-jugadores", component: { template: "<div />" } },
     ],
   });
   router.push("/login-under-test");
@@ -48,7 +51,7 @@ describe("LoginView", () => {
     expect(loginUserMock).not.toHaveBeenCalled();
   });
 
-  it("logs in and navigates to /cuenta with valid credentials", async () => {
+  it("logs in and navigates to the organizer dashboard with valid credentials", async () => {
     loginUserMock.mockResolvedValue({
       token: "token-123",
       user: {
@@ -70,6 +73,55 @@ describe("LoginView", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(loginUserMock).toHaveBeenCalledWith({ email: "ana@example.com", password: "password123" });
+    expect(router.currentRoute.value.path).toBe("/torneos");
+  });
+
+  it("logs in and navigates to the player dashboard for a PLAYER role", async () => {
+    loginUserMock.mockResolvedValue({
+      token: "token-123",
+      user: {
+        id: "usuario-2",
+        name: "Luis Gómez",
+        email: "luis@example.com",
+        status: "ACTIVE",
+        role: "PLAYER",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
+      },
+    });
+
+    const { wrapper, router } = await mountLoginView();
+
+    await wrapper.find('input[type="email"]').setValue("luis@example.com");
+    await wrapper.find('input[type="password"]').setValue("password123");
+    await wrapper.find("form").trigger("submit.prevent");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(router.currentRoute.value.path).toBe("/mis-torneos");
+  });
+
+  it("honors a redirect query param over the role's default dashboard", async () => {
+    loginUserMock.mockResolvedValue({
+      token: "token-123",
+      user: {
+        id: "usuario-1",
+        name: "Ana Torres",
+        email: "ana@example.com",
+        status: "ACTIVE",
+        role: "ORGANIZER",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
+      },
+    });
+
+    const { wrapper, router } = await mountLoginView();
+    await router.push({ path: "/login-under-test", query: { redirect: "/cuenta" } });
+
+    await wrapper.find('input[type="email"]').setValue("ana@example.com");
+    await wrapper.find('input[type="password"]').setValue("password123");
+    await wrapper.find("form").trigger("submit.prevent");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
     expect(router.currentRoute.value.path).toBe("/cuenta");
   });
 

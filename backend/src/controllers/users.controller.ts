@@ -2,7 +2,7 @@ import { prisma } from "../config/prisma";
 import { asyncHandler } from "../middlewares/asyncHandler";
 import { HttpError } from "../middlewares/errorHandler";
 import { exerciseDataRight } from "../services/dataRights.service";
-import { getUserById, updateOwnProfile, updateUserRole } from "../services/users.service";
+import { getUserById, listMyCoaches, updateOwnProfile, updateUserRole } from "../services/users.service";
 import { dataRequestSchema, updateProfileSchema, updateRoleSchema } from "../validators/users.schemas";
 
 /** GET /users/me — returns the currently authenticated user's profile. */
@@ -33,6 +33,12 @@ export const updateRole = asyncHandler(async (req, res) => {
 
   const user = await updateUserRole(prisma, String(req.params.id), parsed.data.role);
   res.status(200).json(user);
+});
+
+/** GET /users/me/coaches — lists the coaches linked to the current user (as a player, HU24). */
+export const myCoaches = asyncHandler(async (req, res) => {
+  const coaches = await listMyCoaches(prisma, req.user!.id);
+  res.status(200).json(coaches);
 });
 
 /** POST /users/me/data-requests — exercises an ARCO data-subject right (HU22, Ley 1581 de 2012). */

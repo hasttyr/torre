@@ -168,7 +168,6 @@
     "semesterPlaceholder": "5",
     "submit": "Create account",
     "submitting": "Creating account...",
-    "successMessage": "Account created for {email}. You can now log in.",
     "acceptDataPolicyLabel": "I accept the personal data treatment policy, in accordance with Colombian Law 1581 of 2012.",
     "acceptDataPolicyRequired": "You must accept the personal data treatment policy"
   },
@@ -209,7 +208,15 @@
     "privacyDeleteButton": "Delete my data",
     "privacyDeleting": "Processing...",
     "privacyDeleteConfirm": "Are you sure you want to request deletion of your personal data? Your session will be closed.",
-    "privacyGenericError": "Could not connect to the server"
+    "privacyGenericError": "Could not connect to the server",
+    "affiliationsTitle": "My club and coaches",
+    "affiliationsSubtitle": "Read-only information; managed by your club or organizer.",
+    "affiliationsLoadError": "Could not load your linked coaches",
+    "clubLabel": "Club",
+    "noClub": "No club assigned",
+    "coachesLabel": "Coaches",
+    "coachesLoading": "Loading…",
+    "noCoaches": "You don't have any linked coach yet."
   },
   "dashboard": {
     "title": "My tournaments",
@@ -321,6 +328,10 @@
     "alreadyLinked": "Already linked",
     "link": "Link",
     "unlink": "Unlink",
-    "empty": "You're not linked with any player yet."
+    "empty": "You're not linked with any player yet.",
+    "tournamentsTitle": "My players' tournaments",
+    "tournamentsSubtitle": "Tournaments where one of your linked players is enrolled.",
+    "tournamentsEmpty": "None of your linked players are enrolled in a tournament yet.",
+    "myPlayersLabel": "Your enrolled players"
   }
 }

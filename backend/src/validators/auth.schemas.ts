@@ -22,10 +22,13 @@ export const registerSchema = z.discriminatedUnion("role", [
   }),
   z.object({
     ...baseFields,
-    // ADMINISTRATOR is deliberately excluded: an admin account must not be
-    // creatable through self-registration; it's provisioned some other way
-    // (seed, a future internal panel).
-    role: z.enum(["ORGANIZER", "ARBITER", "COACH"]),
+    // ORGANIZER, ARBITER and ADMINISTRATOR are deliberately excluded: they
+    // hold authority over other people's data (enrolled players' personal
+    // data, official match results) or over the system itself, so an
+    // account with one of those roles must not be self-service. It's
+    // provisioned some other way (seed, PATCH /users/:id/role by an
+    // administrator, a future internal panel).
+    role: z.literal("COACH"),
   }),
 ]);
 

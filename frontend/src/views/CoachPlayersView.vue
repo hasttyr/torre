@@ -6,8 +6,10 @@ import AppHeader from "../components/AppHeader.vue";
 import { extractErrorMessage } from "../lib/errors";
 import { searchPlayers, type PlayerSearchResult } from "../services/players";
 import { useCoachesStore } from "../stores/coaches";
+import { useLocaleStore } from "../stores/locale";
 
 const coaches = useCoachesStore();
+const locale = useLocaleStore();
 const { t } = useI18n();
 
 const loading = ref(true);
@@ -15,13 +17,18 @@ const loadError = ref<string | null>(null);
 
 onMounted(async () => {
   try {
-    await coaches.loadLinkedPlayers();
+    await Promise.all([coaches.loadLinkedPlayers(), coaches.loadTournaments()]);
   } catch {
     loadError.value = t("coachPlayers.loadError");
   } finally {
     loading.value = false;
   }
 });
+
+/** Formats an ISO date string using the active locale. */
+function formatDate(date: string): string {
+  return new Date(date).toLocaleDateString(locale.locale, { day: "2-digit", month: "short", year: "numeric" });
+}
 
 const playerQuery = ref("");
 const searchResults = ref<PlayerSearchResult[]>([]);
@@ -151,6 +158,38 @@ async function onUnlink(playerId: string): Promise<void> {
           </div>
         </div>
         <p v-else class="mt-4 text-sm text-text-muted">{{ t("coachPlayers.empty") }}</p>
+      </section>
+
+      <section v-if="!loading && !loadError" class="card">
+        <h2 class="mb-1 text-lg">{{ t("coachPlayers.tournamentsTitle") }}</h2>
+        <p class="mb-4 text-sm">{{ t("coachPlayers.tournamentsSubtitle") }}</p>
+
+        <p
+          v-if="coaches.tournaments.length === 0"
+          class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
+        >
+          {{ t("coachPlayers.tournamentsEmpty") }}
+        </p>
+
+        <ul v-else class="m-0 flex list-none flex-col gap-3 p-0">
+          <li
+            v-for="tournament in coaches.tournaments"
+            :key="tournament.id"
+            class="flex flex-col gap-2 rounded-2xl border border-border-soft bg-surface p-5"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-base">{{ tournament.name }}</h3>
+              <span class="pill">{{ t(`estados.${tournament.status}`) }}</span>
+            </div>
+            <p class="text-sm text-text-muted">
+              {{ formatDate(tournament.startDate) }} — {{ formatDate(tournament.endDate) }}
+            </p>
+            <p class="text-sm">
+              {{ t("coachPlayers.myPlayersLabel") }}:
+              {{ tournament.myPlayers.map((player) => player.name).join(", ") }}
+            </p>
+          </li>
+        </ul>
       </section>
     </main>
   </div>

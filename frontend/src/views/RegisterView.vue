@@ -1,18 +1,21 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
 
 import AuthLayout from "../components/AuthLayout.vue";
 import { extractErrorMessage } from "../lib/errors";
+import { roleHomePath } from "../lib/roleHome";
 import { registerUser, SELF_ASSIGNABLE_ROLES, type RegisterPayload, type SelfAssignableRole } from "../services/auth";
+import { useAuthStore } from "../stores/auth";
 
+const router = useRouter();
+const auth = useAuthStore();
 const { t } = useI18n();
 
 const ROLE_GLYPHS: Record<SelfAssignableRole, string> = {
   PLAYER: "♙",
   COACH: "♗",
-  ARBITER: "♘",
-  ORGANIZER: "♕",
 };
 
 const form = reactive({
@@ -47,7 +50,6 @@ function looksLikeEmail(value: string): boolean {
 
 const errors = reactive<Record<string, string>>({});
 const submitting = ref(false);
-const successMessage = ref<string | null>(null);
 const serverError = ref<string | null>(null);
 
 /**
@@ -116,20 +118,8 @@ function buildPayload(): RegisterPayload {
   return { ...base, role: form.role };
 }
 
-/** Clears the registration form back to its initial empty state. */
-function resetForm(): void {
-  form.name = "";
-  form.email = "";
-  form.password = "";
-  form.universityCode = "";
-  form.program = "";
-  form.semester = "";
-  form.acceptDataPolicy = false;
-}
-
-/** Validates and submits the registration form to the backend. */
+/** Validates and submits the registration form to the backend, then logs in and redirects. */
 async function onSubmit(): Promise<void> {
-  successMessage.value = null;
   serverError.value = null;
 
   if (!validate()) {
@@ -138,9 +128,13 @@ async function onSubmit(): Promise<void> {
 
   submitting.value = true;
   try {
-    const user = await registerUser(buildPayload());
-    successMessage.value = t("register.successMessage", { email: user.email });
-    resetForm();
+    const { email, password } = form;
+    await registerUser(buildPayload());
+    // Registration alone doesn't issue a session token; logging in right
+    // after with the same credentials is what gets the user in without a
+    // second manual step.
+    await auth.login(email.trim(), password);
+    router.push(roleHomePath(auth.user!.role));
   } catch (error) {
     serverError.value = extractErrorMessage(error, t("auth.serverError"));
   } finally {
@@ -152,27 +146,6 @@ async function onSubmit(): Promise<void> {
 <template>
   <AuthLayout :title="t('register.title')" :subtitle="t('register.subtitle')">
     <template #banners>
-      <Transition
-        enter-active-class="transition duration-180 ease-out"
-        enter-from-class="opacity-0 -translate-y-1.5"
-        leave-active-class="transition duration-180 ease-in"
-        leave-to-class="opacity-0 -translate-y-1.5"
-      >
-        <output v-if="successMessage" class="banner banner--success">
-          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true" class="mt-0.5 shrink-0">
-            <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.5" />
-            <path
-              d="M6 10.5l2.5 2.5L14 7.5"
-              stroke="currentColor"
-              stroke-width="1.75"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-          <span>{{ successMessage }}</span>
-        </output>
-      </Transition>
-
       <Transition
         enter-active-class="transition duration-180 ease-out"
         enter-from-class="opacity-0 -translate-y-1.5"
@@ -193,7 +166,7 @@ async function onSubmit(): Promise<void> {
     <form novalidate @submit.prevent="onSubmit">
       <div class="field">
         <span class="field-label">{{ t("register.roleLabel") }}</span>
-        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4" role="radiogroup" :aria-label="t('register.roleLabel')">
+        <div class="grid grid-cols-2 gap-2.5" role="radiogroup" :aria-label="t('register.roleLabel')">
           <label
             v-for="role in SELF_ASSIGNABLE_ROLES"
             :key="role"

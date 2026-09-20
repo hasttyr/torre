@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import PlayerAffiliations from "../components/account/PlayerAffiliations.vue";
 import PrivacyDataRights from "../components/account/PrivacyDataRights.vue";
 import AppHeader from "../components/AppHeader.vue";
 import DateField from "../components/DateField.vue";
@@ -232,6 +233,8 @@ async function onSubmit(): Promise<void> {
           </button>
         </form>
       </section>
+
+      <PlayerAffiliations v-if="auth.user?.player" :club="auth.user.player.club" />
 
       <PrivacyDataRights v-if="auth.user" />
     </main>

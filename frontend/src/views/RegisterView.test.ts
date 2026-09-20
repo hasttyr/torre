@@ -1,5 +1,7 @@
 import { mount } from "@vue/test-utils";
+import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../i18n";
 import RegisterView from "./RegisterView.vue";
@@ -9,51 +11,85 @@ vi.mock("../services/auth", async (importOriginal) => {
   return {
     ...actual,
     registerUser: vi.fn(),
+    loginUser: vi.fn(),
   };
 });
 
-import { registerUser } from "../services/auth";
+import { loginUser, registerUser } from "../services/auth";
 
 const registerUserMock = vi.mocked(registerUser);
+const loginUserMock = vi.mocked(loginUser);
 
-async function fillBaseFields(wrapper: ReturnType<typeof mount>) {
+function makeRouter() {
+  return createRouter({
+    history: createWebHistory(),
+    routes: [
+      { path: "/", component: { template: "<div />" } },
+      { path: "/cuenta", component: { template: "<div />" } },
+      { path: "/torneos", component: { template: "<div />" } },
+      { path: "/mis-torneos", component: { template: "<div />" } },
+      { path: "/mis-jugadores", component: { template: "<div />" } },
+    ],
+  });
+}
+
+async function mountRegisterView() {
+  const router = makeRouter();
+  router.push("/registro-under-test");
+  await router.isReady();
+
+  const wrapper = mount(RegisterView, { global: { plugins: [router, i18n] } });
+  return { wrapper, router };
+}
+
+async function fillBaseFields(wrapper: Awaited<ReturnType<typeof mountRegisterView>>["wrapper"]) {
   await wrapper.find('input[type="text"]').setValue("Ana Torres");
   await wrapper.find('input[type="email"]').setValue("ana@example.com");
   await wrapper.find('input[type="password"]').setValue("password123");
 }
 
-async function selectRol(wrapper: ReturnType<typeof mount>, rol: string) {
+async function selectRol(wrapper: Awaited<ReturnType<typeof mountRegisterView>>["wrapper"], rol: string) {
   await wrapper.find(`input[type="radio"][value="${rol}"]`).setValue();
 }
 
-async function acceptDataPolicy(wrapper: ReturnType<typeof mount>) {
+async function acceptDataPolicy(wrapper: Awaited<ReturnType<typeof mountRegisterView>>["wrapper"]) {
   await wrapper.find('input[type="checkbox"]').setValue(true);
 }
 
 describe("RegisterView", () => {
   beforeEach(() => {
+    localStorage.clear();
+    setActivePinia(createPinia());
     registerUserMock.mockReset();
+    loginUserMock.mockReset();
   });
 
-  it("shows player fields by default (initial role PLAYER)", () => {
-    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
+  it("shows player fields by default (initial role PLAYER)", async () => {
+    const { wrapper } = await mountRegisterView();
 
     expect(wrapper.find("fieldset").exists()).toBe(true);
     expect(wrapper.text()).toContain("Datos de jugador");
   });
 
   it("hides player fields when another role is chosen", async () => {
-    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
+    const { wrapper } = await mountRegisterView();
 
-    await selectRol(wrapper, "ORGANIZER");
+    await selectRol(wrapper, "COACH");
 
     expect(wrapper.find("fieldset").exists()).toBe(false);
   });
 
-  it("shows validation errors and does not call the backend when the form is empty", async () => {
-    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
+  it("only offers PLAYER and COACH as self-assignable roles", async () => {
+    const { wrapper } = await mountRegisterView();
 
-    await selectRol(wrapper, "ORGANIZER");
+    const roleInputs = wrapper.findAll('input[type="radio"][name="role"]');
+    expect(roleInputs.map((input) => (input.element as HTMLInputElement).value)).toEqual(["PLAYER", "COACH"]);
+  });
+
+  it("shows validation errors and does not call the backend when the form is empty", async () => {
+    const { wrapper } = await mountRegisterView();
+
+    await selectRol(wrapper, "COACH");
     await wrapper.find("form").trigger("submit.prevent");
 
     expect(wrapper.text()).toContain("El nombre debe tener al menos 2 caracteres");
@@ -63,7 +99,7 @@ describe("RegisterView", () => {
   });
 
   it("validates the additional player fields before submitting", async () => {
-    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
+    const { wrapper } = await mountRegisterView();
 
     await fillBaseFields(wrapper);
     await wrapper.find("form").trigger("submit.prevent");
@@ -74,7 +110,7 @@ describe("RegisterView", () => {
   });
 
   it("requires accepting the data-treatment policy before submitting (RN-10/HU21)", async () => {
-    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
+    const { wrapper } = await mountRegisterView();
 
     await fillBaseFields(wrapper);
     const [codigoInput, programaInput, semestreInput] = wrapper.findAll("fieldset input");
@@ -88,7 +124,7 @@ describe("RegisterView", () => {
     expect(registerUserMock).not.toHaveBeenCalled();
   });
 
-  it("sends the correct payload and shows success for a valid player registration", async () => {
+  it("registers a player, logs in automatically and redirects to the player dashboard", async () => {
     registerUserMock.mockResolvedValue({
       id: "1",
       name: "Ana Torres",
@@ -98,8 +134,20 @@ describe("RegisterView", () => {
       createdAt: "2026-01-01T00:00:00.000Z",
       dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
     });
+    loginUserMock.mockResolvedValue({
+      token: "token-123",
+      user: {
+        id: "1",
+        name: "Ana Torres",
+        email: "ana@example.com",
+        status: "ACTIVE",
+        role: "PLAYER",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
+      },
+    });
 
-    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
+    const { wrapper, router } = await mountRegisterView();
     await fillBaseFields(wrapper);
 
     const [codigoInput, programaInput, semestreInput] = wrapper.findAll("fieldset input");
@@ -122,22 +170,35 @@ describe("RegisterView", () => {
       program: "Ingeniería de Sistemas",
       semester: 5,
     });
-    expect(wrapper.text()).toContain("Cuenta creada para ana@example.com");
+    expect(loginUserMock).toHaveBeenCalledWith({ email: "ana@example.com", password: "password123" });
+    expect(router.currentRoute.value.path).toBe("/mis-torneos");
   });
 
-  it("does not include player fields in the payload for other roles", async () => {
+  it("does not include player fields in the payload for COACH, and redirects to the coach dashboard", async () => {
     registerUserMock.mockResolvedValue({
       id: "2",
       name: "Carlos Ruiz",
       email: "carlos@example.com",
       status: "ACTIVE",
-      role: "ORGANIZER",
+      role: "COACH",
       createdAt: "2026-01-01T00:00:00.000Z",
       dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
     });
+    loginUserMock.mockResolvedValue({
+      token: "token-123",
+      user: {
+        id: "2",
+        name: "Carlos Ruiz",
+        email: "carlos@example.com",
+        status: "ACTIVE",
+        role: "COACH",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
+      },
+    });
 
-    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
-    await selectRol(wrapper, "ORGANIZER");
+    const { wrapper, router } = await mountRegisterView();
+    await selectRol(wrapper, "COACH");
     await wrapper.find('input[type="text"]').setValue("Carlos Ruiz");
     await wrapper.find('input[type="email"]').setValue("carlos@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
@@ -151,8 +212,9 @@ describe("RegisterView", () => {
       email: "carlos@example.com",
       password: "password123",
       acceptDataPolicy: true,
-      role: "ORGANIZER",
+      role: "COACH",
     });
+    expect(router.currentRoute.value.path).toBe("/mis-jugadores");
   });
 
   it("shows the error message returned by the backend (e.g. duplicate email)", async () => {
@@ -161,8 +223,8 @@ describe("RegisterView", () => {
       response: { data: { error: "Ya existe una cuenta registrada con ese correo" } },
     });
 
-    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
-    await selectRol(wrapper, "ORGANIZER");
+    const { wrapper } = await mountRegisterView();
+    await selectRol(wrapper, "COACH");
     await wrapper.find('input[type="text"]').setValue("Ana Torres");
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
@@ -178,8 +240,8 @@ describe("RegisterView", () => {
   it("shows a generic message when there is no response from the server (network error)", async () => {
     registerUserMock.mockRejectedValue(new Error("Network Error"));
 
-    const wrapper = mount(RegisterView, { global: { plugins: [i18n] } });
-    await selectRol(wrapper, "ORGANIZER");
+    const { wrapper } = await mountRegisterView();
+    await selectRol(wrapper, "COACH");
     await wrapper.find('input[type="text"]').setValue("Ana Torres");
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");

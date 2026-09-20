@@ -26,8 +26,8 @@ describe("POST /api/auth/register", () => {
     vi.clearAllMocks();
   });
 
-  it("registers a valid organizer and returns 201 without exposing the hash", async () => {
-    prismaMock.role.findUnique.mockResolvedValue({ id: "role-1", name: "ORGANIZER" });
+  it("registers a valid coach and returns 201 without exposing the hash", async () => {
+    prismaMock.role.findUnique.mockResolvedValue({ id: "role-1", name: "COACH" });
     prismaMock.user.findUnique.mockResolvedValue(null);
     prismaMock.user.create.mockResolvedValue({
       id: "user-1",
@@ -35,19 +35,19 @@ describe("POST /api/auth/register", () => {
       email: "ana@example.com",
       status: "ACTIVE",
       createdAt: new Date("2026-01-01T00:00:00Z"),
-      role: { id: "role-1", name: "ORGANIZER" },
+      role: { id: "role-1", name: "COACH" },
     });
 
     const response = await request(createApp()).post("/api/auth/register").send({
       name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
-      role: "ORGANIZER",
+      role: "COACH",
       acceptDataPolicy: true,
     });
 
     expect(response.status).toBe(201);
-    expect(response.body).toMatchObject({ id: "user-1", email: "ana@example.com", role: "ORGANIZER" });
+    expect(response.body).toMatchObject({ id: "user-1", email: "ana@example.com", role: "COACH" });
     expect(response.body.passwordHash).toBeUndefined();
   });
 
@@ -56,7 +56,7 @@ describe("POST /api/auth/register", () => {
       name: "Ana Torres",
       email: "no-es-un-correo",
       password: "password123",
-      role: "ORGANIZER",
+      role: "COACH",
     });
 
     expect(response.status).toBe(400);
@@ -79,7 +79,7 @@ describe("POST /api/auth/register", () => {
       name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
-      role: "ORGANIZER",
+      role: "COACH",
       acceptDataPolicy: false,
     });
 
@@ -93,6 +93,32 @@ describe("POST /api/auth/register", () => {
       email: "admin@example.com",
       password: "password123",
       role: "ADMINISTRATOR",
+    });
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.user.create).not.toHaveBeenCalled();
+  });
+
+  it("responds 400 when the role is ORGANIZER (must be provisioned by an administrator)", async () => {
+    const response = await request(createApp()).post("/api/auth/register").send({
+      name: "Quiero Ser Organizador",
+      email: "organizador@example.com",
+      password: "password123",
+      role: "ORGANIZER",
+      acceptDataPolicy: true,
+    });
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.user.create).not.toHaveBeenCalled();
+  });
+
+  it("responds 400 when the role is ARBITER (must be provisioned by an administrator)", async () => {
+    const response = await request(createApp()).post("/api/auth/register").send({
+      name: "Quiero Ser Árbitro",
+      email: "arbitro@example.com",
+      password: "password123",
+      role: "ARBITER",
+      acceptDataPolicy: true,
     });
 
     expect(response.status).toBe(400);
@@ -127,7 +153,7 @@ describe("POST /api/auth/register", () => {
       name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
-      role: "ORGANIZER",
+      role: "COACH",
       acceptDataPolicy: true,
     });
 

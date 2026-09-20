@@ -1,10 +1,13 @@
 import { api } from "./api";
 
-// Deliberately duplicated in backend/src/validators/auth.schemas.ts and
-// backend/src/services/auth.service.ts (there is no shared package between
-// the two npm projects): if the registration contract changes there,
-// replicate the change here.
-export const SELF_ASSIGNABLE_ROLES = ["PLAYER", "COACH", "ARBITER", "ORGANIZER"] as const;
+// Deliberately duplicated in backend/src/validators/auth.schemas.ts (there
+// is no shared package between the two npm projects): if the registration
+// contract changes there, replicate the change here.
+//
+// ORGANIZER, ARBITER and ADMINISTRATOR are deliberately excluded: they hold
+// authority over other people's data or over the system itself, so those
+// accounts must be provisioned by an administrator, not self-service.
+export const SELF_ASSIGNABLE_ROLES = ["PLAYER", "COACH"] as const;
 
 export type SelfAssignableRole = (typeof SELF_ASSIGNABLE_ROLES)[number];
 
@@ -24,7 +27,7 @@ interface RegisterPlayerPayload extends RegisterBasePayload {
 }
 
 interface RegisterOtherRolePayload extends RegisterBasePayload {
-  role: "COACH" | "ARBITER" | "ORGANIZER";
+  role: "COACH";
 }
 
 export type RegisterPayload = RegisterPlayerPayload | RegisterOtherRolePayload;
@@ -46,6 +49,11 @@ export const DISABILITIES = [
 ] as const;
 export type Disability = (typeof DISABILITIES)[number];
 
+export interface PlayerClub {
+  id: string;
+  name: string;
+}
+
 export interface PlayerProfile {
   universityCode: string;
   program: string;
@@ -54,6 +62,8 @@ export interface PlayerProfile {
   age: number | null;
   gender: Gender | null;
   disability: Disability | null;
+  // HU23: null when the player isn't currently in a club.
+  club: PlayerClub | null;
 }
 
 // HU22 ("conocer"): cuándo y bajo qué versión de la política el titular
@@ -140,6 +150,18 @@ export async function logoutUser(): Promise<void> {
  */
 export async function fetchMe(): Promise<RegisteredUser> {
   const { data } = await api.get<RegisteredUser>("/users/me");
+  return data;
+}
+
+export interface MyCoach {
+  id: string;
+  name: string;
+  email: string;
+}
+
+/** Lists the coaches linked to the current user (as a player, HU24). */
+export async function listMyCoaches(): Promise<MyCoach[]> {
+  const { data } = await api.get<MyCoach[]>("/users/me/coaches");
   return data;
 }
 
