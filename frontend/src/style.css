@@ -171,6 +171,14 @@
     @apply flex;
   }
 
+  /* A <select> rendered outside a .field (e.g. one cell in a DataTable row,
+     built with h() instead of a template) still needs the same input
+     chrome, just tighter: .field select's py-3 is sized for a standalone
+     form, not a table row. */
+  .select-compact {
+    @apply rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 font-sans text-sm text-text transition-shadow focus:border-accent focus:ring-3 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
   .banner {
     @apply flex items-start gap-2.5 rounded-lg border px-4 py-3.5 text-[0.92rem];
   }

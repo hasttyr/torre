@@ -90,6 +90,7 @@ const columns = [
       h(
         "select",
         {
+          class: "select-compact",
           value: row.original.role,
           disabled: isRowLocked(row.original),
           onChange: (event: Event) => onRoleChange(row.original, (event.target as HTMLSelectElement).value as AnyRole),
