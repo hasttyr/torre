@@ -52,6 +52,7 @@
     "OTHER": "Other"
   },
   "header": {
+    "panel": "Dashboard",
     "myTournaments": "My tournaments",
     "tournaments": "Tournaments",
     "clubs": "Clubs",
@@ -361,7 +362,8 @@
     "actions": {
       "ROLE_CHANGED": "Role changed",
       "PLAYER_WITHDRAWN": "Player withdrawn",
-      "ACCOUNT_STATUS_CHANGED": "Account status changed"
+      "ACCOUNT_STATUS_CHANGED": "Account status changed",
+      "DASHBOARD_LAYOUT_CHANGED": "Role dashboard changed"
     }
   },
   "adminUsers": {
@@ -383,5 +385,151 @@
     "activate": "Activate",
     "deactivate": "Deactivate",
     "toggleConfirm": "Are you sure you want to change {name}'s status to \"{status}\"?"
+  },
+  "panel": {
+    "greeting": "Hi, {name}",
+    "subtitle": {
+      "PLAYER": "Your performance, your tournaments and what's next, at a glance.",
+      "COACH": "How the players you coach are doing.",
+      "ARBITER": "Recent results and tournaments in play.",
+      "ORGANIZER": "Where the tournaments you organize stand.",
+      "ADMINISTRATOR": "Every control in the system. Decide what each role sees from “Configure dashboards”."
+    },
+    "configure": "Configure dashboards",
+    "loading": "Loading your dashboard…",
+    "loadError": "Your dashboard couldn't be loaded",
+    "loadingWidget": "Loading…",
+    "widgetError": "This control couldn't be loaded",
+    "widgetEmpty": "No data to show yet.",
+    "retry": "Retry",
+    "empty": "Your dashboard has no controls yet. An administrator can assign them to your role.",
+    "subjectLabel": "Showing stats for",
+    "noSubject": "Pick a player to see this control.",
+    "noPlayers": "There are no registered players to show in the per-player controls.",
+    "noPlayersCoach": "You aren't coaching any player yet, so the per-player controls are empty.",
+    "noPlayersCoachLink": "Link players"
+  },
+  "widgets": {
+    "ordinal": "#{n}",
+    "selectHint": "Tap a name to see their stats above.",
+    "viewPlayer": "See {name}'s stats",
+    "results": {
+      "wins": "Wins",
+      "draws": "Draws",
+      "losses": "Losses",
+      "summary": "{wins} W · {draws} D · {losses} L"
+    },
+    "PLAYER_SUMMARY": {
+      "title": "Player summary",
+      "description": "Key numbers across their whole career.",
+      "empty": "This player hasn't played any tournament yet.",
+      "scoreRate": "Performance",
+      "scoreRateHint": "Points per game played",
+      "games": "Games",
+      "points": "Points",
+      "tournaments": "Tournaments",
+      "titles": "Titles",
+      "bestFinish": "Best finish",
+      "allGames": "All games"
+    },
+    "PLAYER_PERFORMANCE_TREND": {
+      "title": "Performance trend",
+      "description": "Share of points scored in each tournament.",
+      "empty": "No recorded games yet.",
+      "tooltipRate": "Performance: {rate}",
+      "tooltipRank": "Finished {rank} of {total}",
+      "tooltipPoints": "{points} pts in {games} games"
+    },
+    "PLAYER_RESULTS_BY_COLOR": {
+      "title": "Results by color",
+      "description": "How they do with white versus black.",
+      "empty": "No recorded games yet.",
+      "white": "With white",
+      "black": "With black",
+      "rate": "performance"
+    },
+    "PLAYER_TOURNAMENT_HISTORY": {
+      "title": "Tournament history",
+      "description": "Every tournament they enrolled in, with their final standing.",
+      "empty": "Not enrolled in any tournament yet.",
+      "search": "Search tournament…",
+      "tournament": "Tournament",
+      "status": "Status",
+      "withdrawn": "Withdrawn",
+      "rank": "Standing",
+      "points": "Points"
+    },
+    "PLAYERS_OVERVIEW": {
+      "title": "Stats per player",
+      "description": "Performance comparison of every player within your reach.",
+      "empty": "No players to show.",
+      "search": "Search player…",
+      "player": "Player",
+      "tournaments": "Tournaments",
+      "games": "Games",
+      "results": "Results",
+      "scoreRate": "Performance"
+    },
+    "TOP_PLAYERS": {
+      "title": "Top players",
+      "description": "All-time ranking over finished tournaments.",
+      "empty": "No finished tournaments yet.",
+      "points": "{points} pts",
+      "detail": "{titles} titles · {podiums} podiums · {tournaments} tournaments"
+    },
+    "TOURNAMENTS_BY_STATUS": {
+      "title": "Tournaments by status",
+      "description": "Where each tournament is in its lifecycle.",
+      "empty": "No tournaments yet.",
+      "total": "tournaments in total"
+    },
+    "UPCOMING_TOURNAMENTS": {
+      "title": "Upcoming and in progress",
+      "description": "Tournaments not over yet, soonest first.",
+      "empty": "No upcoming tournaments.",
+      "enrolled": "no players enrolled | 1 player enrolled | {count} players enrolled"
+    },
+    "RECENT_RESULTS": {
+      "title": "Recent results",
+      "description": "The latest recorded games.",
+      "empty": "No result has been recorded yet.",
+      "meta": "{tournament} · Round {round} · Board {board}"
+    },
+    "USERS_BY_ROLE": {
+      "title": "Users by role",
+      "description": "Active accounts per role.",
+      "total": "active accounts",
+      "inactive": "no inactive | 1 inactive | {count} inactive"
+    }
+  },
+  "dashboardLayouts": {
+    "title": "Configure dashboards",
+    "subtitle": "Choose which controls each role sees on its dashboard, and in what order. The administrator always sees all of them. A control missing from a role's dashboard isn't served to it by the API either.",
+    "backToPanel": "Back to my dashboard",
+    "loading": "Loading configuration…",
+    "loadError": "The dashboard configuration couldn't be loaded",
+    "rolesLabel": "Role to configure",
+    "unsaved": "Unsaved changes",
+    "inPanel": "{role} dashboard",
+    "inPanelHint": "Shown in this order. Use the arrows to reorder.",
+    "emptyPanel": "This dashboard has no controls. Add some from the catalog.",
+    "catalog": "Control catalog",
+    "catalogHint": "Available controls this role doesn't have yet.",
+    "allAdded": "This role already has every control.",
+    "perPlayer": "Per player: shows the player picked on the dashboard",
+    "add": "Add",
+    "addTo": "Add “{widget}” to the dashboard",
+    "moveUp": "Move “{widget}” up",
+    "moveDown": "Move “{widget}” down",
+    "remove": "Remove “{widget}” from the dashboard",
+    "pending": "You have unsaved changes on the {role} dashboard.",
+    "discard": "Discard",
+    "save": "Save dashboard",
+    "saving": "Saving…",
+    "saved": "{role} dashboard saved.",
+    "saveError": "The dashboard couldn't be saved",
+    "leaveTitle": "Leave without saving?",
+    "leaveMessage": "Some dashboards have unsaved changes. They'll be lost if you leave.",
+    "leaveConfirm": "Leave without saving"
   }
 }

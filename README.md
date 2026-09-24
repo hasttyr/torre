@@ -150,7 +150,15 @@ npm run prisma:seed
 | Entrenador | coach@test.com | Test1234 |
 | Jugador | player@test.com | Test1234 |
 
-El seed es idempotente (`upsert` con `update: {}`): correrlo de nuevo no sobrescribe contraseñas ni datos que hayas modificado a mano mientras pruebas, solo crea lo que falte. Son cuentas de solo desarrollo local — no ejecutar contra una base de producción.
+Además de las cuentas, el seed crea 12 jugadores, clubes, vínculos entrenador–jugador y un historial de competencia real para que los paneles tengan datos: cinco torneos finalizados y uno en curso, con rondas, partidas, resultados y clasificación (puntaje, Buchholz, Buchholz Cortado 1, Sonneborn-Berger) calculada con el mismo `standings.calculator.ts` que usa la app. También asigna a cada rol su panel por defecto (`prisma/seeds/dashboardLayouts.ts`).
+
+El seed es idempotente (`upsert` con `update: {}`): correrlo de nuevo no sobrescribe contraseñas ni datos que hayas modificado a mano mientras pruebas, solo crea lo que falte. Un torneo que ya tiene rondas no se vuelve a jugar, y un rol que ya tiene panel no se reinicia. Son cuentas de solo desarrollo local — no ejecutar contra una base de producción.
+
+## Paneles por rol
+
+Cada usuario aterriza en `/panel`, que muestra los controles (widgets) asignados a su rol. El administrador ve todos los controles y decide cuáles ve cada rol, y en qué orden, desde `/panel/configuracion`. La asignación también es un permiso: la API (`GET /api/dashboard/widgets/:key`) rechaza un control que no está en el panel del rol. Cada cambio queda en la bitácora de auditoría. Qué datos ve cada rol lo define una política aparte: un jugador solo ve los suyos y un entrenador solo los de sus jugadores vinculados.
+
+Agregar un control nuevo requiere tres pasos, sin tocar rutas ni controladores: su clave en `backend/src/services/dashboard/widgetCatalog.ts`, su loader en `widgetRegistry.ts` y su componente en `frontend/src/components/dashboard/widgetRegistry.ts`.
 
 ## Documentación
 

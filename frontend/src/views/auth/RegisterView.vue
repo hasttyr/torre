@@ -5,7 +5,7 @@ import { useRouter } from "vue-router";
 
 import AuthLayout from "../../components/layout/AuthLayout.vue";
 import { extractErrorMessage } from "../../lib/errors";
-import { roleHomePath } from "../../lib/roleHome";
+import { HOME_PATH } from "../../lib/roleHome";
 import {
   registerUser,
   SELF_ASSIGNABLE_ROLES,
@@ -139,7 +139,7 @@ async function onSubmit(): Promise<void> {
     // after with the same credentials is what gets the user in without a
     // second manual step.
     await auth.login(email.trim(), password);
-    router.push(roleHomePath(auth.user!.role));
+    router.push(HOME_PATH);
   } catch (error) {
     serverError.value = extractErrorMessage(error, t("auth.serverError"));
   } finally {

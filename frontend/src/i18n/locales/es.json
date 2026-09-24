@@ -52,6 +52,7 @@
     "OTHER": "Otra"
   },
   "header": {
+    "panel": "Panel",
     "myTournaments": "Mis torneos",
     "tournaments": "Torneos",
     "clubs": "Clubes",
@@ -361,7 +362,8 @@
     "actions": {
       "ROLE_CHANGED": "Cambio de rol",
       "PLAYER_WITHDRAWN": "Retiro de jugador",
-      "ACCOUNT_STATUS_CHANGED": "Cambio de estado de cuenta"
+      "ACCOUNT_STATUS_CHANGED": "Cambio de estado de cuenta",
+      "DASHBOARD_LAYOUT_CHANGED": "Cambio de panel por rol"
     }
   },
   "adminUsers": {
@@ -383,5 +385,151 @@
     "activate": "Activar",
     "deactivate": "Desactivar",
     "toggleConfirm": "¿Seguro que quieres cambiar el estado de {name} a \"{status}\"?"
+  },
+  "panel": {
+    "greeting": "Hola, {name}",
+    "subtitle": {
+      "PLAYER": "Tu rendimiento, tus torneos y lo que viene, de un vistazo.",
+      "COACH": "El progreso de los jugadores que acompañas.",
+      "ARBITER": "Resultados recientes y torneos en juego.",
+      "ORGANIZER": "El estado de los torneos que organizas.",
+      "ADMINISTRATOR": "Todos los controles del sistema. Decide qué ve cada rol desde «Configurar paneles»."
+    },
+    "configure": "Configurar paneles",
+    "loading": "Cargando tu panel…",
+    "loadError": "No se pudo cargar tu panel",
+    "loadingWidget": "Cargando…",
+    "widgetError": "No se pudo cargar este control",
+    "widgetEmpty": "Todavía no hay datos para mostrar.",
+    "retry": "Reintentar",
+    "empty": "Tu panel todavía no tiene controles. Un administrador puede asignárselos a tu rol.",
+    "subjectLabel": "Viendo las estadísticas de",
+    "noSubject": "Elige un jugador para ver este control.",
+    "noPlayers": "No hay jugadores registrados para mostrar en los controles por jugador.",
+    "noPlayersCoach": "Todavía no acompañas a ningún jugador, así que los controles por jugador están vacíos.",
+    "noPlayersCoachLink": "Vincular jugadores"
+  },
+  "widgets": {
+    "ordinal": "{n}.º",
+    "selectHint": "Toca un nombre para ver sus estadísticas arriba.",
+    "viewPlayer": "Ver las estadísticas de {name}",
+    "results": {
+      "wins": "Victorias",
+      "draws": "Tablas",
+      "losses": "Derrotas",
+      "summary": "{wins} V · {draws} T · {losses} D"
+    },
+    "PLAYER_SUMMARY": {
+      "title": "Resumen del jugador",
+      "description": "Cifras clave de toda su trayectoria.",
+      "empty": "Este jugador todavía no ha jugado ningún torneo.",
+      "scoreRate": "Rendimiento",
+      "scoreRateHint": "Puntos por partida jugada",
+      "games": "Partidas",
+      "points": "Puntos",
+      "tournaments": "Torneos",
+      "titles": "Títulos",
+      "bestFinish": "Mejor puesto",
+      "allGames": "Todas las partidas"
+    },
+    "PLAYER_PERFORMANCE_TREND": {
+      "title": "Evolución del rendimiento",
+      "description": "Porcentaje de puntos obtenidos en cada torneo.",
+      "empty": "Sin partidas registradas todavía.",
+      "tooltipRate": "Rendimiento: {rate}",
+      "tooltipRank": "Puesto {rank} de {total}",
+      "tooltipPoints": "{points} pts en {games} partidas"
+    },
+    "PLAYER_RESULTS_BY_COLOR": {
+      "title": "Resultados por color",
+      "description": "Cómo le va con blancas frente a negras.",
+      "empty": "Sin partidas registradas todavía.",
+      "white": "Con blancas",
+      "black": "Con negras",
+      "rate": "rendimiento"
+    },
+    "PLAYER_TOURNAMENT_HISTORY": {
+      "title": "Historial de torneos",
+      "description": "Cada torneo en que se inscribió, con su puesto final.",
+      "empty": "Todavía no se ha inscrito en ningún torneo.",
+      "search": "Buscar torneo…",
+      "tournament": "Torneo",
+      "status": "Estado",
+      "withdrawn": "Retirado",
+      "rank": "Puesto",
+      "points": "Puntos"
+    },
+    "PLAYERS_OVERVIEW": {
+      "title": "Estadísticas por jugador",
+      "description": "Comparativa de rendimiento de todos los jugadores a tu alcance.",
+      "empty": "No hay jugadores para mostrar.",
+      "search": "Buscar jugador…",
+      "player": "Jugador",
+      "tournaments": "Torneos",
+      "games": "Partidas",
+      "results": "Resultados",
+      "scoreRate": "Rendimiento"
+    },
+    "TOP_PLAYERS": {
+      "title": "Mejores jugadores",
+      "description": "Clasificación histórica en torneos finalizados.",
+      "empty": "Todavía no hay torneos finalizados.",
+      "points": "{points} pts",
+      "detail": "{titles} títulos · {podiums} podios · {tournaments} torneos"
+    },
+    "TOURNAMENTS_BY_STATUS": {
+      "title": "Torneos por estado",
+      "description": "En qué punto del ciclo está cada torneo.",
+      "empty": "Todavía no hay torneos.",
+      "total": "torneos en total"
+    },
+    "UPCOMING_TOURNAMENTS": {
+      "title": "Próximos y en curso",
+      "description": "Torneos que todavía no terminan, del más cercano al más lejano.",
+      "empty": "No hay torneos próximos.",
+      "enrolled": "sin inscritos | 1 inscrito | {count} inscritos"
+    },
+    "RECENT_RESULTS": {
+      "title": "Resultados recientes",
+      "description": "Las últimas partidas registradas.",
+      "empty": "Todavía no se ha registrado ningún resultado.",
+      "meta": "{tournament} · Ronda {round} · Mesa {board}"
+    },
+    "USERS_BY_ROLE": {
+      "title": "Usuarios por rol",
+      "description": "Cuentas activas de cada rol.",
+      "total": "cuentas activas",
+      "inactive": "sin inactivas | 1 inactiva | {count} inactivas"
+    }
+  },
+  "dashboardLayouts": {
+    "title": "Configurar paneles",
+    "subtitle": "Elige qué controles ve cada rol en su panel y en qué orden. El administrador siempre ve todos. Un control que no está en el panel de un rol tampoco se le sirve desde la API.",
+    "backToPanel": "Volver a mi panel",
+    "loading": "Cargando configuración…",
+    "loadError": "No se pudo cargar la configuración de paneles",
+    "rolesLabel": "Rol a configurar",
+    "unsaved": "Cambios sin guardar",
+    "inPanel": "Panel de {role}",
+    "inPanelHint": "Se muestran en este orden. Usa las flechas para reordenar.",
+    "emptyPanel": "Este panel no tiene controles. Agrega alguno desde el catálogo.",
+    "catalog": "Catálogo de controles",
+    "catalogHint": "Controles disponibles que este rol todavía no tiene.",
+    "allAdded": "Este rol ya tiene todos los controles.",
+    "perPlayer": "Por jugador: muestra al jugador elegido en el panel",
+    "add": "Agregar",
+    "addTo": "Agregar «{widget}» al panel",
+    "moveUp": "Subir «{widget}»",
+    "moveDown": "Bajar «{widget}»",
+    "remove": "Quitar «{widget}» del panel",
+    "pending": "Tienes cambios sin guardar en el panel de {role}.",
+    "discard": "Descartar",
+    "save": "Guardar panel",
+    "saving": "Guardando…",
+    "saved": "Panel de {role} guardado.",
+    "saveError": "No se pudo guardar el panel",
+    "leaveTitle": "¿Salir sin guardar?",
+    "leaveMessage": "Hay paneles con cambios sin guardar. Si sales, se perderán.",
+    "leaveConfirm": "Salir sin guardar"
   }
 }

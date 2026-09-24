@@ -64,9 +64,32 @@ model Role {
   id   String @id @default(uuid())
   name String @unique
 
-  users User[]
+  users   User[]
+  widgets RoleWidget[]
 
   @@map("roles")
+}
+
+// Which dashboard widgets each role sees, and in what order (admin-managed).
+// widgetKey is a code-defined catalog key (see
+// src/services/dashboard/widgetCatalog.ts), not a Prisma enum — same
+// reasoning as AuditLog.action: a widget always ships with code (its data
+// loader and its component), so the catalog's source of truth is the code,
+// and adding one shouldn't also require a migration. ADMINISTRATOR has no
+// rows here: it always sees the whole catalog.
+model RoleWidget {
+  id        String @id @default(uuid())
+  roleId    String @map("role_id")
+  widgetKey String @map("widget_key")
+  position  Int
+
+  role Role @relation(fields: [roleId], references: [id])
+
+  // Both lead with roleId, so either covers the "widgets of this role"
+  // lookup every dashboard request makes.
+  @@unique([roleId, widgetKey])
+  @@unique([roleId, position])
+  @@map("role_widgets")
 }
 
 model User {

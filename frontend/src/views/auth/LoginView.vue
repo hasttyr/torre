@@ -5,7 +5,7 @@ import { useRoute, useRouter } from "vue-router";
 
 import AuthLayout from "../../components/layout/AuthLayout.vue";
 import { extractErrorMessage } from "../../lib/errors";
-import { roleHomePath } from "../../lib/roleHome";
+import { HOME_PATH } from "../../lib/roleHome";
 import { useAuthStore } from "../../stores/auth";
 
 const router = useRouter();
@@ -54,7 +54,7 @@ async function onSubmit(): Promise<void> {
     // from the router guard, but it's still user-controlled input via the
     // URL bar, and "//evil.com" is browser-parsed as an external URL.
     const isSafeInternalPath = typeof redirect === "string" && redirect.startsWith("/") && !redirect.startsWith("//");
-    router.push(isSafeInternalPath ? redirect : roleHomePath(auth.user!.role));
+    router.push(isSafeInternalPath ? redirect : HOME_PATH);
   } catch (error) {
     serverError.value = extractErrorMessage(error, t("auth.serverError"));
   } finally {

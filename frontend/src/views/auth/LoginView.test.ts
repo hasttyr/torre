@@ -22,9 +22,7 @@ async function mountLoginView() {
     routes: [
       { path: "/", component: { template: "<div />" } },
       { path: "/cuenta", component: { template: "<div />" } },
-      { path: "/torneos", component: { template: "<div />" } },
-      { path: "/mis-torneos", component: { template: "<div />" } },
-      { path: "/mis-jugadores", component: { template: "<div />" } },
+      { path: "/panel", component: { template: "<div />" } },
     ],
   });
   router.push("/login-under-test");
@@ -51,7 +49,7 @@ describe("LoginView", () => {
     expect(loginUserMock).not.toHaveBeenCalled();
   });
 
-  it("logs in and navigates to the organizer dashboard with valid credentials", async () => {
+  it("logs in and navigates to their dashboard with valid credentials", async () => {
     loginUserMock.mockResolvedValue({
       token: "token-123",
       user: {
@@ -73,10 +71,10 @@ describe("LoginView", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(loginUserMock).toHaveBeenCalledWith({ email: "ana@example.com", password: "password123" });
-    expect(router.currentRoute.value.path).toBe("/torneos");
+    expect(router.currentRoute.value.path).toBe("/panel");
   });
 
-  it("logs in and navigates to the player dashboard for a PLAYER role", async () => {
+  it("logs in and lands a PLAYER on the same dashboard route (widgets are role-driven)", async () => {
     loginUserMock.mockResolvedValue({
       token: "token-123",
       user: {
@@ -97,7 +95,7 @@ describe("LoginView", () => {
     await wrapper.find("form").trigger("submit.prevent");
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(router.currentRoute.value.path).toBe("/mis-torneos");
+    expect(router.currentRoute.value.path).toBe("/panel");
   });
 
   it("honors a redirect query param over the role's default dashboard", async () => {

@@ -26,9 +26,7 @@ function makeRouter() {
     routes: [
       { path: "/", component: { template: "<div />" } },
       { path: "/cuenta", component: { template: "<div />" } },
-      { path: "/torneos", component: { template: "<div />" } },
-      { path: "/mis-torneos", component: { template: "<div />" } },
-      { path: "/mis-jugadores", component: { template: "<div />" } },
+      { path: "/panel", component: { template: "<div />" } },
     ],
   });
 }
@@ -124,7 +122,7 @@ describe("RegisterView", () => {
     expect(registerUserMock).not.toHaveBeenCalled();
   });
 
-  it("registers a player, logs in automatically and redirects to the player dashboard", async () => {
+  it("registers a player, logs in automatically and redirects to their dashboard", async () => {
     registerUserMock.mockResolvedValue({
       id: "1",
       name: "Ana Torres",
@@ -171,10 +169,10 @@ describe("RegisterView", () => {
       semester: 5,
     });
     expect(loginUserMock).toHaveBeenCalledWith({ email: "ana@example.com", password: "password123" });
-    expect(router.currentRoute.value.path).toBe("/mis-torneos");
+    expect(router.currentRoute.value.path).toBe("/panel");
   });
 
-  it("does not include player fields in the payload for COACH, and redirects to the coach dashboard", async () => {
+  it("does not include player fields in the payload for COACH, and redirects to their dashboard", async () => {
     registerUserMock.mockResolvedValue({
       id: "2",
       name: "Carlos Ruiz",
@@ -214,7 +212,7 @@ describe("RegisterView", () => {
       acceptDataPolicy: true,
       role: "COACH",
     });
-    expect(router.currentRoute.value.path).toBe("/mis-jugadores");
+    expect(router.currentRoute.value.path).toBe("/panel");
   });
 
   it("shows the error message returned by the backend (e.g. duplicate email)", async () => {

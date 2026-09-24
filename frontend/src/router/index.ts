@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import { useAuthStore } from "../stores/auth";
 import AuditLogView from "../views/admin/AuditLogView.vue";
+import DashboardLayoutsView from "../views/admin/DashboardLayoutsView.vue";
 import UsersView from "../views/admin/UsersView.vue";
 import ForgotPasswordView from "../views/auth/ForgotPasswordView.vue";
 import LoginView from "../views/auth/LoginView.vue";
@@ -9,6 +10,7 @@ import RegisterView from "../views/auth/RegisterView.vue";
 import ResetPasswordView from "../views/auth/ResetPasswordView.vue";
 import AccountView from "../views/AccountView.vue";
 import CoachPlayersView from "../views/coach/CoachPlayersView.vue";
+import PanelView from "../views/dashboard/PanelView.vue";
 import HomeView from "../views/HomeView.vue";
 import ClubsView from "../views/organizer/ClubsView.vue";
 import CreateTournamentView from "../views/organizer/CreateTournamentView.vue";
@@ -47,6 +49,20 @@ export const router = createRouter({
       path: "/restablecer-password",
       name: "reset-password",
       component: ResetPasswordView,
+    },
+    {
+      // Every role's dashboard; which widgets it shows is decided per role
+      // on the backend (see backend/src/services/dashboard/).
+      path: "/panel",
+      name: "panel",
+      component: PanelView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/panel/configuracion",
+      name: "dashboard-layouts",
+      component: DashboardLayoutsView,
+      meta: { requiresAuth: true, roles: ["ADMINISTRATOR"] },
     },
     {
       path: "/cuenta",

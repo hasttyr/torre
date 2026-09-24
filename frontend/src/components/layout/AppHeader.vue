@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
@@ -13,6 +13,21 @@ const auth = useAuthStore();
 const route = useRoute();
 const { t } = useI18n();
 const mobileOpen = ref(false);
+
+// Role-gated links, declared once for both the desktop and the mobile nav.
+// `roles` mirrors each route's meta.roles in router/index.ts; omitted = any
+// authenticated user.
+const NAV_ITEMS: { to: string; labelKey: string; roles?: string[] }[] = [
+  { to: "/panel", labelKey: "header.panel" },
+  { to: "/torneos", labelKey: "header.myTournaments", roles: ["ORGANIZER", "ADMINISTRATOR"] },
+  { to: "/clubes", labelKey: "header.clubs", roles: ["ORGANIZER", "ADMINISTRATOR"] },
+  { to: "/mis-torneos", labelKey: "header.tournaments", roles: ["PLAYER"] },
+  { to: "/mis-jugadores", labelKey: "header.myPlayers", roles: ["COACH"] },
+  { to: "/usuarios", labelKey: "header.users", roles: ["ADMINISTRATOR"] },
+  { to: "/auditoria", labelKey: "header.auditLog", roles: ["ADMINISTRATOR"] },
+];
+
+const navItems = computed(() => NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(auth.user?.role ?? "")));
 
 // Closes the mobile menu on any navigation (including browser back/forward),
 // not just clicks inside the menu itself.
@@ -34,35 +49,13 @@ function closeMobile(): void {
     <div class="container flex items-center justify-between gap-4 py-4">
       <AppLogo />
 
-      <!-- Desktop nav: hidden below sm, visible from sm upward. -->
-      <nav class="hidden items-center gap-2.5 sm:flex">
+      <!-- Desktop nav: hidden below lg (an administrator has up to six links,
+           which would overflow a tablet-width bar), visible from lg upward. -->
+      <nav class="hidden items-center gap-1.5 lg:flex">
         <template v-if="auth.isAuthenticated">
-          <RouterLink
-            v-if="auth.user && ['ORGANIZER', 'ADMINISTRATOR'].includes(auth.user.role)"
-            to="/torneos"
-            class="btn btn-ghost"
-          >
-            {{ t("header.myTournaments") }}
+          <RouterLink v-for="item in navItems" :key="item.to" :to="item.to" class="btn btn-ghost px-4 py-2.5">
+            {{ t(item.labelKey) }}
           </RouterLink>
-          <RouterLink
-            v-if="auth.user && ['ORGANIZER', 'ADMINISTRATOR'].includes(auth.user.role)"
-            to="/clubes"
-            class="btn btn-ghost"
-          >
-            {{ t("header.clubs") }}
-          </RouterLink>
-          <RouterLink v-if="auth.user?.role === 'PLAYER'" to="/mis-torneos" class="btn btn-ghost">{{
-            t("header.tournaments")
-          }}</RouterLink>
-          <RouterLink v-if="auth.user?.role === 'COACH'" to="/mis-jugadores" class="btn btn-ghost">{{
-            t("header.myPlayers")
-          }}</RouterLink>
-          <RouterLink v-if="auth.user?.role === 'ADMINISTRATOR'" to="/usuarios" class="btn btn-ghost">{{
-            t("header.users")
-          }}</RouterLink>
-          <RouterLink v-if="auth.user?.role === 'ADMINISTRATOR'" to="/auditoria" class="btn btn-ghost">{{
-            t("header.auditLog")
-          }}</RouterLink>
           <UserMenu />
         </template>
         <template v-else>
@@ -74,7 +67,7 @@ function closeMobile(): void {
       </nav>
 
       <!-- Mobile controls: user menu or theme toggle + hamburger button. -->
-      <div class="flex items-center gap-2 sm:hidden">
+      <div class="flex items-center gap-2 lg:hidden">
         <UserMenu v-if="auth.isAuthenticated" />
         <template v-else>
           <LocaleToggle />
@@ -97,7 +90,7 @@ function closeMobile(): void {
       </div>
     </div>
 
-    <!-- Mobile nav panel: opens below the header, hidden from sm upward. -->
+    <!-- Mobile nav panel: opens below the header, hidden from lg upward. -->
     <Transition
       enter-active-class="transition duration-150 ease-out"
       enter-from-class="opacity-0 -translate-y-1"
@@ -106,56 +99,17 @@ function closeMobile(): void {
       leave-from-class="opacity-100 translate-y-0"
       leave-to-class="opacity-0 -translate-y-1"
     >
-      <nav v-if="mobileOpen" class="border-t border-border-soft bg-header sm:hidden">
+      <nav v-if="mobileOpen" class="border-t border-border-soft bg-header lg:hidden">
         <div class="container flex flex-col gap-1 py-3">
           <template v-if="auth.isAuthenticated">
             <RouterLink
-              v-if="auth.user && ['ORGANIZER', 'ADMINISTRATOR'].includes(auth.user.role)"
-              to="/torneos"
+              v-for="item in navItems"
+              :key="item.to"
+              :to="item.to"
               class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
               @click="closeMobile"
             >
-              {{ t("header.myTournaments") }}
-            </RouterLink>
-            <RouterLink
-              v-if="auth.user && ['ORGANIZER', 'ADMINISTRATOR'].includes(auth.user.role)"
-              to="/clubes"
-              class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
-              @click="closeMobile"
-            >
-              {{ t("header.clubs") }}
-            </RouterLink>
-            <RouterLink
-              v-if="auth.user?.role === 'PLAYER'"
-              to="/mis-torneos"
-              class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
-              @click="closeMobile"
-            >
-              {{ t("header.tournaments") }}
-            </RouterLink>
-            <RouterLink
-              v-if="auth.user?.role === 'COACH'"
-              to="/mis-jugadores"
-              class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
-              @click="closeMobile"
-            >
-              {{ t("header.myPlayers") }}
-            </RouterLink>
-            <RouterLink
-              v-if="auth.user?.role === 'ADMINISTRATOR'"
-              to="/usuarios"
-              class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
-              @click="closeMobile"
-            >
-              {{ t("header.users") }}
-            </RouterLink>
-            <RouterLink
-              v-if="auth.user?.role === 'ADMINISTRATOR'"
-              to="/auditoria"
-              class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
-              @click="closeMobile"
-            >
-              {{ t("header.auditLog") }}
+              {{ t(item.labelKey) }}
             </RouterLink>
           </template>
           <template v-else>
