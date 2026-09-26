@@ -1,5 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 
+import type { AuditLogQuery } from "../validators/auditLogs.schemas";
+
 export interface AuditLogDto {
   id: string;
   userId: string;
@@ -27,19 +29,34 @@ export function recordAuditLog(
   return prisma.auditLog.create({ data: { userId, action, detail }, select: { id: true } });
 }
 
-/** Lists every recorded audit log entry, most recent first. */
-export async function listAuditLogs(prisma: PrismaClient): Promise<AuditLogDto[]> {
+export interface AuditLogPage {
+  entries: AuditLogDto[];
+  // Pass it back as `cursor` for the next (older) page; null on the last one.
+  nextCursor: string | null;
+}
+
+/** One page of the audit log, most recent first. */
+export async function listAuditLogs(prisma: PrismaClient, { limit, cursor }: AuditLogQuery): Promise<AuditLogPage> {
   const logs = await prisma.auditLog.findMany({
     include: { user: true },
-    orderBy: { createdAt: "desc" },
+    // id breaks ties between entries recorded in the same instant, so
+    // pages never skip or repeat one (see the matching index).
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    // One more than the page: if it comes back, there's a next page.
+    take: limit + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
   });
 
-  return logs.map((log) => ({
-    id: log.id,
-    userId: log.userId,
-    userName: log.user.name,
-    action: log.action,
-    detail: log.detail,
-    createdAt: log.createdAt,
-  }));
+  const page = logs.slice(0, limit);
+  return {
+    entries: page.map((log) => ({
+      id: log.id,
+      userId: log.userId,
+      userName: log.user.name,
+      action: log.action,
+      detail: log.detail,
+      createdAt: log.createdAt,
+    })),
+    nextCursor: logs.length > limit ? (page.at(-1)?.id ?? null) : null,
+  };
 }

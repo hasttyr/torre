@@ -424,6 +424,8 @@ model AuditLog {
 
   user User @relation(fields: [userId], references: [id])
 
+  // The log is read newest first, one page at a time (see auditLog.service.ts).
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@map("audit_logs")
 }
 

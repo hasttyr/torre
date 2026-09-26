@@ -15,15 +15,38 @@ const logs = ref<AuditLogEntry[]>([]);
 const loading = ref(true);
 const loadError = ref<string | null>(null);
 
+// The log only grows: the newest page first, older ones on demand.
+const nextCursor = ref<string | null>(null);
+const loadingMore = ref(false);
+const loadMoreError = ref<string | null>(null);
+
 onMounted(async () => {
   try {
-    logs.value = await listAuditLogs();
+    const page = await listAuditLogs();
+    logs.value = page.entries;
+    nextCursor.value = page.nextCursor;
   } catch (error) {
     loadError.value = extractErrorMessage(error, t("auditLog.loadError"));
   } finally {
     loading.value = false;
   }
 });
+
+/** Appends the next older page; on failure keeps what's shown, so the same page can be retried. */
+async function loadMore(): Promise<void> {
+  if (!nextCursor.value) return;
+  loadingMore.value = true;
+  loadMoreError.value = null;
+  try {
+    const page = await listAuditLogs(nextCursor.value);
+    logs.value = [...logs.value, ...page.entries];
+    nextCursor.value = page.nextCursor;
+  } catch (error) {
+    loadMoreError.value = extractErrorMessage(error, t("auditLog.loadError"));
+  } finally {
+    loadingMore.value = false;
+  }
+}
 
 /** Falls back to the raw action code if no translation exists yet for it. */
 function actionLabel(action: string): string {
@@ -79,6 +102,13 @@ function formatDate(date: string): string {
           </p>
         </li>
       </ul>
+
+      <template v-if="nextCursor">
+        <p v-if="loadMoreError" role="alert" class="banner banner--error">{{ loadMoreError }}</p>
+        <button type="button" class="btn btn-ghost self-center" :disabled="loadingMore" @click="loadMore">
+          {{ loadingMore ? t("auditLog.loadingMore") : t("auditLog.loadMore") }}
+        </button>
+      </template>
     </main>
   </div>
 </template>

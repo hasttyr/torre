@@ -9,8 +9,18 @@ export interface AuditLogEntry {
   createdAt: string;
 }
 
-/** Lists every recorded audit log entry (HU31/RN-11), most recent first. */
-export async function listAuditLogs(): Promise<AuditLogEntry[]> {
-  const { data } = await api.get<AuditLogEntry[]>("/audit-logs");
+export interface AuditLogPage {
+  entries: AuditLogEntry[];
+  // Pass it back for the next (older) page; null on the last one.
+  nextCursor: string | null;
+}
+
+/**
+ * One page of the audit log (HU31/RN-11), most recent first.
+ *
+ * @param cursor - The previous page's `nextCursor`; omit it for the newest page.
+ */
+export async function listAuditLogs(cursor?: string): Promise<AuditLogPage> {
+  const { data } = await api.get<AuditLogPage>("/audit-logs", { params: cursor ? { cursor } : {} });
   return data;
 }

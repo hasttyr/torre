@@ -384,6 +384,8 @@
     "loading": "Cargando bitácora…",
     "loadError": "No se pudo cargar la bitácora de auditoría",
     "empty": "Todavía no hay acciones registradas.",
+    "loadMore": "Cargar anteriores",
+    "loadingMore": "Cargando anteriores…",
     "actions": {
       "ROLE_CHANGED": "Cambio de rol",
       "PLAYER_WITHDRAWN": "Retiro de jugador",

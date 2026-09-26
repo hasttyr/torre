@@ -222,14 +222,18 @@ describe("HTTP services", () => {
     await expect(tournaments.getTournament("t-1")).resolves.toEqual({ ok: true });
   });
 
-  it("sends search and widget parameters as query params, not in the path", async () => {
+  it("sends search, widget and paging parameters as query params, not in the path", async () => {
     await players.searchPlayers("Luis Gómez");
     await dashboard.getWidgetData("PLAYER_SUMMARY", "p-1");
     await dashboard.getWidgetData("TOP_PLAYERS");
+    await auditLogs.listAuditLogs();
+    await auditLogs.listAuditLogs("log-50");
 
     expect(spies.get.mock.calls[0]).toEqual(["/players", { params: { q: "Luis Gómez" } }]);
     expect(spies.get.mock.calls[1]).toEqual(["/dashboard/widgets/PLAYER_SUMMARY", { params: { playerId: "p-1" } }]);
     expect(spies.get.mock.calls[2]).toEqual(["/dashboard/widgets/TOP_PLAYERS", { params: {} }]);
+    expect(spies.get.mock.calls[3]).toEqual(["/audit-logs", { params: {} }]);
+    expect(spies.get.mock.calls[4]).toEqual(["/audit-logs", { params: { cursor: "log-50" } }]);
   });
 
   it("downloads exports as binary files (HU30)", async () => {

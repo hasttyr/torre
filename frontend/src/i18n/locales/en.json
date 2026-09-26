@@ -384,6 +384,8 @@
     "loading": "Loading audit log…",
     "loadError": "Could not load the audit log",
     "empty": "No actions recorded yet.",
+    "loadMore": "Load older",
+    "loadingMore": "Loading older…",
     "actions": {
       "ROLE_CHANGED": "Role changed",
       "PLAYER_WITHDRAWN": "Player withdrawn",
