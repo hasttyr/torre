@@ -42,7 +42,7 @@ function signIn(role: string, name = "Ana Torres"): void {
   } as ReturnType<typeof useAuthStore>["user"];
 }
 
-async function mountView() {
+async function mountView(url = "/panel") {
   const router = createRouter({
     history: createWebHistory(),
     routes: [
@@ -51,13 +51,21 @@ async function mountView() {
       { path: "/mis-jugadores", component: { template: "<div />" } },
     ],
   });
-  router.push("/panel");
+  router.push(url);
   await router.isReady();
 
   const wrapper = mount(PanelView, { global: { plugins: [router, i18n] } });
   await flushPromises();
   return wrapper;
 }
+
+const TWO_PLAYERS = {
+  widgets: [{ key: "PLAYER_SUMMARY" as const, subject: "player" as const }],
+  players: [
+    { id: "p1", name: "Ana Torres" },
+    { id: "p2", name: "Luis Gómez" },
+  ],
+};
 
 describe("PanelView", () => {
   beforeEach(() => {
@@ -105,6 +113,33 @@ describe("PanelView", () => {
 
     expect(getWidgetDataMock).toHaveBeenLastCalledWith("PLAYER_SUMMARY", "p2");
     expect(wrapper.get("[data-widget='PLAYER_SUMMARY']").text()).toContain("Luis Gómez");
+  });
+
+  it("keeps the picked player in the URL, leaving the default (first) one out", async () => {
+    signIn("COACH");
+    getDashboardMock.mockResolvedValue(TWO_PLAYERS);
+    const wrapper = await mountView();
+    const query = () => wrapper.vm.$router.currentRoute.value.query;
+
+    await wrapper.get("select").setValue("p2");
+    await flushPromises();
+    expect(query()).toEqual({ jugador: "p2" });
+
+    await wrapper.get("select").setValue("p1");
+    await flushPromises();
+    expect(query()).toEqual({});
+  });
+
+  it("opens on the player a shared link points to, or the first one if that player isn't available", async () => {
+    signIn("COACH");
+    getDashboardMock.mockResolvedValue(TWO_PLAYERS);
+
+    const linked = await mountView("/panel?jugador=p2");
+    expect((linked.get("select").element as HTMLSelectElement).value).toBe("p2");
+    expect(getWidgetDataMock).toHaveBeenLastCalledWith("PLAYER_SUMMARY", "p2");
+
+    const stale = await mountView("/panel?jugador=nobody");
+    expect((stale.get("select").element as HTMLSelectElement).value).toBe("p1");
   });
 
   it("tells a coach without linked players where to link them", async () => {

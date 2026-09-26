@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "reka-ui";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
@@ -12,6 +12,7 @@ import TournamentStats from "../../components/tournament/TournamentStats.vue";
 import { saveFile } from "../../lib/download";
 import { extractErrorMessage } from "../../lib/errors";
 import { canExportDocuments, canManageTournament, canRecordResults } from "../../lib/tournamentAccess";
+import { useQueryParam } from "../../lib/useQueryParam";
 import { useTournamentLive } from "../../lib/useTournamentLive";
 import { downloadPairingsPdf, downloadStandingsPdf, type GameResult } from "../../services/rounds";
 import { useAuthStore } from "../../stores/auth";
@@ -32,14 +33,22 @@ const loading = ref(true);
 const loadError = ref<string | null>(null);
 const actionError = ref<string | null>(null);
 const busyMatch = ref<string | null>(null);
-const selectedNumber = ref<number | null>(null);
 
 // Only published rounds belong in the room, even for its managers: drafts
 // are reviewed in the admin panel.
 const published = computed(() => rounds.rounds.filter((round) => round.status !== "GENERATED"));
+
+// An older round picked on purpose lives in the URL (?ronda=2), so a link
+// opens it. Without the param the room shows the newest round, and keeps
+// following it as new ones get published.
+const roundParam = useQueryParam("ronda");
 const selectedRound = computed(
-  () => published.value.find((round) => round.number === selectedNumber.value) ?? published.value.at(-1) ?? null,
+  () => published.value.find((round) => String(round.number) === roundParam.value) ?? published.value.at(-1) ?? null,
 );
+
+function selectRound(number: string | number): void {
+  roundParam.value = Number(number) === published.value.at(-1)?.number ? "" : String(number);
+}
 const tournament = computed(() => tournaments.current);
 const canRecord = computed(() => (tournament.value ? canRecordResults(tournament.value, auth.user) : false));
 const canManage = computed(() => (tournament.value ? canManageTournament(tournament.value, auth.user) : false));
@@ -63,15 +72,6 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-
-// Follow the newest round as it gets published, unless the viewer picked
-// an older one on purpose.
-watch(
-  () => published.value.at(-1)?.number,
-  (newest, previous) => {
-    if (selectedNumber.value === null || selectedNumber.value === previous) selectedNumber.value = newest ?? null;
-  },
-);
 
 async function withMatch(matchId: string, action: () => Promise<void>): Promise<void> {
   actionError.value = null;
@@ -173,7 +173,7 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
             class="card flex flex-col gap-4"
             :aria-label="t('tournamentRoom.pairings')"
             :model-value="selectedRound?.number"
-            @update:model-value="(round) => (selectedNumber = Number(round))"
+            @update:model-value="selectRound"
           >
             <div class="flex flex-wrap items-center justify-between gap-3">
               <h2 class="text-lg">{{ t("tournamentRoom.pairings") }}</h2>

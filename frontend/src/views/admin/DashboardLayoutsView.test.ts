@@ -21,7 +21,7 @@ const updateLayoutMock = vi.mocked(updateRoleLayout);
 enableAutoUnmount(afterEach);
 
 // attachTo: arrow-key navigation moves real focus, which jsdom only tracks for attached nodes.
-async function mountView() {
+async function mountView(url = "/panel/configuracion") {
   const router = createRouter({
     history: createWebHistory(),
     routes: [
@@ -29,7 +29,7 @@ async function mountView() {
       { path: "/panel", component: { template: "<div />" } },
     ],
   });
-  router.push("/panel/configuracion");
+  router.push(url);
   await router.isReady();
 
   const wrapper = mount(DashboardLayoutsView, { global: { plugins: [router, i18n] }, attachTo: document.body });
@@ -47,6 +47,8 @@ const tab = (wrapper: View, role: string) =>
 /** Picks a role's tab with the mouse: like native tabs, they switch on press, not on release. */
 async function selectTab(wrapper: View, role: string): Promise<void> {
   await tab(wrapper, role).trigger("mousedown");
+  // The selected role lives in the URL: let the navigation land.
+  await flushPromises();
 }
 
 describe("DashboardLayoutsView", () => {
@@ -124,6 +126,19 @@ describe("DashboardLayoutsView", () => {
     expect(panelOrder(wrapper)).toEqual([]);
     const panel = wrapper.get("[role='tabpanel']:not([hidden])");
     expect(panel.attributes("aria-labelledby")).toBe(tab(wrapper, "Entrenador").attributes("id"));
+  });
+
+  it("keeps the selected role in the URL, and opens the role a shared link points to", async () => {
+    const wrapper = await mountView();
+
+    await selectTab(wrapper, "Árbitro");
+    expect(wrapper.vm.$router.currentRoute.value.query).toEqual({ rol: "ARBITER" });
+    await selectTab(wrapper, "Jugador");
+    expect(wrapper.vm.$router.currentRoute.value.query).toEqual({});
+
+    const linked = await mountView("/panel/configuracion?rol=ARBITER");
+    expect(tab(linked, "Árbitro").attributes("aria-selected")).toBe("true");
+    expect(panelOrder(linked)).toEqual(["RECENT_RESULTS"]);
   });
 
   it("marks a role with unsaved changes in its tab's text, which screen readers read", async () => {

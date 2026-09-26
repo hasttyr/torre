@@ -1,6 +1,7 @@
 import { computed, inject, provide, ref, type ComputedRef, type InjectionKey, type Ref } from "vue";
 
 import type { SubjectPlayer } from "../services/dashboard";
+import { useQueryParam } from "./useQueryParam";
 
 // The dashboard's shared "which player am I looking at" state. Provided once
 // by the dashboard view and injected by any widget that needs it, so widgets
@@ -20,10 +21,33 @@ export interface PlayerSelection {
 
 const PLAYER_SELECTION: InjectionKey<PlayerSelection> = Symbol("playerSelection");
 
-/** Creates and provides the selection for the current component's subtree. */
-export function providePlayerSelection(options: { hasPlayerWidgets: () => boolean }): PlayerSelection {
+/**
+ * The selection kept in the URL (`?jugador=<id>`), so a link opens the
+ * dashboard on that player: a valid id from the URL, else the first player,
+ * who needs no param.
+ */
+function urlBackedSelection(name: string, players: Ref<SubjectPlayer[]>): Ref<string | null> {
+  const param = useQueryParam(name);
+  return computed({
+    get: () => players.value.find((player) => player.id === param.value)?.id ?? players.value[0]?.id ?? null,
+    set: (playerId) => {
+      param.value = playerId === null || playerId === players.value[0]?.id ? "" : playerId;
+    },
+  });
+}
+
+/**
+ * Creates and provides the selection for the current component's subtree.
+ *
+ * @param options.urlParam - query param to keep the selected player in; without
+ *   it, the selection starts empty and lives only in memory.
+ */
+export function providePlayerSelection(options: {
+  hasPlayerWidgets: () => boolean;
+  urlParam?: string;
+}): PlayerSelection {
   const players = ref<SubjectPlayer[]>([]);
-  const selectedId = ref<string | null>(null);
+  const selectedId = options.urlParam ? urlBackedSelection(options.urlParam, players) : ref<string | null>(null);
   const enabled = computed(() => options.hasPlayerWidgets() && players.value.length > 1);
 
   const canSelect = (playerId: string): boolean =>

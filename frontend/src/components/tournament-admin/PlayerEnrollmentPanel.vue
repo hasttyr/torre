@@ -165,6 +165,7 @@ const columns = [
       :data="tournaments.enrolledPlayers"
       :search-placeholder="t('tournamentAdmin.tableSearchPlaceholder')"
       :empty-message="t('tournamentAdmin.noPlayers')"
+      sync-url
     />
   </section>
 </template>

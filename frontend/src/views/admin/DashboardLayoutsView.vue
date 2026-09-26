@@ -7,6 +7,7 @@ import { isRenderableWidget } from "../../components/dashboard/widgetRegistry";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import { extractErrorMessage } from "../../lib/errors";
 import { useUnsavedChangesGuard } from "../../lib/unsavedChanges";
+import { useQueryParam } from "../../lib/useQueryParam";
 import {
   CONFIGURABLE_ROLES,
   getDashboardLayouts,
@@ -25,7 +26,13 @@ const catalog = ref<WidgetSummary[]>([]);
 // Filled per role once the layouts load; until then every lookup falls back to [].
 const saved = reactive<Partial<Record<ConfigurableRole, WidgetKey[]>>>({});
 const drafts = reactive<Partial<Record<ConfigurableRole, WidgetKey[]>>>({});
-const activeRole = ref<ConfigurableRole>("PLAYER");
+
+// The role being edited lives in the URL (?rol=COACH), so a reload or a
+// shared link lands on the same tab; an unknown value falls back to PLAYER.
+const roleParam = useQueryParam("rol", "PLAYER");
+const activeRole = computed(
+  (): ConfigurableRole => CONFIGURABLE_ROLES.find((role) => role === roleParam.value) ?? "PLAYER",
+);
 
 const loading = ref(true);
 const loadError = ref<string | null>(null);
@@ -62,7 +69,7 @@ function isDirty(role: ConfigurableRole): boolean {
 const anyDirty = computed(() => CONFIGURABLE_ROLES.some(isDirty));
 
 function selectRole(role: ConfigurableRole): void {
-  activeRole.value = role;
+  roleParam.value = role;
   saveError.value = null;
   savedMessage.value = null;
 }

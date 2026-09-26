@@ -7,10 +7,14 @@ import {
   getSortedRowModel,
   useVueTable,
   type ColumnDef,
+  type PaginationState,
+  type SortDirection,
   type SortingState,
 } from "@tanstack/vue-table";
-import { computed, ref, useId } from "vue";
+import { computed, ref, useId, watch } from "vue";
 import { useI18n } from "vue-i18n";
+
+import { useQueryParam } from "../../lib/useQueryParam";
 
 // Headless by design (TanStack Table owns sorting/filtering/pagination
 // *state*, never markup or styling): every <th>/<td> below is styled with
@@ -32,8 +36,12 @@ const props = withDefaults(
     // Turns off the search box for small, already-filtered lists where a
     // search input would just be noise (e.g. a single club's roster).
     searchable?: boolean;
+    // Keeps search, sort and page in the URL (?buscar, ?orden, ?pagina) so a
+    // reload or a shared link reopens the table as it was. For a page's one
+    // main table: two synced tables would share the same params.
+    syncUrl?: boolean;
   }>(),
-  { pageSize: 10, searchable: true },
+  { pageSize: 10, searchable: true, syncUrl: false },
 );
 
 const { t } = useI18n();
@@ -41,6 +49,33 @@ const { t } = useI18n();
 const searchInputId = useId();
 const globalFilter = ref("");
 const sorting = ref<SortingState>([]);
+const pagination = ref<PaginationState>({ pageIndex: 0, pageSize: props.pageSize });
+
+/** "-age" <-> [{ id: "age", desc: true }]; one sorted column at a time. */
+const parseSort = (param: string): SortingState =>
+  param ? [{ id: param.replace(/^-/, ""), desc: param.startsWith("-") }] : [];
+function formatSort(state: SortingState): string {
+  const [column] = state;
+  if (!column) return "";
+  return column.desc ? `-${column.id}` : column.id;
+}
+
+if (props.syncUrl) {
+  // The search box keeps its own ref (a URL-backed value would lag behind
+  // fast typing): the URL is read once here, then written as state changes.
+  const searchParam = useQueryParam("buscar");
+  const sortParam = useQueryParam("orden");
+  const pageParam = useQueryParam("pagina", "1");
+  globalFilter.value = searchParam.value;
+  sorting.value = parseSort(sortParam.value);
+  pagination.value.pageIndex = Math.max(0, Math.trunc(Number(pageParam.value)) - 1 || 0);
+  watch(globalFilter, (value) => (searchParam.value = value.trim()));
+  watch(sorting, (value) => (sortParam.value = formatSort(value)));
+  watch(
+    () => pagination.value.pageIndex,
+    (index) => (pageParam.value = String(index + 1)),
+  );
+}
 
 // TanStack Table memoizes each row model internally, keyed on the `data`
 // array's *reference* — it never inspects contents. A caller that mutates
@@ -65,6 +100,9 @@ const table = useVueTable({
     get globalFilter() {
       return globalFilter.value;
     },
+    get pagination() {
+      return pagination.value;
+    },
   },
   onSortingChange: (updater) => {
     sorting.value = typeof updater === "function" ? updater(sorting.value) : updater;
@@ -72,12 +110,22 @@ const table = useVueTable({
   onGlobalFilterChange: (updater) => {
     globalFilter.value = typeof updater === "function" ? updater(globalFilter.value) : updater;
   },
+  onPaginationChange: (updater) => {
+    pagination.value = typeof updater === "function" ? updater(pagination.value) : updater;
+  },
   getCoreRowModel: getCoreRowModel(),
   getSortedRowModel: getSortedRowModel(),
   getFilteredRowModel: getFilteredRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
-  initialState: { pagination: { pageSize: props.pageSize } },
 });
+
+const ARIA_SORT: Record<SortDirection, "ascending" | "descending"> = { asc: "ascending", desc: "descending" };
+
+/** aria-sort for a sortable header: the sorted column's direction, "none" for the others. */
+function ariaSort(isSorted: false | SortDirection, canSort: boolean): "ascending" | "descending" | "none" | undefined {
+  if (!canSort) return undefined;
+  return isSorted ? ARIA_SORT[isSorted] : "none";
+}
 
 const pageIndex = computed(() => table.getState().pagination.pageIndex);
 const pageCount = computed(() => table.getPageCount());
@@ -114,6 +162,7 @@ const filterStatus = computed(() => {
               v-for="header in headerGroup.headers"
               :key="header.id"
               class="border-b border-border-soft px-2.5 py-2 text-left text-sm"
+              :aria-sort="ariaSort(header.column.getIsSorted(), header.column.getCanSort())"
             >
               <button
                 v-if="header.column.getCanSort()"

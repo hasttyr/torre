@@ -21,7 +21,7 @@ const loading = ref(true);
 const loadError = ref<string | null>(null);
 
 const hasPlayerWidgets = computed(() => widgets.value.some((widget) => widget.subject === "player"));
-const selection = providePlayerSelection({ hasPlayerWidgets: () => hasPlayerWidgets.value });
+const selection = providePlayerSelection({ hasPlayerWidgets: () => hasPlayerWidgets.value, urlParam: "jugador" });
 
 const role = computed(() => auth.user?.role ?? "");
 const firstName = computed(() => auth.user?.name.split(/\s+/)[0] ?? "");
@@ -31,8 +31,8 @@ onMounted(async () => {
   try {
     const dashboard = await getDashboard();
     widgets.value = dashboard.widgets.filter((widget) => isRenderableWidget(widget.key));
+    // The selected player follows: the one in the URL, else the first.
     selection.players.value = dashboard.players;
-    selection.selectedId.value = dashboard.players[0]?.id ?? null;
   } catch (error) {
     loadError.value = extractErrorMessage(error, t("panel.loadError"));
   } finally {

@@ -55,12 +55,12 @@ async function selectClubByName(wrapper: Awaited<ReturnType<typeof mountView>>["
   await button.trigger("click");
 }
 
-async function mountView() {
+async function mountView(url = "/clubes") {
   const router = createRouter({
     history: createWebHistory(),
     routes: [{ path: "/clubes", component: ClubsView }],
   });
-  router.push("/clubes");
+  router.push(url);
   await router.isReady();
 
   const wrapper = mount(ClubsView, { global: { plugins: [router, i18n] } });
@@ -99,6 +99,24 @@ describe("ClubsView", () => {
 
     expect(listClubPlayersMock).toHaveBeenCalledWith("club-1");
     expect(wrapper.text()).toContain("Luis Gómez");
+  });
+
+  it("keeps the selected club in the URL, and opens the club a shared link points to", async () => {
+    listClubsMock.mockResolvedValue([CLUB]);
+    listClubPlayersMock.mockResolvedValue([ROSTER_PLAYER]);
+
+    const { wrapper } = await mountView();
+    await selectClubByName(wrapper, CLUB.name);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(wrapper.vm.$router.currentRoute.value.query).toEqual({ club: "club-1" });
+
+    listClubPlayersMock.mockClear();
+    const linked = await mountView("/clubes?club=club-1");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await linked.wrapper.vm.$nextTick();
+    expect(listClubPlayersMock).toHaveBeenCalledWith("club-1");
+    expect(linked.wrapper.text()).toContain("Luis Gómez");
+    expect(linked.wrapper.get("li button[aria-pressed='true']").text()).toBe(CLUB.name);
   });
 
   it("creates a new club and selects it", async () => {

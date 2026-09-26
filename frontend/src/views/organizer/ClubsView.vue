@@ -6,6 +6,7 @@ import AppHeader from "../../components/layout/AppHeader.vue";
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import { usePlayerSearch } from "../../lib/usePlayerSearch";
+import { useQueryParam } from "../../lib/useQueryParam";
 import type { PlayerSearchResult } from "../../services/players";
 import { useClubsStore } from "../../stores/clubs";
 
@@ -15,7 +16,11 @@ const { t } = useI18n();
 
 const loading = ref(true);
 const loadError = ref<string | null>(null);
-const selectedClubId = ref<string | null>(null);
+
+// The selected club lives in the URL (?club=<id>), so a link opens its roster.
+const clubParam = useQueryParam("club");
+const selectedClubId = computed(() => clubParam.value || null);
+const selectedClub = computed(() => clubs.clubs.find((club) => club.id === selectedClubId.value) ?? null);
 
 onMounted(async () => {
   try {
@@ -25,19 +30,27 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+  // Opened from a link: now that the list is here, load that club's roster.
+  await loadRoster(selectedClubId.value);
 });
 
-const selectedClub = computed(() => clubs.clubs.find((club) => club.id === selectedClubId.value) ?? null);
-
-/** Selects a club and loads its roster. */
-async function selectClub(clubId: string): Promise<void> {
-  selectedClubId.value = clubId;
+/** Loads a club's roster, if the club exists (a stale link just shows the list). */
+async function loadRoster(clubId: string | null): Promise<void> {
   rosterError.value = null;
+  if (!clubId || !clubs.clubs.some((club) => club.id === clubId)) return;
   try {
     await clubs.loadPlayers(clubId);
   } catch (error) {
     rosterError.value = extractErrorMessage(error, t("clubs.genericServerError"));
   }
+}
+
+// Whatever changes the club (a click, a new club, back/forward) loads its roster.
+watch(selectedClubId, loadRoster);
+
+/** Selects a club; its roster loads through the watch above. */
+function selectClub(clubId: string): void {
+  clubParam.value = clubId;
 }
 
 // --- create club ---
@@ -58,7 +71,7 @@ async function onCreateClub(): Promise<void> {
   try {
     const club = await clubs.createClub(newClubName.value.trim());
     newClubName.value = "";
-    await selectClub(club.id);
+    selectClub(club.id);
   } catch (error) {
     createError.value = extractErrorMessage(error, t("clubs.genericServerError"));
   } finally {
@@ -171,7 +184,7 @@ async function onDelete(): Promise<void> {
   deleting.value = true;
   try {
     await clubs.deleteClub(selectedClub.value.id);
-    selectedClubId.value = null;
+    clubParam.value = "";
   } catch (error) {
     rosterError.value = extractErrorMessage(error, t("clubs.genericServerError"));
   } finally {
@@ -231,6 +244,7 @@ async function onDelete(): Promise<void> {
                     ? 'border-accent bg-accent/10 font-semibold'
                     : 'border-border-soft hover:border-accent/40'
                 "
+                :aria-pressed="club.id === selectedClubId"
                 @click="selectClub(club.id)"
               >
                 {{ club.name }}

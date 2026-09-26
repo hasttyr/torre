@@ -113,7 +113,14 @@ function signIn(role: string, id = "user-1"): void {
   } as ReturnType<typeof useAuthStore>["user"];
 }
 
-async function mountRoom() {
+const SECOND_ROUND: Round = {
+  ...ROUND,
+  id: "r-2",
+  number: 2,
+  matches: [{ ...ROUND.matches[0], id: "m-9", white: { playerId: "p9", name: "Marta Ríos" } }],
+};
+
+async function mountRoom(url = "/torneos/t-1/sala") {
   const router = createRouter({
     history: createWebHistory(),
     routes: [
@@ -121,7 +128,7 @@ async function mountRoom() {
       { path: "/torneos/:id", component: { template: "<div />" } },
     ],
   });
-  router.push("/torneos/t-1/sala");
+  router.push(url);
   await router.isReady();
   // attachTo: arrow-key navigation between round tabs moves real focus.
   const wrapper = mount(TournamentLiveView, { global: { plugins: [router, i18n] }, attachTo: document.body });
@@ -185,13 +192,7 @@ describe("TournamentLiveView", () => {
 
   it("switches between published rounds with keyboard-operable tabs, the pairings being the selected tab's panel", async () => {
     signIn("PLAYER");
-    const secondRound: Round = {
-      ...ROUND,
-      id: "r-2",
-      number: 2,
-      matches: [{ ...ROUND.matches[0], id: "m-9", white: { playerId: "p9", name: "Marta Ríos" } }],
-    };
-    vi.mocked(listRounds).mockResolvedValue([ROUND, secondRound]);
+    vi.mocked(listRounds).mockResolvedValue([ROUND, SECOND_ROUND]);
 
     const wrapper = await mountRoom();
     const roundTab = (label: string) => wrapper.findAll("[role='tab']").find((node) => node.text() === label)!;
@@ -206,6 +207,31 @@ describe("TournamentLiveView", () => {
     const panel = visiblePanel();
     expect(panel.attributes("aria-labelledby")).toBe(roundTab("R1").attributes("id"));
     expect(panel.text()).toContain("Ana Torres");
+  });
+
+  it("keeps an older round picked on purpose in the URL; the newest one needs no param", async () => {
+    signIn("PLAYER");
+    vi.mocked(listRounds).mockResolvedValue([ROUND, SECOND_ROUND]);
+    const wrapper = await mountRoom();
+    const roundTab = (label: string) => wrapper.findAll("[role='tab']").find((node) => node.text() === label)!;
+    const query = () => wrapper.vm.$router.currentRoute.value.query;
+
+    await roundTab("R1").trigger("mousedown");
+    await flushPromises();
+    expect(query()).toEqual({ ronda: "1" });
+
+    await roundTab("R2").trigger("mousedown");
+    await flushPromises();
+    expect(query()).toEqual({});
+  });
+
+  it("opens the round a shared link points to", async () => {
+    signIn("PLAYER");
+    vi.mocked(listRounds).mockResolvedValue([ROUND, SECOND_ROUND]);
+
+    const wrapper = await mountRoom("/torneos/t-1/sala?ronda=1");
+
+    expect(wrapper.get("[role='tabpanel']:not([hidden])").text()).toContain("Ana Torres");
   });
 
   it("lets an arbiter record a pending game in one tap (HU10)", async () => {

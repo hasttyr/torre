@@ -1,7 +1,8 @@
 import { createColumnHelper } from "@tanstack/vue-table";
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 import { reactive } from "vue";
+import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
 import DataTable from "./DataTable.vue";
@@ -108,6 +109,17 @@ describe("DataTable", () => {
     });
   });
 
+  it("tells screen readers which column sorts the rows, and which way (aria-sort)", async () => {
+    const wrapper = mountTable(makeRows(3));
+    const nameHeader = () => wrapper.findAll("th")[0];
+    expect(nameHeader().attributes("aria-sort")).toBe("none");
+
+    await nameHeader().get("button").trigger("click");
+    expect(nameHeader().attributes("aria-sort")).toBe("ascending");
+    await nameHeader().get("button").trigger("click");
+    expect(nameHeader().attributes("aria-sort")).toBe("descending");
+  });
+
   it("hides the search box when searchable is false", () => {
     const wrapper = mountTable(makeRows(3), { searchable: false });
 
@@ -133,5 +145,52 @@ describe("DataTable", () => {
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("Renamed");
+  });
+});
+
+describe("DataTable with syncUrl: search, sort and page in the URL", () => {
+  async function mountSynced(url: string) {
+    const router = createRouter({
+      history: createWebHistory(),
+      routes: [{ path: "/usuarios", component: { template: "<div />" } }],
+    });
+    await router.push(url);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see mountTable
+    const wrapper = mount(DataTable as any, {
+      props: { columns, data: makeRows(25), syncUrl: true },
+      global: { plugins: [i18n, router] },
+    });
+    await flushPromises();
+    return { wrapper, query: () => router.currentRoute.value.query };
+  }
+
+  const names = (wrapper: VueWrapper) => wrapper.findAll("tbody tr td:first-child").map((cell) => cell.text());
+
+  it("opens as a shared link left it", async () => {
+    // "Player 1" matches 1 and 10–19; oldest first (Player 19), 10 per page: page 2 holds just Player 1.
+    const { wrapper } = await mountSynced("/usuarios?buscar=Player%201&orden=-age&pagina=2");
+
+    expect((wrapper.get("input[type='search']").element as HTMLInputElement).value).toBe("Player 1");
+    expect(names(wrapper)).toEqual(["Player 1"]);
+  });
+
+  it("writes what the user does, and drops a page that a new search resets", async () => {
+    const { wrapper, query } = await mountSynced("/usuarios");
+
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Siguiente")!
+      .trigger("click");
+    await flushPromises();
+    expect(query()).toEqual({ pagina: "2" });
+
+    // A text column sorts A–Z first (a numeric one would start from the highest).
+    await wrapper.findAll("th button")[0].trigger("click");
+    await flushPromises();
+    expect(query()).toMatchObject({ orden: "name" });
+
+    await wrapper.get("input[type='search']").setValue("Player 2");
+    await flushPromises();
+    expect(query()).toEqual({ orden: "name", buscar: "Player 2" });
   });
 });

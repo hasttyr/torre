@@ -173,6 +173,7 @@ const columns = [
           :data="users"
           :search-placeholder="t('adminUsers.searchPlaceholder')"
           :empty-message="t('adminUsers.empty')"
+          sync-url
         />
       </section>
     </main>
