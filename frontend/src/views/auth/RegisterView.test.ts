@@ -149,7 +149,7 @@ describe("RegisterView", () => {
 
     await wrapper.find("form").trigger("submit.prevent");
 
-    expect(wrapper.text()).toContain("Debés aceptar la política de tratamiento de datos personales");
+    expect(wrapper.text()).toContain("Debes aceptar la política de tratamiento de datos personales");
     expect(registerUserMock).not.toHaveBeenCalled();
   });
 

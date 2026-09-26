@@ -30,8 +30,14 @@ const columns = [
         h("span", { class: "text-xs text-text-faint" }, row.original.program),
       ]),
   }),
-  column.accessor("tournaments", { header: () => t("widgets.PLAYERS_OVERVIEW.tournaments") }),
-  column.accessor("games", { header: () => t("widgets.PLAYERS_OVERVIEW.games") }),
+  column.accessor("tournaments", {
+    header: () => t("widgets.PLAYERS_OVERVIEW.tournaments"),
+    cell: ({ getValue }) => h("span", { class: "tabular-nums" }, getValue()),
+  }),
+  column.accessor("games", {
+    header: () => t("widgets.PLAYERS_OVERVIEW.games"),
+    cell: ({ getValue }) => h("span", { class: "tabular-nums" }, getValue()),
+  }),
   column.display({
     id: "results",
     header: () => t("widgets.PLAYERS_OVERVIEW.results"),

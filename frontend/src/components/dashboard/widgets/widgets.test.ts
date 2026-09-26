@@ -80,6 +80,42 @@ describe("dashboard widgets", () => {
     expect(wrapper.text()).toContain("1.º");
   });
 
+  it("sets numbers in tabular figures, so they line up across tiles and rows", async () => {
+    getWidgetDataMock.mockResolvedValue({
+      wins: 3,
+      draws: 1,
+      losses: 1,
+      games: 5,
+      byes: 0,
+      points: 3.5,
+      scoreRate: 0.7,
+      tournamentsPlayed: 2,
+      titles: 1,
+      bestFinish: 1,
+    });
+    const summary = await mountWidget(PlayerSummaryWidget);
+    expect(summary.wrapper.findAll("dd").every((value) => value.classes("tabular-nums"))).toBe(true);
+
+    getWidgetDataMock.mockResolvedValue([
+      {
+        tournamentId: "t1",
+        name: "Copa",
+        startDate: "2026-03-01",
+        endDate: "2026-03-02",
+        status: "FINISHED",
+        withdrawn: false,
+        rank: 1,
+        participants: 8,
+        points: 4.5,
+        buchholz: 12,
+      },
+    ]);
+    const history = await mountWidget(TournamentHistoryWidget);
+    const cells = history.wrapper.findAll("tbody td");
+    expect(cells.at(-2)!.get("span").classes()).toContain("tabular-nums");
+    expect(cells.at(-1)!.get("span").classes()).toContain("tabular-nums");
+  });
+
   it("player widgets don't request anything until a player is picked", async () => {
     const { wrapper } = await mountWidget(PlayerSummaryWidget, { selected: null });
 

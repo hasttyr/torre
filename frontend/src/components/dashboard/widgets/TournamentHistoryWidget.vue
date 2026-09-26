@@ -17,6 +17,10 @@ const { data, loading, error, reload, subjectName } =
 
 const column = createColumnHelper<TournamentHistoryEntry>();
 
+/** A score cell: digits of equal width so a column of them lines up, or a dash when there's none. */
+const tabularNumber = (value: number | null) =>
+  value === null ? "—" : h("span", { class: "tabular-nums" }, formatNumber(value, locale.locale));
+
 const columns = [
   column.accessor("name", {
     header: () => t("widgets.PLAYER_TOURNAMENT_HISTORY.tournament"),
@@ -49,17 +53,11 @@ const columns = [
   }),
   column.accessor("points", {
     header: () => t("widgets.PLAYER_TOURNAMENT_HISTORY.points"),
-    cell: ({ getValue }) => {
-      const points = getValue();
-      return points === null ? "—" : formatNumber(points, locale.locale);
-    },
+    cell: ({ getValue }) => tabularNumber(getValue()),
   }),
   column.accessor("buchholz", {
     header: () => "Buchholz",
-    cell: ({ getValue }) => {
-      const buchholz = getValue();
-      return buchholz === null ? "—" : formatNumber(buchholz, locale.locale);
-    },
+    cell: ({ getValue }) => tabularNumber(getValue()),
   }),
 ];
 </script>

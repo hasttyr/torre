@@ -41,7 +41,7 @@ function dayParts(date: string): { day: string; month: string } {
           class="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-accent/12 leading-none"
           aria-hidden="true"
         >
-          <span class="text-lg font-semibold text-text">{{ dayParts(tournament.startDate).day }}</span>
+          <span class="text-lg font-semibold text-text tabular-nums">{{ dayParts(tournament.startDate).day }}</span>
           <span class="text-[0.65rem] font-semibold text-text-muted uppercase">
             {{ dayParts(tournament.startDate).month }}
           </span>
