@@ -93,6 +93,17 @@ describe("UsersView", () => {
     expect(updateUserRoleMock).toHaveBeenCalledWith("user-2", "ARBITER");
   });
 
+  it("names each row's role selector after its user", async () => {
+    listUsersMock.mockResolvedValue([ADMIN, ORGANIZER]);
+
+    const { wrapper } = await mountView();
+
+    expect(wrapper.findAll("select").map((select) => select.attributes("aria-label"))).toEqual([
+      "Rol de Admin Demo",
+      "Rol de Carlos Ruiz",
+    ]);
+  });
+
   it("deactivates a user after confirmation", async () => {
     listUsersMock.mockResolvedValue([ADMIN, ORGANIZER]);
     updateUserStatusMock.mockResolvedValue({ ...ORGANIZER, status: "INACTIVE" });

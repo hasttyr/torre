@@ -1,6 +1,6 @@
-import { flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
@@ -17,6 +17,9 @@ import { getDashboardLayouts, updateRoleLayout } from "../../services/dashboard"
 const getLayoutsMock = vi.mocked(getDashboardLayouts);
 const updateLayoutMock = vi.mocked(updateRoleLayout);
 
+enableAutoUnmount(afterEach);
+
+// attachTo: arrow-key navigation moves real focus, which jsdom only tracks for attached nodes.
 async function mountView() {
   const router = createRouter({
     history: createWebHistory(),
@@ -28,13 +31,22 @@ async function mountView() {
   router.push("/panel/configuracion");
   await router.isReady();
 
-  const wrapper = mount(DashboardLayoutsView, { global: { plugins: [router, i18n] } });
+  const wrapper = mount(DashboardLayoutsView, { global: { plugins: [router, i18n] }, attachTo: document.body });
   await flushPromises();
   return wrapper;
 }
 
-const panelOrder = (wrapper: Awaited<ReturnType<typeof mountView>>) =>
-  wrapper.findAll("[data-widget]").map((node) => node.attributes("data-widget"));
+type View = Awaited<ReturnType<typeof mountView>>;
+
+const panelOrder = (wrapper: View) => wrapper.findAll("[data-widget]").map((node) => node.attributes("data-widget"));
+
+const tab = (wrapper: View, role: string) =>
+  wrapper.findAll("[role='tab']").find((node) => node.text().startsWith(role))!;
+
+/** Picks a role's tab with the mouse: like native tabs, they switch on press, not on release. */
+async function selectTab(wrapper: View, role: string): Promise<void> {
+  await tab(wrapper, role).trigger("mousedown");
+}
 
 describe("DashboardLayoutsView", () => {
   beforeEach(() => {
@@ -85,18 +97,41 @@ describe("DashboardLayoutsView", () => {
     const wrapper = await mountView();
 
     await wrapper.get("[data-widget='TOP_PLAYERS'] button[aria-label^='Quitar']").trigger("click");
-    const coachTab = wrapper.findAll("[role='tab']").find((tab) => tab.text().startsWith("Entrenador"));
-    await coachTab!.trigger("click");
+    await selectTab(wrapper, "Entrenador");
     expect(panelOrder(wrapper)).toEqual([]);
 
-    const playerTab = wrapper.findAll("[role='tab']").find((tab) => tab.text().startsWith("Jugador"));
-    await playerTab!.trigger("click");
+    await selectTab(wrapper, "Jugador");
     expect(panelOrder(wrapper)).toEqual(["PLAYER_SUMMARY"]);
 
     const discard = wrapper.findAll("button").find((button) => button.text() === "Descartar");
     await discard!.trigger("click");
     expect(panelOrder(wrapper)).toEqual(["PLAYER_SUMMARY", "TOP_PLAYERS"]);
     expect(updateLayoutMock).not.toHaveBeenCalled();
+  });
+
+  it("switches roles from the keyboard, with the layout as the selected tab's panel", async () => {
+    const wrapper = await mountView();
+    // Tabbing into the list lands on the selected tab.
+    (wrapper.get("[role='tablist']").element as HTMLElement).focus();
+    await flushPromises();
+    expect(document.activeElement).toBe(tab(wrapper, "Jugador").element);
+
+    await tab(wrapper, "Jugador").trigger("keydown", { key: "ArrowRight" });
+    await flushPromises();
+
+    expect(tab(wrapper, "Entrenador").attributes("aria-selected")).toBe("true");
+    expect(panelOrder(wrapper)).toEqual([]);
+    const panel = wrapper.get("[role='tabpanel']:not([hidden])");
+    expect(panel.attributes("aria-labelledby")).toBe(tab(wrapper, "Entrenador").attributes("id"));
+  });
+
+  it("marks a role with unsaved changes in its tab's text, which screen readers read", async () => {
+    const wrapper = await mountView();
+
+    await wrapper.get("[data-widget='TOP_PLAYERS'] button[aria-label^='Quitar']").trigger("click");
+
+    expect(tab(wrapper, "Jugador").text()).toContain("Cambios sin guardar");
+    expect(tab(wrapper, "Jugador").findAll("[aria-label]")).toHaveLength(0);
   });
 
   it("shows the server's error when saving fails", async () => {

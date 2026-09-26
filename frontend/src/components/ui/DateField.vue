@@ -61,6 +61,10 @@ const resolvedPlaceholder = computed(() => props.placeholder ?? t("dateField.pla
 // in Colombia, which made the max date itself unselectable.
 const minBound = computed(() => (props.minDate ? fromIsoDate(props.minDate) : undefined));
 const maxBound = computed(() => (props.maxDate ? fromIsoDate(props.maxDate) : undefined));
+
+// The picker names its input "Datepicker input" by default, which overrides
+// the <label :for="id"> every form puts next to the field.
+const ARIA_LABELS = { input: undefined };
 </script>
 
 <template>
@@ -68,6 +72,7 @@ const maxBound = computed(() => (props.maxDate ? fromIsoDate(props.maxDate) : un
     v-model="selectedDate"
     :dark="theme.theme === 'dark'"
     :input-attrs="{ id, clearable: true }"
+    :aria-labels="ARIA_LABELS"
     :formats="{ input: formatDate }"
     :locale="datePickerLocale"
     :time-config="{ enableTimePicker: false }"

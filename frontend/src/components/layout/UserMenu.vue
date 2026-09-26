@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuRoot,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "reka-ui";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
@@ -7,14 +16,18 @@ import { useAuthStore } from "../../stores/auth";
 import { useLocaleStore } from "../../stores/locale";
 import { useThemeStore } from "../../stores/theme";
 
+// reka-ui's DropdownMenu owns the menu behavior: role="menu" with its items,
+// arrow keys and typeahead, Escape or an outside click closing it, and focus
+// returning to the avatar button afterwards.
 const auth = useAuthStore();
 const theme = useThemeStore();
 const locale = useLocaleStore();
 const router = useRouter();
 const { t } = useI18n();
 
-const open = ref(false);
-const menuRef = ref<HTMLElement | null>(null);
+// Highlighted (hover or arrow keys) instead of an outline, like any menu.
+const ITEM_CLASS =
+  "flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium outline-none select-none data-[highlighted]:bg-accent/10";
 
 /** Derives a two-letter avatar label from the user's full name (e.g. "Nilson Aldair Molina Rengifo" -> "NM"). */
 const initials = computed((): string => {
@@ -27,145 +40,92 @@ const initials = computed((): string => {
   return `${first}${middle}`.toUpperCase();
 });
 
-function toggleMenu(): void {
-  open.value = !open.value;
-}
-
-function closeMenu(): void {
-  open.value = false;
-}
-
-function goToProfile(): void {
-  closeMenu();
-  router.push("/cuenta");
+/** Applies a preference without closing the menu, so its new value shows right there. */
+function toggleInPlace(event: Event, toggle: () => void): void {
+  event.preventDefault();
+  toggle();
 }
 
 async function onLogout(): Promise<void> {
-  closeMenu();
   await auth.logout();
   router.push("/");
 }
-
-/** Closes the dropdown when a click lands outside of it. */
-function onDocumentClick(event: MouseEvent): void {
-  if (!menuRef.value) return;
-  if (!menuRef.value.contains(event.target as Node)) {
-    closeMenu();
-  }
-}
-
-/** Closes the dropdown on Escape. */
-function onKeydown(event: KeyboardEvent): void {
-  if (event.key === "Escape") {
-    closeMenu();
-  }
-}
-
-onMounted(() => {
-  document.addEventListener("click", onDocumentClick);
-  document.addEventListener("keydown", onKeydown);
-});
-
-onBeforeUnmount(() => {
-  document.removeEventListener("click", onDocumentClick);
-  document.removeEventListener("keydown", onKeydown);
-});
 </script>
 
 <template>
-  <div ref="menuRef" class="relative">
-    <button
-      type="button"
-      class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-[#17130a] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
-      :aria-expanded="open"
-      aria-haspopup="true"
+  <DropdownMenuRoot>
+    <DropdownMenuTrigger
+      class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-[#17130a] transition-opacity hover:opacity-90"
       :aria-label="t('userMenu.menuAria', { name: auth.user?.name ?? '' })"
-      @click="toggleMenu"
     >
       {{ initials }}
-    </button>
+    </DropdownMenuTrigger>
 
-    <Transition
-      enter-active-class="transition duration-150 ease-out"
-      enter-from-class="opacity-0 -translate-y-1"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition duration-100 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 -translate-y-1"
-    >
-      <div
-        v-if="open"
-        class="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-lg border border-border bg-header shadow-lg"
+    <DropdownMenuPortal>
+      <DropdownMenuContent
+        align="end"
+        :side-offset="8"
+        class="z-20 w-56 overflow-hidden rounded-lg border border-border bg-bg-elevated shadow-lg"
       >
-        <div class="border-b border-border-soft px-3 py-2.5">
+        <DropdownMenuLabel class="border-b border-border-soft px-3 py-2.5">
           <p class="truncate text-sm font-semibold text-text">{{ auth.user?.name }}</p>
-          <p class="truncate text-xs text-text-soft">{{ auth.user?.email }}</p>
-          <p v-if="auth.user" class="truncate text-xs text-text-soft">{{ t(`roles.${auth.user.role}`) }}</p>
-        </div>
+          <p class="truncate text-xs text-text-muted">{{ auth.user?.email }}</p>
+          <p v-if="auth.user" class="truncate text-xs text-text-muted">{{ t(`roles.${auth.user.role}`) }}</p>
+        </DropdownMenuLabel>
 
-        <div class="flex items-center justify-between px-3 py-2.5">
-          <span class="text-sm text-text">{{ t("userMenu.theme") }}</span>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-text transition-colors hover:border-accent/40 hover:bg-accent/10"
-            @click="theme.toggle()"
-          >
-            <svg
-              v-if="theme.theme === 'dark'"
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              fill="none"
-              aria-hidden="true"
+        <div class="py-1.5">
+          <DropdownMenuItem :class="ITEM_CLASS" @select="toggleInPlace($event, () => theme.toggle())">
+            <span class="text-text">{{ t("userMenu.theme") }}</span>
+            <span
+              class="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-text"
             >
-              <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.75" />
-              <path
-                d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.55 1.55M18.25 18.25l1.55 1.55M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.55-1.55M18.25 5.75l1.55-1.55"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-              />
-            </svg>
-            <svg v-else viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true">
-              <path
-                d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linejoin="round"
-              />
-            </svg>
-            {{ theme.theme === "dark" ? t("userMenu.dark") : t("userMenu.light") }}
-          </button>
+              <svg
+                v-if="theme.theme === 'dark'"
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.75" />
+                <path
+                  d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.55 1.55M18.25 18.25l1.55 1.55M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.55-1.55M18.25 5.75l1.55-1.55"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <svg v-else viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true">
+                <path
+                  d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              {{ theme.theme === "dark" ? t("userMenu.dark") : t("userMenu.light") }}
+            </span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem :class="ITEM_CLASS" @select="toggleInPlace($event, () => locale.toggle())">
+            <span class="text-text">{{ t("userMenu.language") }}</span>
+            <span class="rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-text" translate="no">
+              {{ locale.locale.toUpperCase() }}
+            </span>
+          </DropdownMenuItem>
         </div>
 
-        <div class="flex items-center justify-between px-3 py-2.5">
-          <span class="text-sm text-text">{{ t("userMenu.language") }}</span>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-semibold text-text transition-colors hover:border-accent/40 hover:bg-accent/10"
-            @click="locale.toggle()"
-          >
-            {{ locale.locale.toUpperCase() }}
-          </button>
-        </div>
+        <DropdownMenuSeparator class="h-px bg-border-soft" />
 
-        <div class="border-t border-border-soft py-1.5">
-          <button
-            type="button"
-            class="block w-full px-3 py-2 text-left text-sm font-medium text-text hover:bg-accent/10"
-            @click="goToProfile"
-          >
-            {{ t("userMenu.myProfile") }}
-          </button>
-          <button
-            type="button"
-            class="block w-full px-3 py-2 text-left text-sm font-medium text-red-500 hover:bg-red-500/10"
-            @click="onLogout"
-          >
+        <div class="py-1.5">
+          <DropdownMenuItem as-child :class="ITEM_CLASS">
+            <RouterLink to="/cuenta" class="text-text">{{ t("userMenu.myProfile") }}</RouterLink>
+          </DropdownMenuItem>
+          <DropdownMenuItem :class="[ITEM_CLASS, 'text-error']" @select="onLogout">
             {{ t("userMenu.logout") }}
-          </button>
+          </DropdownMenuItem>
         </div>
-      </div>
-    </Transition>
-  </div>
+      </DropdownMenuContent>
+    </DropdownMenuPortal>
+  </DropdownMenuRoot>
 </template>

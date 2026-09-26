@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "reka-ui";
 import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
@@ -165,47 +166,53 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
         <p v-if="actionError" role="alert" class="banner banner--error">{{ actionError }}</p>
 
         <div class="grid gap-5 lg:grid-cols-[1.25fr_1fr]">
-          <section class="card flex flex-col gap-4" :aria-label="t('tournamentRoom.pairings')">
+          <!-- reka-ui Tabs: arrow keys move between rounds, and screen readers
+               read each round's boards as the panel of its tab. -->
+          <TabsRoot
+            as="section"
+            class="card flex flex-col gap-4"
+            :aria-label="t('tournamentRoom.pairings')"
+            :model-value="selectedRound?.number"
+            @update:model-value="(round) => (selectedNumber = Number(round))"
+          >
             <div class="flex flex-wrap items-center justify-between gap-3">
               <h2 class="text-lg">{{ t("tournamentRoom.pairings") }}</h2>
-              <div
+              <TabsList
                 v-if="published.length > 0"
-                role="tablist"
                 :aria-label="t('tournamentRoom.roundsLabel')"
                 class="flex flex-wrap gap-1 rounded-xl border border-border-soft p-1"
               >
-                <button
+                <TabsTrigger
                   v-for="round in published"
                   :key="round.id"
-                  type="button"
-                  role="tab"
-                  :aria-selected="round.number === selectedRound?.number"
+                  :value="round.number"
                   class="min-w-9 rounded-lg px-2.5 py-1 text-sm font-semibold tabular-nums transition-colors"
                   :class="
                     round.number === selectedRound?.number
                       ? 'bg-accent text-[#17130a]'
                       : 'text-text-muted hover:bg-accent/10'
                   "
-                  @click="selectedNumber = round.number"
                 >
                   {{ t("tournamentRoom.roundTab", { number: round.number }) }}
-                </button>
-              </div>
+                </TabsTrigger>
+              </TabsList>
             </div>
 
             <p v-if="!selectedRound" class="text-sm text-text-muted">{{ t("tournamentRoom.noRounds") }}</p>
 
-            <PairingsTable v-else :round="selectedRound">
-              <template v-if="canRecord" #actions="{ match }">
-                <ResultEntry
-                  :match="match"
-                  :busy="busyMatch === match.id"
-                  @record="onRecord(match.id, $event)"
-                  @correct="(value, reason) => onCorrect(match.id, value, reason)"
-                />
-              </template>
-            </PairingsTable>
-          </section>
+            <TabsContent v-for="round in published" :key="round.id" :value="round.number">
+              <PairingsTable :round="round">
+                <template v-if="canRecord" #actions="{ match }">
+                  <ResultEntry
+                    :match="match"
+                    :busy="busyMatch === match.id"
+                    @record="onRecord(match.id, $event)"
+                    @correct="(value, reason) => onCorrect(match.id, value, reason)"
+                  />
+                </template>
+              </PairingsTable>
+            </TabsContent>
+          </TabsRoot>
 
           <div class="flex flex-col gap-5">
             <section class="card flex flex-col gap-4" :aria-label="t('tournamentRoom.standings')">

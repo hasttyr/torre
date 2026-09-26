@@ -97,6 +97,7 @@ const columns = [
         "select",
         {
           class: "select-compact",
+          "aria-label": t("adminUsers.roleOf", { name: row.original.name }),
           value: row.original.role,
           disabled: isRowLocked(row.original),
           onChange: (event: Event) => onRoleChange(row.original, (event.target as HTMLSelectElement).value as AnyRole),

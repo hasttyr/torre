@@ -43,6 +43,13 @@ describe("DateField", () => {
     useLocaleStore().setLocale("es");
   });
 
+  it("leaves naming the input to the field's own <label>", async () => {
+    const wrapper = await mountField();
+
+    // The picker's default aria-label ("Datepicker input") would override it.
+    expect(wrapper.get("#date").attributes("aria-label")).toBeUndefined();
+  });
+
   it("reads typed dates day-first in Spanish", async () => {
     const wrapper = await mountField();
 

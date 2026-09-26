@@ -1,6 +1,6 @@
-import { flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
@@ -123,10 +123,13 @@ async function mountRoom() {
   });
   router.push("/torneos/t-1/sala");
   await router.isReady();
-  const wrapper = mount(TournamentLiveView, { global: { plugins: [router, i18n] } });
+  // attachTo: arrow-key navigation between round tabs moves real focus.
+  const wrapper = mount(TournamentLiveView, { global: { plugins: [router, i18n] }, attachTo: document.body });
   await flushPromises();
   return wrapper;
 }
+
+enableAutoUnmount(afterEach);
 
 describe("TournamentLiveView", () => {
   beforeEach(() => {
@@ -178,6 +181,31 @@ describe("TournamentLiveView", () => {
     expect(wrapper.text()).toContain("Clasificación provisional");
     expect(wrapper.find("[aria-label='Ganan blancas']").exists()).toBe(false);
     expect(wrapper.text()).not.toContain("Corregir");
+  });
+
+  it("switches between published rounds with keyboard-operable tabs, the pairings being the selected tab's panel", async () => {
+    signIn("PLAYER");
+    const secondRound: Round = {
+      ...ROUND,
+      id: "r-2",
+      number: 2,
+      matches: [{ ...ROUND.matches[0], id: "m-9", white: { playerId: "p9", name: "Marta Ríos" } }],
+    };
+    vi.mocked(listRounds).mockResolvedValue([ROUND, secondRound]);
+
+    const wrapper = await mountRoom();
+    const roundTab = (label: string) => wrapper.findAll("[role='tab']").find((node) => node.text() === label)!;
+    const visiblePanel = () => wrapper.get("[role='tabpanel']:not([hidden])");
+    expect(roundTab("R2").attributes("aria-selected")).toBe("true");
+    expect(visiblePanel().text()).toContain("Marta Ríos");
+
+    await roundTab("R2").trigger("keydown", { key: "ArrowLeft" });
+    await flushPromises();
+
+    expect(roundTab("R1").attributes("aria-selected")).toBe("true");
+    const panel = visiblePanel();
+    expect(panel.attributes("aria-labelledby")).toBe(roundTab("R1").attributes("id"));
+    expect(panel.text()).toContain("Ana Torres");
   });
 
   it("lets an arbiter record a pending game in one tap (HU10)", async () => {

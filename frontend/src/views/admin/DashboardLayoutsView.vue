@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "reka-ui";
 import { computed, onMounted, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { onBeforeRouteLeave } from "vue-router";
@@ -134,34 +135,44 @@ onBeforeRouteLeave(async () => {
       <p v-if="loading">{{ t("dashboardLayouts.loading") }}</p>
       <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
 
-      <template v-else>
-        <div
-          role="tablist"
+      <!-- reka-ui Tabs: arrow keys move between roles, and screen readers
+           read each role's layout as the panel of its tab. -->
+      <TabsRoot
+        v-else
+        :model-value="activeRole"
+        class="flex flex-col gap-6"
+        @update:model-value="(role) => selectRole(role as ConfigurableRole)"
+      >
+        <TabsList
           :aria-label="t('dashboardLayouts.rolesLabel')"
           class="flex flex-wrap gap-1 self-start rounded-xl border border-border-soft bg-surface p-1"
         >
-          <button
+          <TabsTrigger
             v-for="role in CONFIGURABLE_ROLES"
             :key="role"
-            type="button"
-            role="tab"
-            :aria-selected="activeRole === role"
+            :value="role"
             class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
             :class="activeRole === role ? 'bg-accent text-[#17130a]' : 'text-text-muted hover:bg-accent/10'"
-            @click="selectRole(role)"
           >
             {{ t(`roles.${role}`) }}
             <span class="text-xs opacity-75 tabular-nums">{{ drafts[role]?.length ?? 0 }}</span>
-            <span
-              v-if="isDirty(role)"
-              class="h-1.5 w-1.5 rounded-full bg-current"
-              :title="t('dashboardLayouts.unsaved')"
-              :aria-label="t('dashboardLayouts.unsaved')"
-            />
-          </button>
-        </div>
+            <template v-if="isDirty(role)">
+              <span
+                class="h-1.5 w-1.5 rounded-full bg-current"
+                :title="t('dashboardLayouts.unsaved')"
+                aria-hidden="true"
+              />
+              <span class="sr-only">{{ t("dashboardLayouts.unsaved") }}</span>
+            </template>
+          </TabsTrigger>
+        </TabsList>
 
-        <div class="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
+        <TabsContent
+          v-for="role in CONFIGURABLE_ROLES"
+          :key="role"
+          :value="role"
+          class="grid gap-5 lg:grid-cols-[1.1fr_1fr]"
+        >
           <section
             class="card flex flex-col gap-4"
             :aria-label="t('dashboardLayouts.inPanel', { role: t(`roles.${activeRole}`) })"
@@ -261,10 +272,10 @@ onBeforeRouteLeave(async () => {
               </li>
             </ul>
           </section>
-        </div>
+        </TabsContent>
 
         <p v-if="savedMessage" role="status" class="banner banner--success">{{ savedMessage }}</p>
-      </template>
+      </TabsRoot>
     </main>
 
     <Transition

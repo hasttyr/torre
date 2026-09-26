@@ -389,6 +389,7 @@
     "tableName": "Nombre",
     "tableEmail": "Correo",
     "tableRole": "Rol",
+    "roleOf": "Rol de {name}",
     "tableStatus": "Estado",
     "status": {
       "ACTIVE": "Activa",
