@@ -34,7 +34,9 @@ export async function loadRankedTournaments(
   where: Prisma.TournamentWhereInput,
 ): Promise<RankedTournament[]> {
   const tournaments = await prisma.tournament.findMany({
-    where: { ...where, standings: { some: {} } },
+    // AND, not a spread: a caller that filters on standings too (one
+    // player's tournaments) would have its condition overwritten.
+    where: { AND: [where, { standings: { some: {} } }] },
     include: {
       standings: {
         include: { player: { select: { user: { select: { name: true } } } } },

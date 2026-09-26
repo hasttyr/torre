@@ -27,7 +27,9 @@ describe("loadRankedTournaments", () => {
 
     const [ranked] = await loadRankedTournaments(prisma as unknown as PrismaClient, { status: "FINISHED" });
 
-    expect(prisma.tournament.findMany.mock.calls[0][0].where).toEqual({ status: "FINISHED", standings: { some: {} } });
+    expect(prisma.tournament.findMany.mock.calls[0][0].where).toEqual({
+      AND: [{ status: "FINISHED" }, { standings: { some: {} } }],
+    });
     expect(ranked.tournament).toEqual({ id: "t-1", name: "Copa" });
     expect(ranked.ranking.map((entry) => [entry.playerId, entry.rank, entry.playerName])).toEqual([
       ["a", 1, "a"],
@@ -35,5 +37,17 @@ describe("loadRankedTournaments", () => {
     ]);
     expect(standingOf(ranked, "b")?.score).toBe(2);
     expect(standingOf(ranked, "nobody")).toBeUndefined();
+  });
+
+  it("keeps a caller's own standings filter instead of overwriting it", async () => {
+    const prisma = { tournament: { findMany: vi.fn().mockResolvedValue([]) } };
+    const onePlayers = { standings: { some: { playerId: "me" } } };
+
+    await loadRankedTournaments(prisma as unknown as PrismaClient, onePlayers);
+
+    // A spread ({ ...where, standings: { some: {} } }) dropped the player
+    // filter, so every tournament with standings came back (HTTP 500 in
+    // PLAYER_SUMMARY for a player missing from one of them).
+    expect(prisma.tournament.findMany.mock.calls[0][0].where.AND).toContainEqual(onePlayers);
   });
 });

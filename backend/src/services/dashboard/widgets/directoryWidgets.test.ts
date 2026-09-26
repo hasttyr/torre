@@ -67,7 +67,7 @@ describe("TOP_PLAYERS", () => {
 
     const top = await loadTopPlayers(prisma as unknown as PrismaClient);
 
-    expect(prisma.tournament.findMany.mock.calls[0][0].where).toMatchObject({ status: "FINISHED" });
+    expect(prisma.tournament.findMany.mock.calls[0][0].where.AND).toContainEqual({ status: "FINISHED" });
     // ana and luis tie on titles (1) and podiums (2): luis has more points
     // (7.5 vs 7). eva has the most points but no podium, so she comes last.
     expect(top.map((player) => [player.name, player.titles, player.podiums, player.points])).toEqual([
