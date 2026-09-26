@@ -4,14 +4,14 @@ import "./style.css";
 import App from "./App.vue";
 import { i18n } from "./i18n";
 import { installSessionExpiryHandler } from "./lib/sessionExpiry";
-import { installStaleChunkReload } from "./lib/staleChunks";
+import { installStaleChunkRecovery } from "./lib/staleChunks";
 import { router } from "./router";
 import { useLocaleStore } from "./stores/locale";
 
 const pinia = createPinia();
 const app = createApp(App).use(pinia).use(router).use(i18n);
 installSessionExpiryHandler(router);
-installStaleChunkReload();
+installStaleChunkRecovery(router);
 
 // The saved language is applied before the first render, on every page
 // (English's messages are fetched first if that's the saved choice). A

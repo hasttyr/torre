@@ -1,18 +1,34 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createRouter, createWebHistory, type Router } from "vue-router";
 
-import { installStaleChunkReload } from "./staleChunks";
+import { installStaleChunkRecovery } from "./staleChunks";
 
-const chunkFailed = () => window.dispatchEvent(new Event("vite:preloadError"));
+// What Vite does when a lazily loaded file is gone: it reports
+// vite:preloadError, and the import rejects.
+const chunkGone = () => {
+  window.dispatchEvent(new Event("vite:preloadError"));
+  return Promise.reject(new TypeError("Failed to fetch dynamically imported module"));
+};
 
-describe("installStaleChunkReload", () => {
+describe("installStaleChunkRecovery", () => {
+  let router: Router;
   let uninstall: () => void;
-  const reload = vi.fn();
+  const loadPage = vi.fn();
 
-  beforeEach(() => {
+  beforeEach(async () => {
     sessionStorage.clear();
-    reload.mockClear();
-    vi.useFakeTimers();
-    uninstall = installStaleChunkReload(reload);
+    loadPage.mockClear();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    router = createRouter({
+      history: createWebHistory(),
+      routes: [
+        { path: "/panel", component: { template: "<div />" } },
+        { path: "/torneos", component: { template: "<div />" } },
+        { path: "/clubes", component: chunkGone },
+      ],
+    });
+    await router.push("/panel");
+    uninstall = installStaleChunkRecovery(router, loadPage);
   });
 
   afterEach(() => {
@@ -20,30 +36,48 @@ describe("installStaleChunkReload", () => {
     vi.useRealTimers();
   });
 
-  it("reloads the page when a chunk is gone, to pick up the new deploy's files", () => {
-    chunkFailed();
+  it("opens a page whose code a deploy replaced as a full page load, landing on that page", async () => {
+    await router.push("/clubes").catch(() => undefined);
 
-    expect(reload).toHaveBeenCalledOnce();
+    expect(loadPage).toHaveBeenCalledExactlyOnceWith("/clubes");
   });
 
-  it("doesn't reload again right after a reload: a chunk that's broken for real mustn't loop", () => {
-    chunkFailed();
-    chunkFailed();
-    expect(reload).toHaveBeenCalledOnce();
+  it("never reloads on a failed prefetch; the next navigation loads fresh, where the user was going", async () => {
+    // A hover prefetch hit a replaced file: nothing happens under the pointer.
+    window.dispatchEvent(new Event("vite:preloadError"));
+    expect(loadPage).not.toHaveBeenCalled();
 
-    vi.advanceTimersByTime(10_001);
-    chunkFailed();
-    expect(reload).toHaveBeenCalledTimes(2);
+    await router.push("/torneos?estado=activos");
+
+    expect(loadPage).toHaveBeenCalledExactlyOnceWith("/torneos?estado=activos");
+    expect(router.currentRoute.value.path).toBe("/panel");
   });
 
-  it("lets the error show when storage is blocked, since it couldn't tell a loop apart", () => {
+  it("leaves navigation alone while no file is missing", async () => {
+    await router.push("/torneos");
+
+    expect(loadPage).not.toHaveBeenCalled();
+    expect(router.currentRoute.value.path).toBe("/torneos");
+  });
+
+  it("loads fresh at most once every ten seconds: a file broken for real mustn't loop", async () => {
+    await router.push("/clubes").catch(() => undefined);
+    await router.push("/clubes").catch(() => undefined);
+    expect(loadPage).toHaveBeenCalledOnce();
+
+    vi.setSystemTime(Date.now() + 10_001);
+    await router.push("/clubes").catch(() => undefined);
+    expect(loadPage).toHaveBeenCalledTimes(2);
+  });
+
+  it("lets the error show when storage is blocked, since it couldn't tell a loop apart", async () => {
     vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
       throw new DOMException("blocked", "SecurityError");
     });
 
-    chunkFailed();
+    await router.push("/clubes").catch(() => undefined);
 
-    expect(reload).not.toHaveBeenCalled();
+    expect(loadPage).not.toHaveBeenCalled();
     vi.restoreAllMocks();
   });
 });

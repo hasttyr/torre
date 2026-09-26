@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 
-import { reloadPage } from "../../lib/reloadPage";
+import { reloadPage } from "../../lib/pageLoad";
 
 // A page or section whose data couldn't load: what failed, and the way
 // forward. By default retrying reloads the page, which loses nothing: the

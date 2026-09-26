@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { i18n } from "../../i18n";
 import LoadError from "./LoadError.vue";
 
-vi.mock("../../lib/reloadPage", () => ({ reloadPage: vi.fn() }));
+vi.mock("../../lib/pageLoad", () => ({ reloadPage: vi.fn() }));
 
-import { reloadPage } from "../../lib/reloadPage";
+import { reloadPage } from "../../lib/pageLoad";
 
 describe("LoadError", () => {
   it("says what failed and offers the way forward: trying again", async () => {
