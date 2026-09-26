@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { createColumnHelper } from "@tanstack/vue-table";
-import { computed, h, ref, watch } from "vue";
+import { computed, h, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
-import { searchPlayers, type PlayerSearchResult } from "../../services/players";
+import { usePlayerSearch } from "../../lib/usePlayerSearch";
+import type { PlayerSearchResult } from "../../services/players";
 import { type EnrolledPlayer } from "../../services/tournaments";
 import { useTournamentsStore } from "../../stores/tournaments";
 import DataTable from "../ui/DataTable.vue";
@@ -18,36 +19,18 @@ const { t } = useI18n();
 
 // --- HU07: enroll player ---
 
-const playerQuery = ref("");
-const searchResults = ref<PlayerSearchResult[]>([]);
-const searching = ref(false);
+const {
+  query: playerQuery,
+  results: searchResults,
+  pending: searching,
+  status: searchStatus,
+  reset: resetSearch,
+} = usePlayerSearch();
 const submitting = ref(false);
 const error = ref<string | null>(null);
 
 const registrationOpen = computed(() => tournaments.current?.status === "REGISTRATION_OPEN");
 const enrolledIds = computed(() => new Set(tournaments.enrolledPlayers.map((p) => p.playerId)));
-
-let debounceHandle: ReturnType<typeof setTimeout> | undefined;
-
-// Debounced search: avoids one request per keystroke while the organizer
-// types a name, email or university code.
-watch(playerQuery, (query) => {
-  clearTimeout(debounceHandle);
-  if (!query.trim()) {
-    searchResults.value = [];
-    return;
-  }
-  debounceHandle = setTimeout(async () => {
-    searching.value = true;
-    try {
-      searchResults.value = await searchPlayers(query.trim());
-    } catch {
-      searchResults.value = [];
-    } finally {
-      searching.value = false;
-    }
-  }, 300);
-});
 
 /** Enrolls a chosen player from the search results into the tournament. */
 async function onEnroll(player: PlayerSearchResult): Promise<void> {
@@ -55,8 +38,7 @@ async function onEnroll(player: PlayerSearchResult): Promise<void> {
   submitting.value = true;
   try {
     await tournaments.enrollPlayer(props.tournamentId, player.id);
-    playerQuery.value = "";
-    searchResults.value = [];
+    resetSearch();
   } catch (submitError) {
     error.value = extractErrorMessage(submitError, t("tournamentAdmin.genericServerError"));
   } finally {
@@ -136,10 +118,14 @@ const columns = [
       <input
         id="playerQuery"
         v-model="playerQuery"
-        type="text"
+        type="search"
+        name="playerQuery"
+        autocomplete="off"
+        spellcheck="false"
         :placeholder="t('tournamentAdmin.searchPlaceholder')"
         :disabled="!registrationOpen"
       />
+      <p class="sr-only" role="status">{{ searchStatus }}</p>
 
       <ul
         v-if="playerQuery.trim() && registrationOpen"

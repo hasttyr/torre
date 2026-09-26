@@ -4,6 +4,10 @@
     "backToHome": "← Back to home",
     "cancel": "Cancel"
   },
+  "playerSearch": {
+    "searching": "Searching…",
+    "found": "No players match | 1 player found | {count} players found"
+  },
   "unsavedChanges": {
     "title": "Leave without saving?",
     "message": "You have unsaved changes. They'll be lost if you leave.",
@@ -16,6 +20,7 @@
   "dataTable": {
     "searchLabel": "Search…",
     "noResults": "No results.",
+    "resultCount": "No results | 1 result | {count} results",
     "previous": "Previous",
     "next": "Next",
     "pageStatus": "Page {current} of {total}"

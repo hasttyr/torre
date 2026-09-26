@@ -81,6 +81,12 @@ const table = useVueTable({
 
 const pageIndex = computed(() => table.getState().pagination.pageIndex);
 const pageCount = computed(() => table.getPageCount());
+
+const filterStatus = computed(() => {
+  if (!globalFilter.value.trim()) return "";
+  const count = table.getFilteredRowModel().rows.length;
+  return t("dataTable.resultCount", { count }, count);
+});
 </script>
 
 <template>
@@ -91,8 +97,13 @@ const pageCount = computed(() => table.getPageCount());
         :id="searchInputId"
         v-model="globalFilter"
         type="search"
+        name="tableSearch"
+        autocomplete="off"
+        spellcheck="false"
         :placeholder="searchPlaceholder ?? t('dataTable.searchLabel')"
       />
+      <!-- The rows change silently as the user types: say how many are left. -->
+      <p class="sr-only" role="status">{{ filterStatus }}</p>
     </div>
 
     <div class="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">

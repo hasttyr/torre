@@ -4,6 +4,10 @@
     "backToHome": "← Volver al inicio",
     "cancel": "Cancelar"
   },
+  "playerSearch": {
+    "searching": "Buscando…",
+    "found": "Ningún jugador coincide | 1 jugador encontrado | {count} jugadores encontrados"
+  },
   "unsavedChanges": {
     "title": "¿Salir sin guardar?",
     "message": "Tienes cambios sin guardar. Si sales, se perderán.",
@@ -16,6 +20,7 @@
   "dataTable": {
     "searchLabel": "Buscar…",
     "noResults": "Sin resultados.",
+    "resultCount": "Sin resultados | 1 resultado | {count} resultados",
     "previous": "Anterior",
     "next": "Siguiente",
     "pageStatus": "Página {current} de {total}"

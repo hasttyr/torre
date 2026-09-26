@@ -92,6 +92,22 @@ describe("DataTable", () => {
     expect(rows[0].text()).toContain("Player 3");
   });
 
+  it("announces how many rows the search left, for screen readers", async () => {
+    const wrapper = mountTable(makeRows(12));
+    const status = () => wrapper.get("[role='status']").text();
+    expect(status()).toBe("");
+
+    await wrapper.get("input[type='search']").setValue("Player 1");
+    expect(status()).toBe("3 resultados"); // Player 1, 10, 11
+
+    await wrapper.get("input[type='search']").setValue("nadie");
+    expect(status()).toBe("Sin resultados");
+    expect(wrapper.get("input[type='search']").attributes()).toMatchObject({
+      autocomplete: "off",
+      spellcheck: "false",
+    });
+  });
+
   it("hides the search box when searchable is false", () => {
     const wrapper = mountTable(makeRows(3), { searchable: false });
 

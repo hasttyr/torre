@@ -151,6 +151,8 @@ describe("ClubsView", () => {
 
     expect(searchPlayersMock).toHaveBeenCalledWith("Luis");
     expect(wrapper.text()).toContain("Luis Gómez");
+    expect(wrapper.get("[role='status']").text()).toBe("1 jugador encontrado");
+    expect(wrapper.get("#clubPlayerQuery").attributes()).toMatchObject({ type: "search", autocomplete: "off" });
   });
 
   it.each([

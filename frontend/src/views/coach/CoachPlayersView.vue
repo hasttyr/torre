@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
@@ -7,7 +7,8 @@ import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import { formatDate } from "../../lib/format";
 import { hasTournamentRoom } from "../../lib/tournamentAccess";
-import { searchPlayers, type PlayerSearchResult } from "../../services/players";
+import { usePlayerSearch } from "../../lib/usePlayerSearch";
+import type { PlayerSearchResult } from "../../services/players";
 import { useCoachesStore } from "../../stores/coaches";
 import { useLocaleStore } from "../../stores/locale";
 
@@ -29,33 +30,17 @@ onMounted(async () => {
   }
 });
 
-const playerQuery = ref("");
-const searchResults = ref<PlayerSearchResult[]>([]);
-const searching = ref(false);
+const {
+  query: playerQuery,
+  results: searchResults,
+  pending: searching,
+  status: searchStatus,
+  reset: resetSearch,
+} = usePlayerSearch();
 const linking = ref(false);
 const actionError = ref<string | null>(null);
 
 const linkedIds = computed(() => new Set(coaches.linkedPlayers.map((p) => p.playerId)));
-
-let debounceHandle: ReturnType<typeof setTimeout> | undefined;
-
-watch(playerQuery, (query) => {
-  clearTimeout(debounceHandle);
-  if (!query.trim()) {
-    searchResults.value = [];
-    return;
-  }
-  debounceHandle = setTimeout(async () => {
-    searching.value = true;
-    try {
-      searchResults.value = await searchPlayers(query.trim());
-    } catch {
-      searchResults.value = [];
-    } finally {
-      searching.value = false;
-    }
-  }, 300);
-});
 
 /** Links a chosen player from the search results (HU24). */
 async function onLink(player: PlayerSearchResult): Promise<void> {
@@ -63,8 +48,7 @@ async function onLink(player: PlayerSearchResult): Promise<void> {
   linking.value = true;
   try {
     await coaches.linkPlayer(player.id);
-    playerQuery.value = "";
-    searchResults.value = [];
+    resetSearch();
   } catch (error) {
     actionError.value = extractErrorMessage(error, t("coachPlayers.genericServerError"));
   } finally {
@@ -121,9 +105,13 @@ async function onUnlink(player: { playerId: string; name: string }): Promise<voi
           <input
             id="coachPlayerQuery"
             v-model="playerQuery"
-            type="text"
+            type="search"
+            name="coachPlayerQuery"
+            autocomplete="off"
+            spellcheck="false"
             :placeholder="t('coachPlayers.searchPlaceholder')"
           />
+          <p class="sr-only" role="status">{{ searchStatus }}</p>
 
           <ul v-if="playerQuery.trim()" class="mt-2 list-none overflow-hidden rounded-lg border border-border-soft p-0">
             <li v-if="searching" class="px-3.5 py-2.5 text-sm text-text-muted">{{ t("coachPlayers.searching") }}</li>

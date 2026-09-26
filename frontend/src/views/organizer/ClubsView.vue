@@ -5,7 +5,8 @@ import { useI18n } from "vue-i18n";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
-import { searchPlayers, type PlayerSearchResult } from "../../services/players";
+import { usePlayerSearch } from "../../lib/usePlayerSearch";
+import type { PlayerSearchResult } from "../../services/players";
 import { useClubsStore } from "../../stores/clubs";
 
 const clubs = useClubsStore();
@@ -100,33 +101,17 @@ async function onRename(): Promise<void> {
 
 // --- assign player to selected club ---
 
-const playerQuery = ref("");
-const searchResults = ref<PlayerSearchResult[]>([]);
-const searching = ref(false);
+const {
+  query: playerQuery,
+  results: searchResults,
+  pending: searching,
+  status: searchStatus,
+  reset: resetSearch,
+} = usePlayerSearch();
 const assigning = ref(false);
 const rosterError = ref<string | null>(null);
 
 const rosterIds = computed(() => new Set(clubs.players.map((p) => p.playerId)));
-
-let debounceHandle: ReturnType<typeof setTimeout> | undefined;
-
-watch(playerQuery, (query) => {
-  clearTimeout(debounceHandle);
-  if (!query.trim()) {
-    searchResults.value = [];
-    return;
-  }
-  debounceHandle = setTimeout(async () => {
-    searching.value = true;
-    try {
-      searchResults.value = await searchPlayers(query.trim());
-    } catch {
-      searchResults.value = [];
-    } finally {
-      searching.value = false;
-    }
-  }, 300);
-});
 
 /** Assigns a chosen player from the search results to the selected club. */
 async function onAssign(player: PlayerSearchResult): Promise<void> {
@@ -135,8 +120,7 @@ async function onAssign(player: PlayerSearchResult): Promise<void> {
   assigning.value = true;
   try {
     await clubs.assignPlayer(selectedClub.value.id, player.id);
-    playerQuery.value = "";
-    searchResults.value = [];
+    resetSearch();
   } catch (error) {
     rosterError.value = extractErrorMessage(error, t("clubs.genericServerError"));
   } finally {
@@ -297,7 +281,16 @@ async function onDelete(): Promise<void> {
 
           <div class="field relative">
             <label for="clubPlayerQuery">{{ t("clubs.searchLabel") }}</label>
-            <input id="clubPlayerQuery" v-model="playerQuery" type="text" :placeholder="t('clubs.searchPlaceholder')" />
+            <input
+              id="clubPlayerQuery"
+              v-model="playerQuery"
+              type="search"
+              name="clubPlayerQuery"
+              autocomplete="off"
+              spellcheck="false"
+              :placeholder="t('clubs.searchPlaceholder')"
+            />
+            <p class="sr-only" role="status">{{ searchStatus }}</p>
 
             <ul
               v-if="playerQuery.trim()"
