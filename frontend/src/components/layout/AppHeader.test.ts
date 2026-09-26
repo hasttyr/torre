@@ -1,4 +1,4 @@
-import { flushPromises, mount } from "@vue/test-utils";
+import { mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
@@ -46,15 +46,30 @@ describe("AppHeader navigation", () => {
     expect(desktopLinks(await mountHeader(null))).toEqual(["/login", "/registro"]);
   });
 
-  it("loads the user menu only for signed-in users, holding its place meanwhile", async () => {
+  it.each(["mouseenter", "focus"])("starts downloading a section's page on %s of its link", async (event) => {
+    useAuthStore().$patch({ token: "token", user: { id: "u-1", name: "Ana Torres", role: "ORGANIZER" } as never });
+    const loadClubs = vi.fn(() => Promise.resolve({ default: { template: "<div />" } }));
+    const router = createRouter({
+      history: createWebHistory(),
+      routes: [
+        { path: "/clubes", component: loadClubs },
+        { path: "/:p(.*)*", component: { template: "<div />" } },
+      ],
+    });
+    await router.push("/");
+    const wrapper = mount(AppHeader, { global: { plugins: [router, i18n] } });
+
+    await wrapper.findAll("nav")[0].get("a[href='/clubes']").trigger(event);
+
+    expect(loadClubs).toHaveBeenCalledOnce();
+  });
+
+  it("gives only signed-in users the avatar menu, shown at once (its code loads later)", async () => {
     const visitor = await mountHeader(null);
-    await vi.dynamicImportSettled();
     expect(visitor.find("button[aria-haspopup='menu']").exists()).toBe(false);
 
     const user = await mountHeader("PLAYER");
-    await vi.dynamicImportSettled();
-    await flushPromises();
-    expect(user.findAll("button[aria-haspopup='menu']").length).toBeGreaterThan(0);
+    expect(user.findAll("button[aria-haspopup='menu']").map((avatar) => avatar.text())).toEqual(["AT", "AT"]);
   });
 
   it("opens the mobile menu with the same links, and closes it on navigation", async () => {

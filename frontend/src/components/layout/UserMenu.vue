@@ -8,37 +8,41 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "reka-ui";
-import { computed } from "vue";
+import { computed, onMounted, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
+import { initialsOf } from "../../lib/initials";
 import { useAuthStore } from "../../stores/auth";
 import { useLocaleStore } from "../../stores/locale";
 import { useThemeStore } from "../../stores/theme";
 
 // reka-ui's DropdownMenu owns the menu behavior: role="menu" with its items,
 // arrow keys and typeahead, Escape or an outside click closing it, and focus
-// returning to the avatar button afterwards.
+// returning to the avatar button afterwards. It loads lazily (see
+// LazyUserMenu.vue), which says whether the user had already opened or
+// focused the avatar that stood in for it.
+const props = defineProps<{ openOnMount?: boolean; focusOnMount?: boolean }>();
+
 const auth = useAuthStore();
 const theme = useThemeStore();
 const locale = useLocaleStore();
 const router = useRouter();
 const { t } = useI18n();
 
+const open = ref(props.openOnMount);
+const trigger = useTemplateRef<{ $el: HTMLElement }>("trigger");
+
+onMounted(() => {
+  // Opening moves focus into the menu by itself.
+  if (props.focusOnMount && !open.value) trigger.value?.$el.focus();
+});
+
 // Highlighted (hover or arrow keys) instead of an outline, like any menu.
 const ITEM_CLASS =
   "flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium outline-none select-none data-[highlighted]:bg-accent/10";
 
-/** Derives a two-letter avatar label from the user's full name (e.g. "Nilson Aldair Molina Rengifo" -> "NM"). */
-const initials = computed((): string => {
-  const fullName = auth.user?.name?.trim() ?? "";
-  const words = fullName.split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "?";
-  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-  const first = words[0][0];
-  const middle = words[Math.floor(words.length / 2)][0];
-  return `${first}${middle}`.toUpperCase();
-});
+const initials = computed(() => initialsOf(auth.user?.name));
 
 /** Applies a preference without closing the menu, so its new value shows right there. */
 function toggleInPlace(event: Event, toggle: () => void): void {
@@ -53,8 +57,9 @@ async function onLogout(): Promise<void> {
 </script>
 
 <template>
-  <DropdownMenuRoot>
+  <DropdownMenuRoot v-model:open="open">
     <DropdownMenuTrigger
+      ref="trigger"
       class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-[#17130a] transition-opacity hover:opacity-90"
       :aria-label="t('userMenu.menuAria', { name: auth.user?.name ?? '' })"
     >

@@ -1,26 +1,21 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, defineComponent, h, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
+import { prefetchRoute } from "../../lib/prefetchRoute";
 import { useAuthStore } from "../../stores/auth";
 import AppLogo from "./AppLogo.vue";
+import LazyUserMenu from "./LazyUserMenu.vue";
 import LocaleToggle from "../ui/LocaleToggle.vue";
 import ThemeToggle from "../ui/ThemeToggle.vue";
 
-// The user menu (and the menu library under it) only matters to signed-in
-// users: it loads separately, so the landing page never downloads it. Until
-// it arrives, a circle the avatar's size holds its place in the header.
-const UserMenu = defineAsyncComponent({
-  loader: () => import("./UserMenu.vue"),
-  loadingComponent: defineComponent(
-    () => () => h("span", { class: "inline-block h-9 w-9 shrink-0 rounded-full bg-accent/30", "aria-hidden": "true" }),
-  ),
-  delay: 0,
-});
-
 const auth = useAuthStore();
 const route = useRoute();
+const router = useRouter();
+
+/** Pointing at (or tabbing to) a section's link starts downloading its page. */
+const prefetch = (to: string): void => prefetchRoute(router, to);
 const { t } = useI18n();
 const mobileOpen = ref(false);
 
@@ -64,10 +59,17 @@ function closeMobile(): void {
            which would overflow a tablet-width bar), visible from lg upward. -->
       <nav class="hidden items-center gap-1.5 lg:flex">
         <template v-if="auth.isAuthenticated">
-          <RouterLink v-for="item in navItems" :key="item.to" :to="item.to" class="btn btn-ghost px-4 py-2.5">
+          <RouterLink
+            v-for="item in navItems"
+            :key="item.to"
+            :to="item.to"
+            class="btn btn-ghost px-4 py-2.5"
+            @mouseenter="prefetch(item.to)"
+            @focus="prefetch(item.to)"
+          >
             {{ t(item.labelKey) }}
           </RouterLink>
-          <UserMenu />
+          <LazyUserMenu />
         </template>
         <template v-else>
           <RouterLink to="/login" class="btn btn-ghost">{{ t("header.login") }}</RouterLink>
@@ -79,7 +81,7 @@ function closeMobile(): void {
 
       <!-- Mobile controls: user menu or theme toggle + hamburger button. -->
       <div class="flex items-center gap-2 lg:hidden">
-        <UserMenu v-if="auth.isAuthenticated" />
+        <LazyUserMenu v-if="auth.isAuthenticated" />
         <template v-else>
           <LocaleToggle />
           <ThemeToggle />
@@ -119,6 +121,8 @@ function closeMobile(): void {
               :to="item.to"
               class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
               @click="closeMobile"
+              @touchstart.passive="prefetch(item.to)"
+              @focus="prefetch(item.to)"
             >
               {{ t(item.labelKey) }}
             </RouterLink>

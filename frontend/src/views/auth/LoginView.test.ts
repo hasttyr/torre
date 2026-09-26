@@ -12,6 +12,9 @@ vi.mock("../../services/auth", () => ({
   fetchMe: vi.fn(),
 }));
 
+// Idle tasks run right away so their effect can be asserted.
+vi.mock("../../lib/idle", () => ({ whenIdle: (task: () => void) => task() }));
+
 import { loginUser } from "../../services/auth";
 
 const loginUserMock = vi.mocked(loginUser);
@@ -196,5 +199,24 @@ describe("LoginView after the server ended a session", () => {
     await router.push({ path: "/login-under-test", query: { expired: "1", redirect: "/panel" } });
 
     expect(wrapper.text()).toContain("Tu sesión terminó");
+  });
+});
+
+describe("LoginView while the user types", () => {
+  it("downloads the dashboard's code in the background, so it opens at once after signing in", async () => {
+    setActivePinia(createPinia());
+    const loadPanel = vi.fn(() => Promise.resolve({ default: { template: "<div />" } }));
+    const router = createRouter({
+      history: createWebHistory(),
+      routes: [
+        { path: "/panel", component: loadPanel },
+        { path: "/:p(.*)*", component: { template: "<div />" } },
+      ],
+    });
+    await router.push("/login");
+
+    mount(LoginView, { global: { plugins: [router, i18n] } });
+
+    expect(loadPanel).toHaveBeenCalledOnce();
   });
 });
