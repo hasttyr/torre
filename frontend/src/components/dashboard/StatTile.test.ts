@@ -9,7 +9,11 @@ describe("StatTile", () => {
 
     // Inside a <dl>, a wrapping <div> may only hold dt and dd elements.
     expect(wrapper.element.tagName).toBe("DIV");
-    expect(Array.from(wrapper.element.children as HTMLCollection).map((child) => child.tagName)).toEqual(["DT", "DD", "DD"]);
+    expect(Array.from(wrapper.element.children as HTMLCollection).map((child) => child.tagName)).toEqual([
+      "DT",
+      "DD",
+      "DD",
+    ]);
     expect(wrapper.findAll("dd").map((dd) => dd.text())).toEqual(["57 %", "Puntos por partida"]);
   });
 
