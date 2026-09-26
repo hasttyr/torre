@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useId } from "vue";
+import { nextTick, ref, useId, useTemplateRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import type { GameResult, Match } from "../../services/rounds";
@@ -21,24 +21,59 @@ const correcting = ref(false);
 const pickedCorrection = ref<GameResult | null>(null);
 const reason = ref("");
 
+// Each step replaces the control that was just pressed; focus follows to
+// what replaced it instead of falling back to the top of the page.
+const correctButton = useTemplateRef<HTMLButtonElement>("correctButton");
+const correctionPanel = useTemplateRef<HTMLElement>("correctionPanel");
+let recordedHere = false;
+
 function startCorrection(): void {
   correcting.value = true;
   pickedCorrection.value = null;
   reason.value = "";
+  void nextTick(() => correctionPanel.value?.querySelector<HTMLElement>("[aria-pressed='true']")?.focus());
+}
+
+function closeCorrection(): void {
+  correcting.value = false;
+  void nextTick(() => correctButton.value?.focus());
 }
 
 function confirmCorrection(): void {
   if (!pickedCorrection.value) return;
   emit("correct", pickedCorrection.value, reason.value.trim());
-  correcting.value = false;
+  closeCorrection();
 }
+
+function record(value: GameResult): void {
+  recordedHere = true;
+  emit("record", value);
+}
+
+// A result this control recorded lands once saved: focus moves to its
+// Correct button, unless the user has moved on meanwhile. A result
+// recorded elsewhere (a live update) never takes focus.
+watch(
+  () => props.match.result,
+  (result) => {
+    if (!result || !recordedHere) return;
+    recordedHere = false;
+    // After the render: the pressed button is gone, so focus fell to <body>
+    // unless the user already moved it elsewhere.
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    correctButton.value?.focus();
+  },
+  { flush: "post" },
+);
 </script>
 
 <template>
-  <ResultPicker v-if="!props.match.result" :disabled="busy" @pick="emit('record', $event)" />
+  <ResultPicker v-if="!props.match.result" :disabled="busy" @pick="record" />
 
   <button
     v-else-if="!correcting"
+    ref="correctButton"
     type="button"
     class="text-sm font-semibold text-accent hover:underline"
     @click="startCorrection"
@@ -46,7 +81,12 @@ function confirmCorrection(): void {
     {{ t("rounds.correct") }}
   </button>
 
-  <div v-else class="flex flex-col gap-2 rounded-xl border border-border-soft bg-surface-2/50 p-3">
+  <div
+    v-else
+    ref="correctionPanel"
+    class="flex flex-col gap-2 rounded-xl border border-border-soft bg-surface-2/50 p-3"
+    @keydown.esc="closeCorrection"
+  >
     <ResultPicker
       :current="pickedCorrection ?? props.match.result"
       :disabled="busy"
@@ -73,7 +113,7 @@ function confirmCorrection(): void {
       >
         {{ t("rounds.saveCorrection") }}
       </button>
-      <button type="button" class="btn btn-ghost px-3.5 py-2 text-sm" @click="correcting = false">
+      <button type="button" class="btn btn-ghost px-3.5 py-2 text-sm" @click="closeCorrection">
         {{ t("common.cancel") }}
       </button>
     </div>

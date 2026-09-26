@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "reka-ui";
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { isRenderableWidget } from "../../components/dashboard/widgetRegistry";
@@ -74,22 +74,49 @@ function selectRole(role: ConfigurableRole): void {
   savedMessage.value = null;
 }
 
+// Adding, removing or moving a widget re-renders the row whose button was
+// just pressed (or removes it), which would drop keyboard focus on <body>.
+// Each action puts it back on the control a keyboard user reaches for next.
+const root = useTemplateRef<HTMLElement>("root");
+
+async function focusAfterRender(selector: string): Promise<void> {
+  await nextTick();
+  root.value?.querySelector<HTMLElement>(selector)?.focus();
+}
+
+const panelControl = (key: WidgetKey, action: "up" | "down" | "remove") =>
+  `[data-widget="${key}"] [data-action="${action}"]`;
+const addButton = (key: WidgetKey) => `[data-available="${key}"] button`;
+
 function add(key: WidgetKey): void {
+  const index = available.value.findIndex((widget) => widget.key === key);
   drafts[activeRole.value] = [...draft.value, key];
   savedMessage.value = null;
+  const next = available.value[index] ?? available.value[index - 1];
+  void focusAfterRender(next ? addButton(next.key) : panelControl(key, "remove"));
 }
 
 function remove(key: WidgetKey): void {
+  const index = draft.value.indexOf(key);
   drafts[activeRole.value] = draft.value.filter((candidate) => candidate !== key);
   savedMessage.value = null;
+  const next = draft.value[index] ?? draft.value[index - 1];
+  void focusAfterRender(next ? panelControl(next, "remove") : addButton(key));
 }
 
 /** Swaps the widget with its neighbour one position up (-1) or down (+1). */
 function move(index: number, direction: -1 | 1): void {
+  const key = draft.value[index];
   const next = [...draft.value];
   [next[index], next[index + direction]] = [next[index + direction], next[index]];
   drafts[activeRole.value] = next;
   savedMessage.value = null;
+  // At either end the pressed arrow is now disabled: focus the other one.
+  const target = index + direction;
+  const atEnd = direction === -1 ? target === 0 : target === next.length - 1;
+  const sameWay = direction === -1 ? "up" : "down";
+  const otherWay = direction === -1 ? "down" : "up";
+  void focusAfterRender(panelControl(key, atEnd ? otherWay : sameWay));
 }
 
 function discard(): void {
@@ -120,7 +147,7 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
   <div class="min-h-screen">
     <AppHeader />
 
-    <main class="container flex flex-col gap-6 py-10 pb-28 sm:py-12 sm:pb-28">
+    <main ref="root" class="container flex flex-col gap-6 py-10 pb-28 sm:py-12 sm:pb-28">
       <header class="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 class="text-2xl sm:text-3xl">{{ t("dashboardLayouts.title") }}</h1>
@@ -208,6 +235,7 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
                   <button
                     type="button"
                     class="icon-btn"
+                    data-action="up"
                     :disabled="index === 0"
                     :aria-label="t('dashboardLayouts.moveUp', { widget: t(`widgets.${key}.title`) })"
                     @click="move(index, -1)"
@@ -217,6 +245,7 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
                   <button
                     type="button"
                     class="icon-btn"
+                    data-action="down"
                     :disabled="index === draft.length - 1"
                     :aria-label="t('dashboardLayouts.moveDown', { widget: t(`widgets.${key}.title`) })"
                     @click="move(index, 1)"
@@ -226,6 +255,7 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
                   <button
                     type="button"
                     class="icon-btn hover:border-error/40 hover:bg-error/10 hover:text-error"
+                    data-action="remove"
                     :aria-label="t('dashboardLayouts.remove', { widget: t(`widgets.${key}.title`) })"
                     @click="remove(key)"
                   >

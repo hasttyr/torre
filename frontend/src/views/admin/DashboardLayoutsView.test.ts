@@ -96,6 +96,56 @@ describe("DashboardLayoutsView", () => {
     expect(wrapper.findAll("button").some((button) => button.text() === "Guardar panel")).toBe(false);
   });
 
+  describe("keeps keyboard focus on the list while its items move", () => {
+    const focused = () => document.activeElement as HTMLElement;
+    const inRow = (row: string) => focused().closest(row)?.getAttribute(row.slice(1, -1));
+    const press = async (wrapper: View, selector: string) => {
+      const button = wrapper.get<HTMLButtonElement>(selector);
+      button.element.focus();
+      await button.trigger("click");
+      await flushPromises();
+    };
+
+    it("after removing a widget, on the next one's remove button, else the widget back in the catalog", async () => {
+      const wrapper = await mountView();
+
+      await press(wrapper, "[data-widget='PLAYER_SUMMARY'] [data-action='remove']");
+      expect(inRow("[data-widget]")).toBe("TOP_PLAYERS");
+      expect(focused().dataset.action).toBe("remove");
+
+      await press(wrapper, "[data-widget='TOP_PLAYERS'] [data-action='remove']");
+      expect(inRow("[data-available]")).toBe("TOP_PLAYERS");
+    });
+
+    it("after adding one, on the catalog's next add button, else the widget in the panel", async () => {
+      getLayoutsMock.mockResolvedValue({
+        catalog: [
+          { key: "TOP_PLAYERS", subject: "none" },
+          { key: "RECENT_RESULTS", subject: "none" },
+        ],
+        layouts: [{ role: "PLAYER", widgets: [] }],
+      });
+      const wrapper = await mountView();
+
+      await press(wrapper, "[data-available='TOP_PLAYERS'] button");
+      expect(inRow("[data-available]")).toBe("RECENT_RESULTS");
+
+      await press(wrapper, "[data-available='RECENT_RESULTS'] button");
+      expect(inRow("[data-widget]")).toBe("RECENT_RESULTS");
+    });
+
+    it("after moving one, on the same widget, switching direction at the end of the list", async () => {
+      const wrapper = await mountView();
+
+      await press(wrapper, "[data-widget='TOP_PLAYERS'] [data-action='up']");
+
+      expect(panelOrder(wrapper)).toEqual(["TOP_PLAYERS", "PLAYER_SUMMARY"]);
+      expect(inRow("[data-widget]")).toBe("TOP_PLAYERS");
+      // Now first, its "up" is disabled: focus lands on "down".
+      expect(focused().dataset.action).toBe("down");
+    });
+  });
+
   it("keeps a separate draft per role and discards only the active one", async () => {
     const wrapper = await mountView();
 
