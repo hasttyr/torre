@@ -58,7 +58,7 @@ async function onSubmit(): Promise<void> {
       </Transition>
     </template>
 
-    <p v-if="submitted" class="banner banner--success">{{ t("forgotPassword.successMessage") }}</p>
+    <p v-if="submitted" role="status" class="banner banner--success">{{ t("forgotPassword.successMessage") }}</p>
 
     <form v-else ref="formEl" novalidate @submit.prevent="onSubmit">
       <div class="field" :class="{ 'has-error': errors.email }">

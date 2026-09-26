@@ -8,6 +8,7 @@ import type { SwapPayload } from "../../services/rounds";
 import { useRoundsStore } from "../../stores/rounds";
 import { useTournamentsStore } from "../../stores/tournaments";
 import PairingsTable from "../tournament/PairingsTable.vue";
+import LoadError from "../ui/LoadError.vue";
 import SwapPlayersForm from "./SwapPlayersForm.vue";
 
 // The organizer's control of the round cycle: generate the next round
@@ -119,7 +120,7 @@ async function onFinish(): Promise<void> {
       </RouterLink>
     </header>
 
-    <p v-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
+    <LoadError v-if="loadError" :message="loadError" />
     <p v-if="error" role="alert" class="banner banner--error">{{ error }}</p>
 
     <!-- Draft: review, adjust, publish or discard (HU09, HU29). -->
@@ -145,7 +146,7 @@ async function onFinish(): Promise<void> {
     </p>
 
     <template v-else-if="tournament?.status === 'FINISHED'">
-      <p class="banner banner--success">{{ t("roundManager.finished") }}</p>
+      <p role="status" class="banner banner--success">{{ t("roundManager.finished") }}</p>
     </template>
 
     <template v-else-if="allPlayed">

@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import LoadError from "../../components/ui/LoadError.vue";
 import { extractErrorMessage } from "../../lib/errors";
 import { formatDate } from "../../lib/format";
 import { listLiveTournaments, type Tournament } from "../../services/tournaments";
@@ -39,7 +40,7 @@ onMounted(async () => {
       </div>
 
       <p v-if="loading">{{ t("liveTournaments.loading") }}</p>
-      <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
+      <LoadError v-else-if="loadError" :message="loadError" />
       <p
         v-else-if="tournaments.length === 0"
         class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"

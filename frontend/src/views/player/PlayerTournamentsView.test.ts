@@ -68,6 +68,22 @@ describe("PlayerTournamentsView", () => {
     vi.clearAllMocks();
   });
 
+  it("outlines the page as one title, two sections and a tournament under each", async () => {
+    listAvailableTournamentsMock.mockResolvedValue([AVAILABLE_TOURNAMENT]);
+    listEnrolledTournamentsMock.mockResolvedValue([ENROLLED_TOURNAMENT]);
+
+    const { wrapper } = await mountView();
+
+    const outline = wrapper.findAll("h1, h2, h3").map((heading) => `${heading.element.tagName} ${heading.text()}`);
+    expect(outline).toEqual([
+      "H1 Torneos",
+      "H2 Mis inscripciones",
+      "H3 Copa Interna",
+      "H2 Torneos disponibles",
+      "H3 Copa Abierta",
+    ]);
+  });
+
   it("shows empty states when there are no available tournaments or registrations", async () => {
     listAvailableTournamentsMock.mockResolvedValue([]);
     listEnrolledTournamentsMock.mockResolvedValue([]);
@@ -88,13 +104,15 @@ describe("PlayerTournamentsView", () => {
     expect(wrapper.text()).toContain("Copa Interna");
   });
 
-  it("shows an error when loading fails", async () => {
+  it("shows an error when loading fails, with a way to try again", async () => {
     listAvailableTournamentsMock.mockRejectedValue(new Error("network error"));
     listEnrolledTournamentsMock.mockResolvedValue([]);
 
     const { wrapper } = await mountView();
 
-    expect(wrapper.text()).toContain("No se pudieron cargar los torneos");
+    const alert = wrapper.get("[role='alert']");
+    expect(alert.text()).toContain("No se pudieron cargar los torneos");
+    expect(alert.get("button").text()).toBe("Reintentar");
   });
 });
 

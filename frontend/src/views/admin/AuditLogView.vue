@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import LoadError from "../../components/ui/LoadError.vue";
 import { extractErrorMessage } from "../../lib/errors";
 import { listAuditLogs, type AuditLogEntry } from "../../services/auditLogs";
 import { useLocaleStore } from "../../stores/locale";
@@ -53,7 +54,7 @@ function formatDate(date: string): string {
       </div>
 
       <p v-if="loading">{{ t("auditLog.loading") }}</p>
-      <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
+      <LoadError v-else-if="loadError" :message="loadError" />
 
       <p
         v-else-if="logs.length === 0"

@@ -45,7 +45,8 @@ describe("ForgotPasswordView (HU19)", () => {
 
     expect(requestPasswordReset).toHaveBeenCalledWith("ana@example.com");
     expect(wrapper.find("form").exists()).toBe(false);
-    expect(wrapper.find(".banner--success").exists()).toBe(true);
+    // Announced: the form it replaces had focus.
+    expect(wrapper.get("[role='status']").classes()).toContain("banner--success");
   });
 
   it("asks for the email next to the field instead of sending an empty request", async () => {
@@ -88,6 +89,8 @@ describe("ResetPasswordView (HU19)", () => {
 
     expect(wrapper.find("form").exists()).toBe(false);
     expect(wrapper.find("[role='alert']").exists()).toBe(true);
+    // The way forward, not just the problem.
+    expect(wrapper.get("a[href='/olvide-password']").text()).toBe("Solicitar un enlace nuevo");
   });
 
   it("validates length and confirmation before calling the server", async () => {
@@ -115,7 +118,7 @@ describe("ResetPasswordView (HU19)", () => {
     await flushPromises();
 
     expect(confirmPasswordReset).toHaveBeenCalledWith("abc", "nuevaClave123");
-    expect(wrapper.find(".banner--success").exists()).toBe(true);
+    expect(wrapper.get("[role='status']").classes()).toContain("banner--success");
   });
 
   it("shows why an expired or used token was rejected", async () => {
@@ -131,5 +134,6 @@ describe("ResetPasswordView (HU19)", () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain("El enlace ya fue usado");
+    expect(wrapper.find("a[href='/olvide-password']").exists()).toBe(true);
   });
 });

@@ -112,7 +112,7 @@ async function onSubmit(): Promise<void> {
       leave-active-class="transition duration-180 ease-in"
       leave-to-class="opacity-0 -translate-y-1.5"
     >
-      <p v-if="success" class="banner banner--success mb-4">{{ success }}</p>
+      <p v-if="success" role="status" class="banner banner--success mb-4">{{ success }}</p>
     </Transition>
 
     <form novalidate class="config-form flex flex-col gap-4" @submit.prevent="onSubmit">

@@ -323,7 +323,7 @@ describe("AccountView", () => {
     await wrapper.vm.$nextTick();
 
     expect(updateProfileMock).toHaveBeenCalledWith({ name: "Ana T." });
-    expect(wrapper.text()).toContain("Perfil actualizado");
+    expect(wrapper.get("[role='status']").text()).toContain("Perfil actualizado");
   });
 
   it("shows the player's club and linked coaches (HU23/HU24)", async () => {

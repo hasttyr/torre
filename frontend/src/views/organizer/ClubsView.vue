@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import LoadError from "../../components/ui/LoadError.vue";
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import { usePlayerSearch } from "../../lib/usePlayerSearch";
@@ -201,7 +202,7 @@ async function onDelete(): Promise<void> {
       <h1 class="text-2xl sm:text-3xl">{{ t("clubs.title") }}</h1>
 
       <p v-if="loading">{{ t("clubs.loading") }}</p>
-      <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
+      <LoadError v-else-if="loadError" :message="loadError" />
 
       <div v-else class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <section class="card">

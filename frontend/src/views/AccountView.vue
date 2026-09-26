@@ -6,6 +6,7 @@ import PlayerAffiliations from "../components/account/PlayerAffiliations.vue";
 import PrivacyDataRights from "../components/account/PrivacyDataRights.vue";
 import AppHeader from "../components/layout/AppHeader.vue";
 import DateField from "../components/ui/DateField.vue";
+import LoadError from "../components/ui/LoadError.vue";
 import { toIsoDate } from "../lib/dates";
 import { extractErrorMessage } from "../lib/errors";
 import { errorAttrs, errorId, focusFirstInvalid } from "../lib/formErrors";
@@ -154,7 +155,7 @@ async function onSubmit(): Promise<void> {
     <main class="container max-w-xl py-10 sm:py-12">
       <h1 class="text-2xl sm:text-3xl">{{ t("account.title") }}</h1>
 
-      <p v-if="loadError" role="alert" class="banner banner--error mt-4">{{ loadError }}</p>
+      <LoadError v-if="loadError" :message="loadError" class="mt-4" />
 
       <section v-if="auth.user" class="card mt-6">
         <dl class="m-0">
@@ -185,7 +186,7 @@ async function onSubmit(): Promise<void> {
           leave-active-class="transition duration-180 ease-in"
           leave-to-class="opacity-0 -translate-y-1.5"
         >
-          <p v-if="successMessage" class="banner banner--success mb-4">{{ successMessage }}</p>
+          <p v-if="successMessage" role="status" class="banner banner--success mb-4">{{ successMessage }}</p>
         </Transition>
         <Transition
           enter-active-class="transition duration-180 ease-out"

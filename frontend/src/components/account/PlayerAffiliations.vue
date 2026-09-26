@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { listMyCoaches, type MyCoach, type PlayerClub } from "../../services/auth";
+import LoadError from "../ui/LoadError.vue";
 
 defineProps<{ club: PlayerClub | null }>();
 
@@ -28,7 +29,7 @@ onMounted(async () => {
     <h2 class="mb-1 text-lg">{{ t("account.affiliationsTitle") }}</h2>
     <p class="mb-4 text-sm">{{ t("account.affiliationsSubtitle") }}</p>
 
-    <p v-if="loadError" role="alert" class="banner banner--error mb-4">{{ loadError }}</p>
+    <LoadError v-if="loadError" :message="loadError" class="mb-4" />
 
     <dl class="m-0">
       <div class="flex justify-between gap-4 border-b border-border-soft py-3">

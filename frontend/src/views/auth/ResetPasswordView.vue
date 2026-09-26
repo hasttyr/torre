@@ -73,7 +73,7 @@ async function onSubmit(): Promise<void> {
 
     <p v-if="!token" role="alert" class="banner banner--error">{{ t("resetPassword.missingTokenError") }}</p>
 
-    <p v-else-if="submitted" class="banner banner--success">{{ t("resetPassword.successMessage") }}</p>
+    <p v-else-if="submitted" role="status" class="banner banner--success">{{ t("resetPassword.successMessage") }}</p>
 
     <form v-else ref="formEl" novalidate @submit.prevent="onSubmit">
       <div class="field" :class="{ 'has-error': errors.newPassword }">
@@ -107,6 +107,14 @@ async function onSubmit(): Promise<void> {
         {{ submitting ? t("resetPassword.submitting") : t("resetPassword.submit") }}
       </button>
     </form>
+
+    <!-- A link that's missing its token, expired or already used can't be
+         fixed here: the way forward is a new one. -->
+    <p v-if="!token || serverError" class="mt-4 text-sm">
+      <RouterLink to="/olvide-password" class="font-semibold text-accent">
+        {{ t("resetPassword.requestNewLink") }}
+      </RouterLink>
+    </p>
 
     <template #footer>
       <RouterLink to="/login">{{ t("resetPassword.goToLogin") }}</RouterLink>

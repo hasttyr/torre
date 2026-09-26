@@ -3,6 +3,7 @@
     "appName": "Torre Central Hub",
     "backToHome": "← Back to home",
     "cancel": "Cancel",
+    "retry": "Retry",
     "skipToContent": "Skip to content"
   },
   "playerSearch": {
@@ -177,7 +178,8 @@
     "successMessage": "Password updated successfully. You can now log in.",
     "invalidTokenError": "The reset link is invalid or has expired",
     "missingTokenError": "This link doesn't include a valid reset token",
-    "goToLogin": "Go to log in"
+    "goToLogin": "Go to log in",
+    "requestNewLink": "Request a new link"
   },
   "register": {
     "title": "Create Account",

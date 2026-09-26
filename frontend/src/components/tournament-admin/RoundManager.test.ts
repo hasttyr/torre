@@ -177,6 +177,14 @@ describe("RoundManager", () => {
     expect(finishTournament).toHaveBeenCalledWith("t-1");
   });
 
+  it("announces a finished tournament's final standings", async () => {
+    vi.mocked(listRounds).mockResolvedValue([round(1, "STANDINGS_UPDATED", ["1-0"])]);
+
+    const wrapper = await mountManager({ ...TOURNAMENT, status: "FINISHED" });
+
+    expect(wrapper.get("[role='status']").text()).toContain("Torneo finalizado");
+  });
+
   it("shows the server's reason when an action is refused", async () => {
     vi.mocked(listRounds).mockResolvedValue([]);
     vi.mocked(generateRound).mockRejectedValue({

@@ -3,6 +3,7 @@
     "appName": "Torre Central Hub",
     "backToHome": "← Volver al inicio",
     "cancel": "Cancelar",
+    "retry": "Reintentar",
     "skipToContent": "Saltar al contenido"
   },
   "playerSearch": {
@@ -177,7 +178,8 @@
     "successMessage": "Contraseña actualizada correctamente. Ya puedes iniciar sesión.",
     "invalidTokenError": "El enlace de restablecimiento no es válido o ya expiró",
     "missingTokenError": "Este enlace no incluye un token de restablecimiento válido",
-    "goToLogin": "Ir a iniciar sesión"
+    "goToLogin": "Ir a iniciar sesión",
+    "requestNewLink": "Solicitar un enlace nuevo"
   },
   "register": {
     "title": "Crear cuenta",

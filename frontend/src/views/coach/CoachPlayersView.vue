@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import LoadError from "../../components/ui/LoadError.vue";
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import { formatDate } from "../../lib/format";
@@ -88,7 +89,7 @@ async function onUnlink(player: { playerId: string; name: string }): Promise<voi
       </div>
 
       <p v-if="loading">{{ t("coachPlayers.loading") }}</p>
-      <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
+      <LoadError v-else-if="loadError" :message="loadError" />
 
       <section v-else class="card">
         <Transition

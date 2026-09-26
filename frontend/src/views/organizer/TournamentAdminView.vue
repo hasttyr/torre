@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import LoadError from "../../components/ui/LoadError.vue";
 import PlayerEnrollmentPanel from "../../components/tournament-admin/PlayerEnrollmentPanel.vue";
 import RegistrationControls from "../../components/tournament-admin/RegistrationControls.vue";
 import RoundManager from "../../components/tournament-admin/RoundManager.vue";
@@ -42,7 +43,7 @@ onMounted(async () => {
 
     <main class="container flex max-w-3xl flex-col gap-6 py-10 sm:py-12">
       <p v-if="loading">{{ t("tournamentAdmin.loading") }}</p>
-      <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
+      <LoadError v-else-if="loadError" :message="loadError" />
 
       <template v-else-if="tournaments.current">
         <header class="flex flex-wrap items-center justify-between gap-4">

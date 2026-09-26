@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import LoadError from "../../components/ui/LoadError.vue";
 import PairingsTable from "../../components/tournament/PairingsTable.vue";
 import ResultEntry from "../../components/tournament/ResultEntry.vue";
 import StandingsTable from "../../components/tournament/StandingsTable.vue";
@@ -116,7 +117,7 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
 
     <main class="container flex flex-col gap-6 py-10 sm:py-12">
       <p v-if="loading">{{ t("tournamentRoom.loading") }}</p>
-      <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
+      <LoadError v-else-if="loadError" :message="loadError" />
 
       <template v-else-if="tournament">
         <header class="flex flex-wrap items-end justify-between gap-4">

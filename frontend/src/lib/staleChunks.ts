@@ -1,3 +1,5 @@
+import { reloadPage } from "./reloadPage";
+
 // Kept in sessionStorage: it has to survive the reload it guards.
 const RELOADED_AT_KEY = "torre.chunkReloadAt";
 const MIN_INTERVAL_MS = 10_000;
@@ -12,7 +14,7 @@ const MIN_INTERVAL_MS = 10_000;
  *
  * @returns A function that removes the handler.
  */
-export function installStaleChunkReload(reload: () => void = () => window.location.reload()): () => void {
+export function installStaleChunkReload(reload: () => void = reloadPage): () => void {
   const onPreloadError = (): void => {
     let last: number;
     try {

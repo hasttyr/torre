@@ -7,6 +7,7 @@ import { isRenderableWidget, WIDGET_VIEWS } from "../../components/dashboard/wid
 import WidgetSkeleton from "../../components/dashboard/WidgetSkeleton.vue";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LazyMount from "../../components/ui/LazyMount.vue";
+import LoadError from "../../components/ui/LoadError.vue";
 import { extractErrorMessage } from "../../lib/errors";
 import { loadDashboard } from "../../lib/pageData";
 import { providePlayerSelection } from "../../lib/playerSelection";
@@ -76,7 +77,7 @@ onMounted(async () => {
         <div v-for="n in 4" :key="n" class="card h-52 animate-pulse" />
       </div>
 
-      <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
+      <LoadError v-else-if="loadError" :message="loadError" />
 
       <p
         v-else-if="widgets.length === 0"

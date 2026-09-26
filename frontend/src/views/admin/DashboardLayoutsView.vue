@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 
 import { isRenderableWidget } from "../../components/dashboard/widgetRegistry";
 import AppHeader from "../../components/layout/AppHeader.vue";
+import LoadError from "../../components/ui/LoadError.vue";
 import { extractErrorMessage } from "../../lib/errors";
 import { useUnsavedChangesGuard } from "../../lib/unsavedChanges";
 import { useQueryParam } from "../../lib/useQueryParam";
@@ -157,7 +158,7 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
       </header>
 
       <p v-if="loading">{{ t("dashboardLayouts.loading") }}</p>
-      <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
+      <LoadError v-else-if="loadError" :message="loadError" />
 
       <!-- reka-ui Tabs: arrow keys move between roles, and screen readers
            read each role's layout as the panel of its tab. -->

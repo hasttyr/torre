@@ -299,7 +299,7 @@ describe("TournamentAdminView", () => {
       "tournament-1",
       expect.objectContaining({ roundsCount: 7, timeControl: "90+30" }),
     );
-    expect(wrapper.text()).toContain("Configuración guardada");
+    expect(wrapper.get("[role='status']").text()).toContain("Configuración guardada");
   });
 
   it("closes registration only after confirming, since it can't be reopened (HU06)", async () => {

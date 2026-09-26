@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import LoadError from "../../components/ui/LoadError.vue";
 import { formatDate } from "../../lib/format";
 import { useLocaleStore } from "../../stores/locale";
 import { useTournamentsStore } from "../../stores/tournaments";
@@ -35,7 +36,7 @@ onMounted(async () => {
       </header>
 
       <p v-if="loading">{{ t("dashboard.loading") }}</p>
-      <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
+      <LoadError v-else-if="loadError" :message="loadError" />
 
       <p
         v-else-if="tournaments.mine.length === 0"

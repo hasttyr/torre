@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
 import DataTable from "../../components/ui/DataTable.vue";
+import LoadError from "../../components/ui/LoadError.vue";
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import {
@@ -156,7 +157,7 @@ const columns = [
       </div>
 
       <p v-if="loading">{{ t("adminUsers.loading") }}</p>
-      <p v-else-if="loadError" role="alert" class="banner banner--error">{{ loadError }}</p>
+      <LoadError v-else-if="loadError" :message="loadError" />
 
       <section v-else class="card">
         <Transition
