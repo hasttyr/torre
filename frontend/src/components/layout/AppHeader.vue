@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, defineAsyncComponent, defineComponent, h, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
@@ -7,7 +7,17 @@ import { useAuthStore } from "../../stores/auth";
 import AppLogo from "./AppLogo.vue";
 import LocaleToggle from "../ui/LocaleToggle.vue";
 import ThemeToggle from "../ui/ThemeToggle.vue";
-import UserMenu from "./UserMenu.vue";
+
+// The user menu (and the menu library under it) only matters to signed-in
+// users: it loads separately, so the landing page never downloads it. Until
+// it arrives, a circle the avatar's size holds its place in the header.
+const UserMenu = defineAsyncComponent({
+  loader: () => import("./UserMenu.vue"),
+  loadingComponent: defineComponent(
+    () => () => h("span", { class: "inline-block h-9 w-9 shrink-0 rounded-full bg-accent/30", "aria-hidden": "true" }),
+  ),
+  delay: 0,
+});
 
 const auth = useAuthStore();
 const route = useRoute();

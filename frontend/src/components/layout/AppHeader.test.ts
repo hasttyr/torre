@@ -1,6 +1,6 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
@@ -44,6 +44,17 @@ describe("AppHeader navigation", () => {
 
   it("offers login and sign-up to visitors", async () => {
     expect(desktopLinks(await mountHeader(null))).toEqual(["/login", "/registro"]);
+  });
+
+  it("loads the user menu only for signed-in users, holding its place meanwhile", async () => {
+    const visitor = await mountHeader(null);
+    await vi.dynamicImportSettled();
+    expect(visitor.find("button[aria-haspopup='menu']").exists()).toBe(false);
+
+    const user = await mountHeader("PLAYER");
+    await vi.dynamicImportSettled();
+    await flushPromises();
+    expect(user.findAll("button[aria-haspopup='menu']").length).toBeGreaterThan(0);
   });
 
   it("opens the mobile menu with the same links, and closes it on navigation", async () => {

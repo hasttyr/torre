@@ -37,10 +37,10 @@ async function type(wrapper: Awaited<ReturnType<typeof mountField>>, text: strin
 }
 
 describe("DateField", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     localStorage.clear();
     setActivePinia(createPinia());
-    useLocaleStore().setLocale("es");
+    await useLocaleStore().setLocale("es");
   });
 
   it("leaves naming the input to the field's own <label>", async () => {
@@ -59,7 +59,7 @@ describe("DateField", () => {
   });
 
   it("reads typed dates month-first in English, the order it displays them in", async () => {
-    useLocaleStore().setLocale("en");
+    await useLocaleStore().setLocale("en");
     const wrapper = await mountField();
 
     await type(wrapper, "10/01/2026");
@@ -68,7 +68,7 @@ describe("DateField", () => {
   });
 
   it("accepts back, unchanged, the date it shows", async () => {
-    useLocaleStore().setLocale("en");
+    await useLocaleStore().setLocale("en");
     const wrapper = await mountField({ modelValue: "2026-10-01" });
     const shown = (wrapper.get("#date").element as HTMLInputElement).value;
 

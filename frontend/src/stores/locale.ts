@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 
-import { i18n, type SupportedLocale } from "../i18n";
+import { i18n, loadLocaleMessages, type SupportedLocale } from "../i18n";
 
 export type Locale = SupportedLocale;
 
@@ -17,23 +17,32 @@ function readSavedLocale(): Locale | null {
   }
 }
 
-/** Applies the locale to the document and the i18n instance. */
-function applyLocale(locale: Locale): void {
+// Picking a language may wait for its messages to download: only the latest
+// pick gets applied, so a slow load can't override a later choice.
+let latestPick = 0;
+
+/** Loads the language's messages and applies it to the document and the i18n instance. */
+async function applyLocale(locale: Locale): Promise<boolean> {
+  const pick = ++latestPick;
+  await loadLocaleMessages(locale);
+  if (pick !== latestPick) return false;
   document.documentElement.lang = locale;
   i18n.global.locale.value = locale;
+  return true;
 }
 
 export const useLocaleStore = defineStore("locale", {
-  state: (): { locale: Locale } => {
-    const locale = readSavedLocale() ?? "es";
-    applyLocale(locale);
-    return { locale };
-  },
+  state: (): { locale: Locale } => ({ locale: readSavedLocale() ?? "es" }),
   actions: {
-    /** Sets and persists the active language. */
-    setLocale(locale: Locale): void {
+    /** Applies the saved (or default) language. main.ts awaits it before mounting, so every page starts in it. */
+    async init(): Promise<void> {
+      await applyLocale(this.locale);
+    },
+
+    /** Sets and persists the active language (English's messages load the first time). */
+    async setLocale(locale: Locale): Promise<void> {
+      if (!(await applyLocale(locale))) return;
       this.locale = locale;
-      applyLocale(locale);
       try {
         localStorage.setItem(STORAGE_KEY, locale);
       } catch {
@@ -42,8 +51,8 @@ export const useLocaleStore = defineStore("locale", {
     },
 
     /** Toggles between Spanish and English. */
-    toggle(): void {
-      this.setLocale(this.locale === "es" ? "en" : "es");
+    toggle(): Promise<void> {
+      return this.setLocale(this.locale === "es" ? "en" : "es");
     },
   },
 });
