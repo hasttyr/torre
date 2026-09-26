@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
+import { clickConfirmDialogButton, mountConfirmDialogHost } from "../../test-support/confirmDialog";
 import CoachPlayersView from "./CoachPlayersView.vue";
 
 vi.mock("../../services/players", () => ({
@@ -17,10 +18,11 @@ vi.mock("../../services/coaches", () => ({
   listCoachTournaments: vi.fn(),
 }));
 
-import { listCoachTournaments, listLinkedPlayers } from "../../services/coaches";
+import { listCoachTournaments, listLinkedPlayers, unlinkPlayer } from "../../services/coaches";
 
 const listLinkedPlayersMock = vi.mocked(listLinkedPlayers);
 const listCoachTournamentsMock = vi.mocked(listCoachTournaments);
+const unlinkPlayerMock = vi.mocked(unlinkPlayer);
 
 const LINKED_PLAYER = {
   playerId: "player-1",
@@ -87,6 +89,28 @@ describe("CoachPlayersView", () => {
 
     expect(wrapper.text()).toContain("Copa Universitaria");
     expect(wrapper.text()).toContain("Luis Gómez");
+  });
+
+  it.each([
+    ["Desvincular", true],
+    ["Cancelar", false],
+  ])("unlinks a player only if the confirmation is accepted (%s)", async (answer, unlinked) => {
+    listLinkedPlayersMock.mockResolvedValue([LINKED_PLAYER]);
+    listCoachTournamentsMock.mockResolvedValue([]);
+    unlinkPlayerMock.mockResolvedValue(undefined);
+    mountConfirmDialogHost();
+
+    const { wrapper } = await mountView();
+    const unlinkBtn = wrapper.findAll("button").find((btn) => btn.text() === "Desvincular")!;
+    await unlinkBtn.trigger("click");
+    await wrapper.vm.$nextTick();
+    expect(document.body.textContent).toContain("¿Desvincularte de Luis Gómez?");
+
+    await clickConfirmDialogButton(answer);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(unlinkPlayerMock).toHaveBeenCalledTimes(unlinked ? 1 : 0);
+    if (unlinked) expect(unlinkPlayerMock).toHaveBeenCalledWith("player-1");
   });
 
   it("shows an error when loading fails", async () => {

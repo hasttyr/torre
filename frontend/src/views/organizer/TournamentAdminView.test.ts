@@ -266,6 +266,39 @@ describe("TournamentAdminView", () => {
     expect(wrapper.text()).toContain("Configuración guardada");
   });
 
+  it("closes registration only after confirming, since it can't be reopened (HU06)", async () => {
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
+    closeRegistrationMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_CLOSED" });
+    mountConfirmDialogHost();
+
+    const { wrapper } = await mountView();
+    const closeBtn = wrapper.findAll("button").find((btn) => btn.text() === "Cerrar inscripciones")!;
+    await closeBtn.trigger("click");
+    await wrapper.vm.$nextTick();
+
+    expect(document.body.textContent).toContain("no se pueden volver a abrir");
+    expect(closeRegistrationMock).not.toHaveBeenCalled();
+
+    await clickConfirmDialogButton("Cerrar inscripciones");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(closeRegistrationMock).toHaveBeenCalledWith("tournament-1");
+  });
+
+  it("keeps registration open when closing it is cancelled", async () => {
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
+    mountConfirmDialogHost();
+
+    const { wrapper } = await mountView();
+    const closeBtn = wrapper.findAll("button").find((btn) => btn.text() === "Cerrar inscripciones")!;
+    await closeBtn.trigger("click");
+    await wrapper.vm.$nextTick();
+    await clickConfirmDialogButton("Cancelar");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(closeRegistrationMock).not.toHaveBeenCalled();
+  });
+
   it("does not call closeRegistration when the tournament is not in REGISTRATION_OPEN", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
 

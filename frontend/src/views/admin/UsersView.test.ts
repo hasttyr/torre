@@ -79,18 +79,39 @@ describe("UsersView", () => {
     expect(wrapper.text()).toContain("carlos@example.com");
   });
 
-  it("changes a user's role from the row's selector", async () => {
+  it("changes a user's role from the row's selector, after confirming", async () => {
     listUsersMock.mockResolvedValue([ADMIN, ORGANIZER]);
     updateUserRoleMock.mockResolvedValue({ ...ORGANIZER, role: "ARBITER" });
+    mountConfirmDialogHost();
 
     const { wrapper } = await mountView();
 
-    const selects = wrapper.findAll("select");
-    const organizerSelect = selects[1];
+    const organizerSelect = wrapper.findAll("select")[1];
     await organizerSelect.setValue("ARBITER");
+    await wrapper.vm.$nextTick();
+    expect(document.body.textContent).toContain("¿Cambiar el rol de Carlos Ruiz de Organizador a Árbitro?");
+    expect(updateUserRoleMock).not.toHaveBeenCalled();
+
+    await clickConfirmDialogButton("Cambiar rol");
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(updateUserRoleMock).toHaveBeenCalledWith("user-2", "ARBITER");
+  });
+
+  it("puts the previous role back when the change is cancelled", async () => {
+    listUsersMock.mockResolvedValue([ADMIN, ORGANIZER]);
+    mountConfirmDialogHost();
+
+    const { wrapper } = await mountView();
+
+    const organizerSelect = wrapper.findAll("select")[1];
+    await organizerSelect.setValue("ARBITER");
+    await wrapper.vm.$nextTick();
+    await clickConfirmDialogButton("Cancelar");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(updateUserRoleMock).not.toHaveBeenCalled();
+    expect((organizerSelect.element as HTMLSelectElement).value).toBe("ORGANIZER");
   });
 
   it("names each row's role selector after its user", async () => {

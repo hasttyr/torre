@@ -2,12 +2,14 @@
 import { ref } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import { useTournamentsStore } from "../../stores/tournaments";
 
 const props = defineProps<{ tournamentId: string }>();
 
 const tournaments = useTournamentsStore();
+const confirm = useConfirm();
 const { t } = useI18n();
 
 // --- HU06: open / close registration ---
@@ -28,8 +30,18 @@ async function onOpen(): Promise<void> {
   }
 }
 
-/** Closes registration for the current tournament. */
+/** Closes registration for the current tournament, after confirmation: it can't be reopened. */
 async function onClose(): Promise<void> {
+  const confirmed = await confirm({
+    title: t("tournamentAdmin.closeRegistration"),
+    message: t("tournamentAdmin.closeRegistrationConfirm"),
+    confirmLabel: t("tournamentAdmin.closeRegistration"),
+    danger: true,
+  });
+  if (!confirmed) {
+    return;
+  }
+
   error.value = null;
   submitting.value = true;
   try {

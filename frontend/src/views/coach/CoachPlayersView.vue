@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import { formatDate } from "../../lib/format";
 import { hasTournamentRoom } from "../../lib/tournamentAccess";
@@ -12,6 +13,7 @@ import { useLocaleStore } from "../../stores/locale";
 
 const coaches = useCoachesStore();
 const locale = useLocaleStore();
+const confirm = useConfirm();
 const { t } = useI18n();
 
 const loading = ref(true);
@@ -70,11 +72,21 @@ async function onLink(player: PlayerSearchResult): Promise<void> {
   }
 }
 
-/** Unlinks a player from the current coach. */
-async function onUnlink(playerId: string): Promise<void> {
+/** Unlinks a player from the current coach, after confirmation. */
+async function onUnlink(player: { playerId: string; name: string }): Promise<void> {
+  const confirmed = await confirm({
+    title: t("coachPlayers.unlink"),
+    message: t("coachPlayers.unlinkConfirm", { name: player.name }),
+    confirmLabel: t("coachPlayers.unlink"),
+    danger: true,
+  });
+  if (!confirmed) {
+    return;
+  }
+
   actionError.value = null;
   try {
-    await coaches.unlinkPlayer(playerId);
+    await coaches.unlinkPlayer(player.playerId);
   } catch (error) {
     actionError.value = extractErrorMessage(error, t("coachPlayers.genericServerError"));
   }
@@ -149,7 +161,7 @@ async function onUnlink(playerId: string): Promise<void> {
               <strong class="text-sm text-text">{{ player.name }}</strong>
               <span class="text-sm text-text-muted">{{ player.universityCode }} · {{ player.program }}</span>
             </div>
-            <button type="button" class="btn btn-ghost" @click="onUnlink(player.playerId)">
+            <button type="button" class="btn btn-ghost" @click="onUnlink(player)">
               {{ t("coachPlayers.unlink") }}
             </button>
           </div>

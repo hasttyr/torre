@@ -42,9 +42,26 @@ function isRowLocked(user: AdminUser): boolean {
   return savingId.value === user.id || user.id === auth.user?.id;
 }
 
-/** Changes a user's role from the row's selector. */
-async function onRoleChange(user: AdminUser, role: AnyRole): Promise<void> {
+/** Changes a user's role from the row's selector, after confirmation. */
+async function onRoleChange(user: AdminUser, select: HTMLSelectElement): Promise<void> {
+  const role = select.value as AnyRole;
   if (role === user.role) return;
+  const confirmed = await confirm({
+    title: t("adminUsers.changeRole"),
+    message: t("adminUsers.changeRoleConfirm", {
+      name: user.name,
+      from: t(`roles.${user.role}`),
+      to: t(`roles.${role}`),
+    }),
+    confirmLabel: t("adminUsers.changeRole"),
+  });
+  if (!confirmed) {
+    // The row's data never changed, so Vue has no re-render to undo the
+    // user's pick: put the <select> back by hand.
+    select.value = user.role;
+    return;
+  }
+
   actionError.value = null;
   savingId.value = user.id;
   try {
@@ -100,7 +117,7 @@ const columns = [
           "aria-label": t("adminUsers.roleOf", { name: row.original.name }),
           value: row.original.role,
           disabled: isRowLocked(row.original),
-          onChange: (event: Event) => onRoleChange(row.original, (event.target as HTMLSelectElement).value as AnyRole),
+          onChange: (event: Event) => onRoleChange(row.original, event.target as HTMLSelectElement),
         },
         ALL_ROLES.map((role) => h("option", { value: role }, t(`roles.${role}`))),
       ),

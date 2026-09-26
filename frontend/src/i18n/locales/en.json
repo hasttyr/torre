@@ -291,6 +291,7 @@
     "registrationSubtitle": "Control when new participants are accepted. Current status:",
     "openRegistration": "Open registration",
     "closeRegistration": "Close registration",
+    "closeRegistrationConfirm": "No one else will be able to enroll, and registration can't be reopened. Then you'll be able to generate the first round.",
     "playersTitle": "Registered players",
     "playersSubtitle": "Official list of tournament participants.",
     "searchLabel": "Search player (name, email or code)",
@@ -340,6 +341,7 @@
     "alreadyInClub": "Already in club",
     "assign": "Add",
     "remove": "Remove",
+    "removeConfirm": "Remove {name} from “{club}”? You can assign them again later.",
     "noPlayers": "This club doesn't have any players yet.",
     "selectHint": "Select a club to see and manage its players."
   },
@@ -356,6 +358,7 @@
     "alreadyLinked": "Already linked",
     "link": "Link",
     "unlink": "Unlink",
+    "unlinkConfirm": "Unlink {name}? You'll stop seeing their tournaments and stats on your dashboard.",
     "empty": "You're not linked with any player yet.",
     "tournamentsTitle": "My players' tournaments",
     "tournamentsSubtitle": "Tournaments where one of your linked players is enrolled.",
@@ -390,6 +393,8 @@
     "tableEmail": "Email",
     "tableRole": "Role",
     "roleOf": "{name}'s role",
+    "changeRole": "Change role",
+    "changeRoleConfirm": "Change {name}'s role from {from} to {to}? It changes what they can see and do on the platform.",
     "tableStatus": "Status",
     "status": {
       "ACTIVE": "Active",

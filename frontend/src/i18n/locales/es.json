@@ -291,6 +291,7 @@
     "registrationSubtitle": "Controla cuándo se aceptan nuevos participantes. Estado actual:",
     "openRegistration": "Abrir inscripciones",
     "closeRegistration": "Cerrar inscripciones",
+    "closeRegistrationConfirm": "Nadie más podrá inscribirse y las inscripciones no se pueden volver a abrir. Después podrás generar la primera ronda.",
     "playersTitle": "Jugadores inscritos",
     "playersSubtitle": "Listado oficial de participantes del torneo.",
     "searchLabel": "Buscar jugador (nombre, correo o código)",
@@ -340,6 +341,7 @@
     "alreadyInClub": "Ya en el club",
     "assign": "Agregar",
     "remove": "Quitar",
+    "removeConfirm": "¿Quitar a {name} del club «{club}»? Podrás volver a asignarlo después.",
     "noPlayers": "Este club todavía no tiene jugadores.",
     "selectHint": "Selecciona un club para ver y administrar sus jugadores."
   },
@@ -356,6 +358,7 @@
     "alreadyLinked": "Ya vinculado",
     "link": "Vincular",
     "unlink": "Desvincular",
+    "unlinkConfirm": "¿Desvincularte de {name}? Dejarás de ver sus torneos y estadísticas en tu panel.",
     "empty": "Todavía no estás vinculado con ningún jugador.",
     "tournamentsTitle": "Torneos de mis jugadores",
     "tournamentsSubtitle": "Torneos donde alguno de tus jugadores vinculados está inscrito.",
@@ -390,6 +393,8 @@
     "tableEmail": "Correo",
     "tableRole": "Rol",
     "roleOf": "Rol de {name}",
+    "changeRole": "Cambiar rol",
+    "changeRoleConfirm": "¿Cambiar el rol de {name} de {from} a {to}? Cambia lo que puede ver y hacer en la plataforma.",
     "tableStatus": "Estado",
     "status": {
       "ACTIVE": "Activa",

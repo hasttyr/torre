@@ -21,16 +21,24 @@ vi.mock("../../services/clubs", () => ({
   removePlayerFromClub: vi.fn(),
 }));
 
-import { createClub, deleteClub, listClubPlayers, listClubs } from "../../services/clubs";
+import { createClub, deleteClub, listClubPlayers, listClubs, removePlayerFromClub } from "../../services/clubs";
 import { searchPlayers } from "../../services/players";
 
 const listClubsMock = vi.mocked(listClubs);
 const createClubMock = vi.mocked(createClub);
 const deleteClubMock = vi.mocked(deleteClub);
 const listClubPlayersMock = vi.mocked(listClubPlayers);
+const removePlayerFromClubMock = vi.mocked(removePlayerFromClub);
 const searchPlayersMock = vi.mocked(searchPlayers);
 
 const CLUB = { id: "club-1", name: "Club Ajedrez Central", createdAt: "2026-09-17T00:00:00.000Z" };
+const ROSTER_PLAYER = {
+  playerId: "player-1",
+  name: "Luis Gómez",
+  universityCode: "U123",
+  program: "Sistemas",
+  semester: 5,
+};
 
 /**
  * Clicks the club-selection button for the given club name.
@@ -143,6 +151,32 @@ describe("ClubsView", () => {
 
     expect(searchPlayersMock).toHaveBeenCalledWith("Luis");
     expect(wrapper.text()).toContain("Luis Gómez");
+  });
+
+  it.each([
+    ["Quitar", true],
+    ["Cancelar", false],
+  ])("removes a player from the club only if the confirmation is accepted (%s)", async (answer, removed) => {
+    listClubsMock.mockResolvedValue([CLUB]);
+    listClubPlayersMock.mockResolvedValue([ROSTER_PLAYER]);
+    removePlayerFromClubMock.mockResolvedValue(undefined);
+    mountConfirmDialogHost();
+
+    const { wrapper } = await mountView();
+    await selectClubByName(wrapper, CLUB.name);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    const removeBtn = wrapper.findAll("button").find((btn) => btn.text() === "Quitar")!;
+    await removeBtn.trigger("click");
+    await wrapper.vm.$nextTick();
+    expect(document.body.textContent).toContain("¿Quitar a Luis Gómez del club «Club Ajedrez Central»?");
+
+    await clickConfirmDialogButton(answer);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(removePlayerFromClubMock).toHaveBeenCalledTimes(removed ? 1 : 0);
+    if (removed) expect(removePlayerFromClubMock).toHaveBeenCalledWith("club-1", "player-1");
   });
 
   it("deletes the selected club after confirmation", async () => {

@@ -144,12 +144,23 @@ async function onAssign(player: PlayerSearchResult): Promise<void> {
   }
 }
 
-/** Removes a player from the selected club. */
-async function onRemove(playerId: string): Promise<void> {
-  if (!selectedClub.value) return;
+/** Removes a player from the selected club, after confirmation. */
+async function onRemove(player: { playerId: string; name: string }): Promise<void> {
+  const club = selectedClub.value;
+  if (!club) return;
+  const confirmed = await confirm({
+    title: t("clubs.remove"),
+    message: t("clubs.removeConfirm", { name: player.name, club: club.name }),
+    confirmLabel: t("clubs.remove"),
+    danger: true,
+  });
+  if (!confirmed) {
+    return;
+  }
+
   rosterError.value = null;
   try {
-    await clubs.removePlayer(selectedClub.value.id, playerId);
+    await clubs.removePlayer(club.id, player.playerId);
   } catch (error) {
     rosterError.value = extractErrorMessage(error, t("clubs.genericServerError"));
   }
@@ -318,7 +329,7 @@ async function onDelete(): Promise<void> {
                 <strong class="text-sm text-text">{{ player.name }}</strong>
                 <span class="text-sm text-text-muted">{{ player.universityCode }} · {{ player.program }}</span>
               </div>
-              <button type="button" class="btn btn-ghost" @click="onRemove(player.playerId)">
+              <button type="button" class="btn btn-ghost" @click="onRemove(player)">
                 {{ t("clubs.remove") }}
               </button>
             </div>
