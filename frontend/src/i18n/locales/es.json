@@ -2,7 +2,8 @@
   "common": {
     "appName": "Torre Central Hub",
     "backToHome": "← Volver al inicio",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "skipToContent": "Saltar al contenido"
   },
   "playerSearch": {
     "searching": "Buscando…",

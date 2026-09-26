@@ -24,9 +24,15 @@ function readSavedTheme(): Theme | null {
   }
 }
 
-/** Applies the theme to the document so CSS can react to it. */
+// Each theme's page background (--bg in style.css; index.html sets the
+// first paint's value): the browser tints its address bar and task
+// switcher with it.
+const THEME_COLOR: Record<Theme, string> = { dark: "#0f1115", light: "#f7f5f0" };
+
+/** Applies the theme to the document so CSS (and the browser's chrome) can react to it. */
 function applyTheme(theme: Theme): void {
   document.documentElement.dataset.theme = theme;
+  document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute("content", THEME_COLOR[theme]);
 }
 
 export const useThemeStore = defineStore("theme", {

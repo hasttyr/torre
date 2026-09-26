@@ -137,6 +137,12 @@
     outline-offset: 2px;
   }
 
+  /* The skip link's target: focused so the next Tab continues from the
+     content, but it isn't a control, so it gets no ring. */
+  main:focus {
+    outline: none;
+  }
+
   /* Honors the OS "reduce motion" setting: transitions and animations
      (hover lifts, <Transition> slides, skeleton pulses, growing bars) jump
      straight to their end state. Vue's <Transition> still receives its

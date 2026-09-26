@@ -61,6 +61,20 @@ describe("useThemeStore", () => {
     expect(localStorage.getItem("torre.theme")).toBe("light");
   });
 
+  it("keeps the browser's theme-color (address bar, task switcher) in step with the page", () => {
+    mockMatchMedia(false);
+    const meta = document.createElement("meta");
+    meta.name = "theme-color";
+    document.head.append(meta);
+
+    const store = useThemeStore();
+    expect(meta.content).toBe("#0f1115");
+    store.setTheme("light");
+    expect(meta.content).toBe("#f7f5f0");
+
+    meta.remove();
+  });
+
   it("toggle switches between 'dark' and 'light'", () => {
     mockMatchMedia(false);
     const store = useThemeStore();
