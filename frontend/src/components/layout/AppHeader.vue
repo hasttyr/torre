@@ -65,7 +65,7 @@ function closeMobileFromKeyboard(): void {
     @keydown.esc="closeMobileFromKeyboard"
   >
     <div class="container flex items-center justify-between gap-4 py-4">
-      <AppLogo />
+      <AppLogo collapsible />
 
       <!-- Desktop nav: hidden below lg (an administrator has up to six links,
            which would overflow a tablet-width bar), visible from lg upward. -->

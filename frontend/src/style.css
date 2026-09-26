@@ -47,6 +47,38 @@
 
   --shadow-md: var(--shadow-md-value);
   --shadow-lg: var(--shadow-lg-value);
+
+  /* The landing's "ink" tiles stay dark in both themes, so its light/dark
+     tile rhythm reads either way; on them, links and buttons use the bright
+     gold (the light theme's darker accent would sink into the tile). */
+  --color-tile-ink: var(--tile-ink);
+  --color-tile-ink-text: var(--tile-ink-text);
+  --color-tile-ink-muted: var(--tile-ink-muted);
+  --color-tile-ink-accent: #c9a227;
+
+  /* The only drop shadow on the landing: under an illustration resting on
+     its tile, to give it weight. Never on cards, buttons or text. */
+  --shadow-product: 3px 5px 30px rgb(0 0 0 / 22%);
+
+  --animate-rise-in: rise-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-live: live 2s ease-out infinite;
+
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      translate: 0 1.5rem;
+    }
+  }
+
+  /* A ring that grows and fades from a "live" dot. */
+  @keyframes live {
+    from {
+      box-shadow: 0 0 0 0 rgb(63 178 127 / 55%);
+    }
+    to {
+      box-shadow: 0 0 0 0.6rem rgb(63 178 127 / 0%);
+    }
+  }
 }
 
 /* Tema oscuro: por defecto y explícito vía [data-theme="dark"]. */
@@ -79,6 +111,10 @@
   --shadow-md-value: 0 8px 24px rgb(0 0 0 / 35%);
   --shadow-lg-value: 0 24px 60px rgb(0 0 0 / 45%);
 
+  --tile-ink: #07080b;
+  --tile-ink-text: #f2ede4;
+  --tile-ink-muted: #9aa0ab;
+
   color-scheme: dark;
 }
 
@@ -109,6 +145,10 @@
 
   --shadow-md-value: 0 8px 24px rgb(33 30 24 / 10%);
   --shadow-lg-value: 0 24px 60px rgb(33 30 24 / 14%);
+
+  --tile-ink: #1b1914;
+  --tile-ink-text: #f7f3ea;
+  --tile-ink-muted: #b3ac9c;
 
   color-scheme: light;
 }

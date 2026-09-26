@@ -2,30 +2,10 @@ import { enableAutoUnmount, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { h, nextTick } from "vue";
 
+import { stubIntersectionObserver } from "../../test-support/intersectionObserver";
 import LazyMount from "./LazyMount.vue";
 
 enableAutoUnmount(afterEach);
-
-/** A controllable IntersectionObserver: `reveal()` reports the observed element as visible. */
-function stubIntersectionObserver() {
-  const observer = {
-    observe: vi.fn(),
-    disconnect: vi.fn(),
-    options: undefined as IntersectionObserverInit | undefined,
-  };
-  let callback: IntersectionObserverCallback = () => undefined;
-  vi.stubGlobal(
-    "IntersectionObserver",
-    vi.fn(function (this: unknown, cb: IntersectionObserverCallback, options: IntersectionObserverInit) {
-      callback = cb;
-      observer.options = options;
-      return observer;
-    }),
-  );
-  const reveal = () =>
-    callback([{ isIntersecting: true } as IntersectionObserverEntry], observer as unknown as IntersectionObserver);
-  return { observer, reveal };
-}
 
 const mountLazy = () =>
   mount(LazyMount, {

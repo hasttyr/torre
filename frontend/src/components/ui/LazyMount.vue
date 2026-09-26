@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, useTemplateRef } from "vue";
+import { onMounted, useTemplateRef, watch } from "vue";
+
+import { useInView } from "../../lib/useInView";
 
 // Renders its content only once it comes near the viewport (and keeps it
 // from then on): content far down a page doesn't download its code or
@@ -10,29 +12,15 @@ import { onBeforeUnmount, onMounted, ref, useTemplateRef } from "vue";
 const props = withDefaults(defineProps<{ rootMargin?: string }>(), { rootMargin: "400px" });
 const emit = defineEmits<{ visible: [] }>();
 
-const root = useTemplateRef<HTMLElement>("root");
-const visible = ref(typeof IntersectionObserver === "undefined");
-let observer: IntersectionObserver | undefined;
+const visible = useInView(useTemplateRef<HTMLElement>("root"), { rootMargin: props.rootMargin });
 
+// Visible from the start (no IntersectionObserver) never changes, so it's
+// announced on mount; otherwise, the moment it flips (sync, not on the next
+// tick, so the parent's data request starts right then).
 onMounted(() => {
-  if (visible.value) {
-    emit("visible");
-    return;
-  }
-  if (!root.value) return;
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (visible.value || !entries.some((entry) => entry.isIntersecting)) return;
-      emit("visible");
-      visible.value = true;
-      observer?.disconnect();
-    },
-    { rootMargin: props.rootMargin },
-  );
-  observer.observe(root.value);
+  if (visible.value) emit("visible");
 });
-
-onBeforeUnmount(() => observer?.disconnect());
+watch(visible, () => emit("visible"), { flush: "sync" });
 </script>
 
 <template>
