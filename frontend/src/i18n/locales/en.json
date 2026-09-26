@@ -1,7 +1,8 @@
 {
   "common": {
     "appName": "Torre Central Hub",
-    "backToHome": "← Back to home"
+    "backToHome": "← Back to home",
+    "cancel": "Cancel"
   },
   "confirmDialog": {
     "confirm": "Confirm",
@@ -62,7 +63,8 @@
     "login": "Log in",
     "createAccount": "Create account",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "live": "Live"
   },
   "userMenu": {
     "menuAria": "Menu for {name}",
@@ -142,7 +144,8 @@
     "submitting": "Logging in...",
     "noAccount": "Don't have an account?",
     "createOne": "Create one",
-    "forgotPassword": "Forgot your password?"
+    "forgotPassword": "Forgot your password?",
+    "sessionExpired": "Your session ended (it expired or your permissions changed). Log in again to continue."
   },
   "forgotPassword": {
     "title": "Recover access",
@@ -304,7 +307,13 @@
     "tableSemester": "Semester",
     "noPlayers": "No players registered yet.",
     "withdraw": "Withdraw",
-    "withdrawConfirm": "Are you sure you want to withdraw {name} from the tournament?"
+    "withdrawConfirm": "Are you sure you want to withdraw {name} from the tournament?",
+    "byePointsLabel": "Bye value",
+    "byePointsOptions": {
+      "1": "1 point",
+      "0_5": "½ point",
+      "0": "0 points"
+    }
   },
   "clubs": {
     "title": "Clubs",
@@ -363,7 +372,10 @@
       "ROLE_CHANGED": "Role changed",
       "PLAYER_WITHDRAWN": "Player withdrawn",
       "ACCOUNT_STATUS_CHANGED": "Account status changed",
-      "DASHBOARD_LAYOUT_CHANGED": "Role dashboard changed"
+      "DASHBOARD_LAYOUT_CHANGED": "Role dashboard changed",
+      "RESULT_CORRECTED": "Result corrected",
+      "PAIRING_ADJUSTED": "Pairing adjusted manually",
+      "TOURNAMENT_FINISHED": "Tournament finished"
     }
   },
   "adminUsers": {
@@ -500,6 +512,33 @@
       "description": "Active accounts per role.",
       "total": "active accounts",
       "inactive": "no inactive | 1 inactive | {count} inactive"
+    },
+    "boardResults": {
+      "wins": "White wins",
+      "draws": "Draws",
+      "losses": "Black wins",
+      "summary": "{wins} white · {draws} draws · {losses} black"
+    },
+    "PLAYER_GAME_LOG": {
+      "title": "Game history",
+      "description": "Every game played: opponent, color and result.",
+      "empty": "This player has no recorded games yet.",
+      "search": "Search game…",
+      "tournament": "Tournament",
+      "round": "Round {round}",
+      "color": "Color",
+      "colors": {
+        "WHITE": "White",
+        "BLACK": "Black"
+      },
+      "opponent": "Opponent",
+      "outcome": "Result",
+      "outcomes": {
+        "WIN": "Win",
+        "DRAW": "Draw",
+        "LOSS": "Loss",
+        "BYE": "Bye"
+      }
     }
   },
   "dashboardLayouts": {
@@ -531,5 +570,104 @@
     "leaveTitle": "Leave without saving?",
     "leaveMessage": "Some dashboards have unsaved changes. They'll be lost if you leave.",
     "leaveConfirm": "Leave without saving"
+  },
+  "rounds": {
+    "resultLabel": "Result",
+    "resultNames": {
+      "whiteWins": "White wins",
+      "draw": "Draw",
+      "blackWins": "Black wins"
+    },
+    "board": "Board {board}",
+    "byeLabel": "sits out this round",
+    "bye": "Bye",
+    "white": "White",
+    "black": "Black",
+    "vs": "vs",
+    "correct": "Correct",
+    "correctionReason": "Reason for the correction (optional)",
+    "correctionPlaceholder": "E.g. score sheet copied wrong",
+    "saveCorrection": "Save correction"
+  },
+  "standings": {
+    "pending": "Provisional standings: the round in play still has results missing.",
+    "empty": "Standings will show up once the first round is published.",
+    "player": "Player",
+    "points": "Pts",
+    "buchholz": "Buchholz",
+    "cut1": "Buchholz Cut 1",
+    "sb": "Sonneborn-Berger",
+    "withdrawn": "withdrawn",
+    "tiebreakOrder": "Tiebreaks in order: {order}"
+  },
+  "roundManager": {
+    "title": "Rounds",
+    "progress": "Completed rounds: {played} of {total}",
+    "openRoom": "Open tournament room",
+    "loadError": "The rounds couldn't be loaded",
+    "draftBanner": "Round {number} is a draft: only you can see it. Review it, adjust it if needed, and publish it.",
+    "swapTitle": "Manual adjustment",
+    "swapHint": "Swap two players' seats (on the same board, it flips colors). It's logged with your name and the reason.",
+    "swapPlayerA": "Player",
+    "swapPlayerB": "Swap with",
+    "choosePlayer": "Choose a player",
+    "swapReason": "Reason for the adjustment",
+    "swapReasonPlaceholder": "E.g. same club, requested by the organizer",
+    "swapSubmit": "Apply adjustment",
+    "publishRound": "Publish round {number}",
+    "publish": "Publish",
+    "publishTitle": "Publish round {number}?",
+    "publishMessage": "Everyone will see the pairings and results can be recorded. It can't be adjusted afterwards.",
+    "discard": "Discard draft",
+    "discardTitle": "Discard round {number}?",
+    "discardMessage": "The draft's pairings are deleted so they can be generated again.",
+    "inPlay": "Round {number} is in play: {count} result still missing. | Round {number} is in play: {count} results still missing.",
+    "finished": "Tournament finished: the standings are final.",
+    "allPlayed": "Every round has been played and recorded. You can now officially close the tournament.",
+    "finish": "Finish tournament",
+    "finishTitle": "Finish the tournament?",
+    "finishMessage": "The standings become final and no more results can be recorded or corrected.",
+    "generateHint": "Players are paired by score without repeating games, and the bye goes out when there's an odd number of players. You'll review it before publishing.",
+    "generate": "Generate round {number}",
+    "generating": "Pairing…",
+    "closeRegistrationFirst": "Close registration and set the number of rounds to start pairing."
+  },
+  "tournamentRoom": {
+    "loading": "Loading room…",
+    "loadError": "The tournament couldn't be loaded",
+    "live": "Live",
+    "offline": "Not connected live",
+    "roundsPlayed": "{played} of {total} rounds completed",
+    "manage": "Manage tournament",
+    "pairings": "Pairings",
+    "roundsLabel": "Round",
+    "roundTab": "R{number}",
+    "noRounds": "No round has been published yet.",
+    "standings": "Standings",
+    "follow": "Follow live →",
+    "stats": "Tournament statistics",
+    "exportStandings": "Standings (PDF)",
+    "exportRound": "Round {number} (PDF)",
+    "exportError": "The PDF couldn't be generated",
+    "standingsFile": "standings.pdf",
+    "roundFile": "round-{number}.pdf"
+  },
+  "liveTournaments": {
+    "title": "Tournaments in play",
+    "subtitle": "Follow each tournament's pairings, results and standings live.",
+    "loading": "Loading tournaments…",
+    "loadError": "The tournaments couldn't be loaded",
+    "empty": "No tournament is in progress or finished yet."
+  },
+  "tournamentStats": {
+    "players": "Active players",
+    "withdrawn": "none withdrawn | 1 withdrawn | {count} withdrawn",
+    "games": "Games played",
+    "decisive": "Decisive games",
+    "whiteScore": "White's score",
+    "noGames": "No recorded games yet.",
+    "allRounds": "Whole tournament",
+    "round": "Round {round}",
+    "roundPending": "Round {round} ({count} missing) | Round {round} ({count} missing)"
   }
 }

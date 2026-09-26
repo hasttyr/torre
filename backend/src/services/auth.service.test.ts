@@ -44,7 +44,7 @@ describe("registerUser", () => {
       name: "Ana Torres",
       email: "ana@example.com",
       password: "password123",
-      role: "ORGANIZER",
+      role: "COACH",
       acceptDataPolicy: true,
     });
 
@@ -117,7 +117,7 @@ describe("registerUser", () => {
       name: "  Ana  ",
       email: "  Ana@Example.COM  ",
       password: "password123",
-      role: "ARBITER",
+      role: "COACH",
       acceptDataPolicy: true,
     });
 
@@ -154,7 +154,7 @@ describe("registerUser", () => {
         name: "Alguien",
         email: "alguien@example.com",
         password: "password123",
-        role: "ORGANIZER",
+        role: "COACH",
         acceptDataPolicy: true,
       }),
     ).rejects.toMatchObject({ status: 400 } satisfies Partial<HttpError>);
@@ -170,7 +170,7 @@ describe("registerUser", () => {
         name: "Carrera",
         email: "carrera@example.com",
         password: "password123",
-        role: "ORGANIZER",
+        role: "COACH",
         acceptDataPolicy: true,
       }),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);

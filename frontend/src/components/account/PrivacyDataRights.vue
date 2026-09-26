@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 import { useConfirm } from "../../lib/confirm";
+import { saveFile } from "../../lib/download";
 import { extractErrorMessage } from "../../lib/errors";
 import { requestDataAccess, requestDataSuppression } from "../../services/dataRights";
 import { useAuthStore } from "../../stores/auth";
@@ -27,12 +28,7 @@ async function onDownloadData(): Promise<void> {
   try {
     const result = await requestDataAccess();
     const blob = new Blob([JSON.stringify(result.user, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "mis-datos-torre.json";
-    link.click();
-    URL.revokeObjectURL(url);
+    saveFile(blob, "mis-datos-torre.json");
   } catch (error) {
     downloadError.value = extractErrorMessage(error, t("account.privacyGenericError"));
   } finally {

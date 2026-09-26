@@ -1,6 +1,5 @@
 import { prisma } from "../config/prisma";
 import { asyncHandler } from "../middlewares/asyncHandler";
-import { HttpError } from "../middlewares/errorHandler";
 import {
   assignPlayerToClub,
   createClub,
@@ -11,15 +10,13 @@ import {
   updateClub,
 } from "../services/clubs.service";
 import { assignPlayerSchema, createClubSchema, updateClubSchema } from "../validators/clubs.schemas";
+import { parseOrThrow } from "../validators/parse";
 
 /** POST /clubs — creates a new club (HU23). */
 export const create = asyncHandler(async (req, res) => {
-  const parsed = createClubSchema.safeParse(req.body);
-  if (!parsed.success) {
-    throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join("; "));
-  }
+  const input = parseOrThrow(createClubSchema, req.body);
 
-  const club = await createClub(prisma, parsed.data);
+  const club = await createClub(prisma, input);
   res.status(201).json(club);
 });
 
@@ -31,12 +28,9 @@ export const list = asyncHandler(async (_req, res) => {
 
 /** PUT /clubs/:id — renames a club (HU23). */
 export const update = asyncHandler(async (req, res) => {
-  const parsed = updateClubSchema.safeParse(req.body);
-  if (!parsed.success) {
-    throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join("; "));
-  }
+  const input = parseOrThrow(updateClubSchema, req.body);
 
-  const club = await updateClub(prisma, String(req.params.id), parsed.data);
+  const club = await updateClub(prisma, String(req.params.id), input);
   res.status(200).json(club);
 });
 
@@ -54,12 +48,9 @@ export const listPlayers = asyncHandler(async (req, res) => {
 
 /** POST /clubs/:id/players — associates a player with the club (HU23). */
 export const assignPlayer = asyncHandler(async (req, res) => {
-  const parsed = assignPlayerSchema.safeParse(req.body);
-  if (!parsed.success) {
-    throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join("; "));
-  }
+  const input = parseOrThrow(assignPlayerSchema, req.body);
 
-  const player = await assignPlayerToClub(prisma, String(req.params.id), parsed.data);
+  const player = await assignPlayerToClub(prisma, String(req.params.id), input);
   res.status(201).json(player);
 });
 

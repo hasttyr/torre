@@ -4,30 +4,16 @@ import jwt from "jsonwebtoken";
 import { DATA_POLICY_VERSION } from "../config/dataPolicy";
 import { env } from "../config/env";
 import { HttpError } from "../middlewares/errorHandler";
+import type { RegisterSchemaInput } from "../validators/auth.schemas";
 import { comparePassword, hashPassword } from "./password";
+import { isUniqueConstraintError } from "./prismaErrors";
 import { toUserDto, type UserDto } from "./user.mapper";
 
-interface RegisterUserBase {
-  name: string;
-  email: string;
-  password: string;
-  // RN-10/HU21: guaranteed `true` by registerSchema (z.literal(true)); the
-  // service doesn't re-validate it, only persists it with a date and version.
-  acceptDataPolicy: true;
-}
-
-interface RegisterPlayerInput extends RegisterUserBase {
-  role: "PLAYER";
-  universityCode: string;
-  program: string;
-  semester: number;
-}
-
-interface RegisterOtherRoleInput extends RegisterUserBase {
-  role: "ORGANIZER" | "ARBITER" | "COACH";
-}
-
-export type RegisterUserInput = RegisterPlayerInput | RegisterOtherRoleInput;
+// Derived from the validator instead of re-declared by hand, so the roles a
+// person can self-register with (PLAYER, COACH) can't drift from what the
+// API actually accepts. acceptDataPolicy (RN-10/HU21) is guaranteed `true`
+// by the schema; the service only persists it with a date and version.
+export type RegisterUserInput = RegisterSchemaInput;
 
 export interface LoginUserInput {
   email: string;
@@ -39,17 +25,12 @@ export interface AuthResult {
   user: UserDto;
 }
 
-/** Checks whether a Prisma error is a unique-constraint violation (P2002). */
-function isUniqueConstraintError(error: unknown): boolean {
-  return typeof error === "object" && error !== null && (error as { code?: string }).code === "P2002";
-}
-
 /** Signs a JWT carrying the user's id and role name. */
 function signToken(user: { id: string; role: { name: string } }): string {
-  // The role travels embedded in the token (it isn't re-read from the DB on
-  // every request): if an admin changes someone's role, that person only
-  // sees it reflected on their next login, not immediately. Standard
-  // stateless-JWT trade-off, acceptable with a short expiration (1d).
+  // The role travels embedded in the token, and requireAuth checks on every
+  // request that it still matches the account (and that the account is
+  // still active): a role change or a block invalidates the token right
+  // away, and the user just logs in again.
   return jwt.sign({ sub: user.id, role: user.role.name }, env.jwtSecret, {
     expiresIn: env.jwtExpiresIn,
   } as jwt.SignOptions);

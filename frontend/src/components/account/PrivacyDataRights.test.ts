@@ -12,8 +12,10 @@ vi.mock("../../services/dataRights", () => ({
   requestDataAccess: vi.fn(),
   requestDataSuppression: vi.fn(),
 }));
+vi.mock("../../lib/download", () => ({ saveFile: vi.fn() }));
 
-import { requestDataSuppression } from "../../services/dataRights";
+import { saveFile } from "../../lib/download";
+import { requestDataAccess, requestDataSuppression } from "../../services/dataRights";
 
 const requestDataSuppressionMock = vi.mocked(requestDataSuppression);
 
@@ -50,8 +52,8 @@ describe("PrivacyDataRights", () => {
   it("requests data suppression only after the confirm dialog is accepted", async () => {
     mountConfirmDialogHost();
     requestDataSuppressionMock.mockResolvedValue({
-      type: "SUPRESION",
-      status: "RESUELTA",
+      type: "SUPPRESSION",
+      status: "RESOLVED",
       message: "Solicitud procesada",
       user: USER,
     });
@@ -83,5 +85,46 @@ describe("PrivacyDataRights", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(requestDataSuppressionMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("PrivacyDataRights — access right (HU22)", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.clearAllMocks();
+  });
+
+  it("downloads the titular's own data as a JSON file", async () => {
+    vi.mocked(requestDataAccess).mockResolvedValue({ type: "ACCESS", status: "RESOLVED", message: "ok", user: USER });
+
+    const wrapper = await mountPanel();
+    await wrapper
+      .findAll("button")
+      .find((btn) => btn.text().includes("Descargar"))!
+      .trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(requestDataAccess).toHaveBeenCalledTimes(1);
+    const [blob, filename] = vi.mocked(saveFile).mock.calls[0];
+    expect(filename).toBe("mis-datos-torre.json");
+    expect(JSON.parse(await (blob as Blob).text())).toMatchObject({ email: "ana@example.com" });
+  });
+
+  it("shows the server's reason when the request is rejected", async () => {
+    vi.mocked(requestDataAccess).mockRejectedValue({
+      isAxiosError: true,
+      response: { data: { error: "Solicitud inválida" } },
+    });
+
+    const wrapper = await mountPanel();
+    await wrapper
+      .findAll("button")
+      .find((btn) => btn.text().includes("Descargar"))!
+      .trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.text()).toContain("Solicitud inválida");
+    expect(saveFile).not.toHaveBeenCalled();
   });
 });

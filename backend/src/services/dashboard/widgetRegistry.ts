@@ -4,6 +4,7 @@ import type { AuthUser } from "../../types/express";
 import type { WidgetKey } from "./widgetCatalog";
 import { loadPlayersOverview, loadTopPlayers, loadUsersByRole } from "./widgets/directoryWidgets";
 import {
+  loadPlayerGameLog,
   loadPlayerPerformanceTrend,
   loadPlayerResultsByColor,
   loadPlayerSummary,
@@ -27,6 +28,7 @@ export const WIDGET_REGISTRY: Record<WidgetKey, WidgetDefinition> = {
   PLAYER_PERFORMANCE_TREND: { subject: "player", load: loadPlayerPerformanceTrend },
   PLAYER_RESULTS_BY_COLOR: { subject: "player", load: loadPlayerResultsByColor },
   PLAYER_TOURNAMENT_HISTORY: { subject: "player", load: loadPlayerTournamentHistory },
+  PLAYER_GAME_LOG: { subject: "player", load: loadPlayerGameLog },
   PLAYERS_OVERVIEW: { subject: "none", load: loadPlayersOverview },
   TOP_PLAYERS: { subject: "none", load: loadTopPlayers },
   TOURNAMENTS_BY_STATUS: { subject: "none", load: loadTournamentsByStatus },

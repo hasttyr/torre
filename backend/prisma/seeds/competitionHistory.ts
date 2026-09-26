@@ -1,12 +1,15 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { computeStandings, type RecordedGame } from "../../src/services/standings.calculator";
+import { candidatesFromHistory, drawPairingNumbers, type PlayedGame } from "../../src/services/pairing/pairingHistory";
+import { pairRound } from "../../src/services/pairing/swissPairing";
+import { DEFAULT_TIEBREAKS } from "../../src/services/standings.calculator";
+import { recalculateStandings } from "../../src/services/standings.service";
 
-// Plays out a tournament's rounds so dashboards have real history to show:
-// rounds, matches, results and standings computed with the same calculator
-// the app uses (src/services/standings.calculator.ts). The pairing below is
-// a deliberately simple Swiss approximation for demo data only — the real
-// pairing engine (HU08, FIDE Dutch) is a separate piece of work.
+// Plays out a tournament's rounds so dashboards and standings have real
+// history to show. Only the RESULTS are simulated (by playing strength):
+// pairings come from the app's own engine (src/services/pairing/) and
+// standings from the app's own recalculation, so seeded data is exactly
+// what the real flow would have produced.
 
 export interface CompetitionSeed {
   tournamentId: string;
@@ -21,14 +24,12 @@ export interface CompetitionSeed {
   partialRound?: boolean;
 }
 
-const DEFAULT_TIEBREAKS = ["Buchholz Cortado 1", "Buchholz", "Sonneborn-Berger"];
 // Chance of a draw between any two players; the rest is decided by strength.
 const DRAW_RATE = 0.22;
 // Elo-points equivalent of moving first.
 const WHITE_ADVANTAGE = 35;
 
-interface SimulatedGame extends RecordedGame {
-  round: number;
+interface SimulatedGame extends PlayedGame {
   board: number;
   // false = still being played (only in a partial round): the match is
   // persisted, its result isn't.
@@ -53,73 +54,34 @@ function simulateResult(rng: () => number, whiteStrength: number, blackStrength:
   return rng() < whiteExpected ? "1-0" : "0-1";
 }
 
-const pairKey = (a: string, b: string): string => (a < b ? `${a}|${b}` : `${b}|${a}`);
-
-/** Pairs top-down by score, avoiding rematches when possible; returns [white, black] pairs. */
-function pairRound(ordered: string[], alreadyMet: Set<string>, whitesCount: Map<string, number>): [string, string][] {
-  const pending = [...ordered];
-  const pairs: [string, string][] = [];
-  while (pending.length >= 2) {
-    const first = pending.shift()!;
-    const index = pending.findIndex((candidate) => !alreadyMet.has(pairKey(first, candidate)));
-    const [second] = pending.splice(index === -1 ? 0 : index, 1);
-    // Whoever has had white fewer times gets it.
-    pairs.push((whitesCount.get(first) ?? 0) <= (whitesCount.get(second) ?? 0) ? [first, second] : [second, first]);
-  }
-  return pairs;
-}
-
-function simulate(seed: CompetitionSeed, strengthOf: (playerId: string) => number): SimulatedGame[] {
-  const rng = createRng(seed.name);
+function simulate(
+  seed: CompetitionSeed,
+  pairingNumbers: Map<string, number>,
+  strengthOf: (playerId: string) => number,
+  rng: () => number,
+): SimulatedGame[] {
+  const players = seed.playerIds.map((id) => ({ id, pairingNumber: pairingNumbers.get(id)! }));
   const games: SimulatedGame[] = [];
-  const alreadyMet = new Set<string>();
-  const hadBye = new Set<string>();
-  const whitesCount = new Map<string, number>();
   const totalRounds = seed.completedRounds + (seed.partialRound ? 1 : 0);
 
   for (let round = 1; round <= totalRounds; round++) {
-    const scores = new Map(
-      computeStandings(games.filter((game) => game.recorded)).map((row) => [row.playerId, row.score]),
-    );
-    const ordered = [...seed.playerIds].sort(
-      (a, b) => (scores.get(b) ?? 0) - (scores.get(a) ?? 0) || strengthOf(b) - strengthOf(a),
-    );
-
+    const played = games.filter((game) => game.recorded);
+    const { pairings, byeId } = pairRound(candidatesFromHistory(players, played, 1));
     const isPartial = round > seed.completedRounds;
-    let board = 1;
 
-    if (ordered.length % 2 === 1) {
-      // Bye to the lowest-ranked player who hasn't had one yet.
-      const byeIndex = ordered
-        .map((id, index) => ({ id, index }))
-        .reverse()
-        .find(({ id }) => !hadBye.has(id))!.index;
-      const [byePlayer] = ordered.splice(byeIndex, 1);
-      hadBye.add(byePlayer);
+    pairings.forEach(({ whiteId, blackId }, index) => {
       games.push({
         round,
-        board: ordered.length / 2 + 1,
-        whiteId: byePlayer,
-        blackId: null,
-        value: "BYE",
-        recorded: true,
-      });
-    }
-
-    const pairs = pairRound(ordered, alreadyMet, whitesCount);
-    pairs.forEach(([whiteId, blackId], index) => {
-      alreadyMet.add(pairKey(whiteId, blackId));
-      whitesCount.set(whiteId, (whitesCount.get(whiteId) ?? 0) + 1);
-      const recorded = !isPartial || index < Math.ceil(pairs.length / 2);
-      games.push({
-        round,
-        board: board++,
+        board: index + 1,
         whiteId,
         blackId,
         value: simulateResult(rng, strengthOf(whiteId), strengthOf(blackId)),
-        recorded,
+        recorded: !isPartial || index < Math.ceil(pairings.length / 2),
       });
     });
+    if (byeId) {
+      games.push({ round, board: pairings.length + 1, whiteId: byeId, blackId: null, value: "BYE", recorded: true });
+    }
   }
 
   return games;
@@ -149,15 +111,23 @@ export async function seedCompetitionHistory(
     return false;
   }
 
-  const games = simulate(seed, strengthOf);
+  const rng = createRng(seed.name);
+  const pairingNumbers = drawPairingNumbers(seed.playerIds, rng);
+  const games = simulate(seed, pairingNumbers, strengthOf, rng);
   const totalRounds = seed.completedRounds + (seed.partialRound ? 1 : 0);
-  const standings = computeStandings(games.filter((game) => game.recorded));
 
   await prisma.$transaction(
     async (tx) => {
       if ((await tx.tiebreakCriterion.count({ where: { tournamentId: seed.tournamentId } })) === 0) {
         await tx.tiebreakCriterion.createMany({
           data: DEFAULT_TIEBREAKS.map((name, index) => ({ tournamentId: seed.tournamentId, name, order: index + 1 })),
+        });
+      }
+
+      for (const [playerId, pairingNumber] of pairingNumbers) {
+        await tx.enrollment.update({
+          where: { tournamentId_playerId: { tournamentId: seed.tournamentId, playerId } },
+          data: { pairingNumber },
         });
       }
 
@@ -194,12 +164,24 @@ export async function seedCompetitionHistory(
         });
       }
 
-      await tx.standing.createMany({
-        data: standings.map((row) => ({ tournamentId: seed.tournamentId, ...row })),
-      });
+      await recalculateStandings(tx, seed.tournamentId);
     },
     { timeout: 30_000 },
   );
 
   return true;
+}
+
+/**
+ * Rebuilds the standings of every tournament that has rounds, with the
+ * app's current rules (stored rank, tiebreak order, bye value). Keeps a
+ * database seeded by an older version of this script consistent; being a
+ * pure rebuild, running it again changes nothing.
+ */
+export async function refreshAllStandings(prisma: PrismaClient): Promise<number> {
+  const tournaments = await prisma.tournament.findMany({ where: { rounds: { some: {} } }, select: { id: true } });
+  for (const { id } of tournaments) {
+    await prisma.$transaction((tx) => recalculateStandings(tx, id));
+  }
+  return tournaments.length;
 }

@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
 import type { AuthUser } from "../../../types/express";
-import { emptyTally, tallyGames, totalsOf, type PlayerTotals } from "../playerStats";
+import { emptyTally, OFFICIAL_GAME, tallyGames, totalsOf, type PlayerTotals } from "../playerStats";
 import { loadRankedTournaments } from "../rankings";
 import { playerWhere, resolvePlayerScope } from "../scopes";
 
@@ -27,12 +27,24 @@ export async function loadPlayersOverview(prisma: PrismaClient, viewer: AuthUser
       orderBy: { user: { name: "asc" } },
     }),
     prisma.match.findMany({
-      where: { result: { isNot: null }, OR: [{ white: where }, { black: where }] },
-      select: { whiteId: true, blackId: true, result: { select: { value: true } } },
+      where: { ...OFFICIAL_GAME, OR: [{ white: where }, { black: where }] },
+      select: {
+        whiteId: true,
+        blackId: true,
+        result: { select: { value: true } },
+        round: { select: { tournament: { select: { byePoints: true } } } },
+      },
     }),
   ]);
 
-  const tallies = tallyGames(matches.map((match) => ({ ...match, value: match.result!.value })));
+  const tallies = tallyGames(
+    matches.map((match) => ({
+      whiteId: match.whiteId,
+      blackId: match.blackId,
+      value: match.result!.value,
+      byePoints: Number(match.round.tournament.byePoints),
+    })),
+  );
 
   return players.map((player) => ({
     playerId: player.id,

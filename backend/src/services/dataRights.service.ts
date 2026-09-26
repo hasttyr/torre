@@ -31,13 +31,38 @@ async function hasActiveEnrollments(prisma: PrismaClient, userId: string): Promi
 
 /** Suppresses (anonymizes) an account with no active tournament constraint. */
 async function suppressUnblocked(prisma: PrismaClient, userId: string): Promise<UserDto> {
+  const hasPlayerProfile = (await prisma.player.findUnique({ where: { userId } })) !== null;
   // Anonymize instead of a hard row delete: other tables (Tournament.organizerId,
   // historic Enrollment/Standing rows) reference this user, and Prisma
   // doesn't cascade those relations. Same status-flag approach the rest of
   // the schema already uses for "removed" states (see UserStatus).
+  //
+  // The player profile (if any) stays for the same reason — past games and
+  // standings point at it — but every personal field on it is erased too,
+  // above all the sensitive ones (disability, gender, birth date: Ley 1581
+  // art. 5). Only what keeps historic results readable survives.
   const user = await prisma.user.update({
     where: { id: userId },
-    data: { name: "Usuario eliminado", email: `eliminado-${userId}@torre.invalid`, status: "INACTIVE" },
+    data: {
+      name: "Usuario eliminado",
+      email: `eliminado-${userId}@torre.invalid`,
+      status: "INACTIVE",
+      // A nested update on a missing profile would fail, hence the check.
+      ...(hasPlayerProfile
+        ? {
+            player: {
+              update: {
+                universityCode: "—",
+                program: "—",
+                birthDate: null,
+                gender: null,
+                disability: null,
+                clubId: null,
+              },
+            },
+          }
+        : {}),
+    },
     include: { role: true, player: true },
   });
   return toUserDto(user);

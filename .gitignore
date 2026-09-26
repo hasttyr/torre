@@ -5,6 +5,9 @@ node_modules/
 dist/
 dist-ssr/
 
+# Test coverage reports (npm run test:coverage)
+coverage/
+
 # Env files
 .env
 .env.*

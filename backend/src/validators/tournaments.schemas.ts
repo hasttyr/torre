@@ -30,6 +30,10 @@ export const configureTournamentSchema = z.object({
   // null clears the restriction; undefined (field absent) leaves it as-is.
   restrictedProgram: z.string().trim().min(1, "El programa no puede quedar vacío").nullable().optional(),
   minimumSemester: z.number().int().positive("El semestre mínimo debe ser un entero positivo").nullable().optional(),
+  // HU28: what a bye is worth (same catalog as the DB CHECK).
+  byePoints: z
+    .union([z.literal(0), z.literal(0.5), z.literal(1)], { message: "El bye solo puede valer 0, 0.5 o 1 punto" })
+    .optional(),
 });
 
 export type ConfigureTournamentSchemaInput = z.infer<typeof configureTournamentSchema>;

@@ -1,6 +1,7 @@
 import type { Component } from "vue";
 
 import type { WidgetKey } from "../../services/dashboard";
+import GameLogWidget from "./widgets/GameLogWidget.vue";
 import PerformanceTrendWidget from "./widgets/PerformanceTrendWidget.vue";
 import PlayersOverviewWidget from "./widgets/PlayersOverviewWidget.vue";
 import PlayerSummaryWidget from "./widgets/PlayerSummaryWidget.vue";
@@ -26,6 +27,7 @@ export const WIDGET_VIEWS: Record<WidgetKey, WidgetView> = {
   PLAYER_PERFORMANCE_TREND: { component: PerformanceTrendWidget, wide: false },
   PLAYER_RESULTS_BY_COLOR: { component: ResultsByColorWidget, wide: false },
   PLAYER_TOURNAMENT_HISTORY: { component: TournamentHistoryWidget, wide: true },
+  PLAYER_GAME_LOG: { component: GameLogWidget, wide: true },
   PLAYERS_OVERVIEW: { component: PlayersOverviewWidget, wide: true },
   TOP_PLAYERS: { component: TopPlayersWidget, wide: false },
   TOURNAMENTS_BY_STATUS: { component: TournamentsByStatusWidget, wide: false },

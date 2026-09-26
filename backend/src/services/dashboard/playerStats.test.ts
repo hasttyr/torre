@@ -15,24 +15,27 @@ describe("tallyGames", () => {
       white: { wins: 1, draws: 0, losses: 0 },
       black: { wins: 0, draws: 1, losses: 1 },
       byes: 1,
+      byePoints: 1,
     });
     expect(tallies.get("B")).toEqual({
       white: { wins: 0, draws: 1, losses: 0 },
       black: { wins: 0, draws: 0, losses: 1 },
       byes: 0,
+      byePoints: 0,
     });
   });
 });
 
 describe("totalsOf", () => {
-  it("adds byes to points but leaves them out of the score rate", () => {
+  it("adds the byes' configured value to points but leaves them out of the score rate", () => {
     const tally = {
       white: { wins: 1, draws: 0, losses: 0 },
       black: { wins: 0, draws: 1, losses: 1 },
       byes: 1,
+      byePoints: 0.5,
     };
 
-    expect(totalsOf(tally)).toEqual({ wins: 1, draws: 1, losses: 1, games: 3, byes: 1, points: 2.5, scoreRate: 0.5 });
+    expect(totalsOf(tally)).toEqual({ wins: 1, draws: 1, losses: 1, games: 3, byes: 1, points: 2, scoreRate: 0.5 });
   });
 
   it("reports a null score rate before any game is played", () => {

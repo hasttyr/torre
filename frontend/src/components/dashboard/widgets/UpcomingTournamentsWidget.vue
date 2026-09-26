@@ -2,6 +2,7 @@
 import { useI18n } from "vue-i18n";
 
 import { formatDate } from "../../../lib/format";
+import { hasTournamentRoom } from "../../../lib/tournamentAccess";
 import { useWidgetData } from "../../../lib/useWidgetData";
 import type { UpcomingTournament } from "../../../services/dashboard";
 import { useLocaleStore } from "../../../stores/locale";
@@ -46,7 +47,14 @@ function dayParts(date: string): { day: string; month: string } {
           </span>
         </div>
         <div class="min-w-0 flex-1">
-          <p class="truncate font-semibold text-text">{{ tournament.name }}</p>
+          <RouterLink
+            v-if="hasTournamentRoom(tournament)"
+            :to="`/torneos/${tournament.id}/sala`"
+            class="block truncate font-semibold text-text hover:text-accent"
+          >
+            {{ tournament.name }}
+          </RouterLink>
+          <p v-else class="truncate font-semibold text-text">{{ tournament.name }}</p>
           <p class="text-xs">
             {{ formatDate(tournament.startDate, locale.locale) }} —
             {{ formatDate(tournament.endDate, locale.locale) }} ·

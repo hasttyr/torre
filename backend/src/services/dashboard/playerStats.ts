@@ -3,6 +3,10 @@ import { pointsFor, type RecordedGame } from "../standings.calculator";
 // Pure per-player game statistics (no Prisma): shared by every widget that
 // shows win/draw/loss numbers, so "a win" is counted in exactly one place.
 
+// RN-04: only games from published rounds are official. A draft round
+// already holds its bye (created with the draft), which must not count yet.
+export const OFFICIAL_GAME = { result: { isNot: null }, round: { status: { not: "GENERATED" } } } as const;
+
 export interface ResultTally {
   wins: number;
   draws: number;
@@ -13,6 +17,13 @@ export interface PlayerTally {
   white: ResultTally;
   black: ResultTally;
   byes: number;
+  // What those byes were worth: each tournament configures it (HU28).
+  byePoints: number;
+}
+
+// A game plus, for byes, the value its tournament gives them (default 1).
+export interface TalliedGame extends RecordedGame {
+  byePoints?: number;
 }
 
 export interface PlayerTotals extends ResultTally {
@@ -25,7 +36,12 @@ export interface PlayerTotals extends ResultTally {
 }
 
 export function emptyTally(): PlayerTally {
-  return { white: { wins: 0, draws: 0, losses: 0 }, black: { wins: 0, draws: 0, losses: 0 }, byes: 0 };
+  return {
+    white: { wins: 0, draws: 0, losses: 0 },
+    black: { wins: 0, draws: 0, losses: 0 },
+    byes: 0,
+    byePoints: 0,
+  };
 }
 
 function record(tally: ResultTally, points: number): void {
@@ -35,7 +51,7 @@ function record(tally: ResultTally, points: number): void {
 }
 
 /** Tallies wins/draws/losses by color (and byes) for every player appearing in `games`. */
-export function tallyGames(games: RecordedGame[]): Map<string, PlayerTally> {
+export function tallyGames(games: TalliedGame[]): Map<string, PlayerTally> {
   const tallies = new Map<string, PlayerTally>();
   const tallyOf = (playerId: string): PlayerTally => {
     let tally = tallies.get(playerId);
@@ -49,7 +65,11 @@ export function tallyGames(games: RecordedGame[]): Map<string, PlayerTally> {
   for (const game of games) {
     if (game.value === "BYE" || !game.whiteId || !game.blackId) {
       const playerId = game.whiteId ?? game.blackId;
-      if (playerId) tallyOf(playerId).byes += 1;
+      if (playerId) {
+        const tally = tallyOf(playerId);
+        tally.byes += 1;
+        tally.byePoints += game.byePoints ?? 1;
+      }
       continue;
     }
     const points = pointsFor(game);
@@ -77,7 +97,7 @@ export function totalsOf(tally: PlayerTally): PlayerTotals {
     ...overall,
     games: overall.wins + overall.draws + overall.losses,
     byes: tally.byes,
-    points: overall.wins + overall.draws / 2 + tally.byes,
+    points: overall.wins + overall.draws / 2 + tally.byePoints,
     scoreRate: scoreRateOf(overall),
   };
 }

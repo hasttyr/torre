@@ -1,9 +1,15 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { requireAuth, requireRole } from "./auth";
 import { HttpError } from "./errorHandler";
+
+const { prismaMock } = vi.hoisted(() => ({
+  prismaMock: { user: { findFirst: vi.fn() } },
+}));
+
+vi.mock("../config/prisma", () => ({ prisma: prismaMock }));
 
 function buildReq(headers: Record<string, string> = {}): Request {
   return {
@@ -16,45 +22,69 @@ function signValidToken(overrides: Partial<{ sub: string; role: string }> = {}):
   return jwt.sign({ sub: "user-1", role: "ORGANIZER", ...overrides }, "test-secret", { expiresIn: "1h" });
 }
 
+/** Runs requireAuth and resolves with whatever it passed to next(). */
+function runRequireAuth(req: Request): Promise<unknown> {
+  return new Promise((resolve) => {
+    requireAuth(req, {} as Response, ((error?: unknown) => resolve(error)) as NextFunction);
+  });
+}
+
 describe("requireAuth", () => {
-  it("attaches req.user and calls next when the token is valid", () => {
-    const token = signValidToken();
-    const req = buildReq({ authorization: `Bearer ${token}` });
-    const next = vi.fn();
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.user.findFirst.mockResolvedValue({ id: "user-1" });
+  });
 
-    requireAuth(req, {} as Response, next as NextFunction);
+  it("attaches req.user and calls next when the token is valid and still current", async () => {
+    const req = buildReq({ authorization: `Bearer ${signValidToken()}` });
 
+    const error = await runRequireAuth(req);
+
+    expect(error).toBeUndefined();
     expect(req.user).toEqual({ id: "user-1", role: "ORGANIZER" });
-    expect(next).toHaveBeenCalledWith();
+    expect(prismaMock.user.findFirst).toHaveBeenCalledWith({
+      where: { id: "user-1", status: "ACTIVE", role: { name: "ORGANIZER" } },
+      select: { id: true },
+    });
   });
 
-  it("rejects with 401 when the Authorization header is missing", () => {
-    const req = buildReq();
-    const next = vi.fn();
+  it("rejects with 401 when the Authorization header is missing, without touching the database", async () => {
+    const error = await runRequireAuth(buildReq());
 
-    requireAuth(req, {} as Response, next as NextFunction);
-
-    expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 401 } satisfies Partial<HttpError>));
+    expect(error).toMatchObject({ status: 401 } satisfies Partial<HttpError>);
+    expect(prismaMock.user.findFirst).not.toHaveBeenCalled();
   });
 
-  it("rejects with 401 when the token is signed with a different secret", () => {
+  it("rejects with 401 when the token is signed with a different secret", async () => {
     const token = jwt.sign({ sub: "user-1", role: "ORGANIZER" }, "otro-secreto", { expiresIn: "1h" });
-    const req = buildReq({ authorization: `Bearer ${token}` });
-    const next = vi.fn();
 
-    requireAuth(req, {} as Response, next as NextFunction);
-
-    expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 401 } satisfies Partial<HttpError>));
+    expect(await runRequireAuth(buildReq({ authorization: `Bearer ${token}` }))).toMatchObject({ status: 401 });
   });
 
-  it("rejects with 401 when the token has expired", () => {
+  it("rejects with 401 when the token has expired", async () => {
     const expired = jwt.sign({ sub: "user-1", role: "ORGANIZER" }, "test-secret", { expiresIn: -1 });
-    const req = buildReq({ authorization: `Bearer ${expired}` });
-    const next = vi.fn();
 
-    requireAuth(req, {} as Response, next as NextFunction);
+    expect(await runRequireAuth(buildReq({ authorization: `Bearer ${expired}` }))).toMatchObject({ status: 401 });
+  });
 
-    expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 401 } satisfies Partial<HttpError>));
+  it("rejects a still-unexpired token once the account was blocked or its role changed", async () => {
+    // findFirst filters by status ACTIVE and the token's role: no row means
+    // one of them no longer holds.
+    prismaMock.user.findFirst.mockResolvedValue(null);
+    const req = buildReq({ authorization: `Bearer ${signValidToken()}` });
+
+    const error = await runRequireAuth(req);
+
+    expect(error).toMatchObject({ status: 401 } satisfies Partial<HttpError>);
+    expect(req.user).toBeUndefined();
+  });
+
+  it("forwards a database failure to the error handler instead of hanging", async () => {
+    prismaMock.user.findFirst.mockRejectedValue(new Error("db down"));
+
+    const error = await runRequireAuth(buildReq({ authorization: `Bearer ${signValidToken()}` }));
+
+    expect(error).toBeInstanceOf(Error);
   });
 });
 

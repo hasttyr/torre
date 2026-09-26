@@ -11,5 +11,9 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue"],
+  // Tests run in Node (vitest) and are type-checked by tsconfig.vitest.json;
+  // keeping Node's types out of here stops app code from using Node APIs
+  // that don't exist in the browser.
+  "exclude": ["src/**/*.test.ts", "src/test-support/**"]
 }

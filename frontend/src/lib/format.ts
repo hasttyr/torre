@@ -29,7 +29,15 @@ export function formatPercent(ratio: number | null, locale: string): string {
   return ratio === null ? "—" : new Intl.NumberFormat(locale, { style: "percent" }).format(ratio);
 }
 
-/** A number with at most one decimal ("16,5" in Spanish). */
-export function formatNumber(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(value);
+/** A number with at most `maxDecimals` decimals ("16,5" in Spanish). */
+export function formatNumber(value: number, locale: string, maxDecimals = 1): string {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: maxDecimals }).format(value);
+}
+
+// Chess notation for a result, with typographic dashes and ½.
+const RESULT_DISPLAY: Record<string, string> = { "1-0": "1 – 0", "0-1": "0 – 1", "1/2-1/2": "½ – ½" };
+
+/** "1 – 0" / "½ – ½" / "0 – 1" for a stored result value. */
+export function formatResult(value: string): string {
+  return RESULT_DISPLAY[value] ?? value;
 }

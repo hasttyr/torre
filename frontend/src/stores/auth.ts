@@ -78,6 +78,11 @@ export const useAuthStore = defineStore("auth", {
       } catch {
         // Stateless JWT: if the call fails, we still clear the local session.
       }
+      this.clearSession();
+    },
+
+    /** Forgets the session on this device only (e.g. the server already rejected it). */
+    clearSession(): void {
       this.token = null;
       this.user = null;
       setAuthToken(null);

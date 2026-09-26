@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 
-import { formatDateTime } from "../../../lib/format";
+import { formatDateTime, formatResult } from "../../../lib/format";
 import { useWidgetData } from "../../../lib/useWidgetData";
 import type { RecentResult } from "../../../services/dashboard";
 import { useLocaleStore } from "../../../stores/locale";
@@ -10,10 +10,6 @@ import WidgetCard from "../WidgetCard.vue";
 const { t } = useI18n();
 const locale = useLocaleStore();
 const { data, loading, error, reload } = useWidgetData<RecentResult[]>("RECENT_RESULTS");
-
-// Chess notation already says who won; the winner's name is also bolded so
-// the row reads at a glance without parsing "1-0" / "0-1".
-const SCORE_DISPLAY: Record<RecentResult["value"], string> = { "1-0": "1 – 0", "0-1": "0 – 1", "1/2-1/2": "½ – ½" };
 </script>
 
 <template>
@@ -39,7 +35,7 @@ const SCORE_DISPLAY: Record<RecentResult["value"], string> = { "1-0": "1 – 0",
             {{ result.white }}
           </span>
           <span class="rounded-md bg-surface-2 px-2 py-0.5 font-semibold text-text tabular-nums">
-            {{ SCORE_DISPLAY[result.value] }}
+            {{ formatResult(result.value) }}
           </span>
           <span class="truncate" :class="result.value === '0-1' ? 'font-semibold text-text' : 'text-text-muted'">
             {{ result.black }}

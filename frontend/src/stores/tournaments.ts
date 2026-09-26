@@ -5,6 +5,7 @@ import {
   configureTournament,
   createTournament,
   enrollPlayer as enrollTournamentPlayer,
+  finishTournament,
   getTournament,
   listEnrolledPlayers,
   listAvailableTournaments,
@@ -61,6 +62,16 @@ export const useTournamentsStore = defineStore("tournaments", {
     async load(id: string): Promise<void> {
       this.current = await getTournament(id);
       this.enrolledPlayers = await listEnrolledPlayers(id);
+    },
+
+    /** Re-reads the current tournament (its status changes as rounds are published, HU09). */
+    async refreshCurrent(id: string): Promise<void> {
+      this.current = await getTournament(id);
+    },
+
+    /** Officially closes the current tournament (HU17). */
+    async finish(id: string): Promise<void> {
+      this.current = await finishTournament(id);
     },
 
     /** Updates the current tournament's rounds, time control, tiebreak order and eligibility rules. */

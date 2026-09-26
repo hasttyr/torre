@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient, Standing, Tournament } from "@prisma/client";
 
-import { rankStandings, type StandingValues } from "../standings.calculator";
+import type { StandingValues } from "../standings.calculator";
 
 export interface RankedStanding extends StandingValues {
   playerName: string;
@@ -25,8 +25,9 @@ function toStandingValues(row: Standing): StandingValues {
 
 /**
  * Loads the tournaments matching `where` that have standings, each with its
- * standings ranked by score and the tournament's own tiebreak order. Oldest
- * tournament first.
+ * official ranking (the rank standings.service.ts stored at the last
+ * recalculation, so dashboards never disagree with the tournament's own
+ * table). Oldest tournament first.
  */
 export async function loadRankedTournaments(
   prisma: PrismaClient,
@@ -35,20 +36,24 @@ export async function loadRankedTournaments(
   const tournaments = await prisma.tournament.findMany({
     where: { ...where, standings: { some: {} } },
     include: {
-      tiebreakCriteria: { orderBy: { order: "asc" } },
-      standings: { include: { player: { select: { user: { select: { name: true } } } } } },
+      standings: {
+        include: { player: { select: { user: { select: { name: true } } } } },
+        // Postgres sorts NULL last on ASC: rows from before ranks were
+        // stored fall back to their position below.
+        orderBy: [{ rank: "asc" }, { score: "desc" }],
+      },
     },
     orderBy: { startDate: "asc" },
   });
 
-  return tournaments.map(({ standings, tiebreakCriteria, ...tournament }) => {
-    const rows = standings.map((row) => ({ ...toStandingValues(row), playerName: row.player.user.name }));
-    const ranked = rankStandings(
-      rows,
-      tiebreakCriteria.map((criterion) => criterion.name),
-    );
-    return { tournament, ranking: ranked.map((row, index) => ({ ...row, rank: index + 1 })) };
-  });
+  return tournaments.map(({ standings, ...tournament }) => ({
+    tournament,
+    ranking: standings.map((row, index) => ({
+      ...toStandingValues(row),
+      playerName: row.player.user.name,
+      rank: row.rank ?? index + 1,
+    })),
+  }));
 }
 
 /** The player's row in a ranked tournament, if they have one. */

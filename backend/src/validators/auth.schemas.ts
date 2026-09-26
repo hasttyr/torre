@@ -32,6 +32,8 @@ export const registerSchema = z.discriminatedUnion("role", [
   }),
 ]);
 
+export type RegisterSchemaInput = z.infer<typeof registerSchema>;
+
 export const loginSchema = z.object({
   email: z.string().trim().email("El correo no es válido"),
   password: z.string().min(1, "La contraseña es requerida"),

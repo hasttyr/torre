@@ -6,6 +6,12 @@ import { createApp } from "../app";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
+    // requireAuth confirms every token is still current (see middlewares/auth.ts).
+    user: {
+      findFirst: vi.fn(async ({ where }: { where: { id: string } }): Promise<{ id: string } | null> => ({
+        id: where.id,
+      })),
+    },
     player: { findMany: vi.fn() },
   },
 }));

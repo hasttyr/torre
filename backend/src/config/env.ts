@@ -15,4 +15,7 @@ export const env = {
   databaseUrl: required("DATABASE_URL"),
   jwtSecret: required("JWT_SECRET"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "1d",
+  // Time zone for human-readable timestamps the server writes itself (the
+  // "generated at" line of exported PDFs). The university is in Colombia.
+  timeZone: process.env.APP_TIMEZONE ?? "America/Bogota",
 };

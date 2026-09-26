@@ -6,6 +6,7 @@ import { clubsRouter } from "./clubs.routes";
 import { coachesRouter } from "./coaches.routes";
 import { dashboardRouter } from "./dashboard.routes";
 import { playersRouter } from "./players.routes";
+import { matchesRouter, roundsRouter } from "./rounds.routes";
 import { tournamentsRouter } from "./tournaments.routes";
 import { usersRouter } from "./users.routes";
 
@@ -23,6 +24,8 @@ router.use("/clubs", clubsRouter);
 router.use("/coaches", coachesRouter);
 router.use("/audit-logs", auditLogsRouter);
 router.use("/dashboard", dashboardRouter);
+router.use("/rounds", roundsRouter);
+router.use("/matches", matchesRouter);
 
-// As future increments land, the rest of the domain routers (pairing,
-// results, ...) get mounted here.
+// As future increments land, the rest of the domain routers (exports,
+// ...) get mounted here.

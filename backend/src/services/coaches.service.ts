@@ -2,12 +2,8 @@ import type { PrismaClient } from "@prisma/client";
 
 import { HttpError } from "../middlewares/errorHandler";
 import type { LinkPlayerSchemaInput } from "../validators/coaches.schemas";
+import { isUniqueConstraintError } from "./prismaErrors";
 import { toTournamentDto, type TournamentDto } from "./tournament.mapper";
-
-/** Checks whether a Prisma error is a unique-constraint violation (P2002). */
-function isUniqueConstraintError(error: unknown): boolean {
-  return typeof error === "object" && error !== null && (error as { code?: string }).code === "P2002";
-}
 
 export interface LinkedPlayerDto {
   playerId: string;

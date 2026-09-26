@@ -23,6 +23,7 @@ const NAV_ITEMS: { to: string; labelKey: string; roles?: string[] }[] = [
   { to: "/clubes", labelKey: "header.clubs", roles: ["ORGANIZER", "ADMINISTRATOR"] },
   { to: "/mis-torneos", labelKey: "header.tournaments", roles: ["PLAYER"] },
   { to: "/mis-jugadores", labelKey: "header.myPlayers", roles: ["COACH"] },
+  { to: "/en-juego", labelKey: "header.live", roles: ["PLAYER", "COACH", "ARBITER"] },
   { to: "/usuarios", labelKey: "header.users", roles: ["ADMINISTRATOR"] },
   { to: "/auditoria", labelKey: "header.auditLog", roles: ["ADMINISTRATOR"] },
 ];

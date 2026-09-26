@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 export interface AuditLogDto {
   id: string;
@@ -14,13 +14,12 @@ export interface AuditLogDto {
  * correction, manual pairing adjustment, player withdrawal.
  *
  * @remarks
- * Deliberately fire-and-forget from the caller's perspective (awaited, but
- * never wrapped in a try/catch that would swallow the original action if
- * logging fails) — a critical action whose audit trail can't be written
- * should fail loudly, not silently succeed unaudited.
+ * Call it with the same transaction client as the action it records, so
+ * both commit or neither does: a critical action whose audit trail can't be
+ * written must fail, not silently succeed unaudited.
  */
 export function recordAuditLog(
-  prisma: PrismaClient,
+  prisma: Prisma.TransactionClient,
   userId: string,
   action: string,
   detail?: string,

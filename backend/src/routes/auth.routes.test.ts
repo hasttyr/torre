@@ -11,7 +11,14 @@ import { createApp } from "../app";
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     role: { findUnique: vi.fn() },
-    user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+    user: {
+      findFirst: vi.fn(async ({ where }: { where: { id: string } }): Promise<{ id: string } | null> => ({
+        id: where.id,
+      })),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
     passwordResetRequest: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
     $transaction: vi.fn(),
   },

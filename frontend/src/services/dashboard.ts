@@ -1,18 +1,22 @@
 import { api } from "./api";
 import type { Tournament } from "./tournaments";
 
-// Mirrors WIDGET_KEYS in backend/src/services/dashboard/widgetCatalog.ts.
-export type WidgetKey =
-  | "PLAYER_SUMMARY"
-  | "PLAYER_PERFORMANCE_TREND"
-  | "PLAYER_RESULTS_BY_COLOR"
-  | "PLAYER_TOURNAMENT_HISTORY"
-  | "PLAYERS_OVERVIEW"
-  | "TOP_PLAYERS"
-  | "TOURNAMENTS_BY_STATUS"
-  | "UPCOMING_TOURNAMENTS"
-  | "RECENT_RESULTS"
-  | "USERS_BY_ROLE";
+// Mirrors WIDGET_KEYS in backend/src/services/dashboard/widgetCatalog.ts
+// (checked by src/contracts.test.ts).
+export const WIDGET_KEYS = [
+  "PLAYER_SUMMARY",
+  "PLAYER_PERFORMANCE_TREND",
+  "PLAYER_RESULTS_BY_COLOR",
+  "PLAYER_TOURNAMENT_HISTORY",
+  "PLAYER_GAME_LOG",
+  "PLAYERS_OVERVIEW",
+  "TOP_PLAYERS",
+  "TOURNAMENTS_BY_STATUS",
+  "UPCOMING_TOURNAMENTS",
+  "RECENT_RESULTS",
+  "USERS_BY_ROLE",
+] as const;
+export type WidgetKey = (typeof WIDGET_KEYS)[number];
 
 // Mirrors CONFIGURABLE_ROLES (ADMINISTRATOR always sees every widget).
 export const CONFIGURABLE_ROLES = ["PLAYER", "COACH", "ARBITER", "ORGANIZER"] as const;
@@ -120,6 +124,19 @@ export interface TournamentHistoryEntry {
   participants: number | null;
   points: number | null;
   buchholz: number | null;
+}
+
+// HU15: one game from the player's side of the board.
+export interface GameLogEntry {
+  matchId: string;
+  tournamentId: string;
+  tournamentName: string;
+  round: number;
+  // null for a bye (no opponent, no color).
+  color: "WHITE" | "BLACK" | null;
+  opponent: string | null;
+  outcome: "WIN" | "DRAW" | "LOSS" | "BYE";
+  recordedAt: string;
 }
 
 export interface PlayerOverviewRow extends PlayerTotals {

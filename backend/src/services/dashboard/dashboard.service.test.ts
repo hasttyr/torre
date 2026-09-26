@@ -18,13 +18,20 @@ vi.mock("./widgetRegistry", () => ({
 }));
 
 function buildPrismaMock() {
+  // Interactive transactions run against a separate "tx" client, so a test
+  // can tell writes made inside the transaction from writes made outside it.
+  const tx = {
+    roleWidget: { deleteMany: vi.fn(), createMany: vi.fn() },
+    auditLog: { create: vi.fn().mockResolvedValue({ id: "log-1" }) },
+  };
   return {
+    tx,
     roleWidget: { findMany: vi.fn(), deleteMany: vi.fn(), createMany: vi.fn() },
     role: { findUnique: vi.fn() },
     player: { findMany: vi.fn(), findUnique: vi.fn() },
     coachPlayer: { findMany: vi.fn() },
     auditLog: { create: vi.fn().mockResolvedValue({ id: "log-1" }) },
-    $transaction: vi.fn().mockResolvedValue([]),
+    $transaction: vi.fn(async (work: (client: typeof tx) => unknown) => work(tx)),
   };
 }
 
@@ -140,14 +147,15 @@ describe("dashboard layouts", () => {
     const result = await updateRoleLayout(asClient(prisma), "COACH", ["TOP_PLAYERS", "PLAYER_SUMMARY"], "admin-1");
 
     expect(result).toEqual({ role: "COACH", widgets: ["TOP_PLAYERS", "PLAYER_SUMMARY"] });
-    expect(prisma.roleWidget.createMany).toHaveBeenCalledWith({
+    expect(prisma.tx.roleWidget.createMany).toHaveBeenCalledWith({
       data: [
         { roleId: "role-coach", widgetKey: "TOP_PLAYERS", position: 0 },
         { roleId: "role-coach", widgetKey: "PLAYER_SUMMARY", position: 1 },
       ],
     });
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-    expect(prisma.auditLog.create).toHaveBeenCalledWith({
+    // RN-11: audited inside the same transaction as the change.
+    expect(prisma.tx.auditLog.create).toHaveBeenCalledWith({
       data: { userId: "admin-1", action: "DASHBOARD_LAYOUT_CHANGED", detail: "COACH: TOP_PLAYERS, PLAYER_SUMMARY" },
       select: { id: true },
     });

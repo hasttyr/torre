@@ -70,6 +70,7 @@ describe("CreateTournamentView", () => {
       timeControl: null,
       restrictedProgram: null,
       minimumSemester: null,
+      byePoints: 1,
       organizerId: "org-1",
       tiebreakCriteria: [],
       createdAt: "2026-09-17T00:00:00.000Z",

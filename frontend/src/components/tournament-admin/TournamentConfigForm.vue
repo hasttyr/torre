@@ -15,7 +15,9 @@ const { t } = useI18n();
 const configForm = reactive({
   roundsCount: "",
   timeControl: "",
-  tiebreaks: "Buchholz, Buchholz Cortado 1, Sonneborn-Berger, ARO",
+  // HU13's order. ARO can't be computed (no ratings in scope) and is skipped when ranking.
+  tiebreaks: "Buchholz, Buchholz Cortado 1, Sonneborn-Berger, ARO, Resultado particular",
+  byePoints: "1",
   restrictedProgram: "",
   minimumSemester: "",
 });
@@ -36,6 +38,7 @@ function populateForm(): void {
   if (tournament.tiebreakCriteria.length > 0) {
     configForm.tiebreaks = tournament.tiebreakCriteria.map((c) => c.name).join(", ");
   }
+  configForm.byePoints = String(tournament.byePoints ?? 1);
   configForm.restrictedProgram = tournament.restrictedProgram ?? "";
   configForm.minimumSemester = tournament.minimumSemester != null ? String(tournament.minimumSemester) : "";
 }
@@ -63,6 +66,8 @@ async function onSubmit(): Promise<void> {
       roundsCount: configForm.roundsCount ? Number(configForm.roundsCount) : undefined,
       timeControl: configForm.timeControl.trim() || undefined,
       tiebreakCriteria: canEditTiebreaks.value ? tiebreakCriteria : undefined,
+      // Same lock as the tiebreaks: fixed once round 1 exists (HU28).
+      byePoints: canEditTiebreaks.value ? (Number(configForm.byePoints) as 0 | 0.5 | 1) : undefined,
       restrictedProgram: configForm.restrictedProgram.trim() || null,
       minimumSemester: configForm.minimumSemester ? Number(configForm.minimumSemester) : null,
     });
@@ -107,6 +112,15 @@ async function onSubmit(): Promise<void> {
           <label for="timeControl">{{ t("tournamentAdmin.timeControlLabel") }}</label>
           <input id="timeControl" v-model="configForm.timeControl" type="text" placeholder="90+30" />
         </div>
+      </div>
+
+      <div class="field">
+        <label for="byePoints">{{ t("tournamentAdmin.byePointsLabel") }}</label>
+        <select id="byePoints" v-model="configForm.byePoints" :disabled="!canEditTiebreaks">
+          <option value="1">{{ t("tournamentAdmin.byePointsOptions.1") }}</option>
+          <option value="0.5">{{ t("tournamentAdmin.byePointsOptions.0_5") }}</option>
+          <option value="0">{{ t("tournamentAdmin.byePointsOptions.0") }}</option>
+        </select>
       </div>
 
       <div class="field">

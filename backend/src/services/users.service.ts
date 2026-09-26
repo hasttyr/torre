@@ -73,19 +73,22 @@ export async function updateUserRole(
     throw new HttpError(404, "Usuario no encontrado");
   }
 
-  const user = await prisma.user.update({
-    where: { id },
-    data: { roleId: role.id },
-    include: { role: true, player: { include: { club: true } } },
+  // RN-11: role changes are a critical administrative action, audited in
+  // the same transaction as the change itself.
+  const user = await prisma.$transaction(async (tx) => {
+    const updated = await tx.user.update({
+      where: { id },
+      data: { roleId: role.id },
+      include: { role: true, player: { include: { club: true } } },
+    });
+    await recordAuditLog(
+      tx,
+      actingAdminId,
+      "ROLE_CHANGED",
+      `${existingUser.name} (${existingUser.role.name} -> ${newRole})`,
+    );
+    return updated;
   });
-
-  // RN-11: role changes are a critical administrative action.
-  await recordAuditLog(
-    prisma,
-    actingAdminId,
-    "ROLE_CHANGED",
-    `${existingUser.name} (${existingUser.role.name} -> ${newRole})`,
-  );
 
   return toUserDto(user);
 }
@@ -111,15 +114,17 @@ export async function updateUserStatus(
     throw new HttpError(404, "Usuario no encontrado");
   }
 
-  const user = await prisma.user.update({
-    where: { id },
-    data: { status },
-    include: { role: true, player: { include: { club: true } } },
-  });
-
   // Blocking/reactivating an account is a critical administrative action,
   // same trust boundary as a role change.
-  await recordAuditLog(prisma, actingAdminId, "ACCOUNT_STATUS_CHANGED", `${existingUser.name} -> ${status}`);
+  const user = await prisma.$transaction(async (tx) => {
+    const updated = await tx.user.update({
+      where: { id },
+      data: { status },
+      include: { role: true, player: { include: { club: true } } },
+    });
+    await recordAuditLog(tx, actingAdminId, "ACCOUNT_STATUS_CHANGED", `${existingUser.name} -> ${status}`);
+    return updated;
+  });
 
   return toUserDto(user);
 }

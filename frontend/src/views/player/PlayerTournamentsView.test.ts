@@ -1,6 +1,6 @@
 import { mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
@@ -35,6 +35,7 @@ const AVAILABLE_TOURNAMENT = {
   timeControl: null,
   restrictedProgram: null,
   minimumSemester: null,
+  byePoints: 1,
   organizerId: "org-1",
   tiebreakCriteria: [],
   createdAt: "2026-09-17T00:00:00.000Z",
@@ -94,5 +95,45 @@ describe("PlayerTournamentsView", () => {
     const { wrapper } = await mountView();
 
     expect(wrapper.text()).toContain("No se pudieron cargar los torneos");
+  });
+});
+
+describe("PlayerTournamentsView in Colombia (UTC-5)", () => {
+  const originalTimeZone = process.env.TZ;
+
+  beforeEach(() => {
+    process.env.TZ = "America/Bogota";
+    setActivePinia(createPinia());
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    process.env.TZ = originalTimeZone;
+  });
+
+  it("shows a tournament's own dates, not the previous day", async () => {
+    listAvailableTournamentsMock.mockResolvedValue([
+      { ...AVAILABLE_TOURNAMENT, startDate: "2026-10-15T00:00:00.000Z", endDate: "2026-10-17T00:00:00.000Z" },
+    ]);
+    listEnrolledTournamentsMock.mockResolvedValue([]);
+
+    const { wrapper } = await mountView();
+
+    expect(wrapper.text()).toMatch(/15 oct/);
+    expect(wrapper.text()).toMatch(/17 oct/);
+    expect(wrapper.text()).not.toMatch(/14 oct/);
+  });
+
+  it("links an enrolled tournament in play to its live room (HU18), and not one still in registration", async () => {
+    listAvailableTournamentsMock.mockResolvedValue([]);
+    listEnrolledTournamentsMock.mockResolvedValue([
+      { ...ENROLLED_TOURNAMENT, id: "t-live", status: "IN_PROGRESS" },
+      { ...ENROLLED_TOURNAMENT, id: "t-open", status: "REGISTRATION_OPEN" },
+    ]);
+
+    const { wrapper } = await mountView();
+
+    expect(wrapper.find("a[href='/torneos/t-live/sala']").exists()).toBe(true);
+    expect(wrapper.find("a[href='/torneos/t-open/sala']").exists()).toBe(false);
   });
 });

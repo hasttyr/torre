@@ -1,25 +1,34 @@
 import type { PrismaClient } from "@prisma/client";
 
-import type { RecordedGame } from "../../standings.calculator";
-import { emptyTally, scoreRateOf, tallyGames, totalsOf, type PlayerTotals, type ResultTally } from "../playerStats";
+import { pointsFor } from "../../standings.calculator";
+import {
+  emptyTally,
+  OFFICIAL_GAME,
+  scoreRateOf,
+  tallyGames,
+  totalsOf,
+  type PlayerTotals,
+  type ResultTally,
+  type TalliedGame,
+} from "../playerStats";
 import { loadRankedTournaments, standingOf } from "../rankings";
 
 // Widgets about ONE player (the dashboard's selected subject). Callers have
 // already checked the viewer may see this player (see dashboard.service.ts).
 
-interface TournamentGame extends RecordedGame {
+interface TournamentGame extends TalliedGame {
   tournamentId: string;
 }
 
 /** Every recorded game the player took part in, with the tournament it belongs to. */
 async function loadPlayerGames(prisma: PrismaClient, playerId: string): Promise<TournamentGame[]> {
   const matches = await prisma.match.findMany({
-    where: { result: { isNot: null }, OR: [{ whiteId: playerId }, { blackId: playerId }] },
+    where: { ...OFFICIAL_GAME, OR: [{ whiteId: playerId }, { blackId: playerId }] },
     select: {
       whiteId: true,
       blackId: true,
       result: { select: { value: true } },
-      round: { select: { tournamentId: true } },
+      round: { select: { tournamentId: true, tournament: { select: { byePoints: true } } } },
     },
   });
 
@@ -27,6 +36,7 @@ async function loadPlayerGames(prisma: PrismaClient, playerId: string): Promise<
     whiteId: match.whiteId,
     blackId: match.blackId,
     value: match.result!.value,
+    byePoints: Number(match.round.tournament.byePoints),
     tournamentId: match.round.tournamentId,
   }));
 }
@@ -159,6 +169,49 @@ export async function loadPlayerTournamentHistory(
       participants: entry?.ranking.length ?? null,
       points: standing?.score ?? null,
       buchholz: standing?.buchholz ?? null,
+    };
+  });
+}
+
+export interface GameLogEntryDto {
+  matchId: string;
+  tournamentId: string;
+  tournamentName: string;
+  round: number;
+  // null for a bye (no opponent, no color).
+  color: "WHITE" | "BLACK" | null;
+  opponent: string | null;
+  outcome: "WIN" | "DRAW" | "LOSS" | "BYE";
+  recordedAt: Date;
+}
+
+/** PLAYER_GAME_LOG (HU15): every official game the player played, newest first. */
+export async function loadPlayerGameLog(prisma: PrismaClient, playerId: string): Promise<GameLogEntryDto[]> {
+  const matches = await prisma.match.findMany({
+    where: { ...OFFICIAL_GAME, OR: [{ whiteId: playerId }, { blackId: playerId }] },
+    include: {
+      result: { select: { value: true, recordedAt: true } },
+      round: { select: { number: true, tournament: { select: { id: true, name: true } } } },
+      white: { select: { user: { select: { name: true } } } },
+      black: { select: { user: { select: { name: true } } } },
+    },
+    orderBy: { result: { recordedAt: "desc" } },
+  });
+
+  return matches.map((match) => {
+    const result = match.result!;
+    const isBye = !match.whiteId || !match.blackId;
+    const color = isBye ? null : match.whiteId === playerId ? "WHITE" : "BLACK";
+    const points = isBye ? null : pointsFor({ ...match, value: result.value })[color === "WHITE" ? "white" : "black"];
+    return {
+      matchId: match.id,
+      tournamentId: match.round.tournament.id,
+      tournamentName: match.round.tournament.name,
+      round: match.round.number,
+      color,
+      opponent: isBye ? null : ((color === "WHITE" ? match.black : match.white)?.user.name ?? null),
+      outcome: points === null ? "BYE" : points === 1 ? "WIN" : points === 0 ? "LOSS" : "DRAW",
+      recordedAt: result.recordedAt,
     };
   });
 }

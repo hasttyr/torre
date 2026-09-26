@@ -1,7 +1,8 @@
 {
   "common": {
     "appName": "Torre Central Hub",
-    "backToHome": "← Volver al inicio"
+    "backToHome": "← Volver al inicio",
+    "cancel": "Cancelar"
   },
   "confirmDialog": {
     "confirm": "Confirmar",
@@ -62,7 +63,8 @@
     "login": "Iniciar sesión",
     "createAccount": "Crear cuenta",
     "openMenu": "Abrir menú",
-    "closeMenu": "Cerrar menú"
+    "closeMenu": "Cerrar menú",
+    "live": "En juego"
   },
   "userMenu": {
     "menuAria": "Menú de {name}",
@@ -142,7 +144,8 @@
     "submitting": "Ingresando...",
     "noAccount": "¿No tienes cuenta?",
     "createOne": "Crea una",
-    "forgotPassword": "¿Olvidaste tu contraseña?"
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "sessionExpired": "Tu sesión terminó (venció o cambiaron tus permisos). Inicia sesión de nuevo para continuar."
   },
   "forgotPassword": {
     "title": "Recuperar acceso",
@@ -304,7 +307,13 @@
     "tableSemester": "Semestre",
     "noPlayers": "Todavía no hay jugadores inscritos.",
     "withdraw": "Retirar",
-    "withdrawConfirm": "¿Seguro que quieres retirar a {name} del torneo?"
+    "withdrawConfirm": "¿Seguro que quieres retirar a {name} del torneo?",
+    "byePointsLabel": "Valor del bye",
+    "byePointsOptions": {
+      "1": "1 punto",
+      "0_5": "½ punto",
+      "0": "0 puntos"
+    }
   },
   "clubs": {
     "title": "Clubes",
@@ -363,7 +372,10 @@
       "ROLE_CHANGED": "Cambio de rol",
       "PLAYER_WITHDRAWN": "Retiro de jugador",
       "ACCOUNT_STATUS_CHANGED": "Cambio de estado de cuenta",
-      "DASHBOARD_LAYOUT_CHANGED": "Cambio de panel por rol"
+      "DASHBOARD_LAYOUT_CHANGED": "Cambio de panel por rol",
+      "RESULT_CORRECTED": "Corrección de resultado",
+      "PAIRING_ADJUSTED": "Ajuste manual de emparejamiento",
+      "TOURNAMENT_FINISHED": "Torneo finalizado"
     }
   },
   "adminUsers": {
@@ -500,6 +512,33 @@
       "description": "Cuentas activas de cada rol.",
       "total": "cuentas activas",
       "inactive": "sin inactivas | 1 inactiva | {count} inactivas"
+    },
+    "boardResults": {
+      "wins": "Ganan blancas",
+      "draws": "Tablas",
+      "losses": "Ganan negras",
+      "summary": "{wins} blancas · {draws} tablas · {losses} negras"
+    },
+    "PLAYER_GAME_LOG": {
+      "title": "Historial de partidas",
+      "description": "Cada partida jugada: rival, color y resultado.",
+      "empty": "Este jugador todavía no tiene partidas registradas.",
+      "search": "Buscar partida…",
+      "tournament": "Torneo",
+      "round": "Ronda {round}",
+      "color": "Color",
+      "colors": {
+        "WHITE": "Blancas",
+        "BLACK": "Negras"
+      },
+      "opponent": "Rival",
+      "outcome": "Resultado",
+      "outcomes": {
+        "WIN": "Victoria",
+        "DRAW": "Tablas",
+        "LOSS": "Derrota",
+        "BYE": "Bye"
+      }
     }
   },
   "dashboardLayouts": {
@@ -531,5 +570,104 @@
     "leaveTitle": "¿Salir sin guardar?",
     "leaveMessage": "Hay paneles con cambios sin guardar. Si sales, se perderán.",
     "leaveConfirm": "Salir sin guardar"
+  },
+  "rounds": {
+    "resultLabel": "Resultado",
+    "resultNames": {
+      "whiteWins": "Ganan blancas",
+      "draw": "Tablas",
+      "blackWins": "Ganan negras"
+    },
+    "board": "Mesa {board}",
+    "byeLabel": "descansa esta ronda",
+    "bye": "Bye",
+    "white": "Blancas",
+    "black": "Negras",
+    "vs": "vs",
+    "correct": "Corregir",
+    "correctionReason": "Motivo de la corrección (opcional)",
+    "correctionPlaceholder": "Ej.: planilla mal transcrita",
+    "saveCorrection": "Guardar corrección"
+  },
+  "standings": {
+    "pending": "Clasificación provisional: faltan resultados de la ronda en juego.",
+    "empty": "La clasificación aparecerá cuando se publique la primera ronda.",
+    "player": "Jugador",
+    "points": "Pts",
+    "buchholz": "Buchholz",
+    "cut1": "Buchholz Cortado 1",
+    "sb": "Sonneborn-Berger",
+    "withdrawn": "retirado",
+    "tiebreakOrder": "Desempates en orden: {order}"
+  },
+  "roundManager": {
+    "title": "Rondas",
+    "progress": "Rondas completas: {played} de {total}",
+    "openRoom": "Abrir sala del torneo",
+    "loadError": "No se pudieron cargar las rondas",
+    "draftBanner": "Ronda {number} en borrador: solo tú la ves. Revísala, ajústala si hace falta y publícala.",
+    "swapTitle": "Ajuste manual",
+    "swapHint": "Intercambia el lugar de dos jugadores (en la misma mesa, invierte los colores). Queda en la bitácora con tu nombre y el motivo.",
+    "swapPlayerA": "Jugador",
+    "swapPlayerB": "Intercambiar con",
+    "choosePlayer": "Elige un jugador",
+    "swapReason": "Motivo del ajuste",
+    "swapReasonPlaceholder": "Ej.: son del mismo club y lo pidió el organizador",
+    "swapSubmit": "Aplicar ajuste",
+    "publishRound": "Publicar ronda {number}",
+    "publish": "Publicar",
+    "publishTitle": "¿Publicar la ronda {number}?",
+    "publishMessage": "Todos verán los emparejamientos y se podrán registrar resultados. Después ya no se podrá ajustar.",
+    "discard": "Descartar borrador",
+    "discardTitle": "¿Descartar la ronda {number}?",
+    "discardMessage": "Se borran los emparejamientos del borrador para volver a generarlos.",
+    "inPlay": "La ronda {number} está en juego: falta registrar {count} resultado. | La ronda {number} está en juego: faltan registrar {count} resultados.",
+    "finished": "Torneo finalizado: la clasificación es definitiva.",
+    "allPlayed": "Se jugaron y registraron todas las rondas. Ya puedes cerrar oficialmente el torneo.",
+    "finish": "Finalizar torneo",
+    "finishTitle": "¿Finalizar el torneo?",
+    "finishMessage": "La clasificación queda como definitiva y no se podrán registrar ni corregir más resultados.",
+    "generateHint": "El sistema empareja por puntaje sin repetir enfrentamientos y asigna el bye si hay un número impar de jugadores. Podrás revisarlo antes de publicar.",
+    "generate": "Generar ronda {number}",
+    "generating": "Emparejando…",
+    "closeRegistrationFirst": "Cierra las inscripciones y configura el número de rondas para empezar a emparejar."
+  },
+  "tournamentRoom": {
+    "loading": "Cargando sala…",
+    "loadError": "No se pudo cargar el torneo",
+    "live": "En vivo",
+    "offline": "Sin conexión en vivo",
+    "roundsPlayed": "{played} de {total} rondas completas",
+    "manage": "Administrar torneo",
+    "pairings": "Emparejamientos",
+    "roundsLabel": "Ronda",
+    "roundTab": "R{number}",
+    "noRounds": "Todavía no se ha publicado ninguna ronda.",
+    "standings": "Clasificación",
+    "follow": "Seguir en vivo →",
+    "stats": "Estadísticas del torneo",
+    "exportStandings": "Clasificación (PDF)",
+    "exportRound": "Ronda {number} (PDF)",
+    "exportError": "No se pudo generar el PDF",
+    "standingsFile": "clasificacion.pdf",
+    "roundFile": "ronda-{number}.pdf"
+  },
+  "liveTournaments": {
+    "title": "Torneos en juego",
+    "subtitle": "Sigue en vivo los emparejamientos, resultados y la clasificación de cada torneo.",
+    "loading": "Cargando torneos…",
+    "loadError": "No se pudieron cargar los torneos",
+    "empty": "No hay torneos en curso ni finalizados todavía."
+  },
+  "tournamentStats": {
+    "players": "Jugadores activos",
+    "withdrawn": "sin retirados | 1 retirado | {count} retirados",
+    "games": "Partidas jugadas",
+    "decisive": "Partidas decisivas",
+    "whiteScore": "Rendimiento de blancas",
+    "noGames": "Todavía no hay partidas registradas.",
+    "allRounds": "Todo el torneo",
+    "round": "Ronda {round}",
+    "roundPending": "Ronda {round} (falta {count}) | Ronda {round} (faltan {count})"
   }
 }

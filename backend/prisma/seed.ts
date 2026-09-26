@@ -2,7 +2,7 @@ import { PrismaClient, type TournamentStatus } from "@prisma/client";
 
 import { DATA_POLICY_VERSION } from "../src/config/dataPolicy";
 import { hashPassword } from "../src/services/password";
-import { seedCompetitionHistory } from "./seeds/competitionHistory";
+import { refreshAllStandings, seedCompetitionHistory } from "./seeds/competitionHistory";
 import { seedDashboardLayouts } from "./seeds/dashboardLayouts";
 
 const prisma = new PrismaClient();
@@ -539,11 +539,13 @@ async function main() {
   await seedCoachLinks(directory.playerIdByEmail, directory.coachIdByEmail);
   const tournaments = await seedTournaments(directory.playerIdByEmail, directory.organizerId);
   const played = await seedHistories(tournaments, directory.playerIdByEmail);
+  const refreshed = await refreshAllStandings(prisma);
   const layouts = await seedDashboardLayouts(prisma, roleIdByName);
 
   printSummary(directory);
   console.log(
-    `Played out ${played} tournament histories; default dashboards seeded for: ${layouts.join(", ") || "none (already set)"}.`,
+    `Played out ${played} tournament histories (standings rebuilt for ${refreshed}); ` +
+      `default dashboards seeded for: ${layouts.join(", ") || "none (already set)"}.`,
   );
 }
 

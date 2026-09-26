@@ -74,6 +74,25 @@ describe("exerciseDataRight", () => {
     });
   });
 
+  it("SUPPRESSION: also erases the player profile's personal and sensitive data (Ley 1581 art. 5)", async () => {
+    prisma.player.findUnique.mockResolvedValue({ id: "player-1", userId: "user-1" });
+    prisma.enrollment.findFirst.mockResolvedValue(null);
+    prisma.user.update.mockResolvedValue({ ...baseUser, status: "INACTIVE" });
+
+    await exerciseDataRight(prisma as unknown as PrismaClient, "user-1", { type: "SUPPRESSION" });
+
+    const data = prisma.user.update.mock.calls[0][0].data;
+    expect(data.email).toBe("eliminado-user-1@torre.invalid");
+    expect(data.player.update).toEqual({
+      universityCode: "—",
+      program: "—",
+      birthDate: null,
+      gender: null,
+      disability: null,
+      clubId: null,
+    });
+  });
+
   it("SUPPRESSION: blocks (deactivates without erasing) when the player has an active tournament enrollment", async () => {
     prisma.player.findUnique.mockResolvedValue({ id: "player-1", userId: "user-1" });
     prisma.enrollment.findFirst.mockResolvedValue({ id: "enrollment-1" });
@@ -105,5 +124,7 @@ describe("exerciseDataRight", () => {
 
     expect(result.status).toBe("RESOLVED");
     expect(prisma.enrollment.findFirst).not.toHaveBeenCalled();
+    // No nested player update for a missing profile: Prisma would reject it.
+    expect(prisma.user.update.mock.calls[0][0].data.player).toBeUndefined();
   });
 });

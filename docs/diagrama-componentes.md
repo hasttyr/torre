@@ -12,9 +12,10 @@ El diagrama de componentes de S4 ya existe en el documento de sustentación: [`d
 | — (cliente HTTP/WS) | `frontend/src/services/api.ts`, `frontend/src/services/socket.ts` | Cliente axios hacia la API REST y cliente socket.io hacia el gateway |
 | Node.js + Express API | `backend/src/app.ts`, `backend/src/routes` | Enrutamiento REST bajo `/api` |
 | Socket.IO Gateway | `backend/src/sockets` | Emisión del catálogo de eventos en tiempo real |
-| Modulo Auth y Roles | *(a codificar en S5 — Incremento 1)* | HU01-03: registro, autenticación, roles y permisos |
-| Modulo Emparejamiento | *(a codificar en S7 — Incremento 3)* | HU08-09: generación y publicación de emparejamiento suizo |
-| Modulo Resultados y Clasificación | *(a codificar en S8 — Incremento 4)* | HU10-13: registro de resultados, recálculo de clasificación y desempates |
+| Modulo Auth y Roles | `backend/src/middlewares/auth.ts`, `backend/src/services/auth.service.ts`, `backend/src/services/tournamentAccess.ts` | HU01-03: registro, autenticación (JWT verificado contra la BD en cada petición), roles y permisos por torneo |
+| Modulo Emparejamiento | `backend/src/services/pairing/`, `backend/src/services/rounds.service.ts` | HU08-09, HU28-29: motor suizo adaptado, bye, borrador, ajuste manual y publicación |
+| Modulo Resultados y Clasificación | `backend/src/services/results.service.ts`, `backend/src/services/standings.*` | HU10-14: registro y corrección de resultados, recálculo de clasificación y desempates |
+| — (consultas y documentos) | `backend/src/services/dashboard/`, `backend/src/services/tournamentStats.service.ts`, `backend/src/services/exports/` | HU15-16, HU30: paneles por rol, estadísticas del torneo y PDF oficiales |
 | PostgreSQL | `backend/prisma/schema.prisma` | Persistencia según el modelo ER de S4 (ver más abajo) |
 
 ## Modelo ER (S4)
@@ -27,9 +28,9 @@ El modelo ER conceptual y el diagrama de clases de dominio ya están en el docum
 
 `backend/prisma/schema.prisma` codifica ese modelo para PostgreSQL, con las 9 entidades del Objetivo específico 3 (Usuario, Rol, Jugador, Torneo, Ronda, Partida, Resultado, CriterioDesempate, Clasificacion). Dos decisiones de traducción de diagrama conceptual a esquema físico, documentadas también como comentarios en el propio `schema.prisma`:
 
-- Los campos `estado` (tipados como `string` genérico en los diagramas) se refinan a enums de PostgreSQL (`EstadoUsuario`, `EstadoTorneo`, `EstadoRonda`, `EstadoPartida`) con los mismos valores mostrados en `image8.png`, para integridad a nivel de base de datos.
+- Los campos `estado` (tipados como `string` genérico en los diagramas) se refinan a enums de PostgreSQL (`UserStatus`, `TournamentStatus`, `RoundStatus`, `MatchStatus`; el código usa identificadores en inglés) con los mismos valores mostrados en `image8.png`, para integridad a nivel de base de datos.
 - `Resultado` es una entidad 1:1 con `Partida` (relación "registra" del ER conceptual), no un catálogo compartido: cada partida decidida tiene su propia fila con la fecha de registro. El catálogo de valores válidos (RN-03) se aplica con un `CHECK` en la migración.
 
-Entidades como Club, Federación, EntrenadorJugador, Bitácora e Inscripción no están en el alcance de S4 (no aparecen en el ER conceptual ni en el diagrama de clases): pertenecen a incrementos posteriores del roadmap (S10-S13) y se agregan al esquema cuando se codifique esa semana.
+Las entidades que no estaban en el alcance de S4 se agregaron en su incremento: Inscripción (`Enrollment`), Club, vínculo entrenador-jugador (`CoachPlayer`), bitácora (`AuditLog`), solicitudes de datos (`DataRequest`) y paneles por rol (`RoleWidget`). Las migraciones están en `backend/prisma/migrations/` y se aplican con `npx prisma migrate dev`.
 
-La migración inicial está en `backend/prisma/migrations/20260904000000_init/`, generada sin necesitar una base de datos activa (`prisma migrate diff --from-empty`); se aplica con `npx prisma migrate dev` en cuanto haya un PostgreSQL disponible.
+La arquitectura interna de cada capa, las decisiones de diseño y las mejoras aplicadas están en [`arquitectura.md`](./arquitectura.md).

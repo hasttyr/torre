@@ -6,6 +6,12 @@ import { createApp } from "../app";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
+    // requireAuth confirms every token is still current (see middlewares/auth.ts).
+    user: {
+      findFirst: vi.fn(async ({ where }: { where: { id: string } }): Promise<{ id: string } | null> => ({
+        id: where.id,
+      })),
+    },
     tournament: { create: vi.fn(), findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
     round: { findFirst: vi.fn() },
     player: { findUnique: vi.fn() },
@@ -185,24 +191,34 @@ describe("GET /api/tournaments/:id", () => {
     expect(response.status).toBe(200);
   });
 
-  it("responds 403 for a PLAYER unrelated to the tournament", async () => {
+  it("hides a draft (CREATED) tournament from a PLAYER with 404, not revealing it exists", async () => {
     prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
 
     const response = await request(createApp())
       .get("/api/tournaments/tournament-1")
       .set("Authorization", `Bearer ${tokenFor("PLAYER", "player-1")}`);
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(404);
   });
 
-  it("responds 403 for an ORGANIZER who isn't the tournament's owner", async () => {
+  it("hides a draft tournament from an ORGANIZER who isn't its owner", async () => {
     prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
 
     const response = await request(createApp())
       .get("/api/tournaments/tournament-1")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "other-organizer")}`);
 
-    expect(response.status).toBe(403);
+    expect(response.status).toBe(404);
+  });
+
+  it("shows a published tournament to any authenticated role (HU18)", async () => {
+    prismaMock.tournament.findUnique.mockResolvedValue({ ...tournamentBase, status: "IN_PROGRESS" });
+
+    const response = await request(createApp())
+      .get("/api/tournaments/tournament-1")
+      .set("Authorization", `Bearer ${tokenFor("PLAYER", "player-1")}`);
+
+    expect(response.status).toBe(200);
   });
 
   it("responds 401 without a token", async () => {

@@ -133,22 +133,21 @@ export async function updateRoleLayout(
   }
 
   // Delete + recreate in one transaction: positions are unique per role,
-  // so shifting rows in place would collide mid-update.
-  await prisma.$transaction([
-    prisma.roleWidget.deleteMany({ where: { roleId: roleRow.id } }),
-    prisma.roleWidget.createMany({
+  // so shifting rows in place would collide mid-update. RN-11: a layout is
+  // also a permission (see getWidgetData), so the change is audited in that
+  // same transaction, like a role change.
+  await prisma.$transaction(async (tx) => {
+    await tx.roleWidget.deleteMany({ where: { roleId: roleRow.id } });
+    await tx.roleWidget.createMany({
       data: widgets.map((widgetKey, position) => ({ roleId: roleRow.id, widgetKey, position })),
-    }),
-  ]);
-
-  // RN-11: a layout is also a permission (see getWidgetData), so changing
-  // it is a critical administrative action like a role change.
-  await recordAuditLog(
-    prisma,
-    actingAdminId,
-    "DASHBOARD_LAYOUT_CHANGED",
-    `${role}: ${widgets.length > 0 ? widgets.join(", ") : "—"}`,
-  );
+    });
+    await recordAuditLog(
+      tx,
+      actingAdminId,
+      "DASHBOARD_LAYOUT_CHANGED",
+      `${role}: ${widgets.length > 0 ? widgets.join(", ") : "—"}`,
+    );
+  });
 
   return { role, widgets };
 }

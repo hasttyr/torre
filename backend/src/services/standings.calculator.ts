@@ -1,6 +1,6 @@
-// Pure standings math (no Prisma, no I/O), so it can be reused by the
-// seeder today and by the real round-closing flow (HU10-HU13) later, and
-// unit-tested without a database.
+// Pure standings math (no Prisma, no I/O): used by standings.service.ts on
+// every recorded result (HU12) and by the seeder, and unit-tested without a
+// database.
 
 /** A recorded game as stored in `results.value` (RN-03 catalog). `blackId` is null for a bye. */
 export interface RecordedGame {
@@ -17,12 +17,21 @@ export interface StandingValues {
   sonnebornBerger: number;
 }
 
-/** Points each side earns for a result value. A bye gives its only player a full point. */
-export function pointsFor(game: RecordedGame): { white: number; black: number } {
+// HU13's order. ARO is listed because the documentation lists it, but it's
+// skipped when ranking: it needs ratings, which are out of scope.
+export const DEFAULT_TIEBREAKS = ["Buchholz", "Buchholz Cortado 1", "Sonneborn-Berger", "ARO", "Resultado particular"];
+
+/**
+ * Points each side earns for a result value.
+ *
+ * @param byePoints - What a bye is worth in this tournament (HU28: 1, 0.5 or 0).
+ */
+export function pointsFor(game: RecordedGame, byePoints = 1): { white: number; black: number } {
   switch (game.value) {
     case "1-0":
-    case "BYE":
       return { white: 1, black: 0 };
+    case "BYE":
+      return { white: byePoints, black: 0 };
     case "0-1":
       return { white: 0, black: 1 };
     case "1/2-1/2":
@@ -46,7 +55,7 @@ interface Encounter {
  * nothing to their tiebreaks (the simplified rule, not FIDE's "virtual
  * opponent"). ARO needs ratings, which are out of this project's scope.
  */
-export function computeStandings(games: RecordedGame[]): StandingValues[] {
+export function computeStandings(games: RecordedGame[], byePoints = 1): StandingValues[] {
   const scores = new Map<string, number>();
   const encounters = new Map<string, Encounter[]>();
 
@@ -56,7 +65,7 @@ export function computeStandings(games: RecordedGame[]): StandingValues[] {
   };
 
   for (const game of games) {
-    const points = pointsFor(game);
+    const points = pointsFor(game, byePoints);
     if (game.whiteId) addScore(game.whiteId, points.white);
     if (game.blackId) addScore(game.blackId, points.black);
     if (game.whiteId && game.blackId) {
@@ -75,16 +84,42 @@ export function computeStandings(games: RecordedGame[]): StandingValues[] {
   });
 }
 
+// Negative when `a` ranks ahead of `b`, like Array#sort's comparator.
+type Comparator = (a: StandingValues, b: StandingValues) => number;
+
+const byDescending =
+  (field: "buchholz" | "buchholzCut1" | "sonnebornBerger"): Comparator =>
+  (a, b) =>
+    b[field] - a[field];
+
+/** Direct encounter: whoever scored more against the other in their games together ranks first. */
+function directEncounter(games: RecordedGame[]): Comparator {
+  const scoredAgainst = new Map<string, number>();
+  for (const game of games) {
+    if (!game.whiteId || !game.blackId) continue;
+    const points = pointsFor(game);
+    const whiteKey = `${game.whiteId}>${game.blackId}`;
+    const blackKey = `${game.blackId}>${game.whiteId}`;
+    scoredAgainst.set(whiteKey, (scoredAgainst.get(whiteKey) ?? 0) + points.white);
+    scoredAgainst.set(blackKey, (scoredAgainst.get(blackKey) ?? 0) + points.black);
+  }
+  return (a, b) =>
+    (scoredAgainst.get(`${b.playerId}>${a.playerId}`) ?? 0) - (scoredAgainst.get(`${a.playerId}>${b.playerId}`) ?? 0);
+}
+
 // Tiebreak names are free text (see tournaments.schemas.ts): matched
 // loosely so "Buchholz Cortado 1", "buchholz-cut-1" etc. all resolve.
-const TIEBREAK_FIELDS: Record<string, keyof Omit<StandingValues, "playerId" | "score">> = {
-  buchholz: "buchholz",
-  buchholzcortado1: "buchholzCut1",
-  buchholzcut1: "buchholzCut1",
-  sonnebornberger: "sonnebornBerger",
-};
-
-const DEFAULT_TIEBREAKS = ["Buchholz Cortado 1", "Buchholz", "Sonneborn-Berger"];
+function tiebreakComparators(games: RecordedGame[]): Record<string, Comparator> {
+  const direct = directEncounter(games);
+  return {
+    buchholz: byDescending("buchholz"),
+    buchholzcortado1: byDescending("buchholzCut1"),
+    buchholzcut1: byDescending("buchholzCut1"),
+    sonnebornberger: byDescending("sonnebornBerger"),
+    resultadoparticular: direct,
+    directencounter: direct,
+  };
+}
 
 function normalize(name: string): string {
   return name
@@ -95,17 +130,26 @@ function normalize(name: string): string {
 
 /**
  * Sorts standings best-first: score, then each tiebreak in the tournament's
- * configured order (unknown names, e.g. ARO, are skipped). Falls back to a
- * default order when the tournament has none configured.
+ * configured order (names it can't compute, e.g. ARO, are skipped). Falls
+ * back to {@link DEFAULT_TIEBREAKS} when the tournament has none configured.
+ *
+ * @param games - The tournament's recorded games; only needed by the
+ * direct-encounter tiebreak ("Resultado particular").
  */
-export function rankStandings<T extends StandingValues>(rows: T[], tiebreakNames: string[]): T[] {
+export function rankStandings<T extends StandingValues>(
+  rows: T[],
+  tiebreakNames: string[],
+  games: RecordedGame[] = [],
+): T[] {
   const names = tiebreakNames.length > 0 ? tiebreakNames : DEFAULT_TIEBREAKS;
-  const fields = names.map((name) => TIEBREAK_FIELDS[normalize(name)]).filter(Boolean);
+  const available = tiebreakComparators(games);
+  const comparators = names.map((name) => available[normalize(name)]).filter(Boolean);
 
   return rows.slice().sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
-    for (const field of fields) {
-      if (b[field] !== a[field]) return b[field] - a[field];
+    for (const compare of comparators) {
+      const order = compare(a, b);
+      if (order !== 0) return order;
     }
     return 0;
   });

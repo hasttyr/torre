@@ -7,12 +7,20 @@ import { createApp } from "../app";
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
     role: { findUnique: vi.fn() },
-    user: { findUnique: vi.fn(), findMany: vi.fn(), update: vi.fn() },
+    user: {
+      findFirst: vi.fn(async ({ where }: { where: { id: string } }): Promise<{ id: string } | null> => ({
+        id: where.id,
+      })),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      update: vi.fn(),
+    },
     player: { findUnique: vi.fn() },
     coachPlayer: { findMany: vi.fn() },
     enrollment: { findFirst: vi.fn() },
     dataRequest: { create: vi.fn() },
     auditLog: { create: vi.fn() },
+    $transaction: vi.fn(async (work: (tx: unknown) => unknown) => work(prismaMock)),
   },
 }));
 
@@ -494,5 +502,18 @@ describe("PATCH /api/users/:id/status", () => {
   it("responds 401 without a token", async () => {
     const response = await request(createApp()).patch("/api/users/user-2/status").send({ status: "INACTIVE" });
     expect(response.status).toBe(401);
+  });
+});
+
+describe("session validity", () => {
+  it("rejects a still-unexpired token once the account was deactivated or its role changed", async () => {
+    prismaMock.user.findFirst.mockResolvedValueOnce(null);
+
+    const response = await request(createApp())
+      .get("/api/users/me")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR")}`);
+
+    expect(response.status).toBe(401);
+    expect(response.body.error).toContain("sesión");
   });
 });

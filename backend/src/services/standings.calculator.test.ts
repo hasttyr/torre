@@ -10,6 +10,10 @@ describe("pointsFor", () => {
     expect(pointsFor({ whiteId: "a", blackId: null, value: "BYE" })).toEqual({ white: 1, black: 0 });
   });
 
+  it("uses the tournament's configured bye points (HU28)", () => {
+    expect(pointsFor({ whiteId: "a", blackId: null, value: "BYE" }, 0.5)).toEqual({ white: 0.5, black: 0 });
+  });
+
   it("rejects values outside the catalog", () => {
     expect(() => pointsFor({ whiteId: "a", blackId: "b", value: "2-0" })).toThrow();
   });
@@ -62,5 +66,14 @@ describe("rankStandings", () => {
 
     expect(rankStandings(rows, ["ARO"]).map((r) => r.playerId)).toEqual(["a", "b"]);
     expect(rankStandings(rows, []).map((r) => r.playerId)).toEqual(["b", "a"]);
+  });
+
+  it("breaks a remaining tie by direct encounter (Resultado particular)", () => {
+    const rows = [row("a", 2, 3, 0), row("b", 2, 3, 0)];
+    const games = [{ whiteId: "a", blackId: "b", value: "0-1" }];
+
+    expect(rankStandings(rows, ["Buchholz", "Resultado particular"], games).map((r) => r.playerId)).toEqual(["b", "a"]);
+    // Without their game on record, the tie stays as it was.
+    expect(rankStandings(rows, ["Resultado particular"]).map((r) => r.playerId)).toEqual(["a", "b"]);
   });
 });

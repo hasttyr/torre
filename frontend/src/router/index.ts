@@ -1,22 +1,11 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 import { useAuthStore } from "../stores/auth";
-import AuditLogView from "../views/admin/AuditLogView.vue";
-import DashboardLayoutsView from "../views/admin/DashboardLayoutsView.vue";
-import UsersView from "../views/admin/UsersView.vue";
-import ForgotPasswordView from "../views/auth/ForgotPasswordView.vue";
 import LoginView from "../views/auth/LoginView.vue";
-import RegisterView from "../views/auth/RegisterView.vue";
-import ResetPasswordView from "../views/auth/ResetPasswordView.vue";
-import AccountView from "../views/AccountView.vue";
-import CoachPlayersView from "../views/coach/CoachPlayersView.vue";
-import PanelView from "../views/dashboard/PanelView.vue";
 import HomeView from "../views/HomeView.vue";
-import ClubsView from "../views/organizer/ClubsView.vue";
-import CreateTournamentView from "../views/organizer/CreateTournamentView.vue";
-import DashboardView from "../views/organizer/DashboardView.vue";
-import TournamentAdminView from "../views/organizer/TournamentAdminView.vue";
-import PlayerTournamentsView from "../views/player/PlayerTournamentsView.vue";
+
+// Only the two entry points (landing, login) ship in the initial bundle;
+// every other view is its own chunk, fetched the first time it's visited.
 
 // Roles that manage tournaments (HU04-HU07). Mirrors
 // backend/src/routes/tournaments.routes.ts (requireRole("ORGANIZER", "ADMINISTRATOR")).
@@ -33,7 +22,7 @@ export const router = createRouter({
     {
       path: "/registro",
       name: "register",
-      component: RegisterView,
+      component: () => import("../views/auth/RegisterView.vue"),
     },
     {
       path: "/login",
@@ -43,79 +32,93 @@ export const router = createRouter({
     {
       path: "/olvide-password",
       name: "forgot-password",
-      component: ForgotPasswordView,
+      component: () => import("../views/auth/ForgotPasswordView.vue"),
     },
     {
       path: "/restablecer-password",
       name: "reset-password",
-      component: ResetPasswordView,
+      component: () => import("../views/auth/ResetPasswordView.vue"),
     },
     {
       // Every role's dashboard; which widgets it shows is decided per role
       // on the backend (see backend/src/services/dashboard/).
       path: "/panel",
       name: "panel",
-      component: PanelView,
+      component: () => import("../views/dashboard/PanelView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/panel/configuracion",
       name: "dashboard-layouts",
-      component: DashboardLayoutsView,
+      component: () => import("../views/admin/DashboardLayoutsView.vue"),
       meta: { requiresAuth: true, roles: ["ADMINISTRATOR"] },
     },
     {
       path: "/cuenta",
       name: "account",
-      component: AccountView,
+      component: () => import("../views/AccountView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/torneos",
       name: "tournaments-dashboard",
-      component: DashboardView,
+      component: () => import("../views/organizer/DashboardView.vue"),
       meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
     },
     {
       path: "/torneos/nuevo",
       name: "tournaments-new",
-      component: CreateTournamentView,
+      component: () => import("../views/organizer/CreateTournamentView.vue"),
       meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
     },
     {
       path: "/torneos/:id",
       name: "tournaments-admin",
-      component: TournamentAdminView,
+      component: () => import("../views/organizer/TournamentAdminView.vue"),
       meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
+    },
+    {
+      // HU18: any authenticated role follows a tournament here; the backend
+      // hides drafts from whoever doesn't manage it.
+      path: "/torneos/:id/sala",
+      name: "tournament-room",
+      component: () => import("../views/tournament/TournamentLiveView.vue"),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/en-juego",
+      name: "live-tournaments",
+      component: () => import("../views/tournament/LiveTournamentsView.vue"),
+      meta: { requiresAuth: true },
     },
     {
       path: "/mis-torneos",
       name: "tournaments-player",
-      component: PlayerTournamentsView,
+      component: () => import("../views/player/PlayerTournamentsView.vue"),
       meta: { requiresAuth: true, roles: ["PLAYER"] },
     },
     {
       path: "/clubes",
       name: "clubs",
-      component: ClubsView,
+      component: () => import("../views/organizer/ClubsView.vue"),
       meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
     },
     {
       path: "/mis-jugadores",
       name: "coach-players",
-      component: CoachPlayersView,
+      component: () => import("../views/coach/CoachPlayersView.vue"),
       meta: { requiresAuth: true, roles: ["COACH"] },
     },
     {
       path: "/auditoria",
       name: "audit-log",
-      component: AuditLogView,
+      component: () => import("../views/admin/AuditLogView.vue"),
       meta: { requiresAuth: true, roles: ["ADMINISTRATOR"] },
     },
     {
       path: "/usuarios",
       name: "admin-users",
-      component: UsersView,
+      component: () => import("../views/admin/UsersView.vue"),
       meta: { requiresAuth: true, roles: ["ADMINISTRATOR"] },
     },
   ],

@@ -5,5 +5,9 @@ export default defineConfig({
   plugins: [vue()],
   test: {
     environment: "jsdom",
+    coverage: {
+      include: ["src/**/*.{ts,vue}"],
+      exclude: ["src/**/*.test.ts", "src/test-support/**"],
+    },
   },
 });

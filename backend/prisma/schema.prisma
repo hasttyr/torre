@@ -225,6 +225,10 @@ model Tournament {
   // project document excludes federated rating calculation from scope.
   restrictedProgram String?          @map("restricted_program")
   minimumSemester   Int?             @map("minimum_semester")
+  // HU28: points a bye is worth ("puntaje configurado"). Only 1, 0.5 or 0
+  // (CHECK in the migration); like the tiebreak order (RN-05), it's locked
+  // once round 1 exists.
+  byePoints         Decimal          @default(1) @map("bye_points") @db.Decimal(2, 1)
   organizerId       String           @map("organizer_id")
   createdAt         DateTime         @default(now()) @map("created_at")
 
@@ -272,6 +276,12 @@ model Match {
   black  Player? @relation("MatchBlack", fields: [blackId], references: [id])
   result Result?
 
+  // A board number identifies a match within its round (it's what gets
+  // printed/displayed) — nothing today stops a pairing-generation bug from
+  // inserting two matches on the same board in the same round. Catching
+  // that at the database is cheaper than a duplicate-board incident once
+  // real tournament data exists.
+  @@unique([roundId, board])
   // The pairing engine (HU08) will constantly query "matches in this
   // round" and "has this player already faced X" (RN: no repeated
   // pairings) — none of these three FKs are covered by any unique
@@ -279,12 +289,6 @@ model Match {
   @@index([roundId])
   @@index([whiteId])
   @@index([blackId])
-  // A board number identifies a match within its round (it's what gets
-  // printed/displayed) — nothing today stops a pairing-generation bug from
-  // inserting two matches on the same board in the same round. Catching
-  // that at the database is cheaper than a duplicate-board incident once
-  // real tournament data exists.
-  @@unique([roundId, board])
   @@map("matches")
 }
 
@@ -325,6 +329,11 @@ model Standing {
   buchholzCut1    Decimal @default(0) @map("buchholz_cut1") @db.Decimal(6, 2)
   sonnebornBerger Decimal @default(0) @map("sonneborn_berger") @db.Decimal(6, 2)
   aro             Decimal @default(0) @db.Decimal(6, 2)
+  // HU12/HU13: official position, computed once at each recalculation with
+  // the tournament's tiebreak order, so every screen shows the same rank
+  // instead of re-deriving it. ARO stays 0: it needs ratings, and rating
+  // calculation is out of this project's scope.
+  rank            Int?
 
   tournament Tournament @relation(fields: [tournamentId], references: [id])
   player     Player     @relation(fields: [playerId], references: [id])
@@ -342,14 +351,18 @@ model Standing {
 // to Standing), but it's needed before a Standing exists: it's where RN-01
 // is enforced (a player can't enroll twice in the same tournament).
 model Enrollment {
-  id           String    @id @default(uuid())
-  tournamentId String    @map("tournament_id")
-  playerId     String    @map("player_id")
-  createdAt    DateTime  @default(now()) @map("created_at")
+  id            String    @id @default(uuid())
+  tournamentId  String    @map("tournament_id")
+  playerId      String    @map("player_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
   // HU27: a withdrawn player keeps their enrollment row (history, past
   // matches) but is excluded from the active roster and from future
   // pairings. null = still an active participant.
-  withdrawnAt  DateTime? @map("withdrawn_at")
+  withdrawnAt   DateTime? @map("withdrawn_at")
+  // HU08: the player's pairing number, from the random draw made when round
+  // 1 is generated. Orders players within a score group in every later
+  // round, so it must stay stable for the whole tournament. null until then.
+  pairingNumber Int?      @map("pairing_number")
 
   tournament Tournament @relation(fields: [tournamentId], references: [id])
   player     Player     @relation(fields: [playerId], references: [id])

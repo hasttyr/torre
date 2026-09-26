@@ -18,6 +18,8 @@ export interface Tournament {
   // null = no restriction on that criterion.
   restrictedProgram: string | null;
   minimumSemester: number | null;
+  // HU28: what a bye is worth (1, 0.5 or 0).
+  byePoints: number;
   organizerId: string;
   tiebreakCriteria: TiebreakCriterion[];
   createdAt: string;
@@ -37,6 +39,7 @@ export interface ConfigureTournamentPayload {
   // An explicit null clears the restriction; omitting the field leaves it as-is.
   restrictedProgram?: string | null;
   minimumSemester?: number | null;
+  byePoints?: 0 | 0.5 | 1;
 }
 
 export interface EnrolledPlayer {
@@ -111,4 +114,16 @@ export async function listEnrolledPlayers(tournamentId: string): Promise<Enrolle
 /** Withdraws a player from a tournament (HU27). */
 export async function withdrawPlayer(tournamentId: string, playerId: string, reason?: string): Promise<void> {
   await api.post(`/tournaments/${tournamentId}/players/${playerId}/withdraw`, reason ? { reason } : {});
+}
+
+/** Lists tournaments in progress or finished, which anyone can follow (HU18). */
+export async function listLiveTournaments(): Promise<Tournament[]> {
+  const { data } = await api.get<Tournament[]>("/tournaments/live");
+  return data;
+}
+
+/** Officially closes a tournament once all its rounds are recorded (HU17). */
+export async function finishTournament(id: string): Promise<Tournament> {
+  const { data } = await api.post<Tournament>(`/tournaments/${id}/finish`);
+  return data;
 }

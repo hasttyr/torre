@@ -11,6 +11,7 @@ export interface TournamentDto {
   timeControl: string | null;
   restrictedProgram: string | null;
   minimumSemester: number | null;
+  byePoints: number;
   organizerId: string;
   tiebreakCriteria: { name: string; order: number }[];
   createdAt: Date;
@@ -29,6 +30,7 @@ export function toTournamentDto(tournament: Tournament & { tiebreakCriteria?: Ti
     timeControl: tournament.timeControl,
     restrictedProgram: tournament.restrictedProgram,
     minimumSemester: tournament.minimumSemester,
+    byePoints: Number(tournament.byePoints),
     organizerId: tournament.organizerId,
     tiebreakCriteria: (tournament.tiebreakCriteria ?? [])
       .slice()

@@ -6,11 +6,7 @@ import type {
   CreateClubSchemaInput,
   UpdateClubSchemaInput,
 } from "../validators/clubs.schemas";
-
-/** Checks whether a Prisma error is a unique-constraint violation (P2002). */
-function isUniqueConstraintError(error: unknown): boolean {
-  return typeof error === "object" && error !== null && (error as { code?: string }).code === "P2002";
-}
+import { isUniqueConstraintError } from "./prismaErrors";
 
 export interface ClubDto {
   id: string;

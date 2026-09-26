@@ -4,6 +4,8 @@ import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
 import { extractErrorMessage } from "../../lib/errors";
+import { formatDate } from "../../lib/format";
+import { hasTournamentRoom } from "../../lib/tournamentAccess";
 import { searchPlayers, type PlayerSearchResult } from "../../services/players";
 import { useCoachesStore } from "../../stores/coaches";
 import { useLocaleStore } from "../../stores/locale";
@@ -24,11 +26,6 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-
-/** Formats an ISO date string using the active locale. */
-function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString(locale.locale, { day: "2-digit", month: "short", year: "numeric" });
-}
 
 const playerQuery = ref("");
 const searchResults = ref<PlayerSearchResult[]>([]);
@@ -182,12 +179,20 @@ async function onUnlink(playerId: string): Promise<void> {
               <span class="pill">{{ t(`estados.${tournament.status}`) }}</span>
             </div>
             <p class="text-sm text-text-muted">
-              {{ formatDate(tournament.startDate) }} — {{ formatDate(tournament.endDate) }}
+              {{ formatDate(tournament.startDate, locale.locale) }} —
+              {{ formatDate(tournament.endDate, locale.locale) }}
             </p>
             <p class="text-sm">
               {{ t("coachPlayers.myPlayersLabel") }}:
               {{ tournament.myPlayers.map((player) => player.name).join(", ") }}
             </p>
+            <RouterLink
+              v-if="hasTournamentRoom(tournament)"
+              :to="`/torneos/${tournament.id}/sala`"
+              class="self-start text-sm font-semibold text-accent"
+            >
+              {{ t("tournamentRoom.follow") }}
+            </RouterLink>
           </li>
         </ul>
       </section>

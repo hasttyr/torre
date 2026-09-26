@@ -1,17 +1,14 @@
 import { prisma } from "../config/prisma";
 import { asyncHandler } from "../middlewares/asyncHandler";
-import { HttpError } from "../middlewares/errorHandler";
 import { linkPlayer, listCoachTournaments, listLinkedPlayers, unlinkPlayer } from "../services/coaches.service";
 import { linkPlayerSchema } from "../validators/coaches.schemas";
+import { parseOrThrow } from "../validators/parse";
 
 /** POST /coaches/players — links the current coach to a player (HU24). */
 export const link = asyncHandler(async (req, res) => {
-  const parsed = linkPlayerSchema.safeParse(req.body);
-  if (!parsed.success) {
-    throw new HttpError(400, parsed.error.issues.map((issue) => issue.message).join("; "));
-  }
+  const input = parseOrThrow(linkPlayerSchema, req.body);
 
-  const player = await linkPlayer(prisma, req.user!.id, parsed.data);
+  const player = await linkPlayer(prisma, req.user!.id, input);
   res.status(201).json(player);
 });
 

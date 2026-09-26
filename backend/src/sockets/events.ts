@@ -8,4 +8,5 @@ export const SOCKET_EVENTS = {
   STANDINGS_UPDATED: "standings.updated",
   PLAYER_WITHDRAWN: "player.withdrawn",
   PAIRING_ADJUSTED: "pairing.adjusted",
+  TOURNAMENT_FINISHED: "tournament.finished",
 } as const;

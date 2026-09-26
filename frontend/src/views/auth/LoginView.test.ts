@@ -155,3 +155,19 @@ describe("LoginView", () => {
     expect(wrapper.text()).toContain("No se pudo conectar con el servidor");
   });
 });
+
+describe("LoginView after the server ended a session", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    setActivePinia(createPinia());
+  });
+
+  it("explains why the user is back at the login page", async () => {
+    const { wrapper, router } = await mountLoginView();
+
+    expect(wrapper.text()).not.toContain("Tu sesión terminó");
+    await router.push({ path: "/login-under-test", query: { expired: "1", redirect: "/panel" } });
+
+    expect(wrapper.text()).toContain("Tu sesión terminó");
+  });
+});

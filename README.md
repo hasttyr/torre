@@ -154,13 +154,42 @@ Además de las cuentas, el seed crea 12 jugadores, clubes, vínculos entrenador�
 
 El seed es idempotente (`upsert` con `update: {}`): correrlo de nuevo no sobrescribe contraseñas ni datos que hayas modificado a mano mientras pruebas, solo crea lo que falte. Un torneo que ya tiene rondas no se vuelve a jugar, y un rol que ya tiene panel no se reinicia. Son cuentas de solo desarrollo local — no ejecutar contra una base de producción.
 
+## Ciclo de un torneo
+
+1. **Inscripción** (HU04–HU07): el organizador crea y configura el torneo (rondas, ritmo, desempates, valor del bye), abre y cierra inscripciones.
+2. **Emparejar** (HU08, HU28): con las inscripciones cerradas, el organizador genera la ronda. El motor suizo adaptado (`backend/src/services/pairing/`) empareja por puntaje, mitad superior contra mitad inferior de cada grupo, sin repetir enfrentamientos (RN-02), equilibrando colores, sin retirados (RN-07) y con bye al jugador de menor puntaje que no lo haya tenido (RN-08). La ronda 1 hace un sorteo que fija el número de emparejamiento de cada jugador.
+3. **Revisar y ajustar** (HU29): la ronda queda en borrador, visible solo para quien administra el torneo. Se puede intercambiar a dos jugadores (con motivo obligatorio, RN-09) o descartarla y volver a generarla.
+4. **Publicar** (HU09): la ronda se hace visible para todos en la sala del torneo (`/torneos/:id/sala`) y se emite `pairing.published`. Publicar la ronda 1 pasa el torneo a "En curso".
+5. **Resultados** (HU10–HU13): cualquier árbitro, el organizador del torneo o un administrador registran y corrigen resultados mesa por mesa (RN-06). Cada cambio recalcula la clasificación completa y la difunde en tiempo real. Las correcciones quedan en la bitácora. La ronda se cierra sola cuando tiene todos sus resultados.
+6. **Finalizar** (HU17): con todas las rondas jugadas y registradas, el organizador cierra el torneo; desde entonces no admite cambios.
+
+En la sala del torneo todos ven además sus estadísticas (HU16), y los árbitros y el organizador pueden exportar la clasificación y los emparejamientos de cada ronda en PDF (HU30), con la fecha y hora de generación.
+
+Decisiones de alcance:
+
+- **ARO no se calcula**: necesita el rating de los rivales, y el cálculo de rating está fuera del alcance del proyecto. Si un torneo lo incluye en su orden de desempates, se omite.
+- **Resultado particular** sí se aplica como último desempate.
+- El **bye** vale 1, ½ o 0 puntos según el torneo (1 por defecto), y ese valor, como el orden de desempates, no se puede cambiar después de generar la ronda 1.
+- Si ningún emparejamiento evita repetir un enfrentamiento, la generación se rechaza con un mensaje claro en lugar de repetirlo en silencio.
+
 ## Paneles por rol
 
 Cada usuario aterriza en `/panel`, que muestra los controles (widgets) asignados a su rol. El administrador ve todos los controles y decide cuáles ve cada rol, y en qué orden, desde `/panel/configuracion`. La asignación también es un permiso: la API (`GET /api/dashboard/widgets/:key`) rechaza un control que no está en el panel del rol. Cada cambio queda en la bitácora de auditoría. Qué datos ve cada rol lo define una política aparte: un jugador solo ve los suyos y un entrenador solo los de sus jugadores vinculados.
 
 Agregar un control nuevo requiere tres pasos, sin tocar rutas ni controladores: su clave en `backend/src/services/dashboard/widgetCatalog.ts`, su loader en `widgetRegistry.ts` y su componente en `frontend/src/components/dashboard/widgetRegistry.ts`.
 
+## Pruebas
+
+```bash
+npm test               # en backend/ y en frontend/
+npm run test:coverage  # informe de cobertura en coverage/
+```
+
+Además de las pruebas unitarias, de servicios y de rutas, `frontend/src/contracts.test.ts` compara los catálogos que frontend y backend duplican (widgets, roles, eventos, resultados…) y falla si se desalinean. La estrategia completa está en [`docs/arquitectura.md`](./docs/arquitectura.md#estrategia-de-pruebas).
+
 ## Documentación
+
+La arquitectura interna, las decisiones de diseño y la revisión de septiembre de 2026 están en [`docs/arquitectura.md`](./docs/arquitectura.md).
 
 El documento completo de sustentación (planteamiento del problema, marco referencial, requisitos, casos de uso, modelo de datos, plan de pruebas y trazabilidad completa) está en [`docs/`](./docs).
 

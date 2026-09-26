@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
@@ -17,6 +17,8 @@ const form = reactive({ email: "", password: "" });
 const errors = reactive<Record<string, string>>({});
 const submitting = ref(false);
 const serverError = ref<string | null>(null);
+// Set by lib/sessionExpiry.ts when the server rejected the previous session.
+const sessionExpired = computed(() => route.query.expired === "1");
 
 /**
  * Validates the login form.
@@ -71,6 +73,9 @@ async function onSubmit(): Promise<void> {
     :quote-author="t('login.quoteAuthor')"
   >
     <template #banners>
+      <p v-if="sessionExpired && !serverError" role="status" class="banner border-border bg-surface-2 text-text-muted">
+        {{ t("login.sessionExpired") }}
+      </p>
       <Transition
         enter-active-class="transition duration-180 ease-out"
         enter-from-class="opacity-0 -translate-y-1.5"

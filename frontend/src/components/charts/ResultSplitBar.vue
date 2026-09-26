@@ -9,10 +9,13 @@ import type { ResultTally } from "../../services/dashboard";
 // instead of borders; the counts are always printed next to the bar, so the
 // split is readable without telling the colors apart. Pair with
 // <ResultLegend> once per widget.
-const props = withDefaults(defineProps<{ tally: ResultTally; label?: string; compact?: boolean }>(), {
-  label: undefined,
-  compact: false,
-});
+// `perspective`: "player" reads the split as win/draw/loss for one player;
+// "board" as white wins/draw/black wins across a tournament's games.
+const props = withDefaults(
+  defineProps<{ tally: ResultTally; label?: string; compact?: boolean; perspective?: "player" | "board" }>(),
+  { label: undefined, compact: false, perspective: "player" },
+);
+const names = computed(() => (props.perspective === "board" ? "widgets.boardResults" : "widgets.results"));
 
 const { t } = useI18n();
 
@@ -29,7 +32,7 @@ const segments = computed(() =>
 );
 
 const summary = computed(() =>
-  t("widgets.results.summary", { wins: props.tally.wins, draws: props.tally.draws, losses: props.tally.losses }),
+  t(`${names.value}.summary`, { wins: props.tally.wins, draws: props.tally.draws, losses: props.tally.losses }),
 );
 </script>
 
@@ -52,7 +55,7 @@ const summary = computed(() =>
         class="h-full transition-[flex-grow] duration-500"
         :class="segment.color"
         :style="{ flexGrow: segment.value, flexBasis: 0 }"
-        :title="`${t(`widgets.results.${segment.key}`)}: ${segment.value}`"
+        :title="`${t(`${names}.${segment.key}`)}: ${segment.value}`"
       />
     </div>
   </div>

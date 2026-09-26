@@ -3,6 +3,8 @@ import { onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import { formatDate } from "../../lib/format";
+import { hasTournamentRoom } from "../../lib/tournamentAccess";
 import { useLocaleStore } from "../../stores/locale";
 import { useTournamentsStore } from "../../stores/tournaments";
 
@@ -21,12 +23,6 @@ onMounted(async () => {
     loading.value = false;
   }
 });
-
-/** Formats an ISO date string using the active locale. */
-function formatDate(date: string): string {
-  const localeTag = locale.locale;
-  return new Date(date).toLocaleDateString(localeTag, { day: "2-digit", month: "short", year: "numeric" });
-}
 </script>
 
 <template>
@@ -60,8 +56,16 @@ function formatDate(date: string): string {
               <div>
                 <h2 class="text-base">{{ tournament.name }}</h2>
                 <p class="mt-0.5 text-sm">
-                  {{ formatDate(tournament.startDate) }} — {{ formatDate(tournament.endDate) }}
+                  {{ formatDate(tournament.startDate, locale.locale) }} —
+                  {{ formatDate(tournament.endDate, locale.locale) }}
                 </p>
+                <RouterLink
+                  v-if="hasTournamentRoom(tournament)"
+                  :to="`/torneos/${tournament.id}/sala`"
+                  class="mt-1 inline-block text-sm font-semibold text-accent"
+                >
+                  {{ t("tournamentRoom.follow") }}
+                </RouterLink>
               </div>
               <span class="pill">{{ t(`estados.${tournament.status}`) }}</span>
             </li>
@@ -90,7 +94,8 @@ function formatDate(date: string): string {
               <div>
                 <h2 class="text-base">{{ tournament.name }}</h2>
                 <p class="mt-0.5 text-sm">
-                  {{ formatDate(tournament.startDate) }} — {{ formatDate(tournament.endDate) }}
+                  {{ formatDate(tournament.startDate, locale.locale) }} —
+                  {{ formatDate(tournament.endDate, locale.locale) }}
                 </p>
               </div>
               <span class="pill">{{ t(`estados.${tournament.status}`) }}</span>
