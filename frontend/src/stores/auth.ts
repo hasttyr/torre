@@ -1,14 +1,11 @@
 import { defineStore } from "pinia";
 
-import { setAuthToken } from "../services/api";
-import {
-  fetchMe,
-  loginUser,
-  logoutUser,
-  updateProfile,
-  type RegisteredUser,
-  type UpdateProfilePayload,
-} from "../services/auth";
+import type { RegisteredUser, UpdateProfilePayload } from "../services/auth";
+import { setAuthToken } from "../services/session";
+
+// The auth endpoints (and axios with them) load on first use: the store is
+// part of the app shell, and reading the saved session needs no HTTP client.
+const authApi = () => import("../services/auth");
 
 const STORAGE_KEY_TOKEN = "torre.token";
 const STORAGE_KEY_USER = "torre.usuario";
@@ -62,6 +59,7 @@ export const useAuthStore = defineStore("auth", {
   actions: {
     /** Logs in with email and password and persists the resulting session. */
     async login(email: string, password: string): Promise<void> {
+      const { loginUser } = await authApi();
       const { token, user } = await loginUser({ email, password });
       this.token = token;
       this.user = user;
@@ -73,6 +71,7 @@ export const useAuthStore = defineStore("auth", {
     async logout(): Promise<void> {
       try {
         if (this.token) {
+          const { logoutUser } = await authApi();
           await logoutUser();
         }
       } catch {
@@ -91,6 +90,7 @@ export const useAuthStore = defineStore("auth", {
 
     /** Re-fetches the current user's profile from the backend. */
     async refreshUser(): Promise<void> {
+      const { fetchMe } = await authApi();
       const user = await fetchMe();
       this.user = user;
       writeStorage(this.token, user);
@@ -98,6 +98,7 @@ export const useAuthStore = defineStore("auth", {
 
     /** Updates the current user's own profile. */
     async updateProfile(payload: UpdateProfilePayload): Promise<void> {
+      const { updateProfile } = await authApi();
       const user = await updateProfile(payload);
       this.user = user;
       writeStorage(this.token, user);

@@ -2,19 +2,9 @@ import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
+import { notifyUnauthorized } from "../services/session";
 import { useAuthStore } from "../stores/auth";
 import { installSessionExpiryHandler } from "./sessionExpiry";
-
-const { apiMock } = vi.hoisted(() => ({
-  apiMock: { handler: null as (() => void) | null },
-}));
-
-vi.mock("../services/api", () => ({
-  setAuthToken: vi.fn(),
-  onUnauthorized: (handler: () => void) => {
-    apiMock.handler = handler;
-  },
-}));
 
 async function setup(path: string) {
   const router = createRouter({
@@ -37,7 +27,7 @@ describe("installSessionExpiryHandler", () => {
     const auth = useAuthStore();
     auth.$patch({ token: "stale", user: { id: "u-1", name: "Ana", role: "ARBITER" } as never });
 
-    apiMock.handler!();
+    notifyUnauthorized();
     await vi.waitFor(() => expect(router.currentRoute.value.path).toBe("/login"));
 
     expect(auth.isAuthenticated).toBe(false);
@@ -48,7 +38,7 @@ describe("installSessionExpiryHandler", () => {
     const router = await setup("/panel");
     const push = vi.spyOn(router, "push");
 
-    apiMock.handler!();
+    notifyUnauthorized();
 
     expect(push).not.toHaveBeenCalled();
   });

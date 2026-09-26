@@ -1,6 +1,6 @@
 import type { Router } from "vue-router";
 
-import { onUnauthorized } from "../services/api";
+import { onUnauthorized } from "../services/session";
 import { useAuthStore } from "../stores/auth";
 
 /**

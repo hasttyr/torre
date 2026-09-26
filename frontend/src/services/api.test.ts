@@ -1,7 +1,8 @@
 import { AxiosError, type AxiosAdapter, type InternalAxiosRequestConfig } from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { api, onUnauthorized, setAuthToken } from "./api";
+import { api } from "./api";
+import { onUnauthorized, setAuthToken } from "./session";
 
 /** Makes every request fail with the given HTTP status, without any network. */
 function respondWith(status: number): AxiosAdapter {
@@ -9,6 +10,14 @@ function respondWith(status: number): AxiosAdapter {
     Promise.reject(
       new AxiosError("fail", "ERR", config, null, { status, statusText: "", headers: {}, config, data: {} }),
     );
+}
+
+/** Answers 200 and remembers the request it got. */
+function recordRequests(sent: InternalAxiosRequestConfig[]): AxiosAdapter {
+  return async (config) => {
+    sent.push(config);
+    return { status: 200, statusText: "OK", headers: {}, config, data: {} };
+  };
 }
 
 describe("api session handling", () => {
@@ -49,11 +58,16 @@ describe("api session handling", () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it("sets and clears the bearer token for every request", () => {
-    setAuthToken("abc");
-    expect(api.defaults.headers.common.Authorization).toBe("Bearer abc");
+  it("sends the session's bearer token on every request, and none once it's cleared", async () => {
+    const sent: InternalAxiosRequestConfig[] = [];
+    api.defaults.adapter = recordRequests(sent);
 
+    setAuthToken("abc");
+    await api.get("/users/me");
     setAuthToken(null);
-    expect(api.defaults.headers.common.Authorization).toBeUndefined();
+    await api.get("/tournaments/live");
+
+    expect(sent[0].headers.Authorization).toBe("Bearer abc");
+    expect(sent[1].headers.Authorization).toBeUndefined();
   });
 });

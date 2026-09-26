@@ -8,7 +8,7 @@ vi.mock("../services/auth", () => ({
   updateProfile: vi.fn(),
 }));
 
-import { api } from "../services/api";
+import { getAuthToken } from "../services/session";
 import { fetchMe, loginUser, logoutUser, updateProfile } from "../services/auth";
 import { useAuthStore } from "./auth";
 
@@ -39,7 +39,7 @@ describe("useAuthStore", () => {
 
     expect(store.isAuthenticated).toBe(false);
     expect(store.user).toBeNull();
-    expect(api.defaults.headers.common.Authorization).toBeUndefined();
+    expect(getAuthToken()).toBeNull();
   });
 
   it("hydrates the session from localStorage when the store is created", () => {
@@ -50,10 +50,10 @@ describe("useAuthStore", () => {
 
     expect(store.isAuthenticated).toBe(true);
     expect(store.user).toEqual(USER);
-    expect(api.defaults.headers.common.Authorization).toBe("Bearer token-guardado");
+    expect(getAuthToken()).toBe("token-guardado");
   });
 
-  it("login stores the token/user, persists to localStorage and sets the axios header", async () => {
+  it("login stores the token/user, persists to localStorage and sets the request token", async () => {
     loginUserMock.mockResolvedValue({ token: "nuevo-token", user: USER });
     const store = useAuthStore();
 
@@ -63,7 +63,7 @@ describe("useAuthStore", () => {
     expect(store.user).toEqual(USER);
     expect(localStorage.getItem("torre.token")).toBe("nuevo-token");
     expect(JSON.parse(localStorage.getItem("torre.usuario")!)).toEqual(USER);
-    expect(api.defaults.headers.common.Authorization).toBe("Bearer nuevo-token");
+    expect(getAuthToken()).toBe("nuevo-token");
   });
 
   it("login does not change state when the backend rejects the credentials", async () => {
@@ -76,7 +76,7 @@ describe("useAuthStore", () => {
     expect(localStorage.getItem("torre.token")).toBeNull();
   });
 
-  it("logout clears state, localStorage and the axios header", async () => {
+  it("logout clears state, localStorage and the request token", async () => {
     loginUserMock.mockResolvedValue({ token: "token", user: USER });
     logoutUserMock.mockResolvedValue(undefined);
     const store = useAuthStore();
@@ -88,7 +88,7 @@ describe("useAuthStore", () => {
     expect(store.token).toBeNull();
     expect(store.user).toBeNull();
     expect(localStorage.getItem("torre.token")).toBeNull();
-    expect(api.defaults.headers.common.Authorization).toBeUndefined();
+    expect(getAuthToken()).toBeNull();
   });
 
   it("logout clears the local session even if the backend call fails", async () => {

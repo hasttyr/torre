@@ -97,9 +97,9 @@ describe("UserMenu", () => {
     await flushPromises();
 
     item("Cerrar sesión")!.click();
+    // Logging out loads the auth endpoints on demand: wait for it to land.
+    await vi.waitFor(() => expect(useAuthStore().isAuthenticated).toBe(false));
     await flushPromises();
-
-    expect(useAuthStore().isAuthenticated).toBe(false);
     expect(router.currentRoute.value.path).toBe("/");
     expect(menu()).toBeNull();
   });

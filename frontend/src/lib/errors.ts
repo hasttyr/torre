@@ -1,4 +1,15 @@
-import axios from "axios";
+/** What axios rejects with when the server answered with an error status. */
+interface HttpError {
+  isAxiosError: true;
+  response?: { data?: { error?: unknown } };
+}
+
+// Checked by shape rather than with axios.isAxiosError (which does the same
+// check): pages like login use this helper, and importing axios here would
+// put the whole HTTP client in the initial bundle.
+function isHttpError(error: unknown): error is HttpError {
+  return typeof error === "object" && error !== null && (error as { isAxiosError?: unknown }).isAxiosError === true;
+}
 
 /**
  * Extracts a user-facing error message from a failed API call.
@@ -8,8 +19,6 @@ import axios from "axios";
  * (network failure, unexpected response shape, etc.).
  */
 export function extractErrorMessage(error: unknown, fallback: string): string {
-  if (axios.isAxiosError(error) && typeof error.response?.data?.error === "string") {
-    return error.response.data.error;
-  }
-  return fallback;
+  const message = isHttpError(error) ? error.response?.data?.error : undefined;
+  return typeof message === "string" ? message : fallback;
 }
