@@ -2,12 +2,11 @@
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "reka-ui";
 import { computed, onMounted, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { onBeforeRouteLeave } from "vue-router";
 
 import { isRenderableWidget } from "../../components/dashboard/widgetRegistry";
 import AppHeader from "../../components/layout/AppHeader.vue";
-import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
+import { useUnsavedChangesGuard } from "../../lib/unsavedChanges";
 import {
   CONFIGURABLE_ROLES,
   getDashboardLayouts,
@@ -21,7 +20,6 @@ import {
 // shows and in what order. Every role keeps its own draft while switching
 // tabs; nothing reaches the server until "Save" for that role.
 const { t } = useI18n();
-const confirm = useConfirm();
 
 const catalog = ref<WidgetSummary[]>([]);
 // Filled per role once the layouts load; until then every lookup falls back to [].
@@ -108,15 +106,7 @@ async function save(): Promise<void> {
   }
 }
 
-onBeforeRouteLeave(async () => {
-  if (!anyDirty.value) return true;
-  return confirm({
-    title: t("dashboardLayouts.leaveTitle"),
-    message: t("dashboardLayouts.leaveMessage"),
-    confirmLabel: t("dashboardLayouts.leaveConfirm"),
-    danger: true,
-  });
-});
+useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
 </script>
 
 <template>

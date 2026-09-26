@@ -3,6 +3,8 @@ import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { extractErrorMessage } from "../../lib/errors";
+import { hasChanges, useUnsavedChangesGuard } from "../../lib/unsavedChanges";
+import type { Tournament } from "../../services/tournaments";
 import { useTournamentsStore } from "../../stores/tournaments";
 
 const props = defineProps<{ tournamentId: string }>();
@@ -12,11 +14,32 @@ const { t } = useI18n();
 
 // --- HU05: configure tournament (rounds, time control, tiebreaks) ---
 
+// HU13's order. ARO can't be computed (no ratings in scope) and is skipped when ranking.
+const DEFAULT_TIEBREAKS = "Buchholz, Buchholz Cortado 1, Sonneborn-Berger, ARO, Resultado particular";
+
+/**
+ * The tournament's saved configuration, in the form's shape: an organizer
+ * coming back to a configured tournament sees what's there, and one that
+ * has no tiebreaks yet gets HU13's suggested order.
+ */
+function configFormOf(tournament: Tournament) {
+  return {
+    roundsCount: tournament.roundsCount != null ? String(tournament.roundsCount) : "",
+    timeControl: tournament.timeControl ?? "",
+    tiebreaks:
+      tournament.tiebreakCriteria.length > 0
+        ? tournament.tiebreakCriteria.map((c) => c.name).join(", ")
+        : DEFAULT_TIEBREAKS,
+    byePoints: String(tournament.byePoints ?? 1),
+    restrictedProgram: tournament.restrictedProgram ?? "",
+    minimumSemester: tournament.minimumSemester != null ? String(tournament.minimumSemester) : "",
+  };
+}
+
 const configForm = reactive({
   roundsCount: "",
   timeControl: "",
-  // HU13's order. ARO can't be computed (no ratings in scope) and is skipped when ranking.
-  tiebreaks: "Buchholz, Buchholz Cortado 1, Sonneborn-Berger, ARO, Resultado particular",
+  tiebreaks: DEFAULT_TIEBREAKS,
   byePoints: "1",
   restrictedProgram: "",
   minimumSemester: "",
@@ -25,25 +48,15 @@ const submitting = ref(false);
 const error = ref<string | null>(null);
 const success = ref<string | null>(null);
 
-/**
- * Fills the configuration form from the loaded tournament instead of
- * always starting blank: if the organizer comes back to an already
- * configured tournament, they see what's there.
- */
+/** Fills the configuration form from the loaded tournament. */
 function populateForm(): void {
-  const tournament = tournaments.current;
-  if (!tournament) return;
-  configForm.roundsCount = tournament.roundsCount != null ? String(tournament.roundsCount) : "";
-  configForm.timeControl = tournament.timeControl ?? "";
-  if (tournament.tiebreakCriteria.length > 0) {
-    configForm.tiebreaks = tournament.tiebreakCriteria.map((c) => c.name).join(", ");
-  }
-  configForm.byePoints = String(tournament.byePoints ?? 1);
-  configForm.restrictedProgram = tournament.restrictedProgram ?? "";
-  configForm.minimumSemester = tournament.minimumSemester != null ? String(tournament.minimumSemester) : "";
+  if (tournaments.current) Object.assign(configForm, configFormOf(tournaments.current));
 }
 
 watch(() => tournaments.current, populateForm, { immediate: true });
+
+// Saving replaces tournaments.current, which repopulates the form: it's clean again.
+useUnsavedChangesGuard(() => tournaments.current !== null && hasChanges(configForm, configFormOf(tournaments.current)));
 
 // RN-05: the tiebreak order can only be changed while the tournament is in
 // its preliminary state (before round 1). The backend is what actually

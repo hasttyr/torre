@@ -4,6 +4,11 @@
     "backToHome": "← Back to home",
     "cancel": "Cancel"
   },
+  "unsavedChanges": {
+    "title": "Leave without saving?",
+    "message": "You have unsaved changes. They'll be lost if you leave.",
+    "leave": "Leave without saving"
+  },
   "confirmDialog": {
     "confirm": "Confirm",
     "cancel": "Cancel"
@@ -573,9 +578,7 @@
     "saving": "Saving…",
     "saved": "{role} dashboard saved.",
     "saveError": "The dashboard couldn't be saved",
-    "leaveTitle": "Leave without saving?",
-    "leaveMessage": "Some dashboards have unsaved changes. They'll be lost if you leave.",
-    "leaveConfirm": "Leave without saving"
+    "leaveMessage": "Some dashboards have unsaved changes. They'll be lost if you leave."
   },
   "rounds": {
     "resultLabel": "Result",

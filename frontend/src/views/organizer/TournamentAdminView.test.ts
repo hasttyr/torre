@@ -257,6 +257,32 @@ describe("TournamentAdminView", () => {
     }
   });
 
+  it("asks before leaving with an unsaved configuration", async () => {
+    getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
+    mountConfirmDialogHost();
+    // Through <RouterView>, as the app does: route-leave guards only run there.
+    const router = createRouter({
+      history: createWebHistory(),
+      routes: [
+        { path: "/torneos/:id", component: TournamentAdminView },
+        { path: "/panel", component: { template: "<div />" } },
+      ],
+    });
+    await router.push("/torneos/tournament-1");
+    const wrapper = mount({ template: "<RouterView />" }, { global: { plugins: [router, i18n] } });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.vm.$nextTick();
+
+    await wrapper.get("#roundsCount").setValue("7");
+    const navigation = router.push("/panel");
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(document.body.textContent).toContain("Tienes cambios sin guardar");
+    await clickConfirmDialogButton("Cancelar");
+    await navigation;
+
+    expect(router.currentRoute.value.path).toBe("/torneos/tournament-1");
+  });
+
   it("saves the tournament configuration (HU05)", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
     configureTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, roundsCount: 7, timeControl: "90+30" });

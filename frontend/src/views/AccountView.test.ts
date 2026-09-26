@@ -5,6 +5,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../i18n";
 import { useAuthStore } from "../stores/auth";
+import { clickConfirmDialogButton, mountConfirmDialogHost } from "../test-support/confirmDialog";
 import AccountView from "./AccountView.vue";
 
 vi.mock("../services/auth", async (importOriginal) => {
@@ -74,6 +75,67 @@ async function mountAccountView() {
 }
 
 enableAutoUnmount(afterEach);
+
+/** Mounts the view through <RouterView>, as the app does: route-leave guards only run there. */
+async function mountRouted() {
+  const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+      { path: "/", component: { template: "<div />" } },
+      { path: "/cuenta", component: AccountView },
+    ],
+  });
+  await router.push("/cuenta");
+  const wrapper = mount({ template: "<RouterView />" }, { global: { plugins: [router, i18n] } });
+  await flushPromises();
+  return { wrapper, router };
+}
+
+describe("AccountView — leaving with unsaved changes", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    setActivePinia(createPinia());
+    vi.clearAllMocks();
+    listMyCoachesMock.mockResolvedValue([]);
+    useAuthStore().$patch({ token: "token", user: PLAYER });
+    fetchMeMock.mockResolvedValue(PLAYER);
+  });
+
+  it("lets the user leave while the profile is as saved", async () => {
+    const { router } = await mountRouted();
+
+    await router.push("/");
+
+    expect(router.currentRoute.value.path).toBe("/");
+  });
+
+  it("asks before leaving with an edited field", async () => {
+    mountConfirmDialogHost();
+    const { wrapper, router } = await mountRouted();
+
+    await wrapper.get("#program").setValue("Medicina");
+    const navigation = router.push("/");
+    await flushPromises();
+    expect(document.body.textContent).toContain("Tienes cambios sin guardar");
+    await clickConfirmDialogButton("Cancelar");
+    await navigation;
+
+    expect(router.currentRoute.value.path).toBe("/cuenta");
+  });
+
+  it("doesn't ask once the edit is saved", async () => {
+    const saved = { ...PLAYER, player: { ...PLAYER.player, program: "Medicina" } };
+    updateProfileMock.mockResolvedValue(saved);
+    const { wrapper, router } = await mountRouted();
+
+    await wrapper.get("#program").setValue("Medicina");
+    await wrapper.get("form").trigger("submit.prevent");
+    await flushPromises();
+    await router.push("/");
+
+    expect(router.currentRoute.value.path).toBe("/");
+  });
+});
 
 describe("AccountView", () => {
   beforeEach(() => {

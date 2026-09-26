@@ -4,6 +4,11 @@
     "backToHome": "← Volver al inicio",
     "cancel": "Cancelar"
   },
+  "unsavedChanges": {
+    "title": "¿Salir sin guardar?",
+    "message": "Tienes cambios sin guardar. Si sales, se perderán.",
+    "leave": "Salir sin guardar"
+  },
   "confirmDialog": {
     "confirm": "Confirmar",
     "cancel": "Cancelar"
@@ -573,9 +578,7 @@
     "saving": "Guardando…",
     "saved": "Panel de {role} guardado.",
     "saveError": "No se pudo guardar el panel",
-    "leaveTitle": "¿Salir sin guardar?",
-    "leaveMessage": "Hay paneles con cambios sin guardar. Si sales, se perderán.",
-    "leaveConfirm": "Salir sin guardar"
+    "leaveMessage": "Hay paneles con cambios sin guardar. Si sales, se perderán."
   },
   "rounds": {
     "resultLabel": "Resultado",

@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
+import { clickConfirmDialogButton, mountConfirmDialogHost } from "../../test-support/confirmDialog";
 import CreateTournamentView from "./CreateTournamentView.vue";
 
 vi.mock("../../services/tournaments", () => ({
@@ -45,6 +46,56 @@ async function mountView() {
 }
 
 enableAutoUnmount(afterEach);
+
+/** Mounts the view through <RouterView>, as the app does: route-leave guards only run there. */
+async function mountRouted() {
+  const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+      { path: "/torneos/nuevo", component: CreateTournamentView },
+      { path: "/torneos/:id", component: { template: "<div />" } },
+    ],
+  });
+  await router.push("/torneos/nuevo");
+  const wrapper = mount({ template: "<RouterView />" }, { global: { plugins: [router, i18n] } });
+  await flushPromises();
+  return { wrapper, router };
+}
+
+describe("CreateTournamentView — leaving with unsaved changes", () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+    vi.clearAllMocks();
+  });
+
+  it("asks before throwing away a half-filled form", async () => {
+    mountConfirmDialogHost();
+    const { wrapper, router } = await mountRouted();
+
+    await wrapper.find("#name").setValue("Copa Universitaria");
+    const navigation = router.push("/torneos/otro");
+    await flushPromises();
+    await clickConfirmDialogButton("Cancelar");
+    await navigation;
+
+    expect(router.currentRoute.value.path).toBe("/torneos/nuevo");
+  });
+
+  it("doesn't ask once the tournament is created", async () => {
+    mountConfirmDialogHost();
+    createTournamentMock.mockResolvedValue({ id: "tournament-1" } as never);
+    const { wrapper, router } = await mountRouted();
+
+    await wrapper.find("#name").setValue("Copa Universitaria");
+    await setDateField(wrapper, "startDate", "2026-10-01");
+    await setDateField(wrapper, "endDate", "2026-10-03");
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(document.querySelector("[role='alertdialog']")).toBeNull();
+    expect(router.currentRoute.value.path).toBe("/torneos/tournament-1");
+  });
+});
 
 describe("CreateTournamentView", () => {
   beforeEach(() => {

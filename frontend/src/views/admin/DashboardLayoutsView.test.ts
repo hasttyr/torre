@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
+import { clickConfirmDialogButton, mountConfirmDialogHost } from "../../test-support/confirmDialog";
 import DashboardLayoutsView from "./DashboardLayoutsView.vue";
 
 vi.mock("../../services/dashboard", async (importOriginal) => ({
@@ -132,6 +133,30 @@ describe("DashboardLayoutsView", () => {
 
     expect(tab(wrapper, "Jugador").text()).toContain("Cambios sin guardar");
     expect(tab(wrapper, "Jugador").findAll("[aria-label]")).toHaveLength(0);
+  });
+
+  it("warns about unsaved dashboards before leaving the page", async () => {
+    mountConfirmDialogHost();
+    // Through <RouterView>, as the app does: route-leave guards only run there.
+    const router = createRouter({
+      history: createWebHistory(),
+      routes: [
+        { path: "/panel/configuracion", component: DashboardLayoutsView },
+        { path: "/panel", component: { template: "<div />" } },
+      ],
+    });
+    await router.push("/panel/configuracion");
+    const wrapper = mount({ template: "<RouterView />" }, { global: { plugins: [router, i18n] } });
+    await flushPromises();
+
+    await wrapper.get("[data-widget='TOP_PLAYERS'] button[aria-label^='Quitar']").trigger("click");
+    const navigation = router.push("/panel");
+    await flushPromises();
+    expect(document.body.textContent).toContain("Hay paneles con cambios sin guardar");
+    await clickConfirmDialogButton("Salir sin guardar");
+    await navigation;
+
+    expect(router.currentRoute.value.path).toBe("/panel");
   });
 
   it("shows the server's error when saving fails", async () => {

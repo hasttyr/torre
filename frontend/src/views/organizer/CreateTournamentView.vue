@@ -7,23 +7,24 @@ import AppHeader from "../../components/layout/AppHeader.vue";
 import DateField from "../../components/ui/DateField.vue";
 import { extractErrorMessage } from "../../lib/errors";
 import { errorAttrs, errorId, focusFirstInvalid } from "../../lib/formErrors";
+import { hasChanges, useUnsavedChangesGuard } from "../../lib/unsavedChanges";
 import { useTournamentsStore } from "../../stores/tournaments";
 
 const router = useRouter();
 const tournaments = useTournamentsStore();
 const { t } = useI18n();
 
-const form = reactive({
-  name: "",
-  startDate: "",
-  endDate: "",
-  format: "swiss",
-});
+const EMPTY_FORM = { name: "", startDate: "", endDate: "", format: "swiss" };
+const form = reactive({ ...EMPTY_FORM });
 
 const errors = reactive<Record<string, string>>({});
 const submitting = ref(false);
 const serverError = ref<string | null>(null);
 const formEl = useTemplateRef<HTMLFormElement>("formEl");
+
+// Once created, the form's data lives in the tournament: leaving is safe.
+const created = ref(false);
+useUnsavedChangesGuard(() => !created.value && hasChanges(form, EMPTY_FORM));
 
 /**
  * Validates the tournament creation form, mirroring
@@ -69,6 +70,7 @@ async function onSubmit(): Promise<void> {
       endDate: form.endDate,
       format: form.format.trim() || undefined,
     });
+    created.value = true;
     router.push(`/torneos/${tournament.id}`);
   } catch (error) {
     serverError.value = extractErrorMessage(error, t("auth.serverError"));

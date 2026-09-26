@@ -9,7 +9,8 @@ import DateField from "../components/ui/DateField.vue";
 import { toIsoDate } from "../lib/dates";
 import { extractErrorMessage } from "../lib/errors";
 import { errorAttrs, errorId, focusFirstInvalid } from "../lib/formErrors";
-import { DISABILITIES, GENDERS, type Disability, type Gender } from "../services/auth";
+import { hasChanges, useUnsavedChangesGuard } from "../lib/unsavedChanges";
+import { DISABILITIES, GENDERS, type Disability, type Gender, type RegisteredUser } from "../services/auth";
 import { useAuthStore } from "../stores/auth";
 
 const auth = useAuthStore();
@@ -20,32 +21,50 @@ const todayIso = toIsoDate(new Date());
 // HU20: form for editing the user's own profile. It gets populated from
 // auth.user as soon as it arrives (onMounted and the watch below, in case
 // refreshUser resolves after the first render).
-const form = reactive({
+interface ProfileForm {
+  name: string;
+  universityCode: string;
+  program: string;
+  semester: string;
+  birthDate: string;
+  gender: Gender | "";
+  disability: Disability | "";
+}
+
+/** The profile as saved, in the edit form's shape. */
+function profileFormOf(user: RegisteredUser): ProfileForm {
+  const player = user.player;
+  return {
+    name: user.name,
+    universityCode: player?.universityCode ?? "",
+    program: player?.program ?? "",
+    semester: player ? String(player.semester) : "",
+    // The date input expects "YYYY-MM-DD"; the backend returns a full ISO string.
+    birthDate: player?.birthDate?.slice(0, 10) ?? "",
+    gender: player?.gender ?? "",
+    disability: player?.disability ?? "",
+  };
+}
+
+const form = reactive<ProfileForm>({
   name: "",
   universityCode: "",
   program: "",
   semester: "",
   birthDate: "",
-  gender: "" as Gender | "",
-  disability: "" as Disability | "",
+  gender: "",
+  disability: "",
 });
 
 /** Fills the edit form from the currently loaded user, if any. */
 function populateForm(): void {
-  if (!auth.user) return;
-  form.name = auth.user.name;
-  if (auth.user.player) {
-    form.universityCode = auth.user.player.universityCode;
-    form.program = auth.user.player.program;
-    form.semester = String(auth.user.player.semester);
-    // The date input expects "YYYY-MM-DD"; the backend returns a full ISO string.
-    form.birthDate = auth.user.player.birthDate?.slice(0, 10) ?? "";
-    form.gender = auth.user.player.gender ?? "";
-    form.disability = auth.user.player.disability ?? "";
-  }
+  if (auth.user) Object.assign(form, profileFormOf(auth.user));
 }
 
 watch(() => auth.user, populateForm, { immediate: true });
+
+// Saving updates auth.user, which repopulates the form: it's clean again.
+useUnsavedChangesGuard(() => auth.user !== null && hasChanges(form, profileFormOf(auth.user)));
 
 onMounted(async () => {
   try {
