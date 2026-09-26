@@ -72,7 +72,7 @@ onMounted(async () => {
       </p>
 
       <template v-else>
-        <div v-if="selection.enabled.value" class="sticky top-20 z-[5]">
+        <div v-if="selection.enabled.value" class="sticky top-20 z-[5]" data-sticky-picker>
           <PlayerPicker />
         </div>
 

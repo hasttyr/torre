@@ -114,6 +114,44 @@
 }
 
 @layer base {
+  html {
+    /* The sticky <AppHeader> covers the top of the viewport: without this,
+       an in-page anchor (#funciona) or a control reached with Tab lands
+       underneath it. */
+    scroll-padding-top: 6rem;
+    /* No double-tap-to-zoom delay on taps; pinch zoom keeps working. */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: color-mix(in oklab, var(--accent) 20%, transparent);
+  }
+
+  /* The dashboard pins its player picker under the header as well. */
+  html:has([data-sticky-picker]) {
+    scroll-padding-top: 11rem;
+  }
+
+  /* One focus ring for every control reached with the keyboard. Inputs and
+     selects keep their own ring (.field, .select-compact), and a
+     focus-visible: utility still overrides this where a control needs it. */
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Honors the OS "reduce motion" setting: transitions and animations
+     (hover lifts, <Transition> slides, skeleton pulses, growing bars) jump
+     straight to their end state. Vue's <Transition> still receives its
+     transitionend, so enter/leave keep working. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
   body {
     @apply bg-bg text-text font-sans antialiased;
     background-image:
@@ -128,7 +166,7 @@
   h1,
   h2,
   h3 {
-    @apply font-display font-semibold text-text leading-tight;
+    @apply font-display font-semibold text-text leading-tight text-balance;
   }
 
   p {
@@ -151,7 +189,7 @@
      se agrupan acá con @apply para no repetir la misma docena de utilidades
      en cada template. Todo lo específico de cada vista queda inline. */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-transparent px-6 py-3 text-[0.95rem] font-semibold whitespace-nowrap transition-all disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-transparent px-6 py-3 text-[0.95rem] font-semibold whitespace-nowrap transition-[translate,background-color,border-color,box-shadow] disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-primary {
