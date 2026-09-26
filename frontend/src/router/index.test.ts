@@ -1,6 +1,14 @@
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// Pages' first data requests, started by their routes (see lib/pageData.ts).
+vi.mock("../lib/pageData", () => ({
+  loadDashboard: vi.fn(() => new Promise(() => {})),
+  loadTournamentRoom: vi.fn(() => new Promise(() => {})),
+  loadTournamentAdmin: vi.fn(() => new Promise(() => {})),
+}));
+
+import { loadDashboard, loadTournamentAdmin, loadTournamentRoom } from "../lib/pageData";
 import { useAuthStore } from "../stores/auth";
 import { router } from "./index";
 
@@ -74,5 +82,40 @@ describe("router role guards", () => {
 
     expect(router.currentRoute.value.path).toBe("/torneos/t-1/sala");
     expect(router.currentRoute.value.params.id).toBe("t-1");
+  });
+});
+
+describe("router data prefetch", () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    setActivePinia(createPinia());
+    vi.clearAllMocks();
+    await router.push("/");
+    await router.isReady();
+  });
+
+  function signIn(role: string): void {
+    useAuthStore().$patch({ token: "token", user: { id: "u-1", name: "Ana", role } as never });
+  }
+
+  it("starts each heavy page's data while its code is still downloading", async () => {
+    signIn("ADMINISTRATOR");
+
+    await router.push("/panel");
+    await router.push("/torneos/t-7/sala");
+    await router.push("/torneos/t-8");
+    await vi.dynamicImportSettled();
+
+    expect(loadDashboard).toHaveBeenCalledOnce();
+    expect(loadTournamentRoom).toHaveBeenCalledWith("t-7");
+    expect(loadTournamentAdmin).toHaveBeenCalledWith("t-8");
+  });
+
+  it("asks for nothing when the guard sends the visitor to log in", async () => {
+    await router.push("/panel");
+    await vi.dynamicImportSettled();
+
+    expect(router.currentRoute.value.path).toBe("/login");
+    expect(loadDashboard).not.toHaveBeenCalled();
   });
 });

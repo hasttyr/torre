@@ -6,8 +6,10 @@ import PlayerPicker from "../../components/dashboard/PlayerPicker.vue";
 import { isRenderableWidget, WIDGET_VIEWS } from "../../components/dashboard/widgetRegistry";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import { extractErrorMessage } from "../../lib/errors";
+import { loadDashboard } from "../../lib/pageData";
 import { providePlayerSelection } from "../../lib/playerSelection";
-import { getDashboard, type WidgetSummary } from "../../services/dashboard";
+import { DATA_KEYS, takeData } from "../../lib/routeData";
+import type { WidgetSummary } from "../../services/dashboard";
 import { useAuthStore } from "../../stores/auth";
 
 // Every role's home: renders whichever widgets the administrator assigned
@@ -29,7 +31,8 @@ const noSubjects = computed(() => hasPlayerWidgets.value && selection.players.va
 
 onMounted(async () => {
   try {
-    const dashboard = await getDashboard();
+    // Usually already on its way: the route started it (lib/routeData.ts).
+    const dashboard = await takeData(DATA_KEYS.panel, loadDashboard);
     widgets.value = dashboard.widgets.filter((widget) => isRenderableWidget(widget.key));
     // The selected player follows: the one in the URL, else the first.
     selection.players.value = dashboard.players;

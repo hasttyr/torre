@@ -11,6 +11,8 @@ import StandingsTable from "../../components/tournament/StandingsTable.vue";
 import TournamentStats from "../../components/tournament/TournamentStats.vue";
 import { saveFile } from "../../lib/download";
 import { extractErrorMessage } from "../../lib/errors";
+import { loadTournamentRoom } from "../../lib/pageData";
+import { DATA_KEYS, takeData } from "../../lib/routeData";
 import { canExportDocuments, canManageTournament, canRecordResults } from "../../lib/tournamentAccess";
 import { useQueryParam } from "../../lib/useQueryParam";
 import { useTournamentLive } from "../../lib/useTournamentLive";
@@ -65,7 +67,8 @@ const { connected } = useTournamentLive(tournamentId, () => {
 
 onMounted(async () => {
   try {
-    await Promise.all([rounds.load(tournamentId), tournaments.refreshCurrent(tournamentId)]);
+    // Usually already on its way: the route started it (lib/routeData.ts).
+    await takeData(DATA_KEYS.room(tournamentId), () => loadTournamentRoom(tournamentId));
   } catch (error) {
     loadError.value = extractErrorMessage(error, t("tournamentRoom.loadError"));
   } finally {

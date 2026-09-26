@@ -8,6 +8,8 @@ import PlayerEnrollmentPanel from "../../components/tournament-admin/PlayerEnrol
 import RegistrationControls from "../../components/tournament-admin/RegistrationControls.vue";
 import RoundManager from "../../components/tournament-admin/RoundManager.vue";
 import TournamentConfigForm from "../../components/tournament-admin/TournamentConfigForm.vue";
+import { loadTournamentAdmin } from "../../lib/pageData";
+import { DATA_KEYS, takeData } from "../../lib/routeData";
 import { useTournamentsStore } from "../../stores/tournaments";
 
 const route = useRoute();
@@ -24,7 +26,8 @@ const PLAY_STATUSES = ["REGISTRATION_CLOSED", "IN_PROGRESS", "FINISHED"];
 
 onMounted(async () => {
   try {
-    await tournaments.load(tournamentId);
+    // Usually already on its way: the route started it (lib/routeData.ts).
+    await takeData(DATA_KEYS.tournamentAdmin(tournamentId), () => loadTournamentAdmin(tournamentId));
   } catch {
     loadError.value = t("tournamentAdmin.loadError");
   } finally {

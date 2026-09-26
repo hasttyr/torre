@@ -1,11 +1,15 @@
 import { createRouter, createWebHistory } from "vue-router";
 
+import { DATA_KEYS, prefetchData } from "../lib/routeData";
 import { useAuthStore } from "../stores/auth";
 import LoginView from "../views/auth/LoginView.vue";
 import HomeView from "../views/HomeView.vue";
 
 // Only the two entry points (landing, login) ship in the initial bundle;
 // every other view is its own chunk, fetched the first time it's visited.
+// The heavier pages also start their data in beforeEnter, which runs before
+// the page's chunk downloads, so data and code arrive in parallel.
+const pageData = () => import("../lib/pageData");
 
 // Roles that manage tournaments (HU04-HU07). Mirrors
 // backend/src/routes/tournaments.routes.ts (requireRole("ORGANIZER", "ADMINISTRATOR")).
@@ -46,6 +50,7 @@ export const router = createRouter({
       name: "panel",
       component: () => import("../views/dashboard/PanelView.vue"),
       meta: { requiresAuth: true },
+      beforeEnter: () => prefetchData(DATA_KEYS.panel, () => pageData().then((data) => data.loadDashboard())),
     },
     {
       path: "/panel/configuracion",
@@ -76,6 +81,10 @@ export const router = createRouter({
       name: "tournaments-admin",
       component: () => import("../views/organizer/TournamentAdminView.vue"),
       meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
+      beforeEnter: (to) => {
+        const id = String(to.params.id);
+        prefetchData(DATA_KEYS.tournamentAdmin(id), () => pageData().then((data) => data.loadTournamentAdmin(id)));
+      },
     },
     {
       // HU18: any authenticated role follows a tournament here; the backend
@@ -84,6 +93,10 @@ export const router = createRouter({
       name: "tournament-room",
       component: () => import("../views/tournament/TournamentLiveView.vue"),
       meta: { requiresAuth: true },
+      beforeEnter: (to) => {
+        const id = String(to.params.id);
+        prefetchData(DATA_KEYS.room(id), () => pageData().then((data) => data.loadTournamentRoom(id)));
+      },
     },
     {
       path: "/en-juego",
