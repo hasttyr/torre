@@ -17,4 +17,16 @@ export default defineConfig({
       include: [fileURLToPath(new URL("./src/i18n/locales/**", import.meta.url))],
     }),
   ],
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          // Vue and its plugins load on every page, together: one file
+          // instead of five saves startup round trips. Only libraries the
+          // entry needs belong here — anything else would load everywhere.
+          groups: [{ name: "vue", test: /node_modules[\\/](@vue|vue|vue-router|pinia|vue-i18n|@intlify)[\\/]/ }],
+        },
+      },
+    },
+  },
 });
