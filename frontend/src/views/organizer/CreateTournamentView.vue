@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
 import DateField from "../../components/ui/DateField.vue";
 import { extractErrorMessage } from "../../lib/errors";
+import { errorAttrs, errorId, focusFirstInvalid } from "../../lib/formErrors";
 import { useTournamentsStore } from "../../stores/tournaments";
 
 const router = useRouter();
@@ -22,6 +23,7 @@ const form = reactive({
 const errors = reactive<Record<string, string>>({});
 const submitting = ref(false);
 const serverError = ref<string | null>(null);
+const formEl = useTemplateRef<HTMLFormElement>("formEl");
 
 /**
  * Validates the tournament creation form, mirroring
@@ -55,6 +57,7 @@ async function onSubmit(): Promise<void> {
   serverError.value = null;
 
   if (!validate()) {
+    await focusFirstInvalid(formEl.value);
     return;
   }
 
@@ -92,30 +95,45 @@ async function onSubmit(): Promise<void> {
         <p v-if="serverError" role="alert" class="banner banner--error mt-4">{{ serverError }}</p>
       </Transition>
 
-      <form novalidate class="mt-6 flex flex-col gap-4" @submit.prevent="onSubmit">
+      <form ref="formEl" novalidate class="mt-6 flex flex-col gap-4" @submit.prevent="onSubmit">
         <div class="field" :class="{ 'has-error': errors.name }">
           <label for="name">{{ t("createTournament.nameLabel") }}</label>
-          <input id="name" v-model="form.name" type="text" :placeholder="t('createTournament.namePlaceholder')" />
-          <span class="field-error">{{ errors.name }}</span>
+          <input
+            id="name"
+            v-model="form.name"
+            type="text"
+            name="name"
+            autocomplete="off"
+            :placeholder="t('createTournament.namePlaceholder')"
+            v-bind="errorAttrs(errors, 'name')"
+          />
+          <span :id="errorId('name')" class="field-error">{{ errors.name }}</span>
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="field" :class="{ 'has-error': errors.startDate }">
             <label for="startDate">{{ t("createTournament.startDateLabel") }}</label>
-            <DateField id="startDate" v-model="form.startDate" />
-            <span class="field-error">{{ errors.startDate }}</span>
+            <DateField id="startDate" v-model="form.startDate" :invalid="Boolean(errors.startDate)" />
+            <span :id="errorId('startDate')" class="field-error">{{ errors.startDate }}</span>
           </div>
 
           <div class="field" :class="{ 'has-error': errors.endDate }">
             <label for="endDate">{{ t("createTournament.endDateLabel") }}</label>
-            <DateField id="endDate" v-model="form.endDate" />
-            <span class="field-error">{{ errors.endDate }}</span>
+            <DateField id="endDate" v-model="form.endDate" :invalid="Boolean(errors.endDate)" />
+            <span :id="errorId('endDate')" class="field-error">{{ errors.endDate }}</span>
           </div>
         </div>
 
         <div class="field">
           <label for="format">{{ t("createTournament.formatLabel") }}</label>
-          <input id="format" v-model="form.format" type="text" :placeholder="t('createTournament.formatPlaceholder')" />
+          <input
+            id="format"
+            v-model="form.format"
+            type="text"
+            name="format"
+            autocomplete="off"
+            :placeholder="t('createTournament.formatPlaceholder')"
+          />
         </div>
 
         <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">

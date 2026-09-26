@@ -106,17 +106,33 @@ async function onSubmit(): Promise<void> {
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="field">
           <label for="roundsCount">{{ t("tournamentAdmin.roundsCountLabel") }}</label>
-          <input id="roundsCount" v-model="configForm.roundsCount" type="number" min="1" placeholder="7" />
+          <input
+            id="roundsCount"
+            v-model="configForm.roundsCount"
+            type="number"
+            name="roundsCount"
+            autocomplete="off"
+            min="1"
+            placeholder="7"
+          />
         </div>
         <div class="field">
           <label for="timeControl">{{ t("tournamentAdmin.timeControlLabel") }}</label>
-          <input id="timeControl" v-model="configForm.timeControl" type="text" placeholder="90+30" />
+          <input
+            id="timeControl"
+            v-model="configForm.timeControl"
+            type="text"
+            name="timeControl"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="90+30"
+          />
         </div>
       </div>
 
       <div class="field">
         <label for="byePoints">{{ t("tournamentAdmin.byePointsLabel") }}</label>
-        <select id="byePoints" v-model="configForm.byePoints" :disabled="!canEditTiebreaks">
+        <select id="byePoints" v-model="configForm.byePoints" name="byePoints" :disabled="!canEditTiebreaks">
           <option value="1">{{ t("tournamentAdmin.byePointsOptions.1") }}</option>
           <option value="0.5">{{ t("tournamentAdmin.byePointsOptions.0_5") }}</option>
           <option value="0">{{ t("tournamentAdmin.byePointsOptions.0") }}</option>
@@ -125,7 +141,14 @@ async function onSubmit(): Promise<void> {
 
       <div class="field">
         <label for="tiebreaks">{{ t("tournamentAdmin.tiebreaksLabel") }}</label>
-        <input id="tiebreaks" v-model="configForm.tiebreaks" type="text" :disabled="!canEditTiebreaks" />
+        <input
+          id="tiebreaks"
+          v-model="configForm.tiebreaks"
+          type="text"
+          name="tiebreaks"
+          autocomplete="off"
+          :disabled="!canEditTiebreaks"
+        />
         <span v-if="!canEditTiebreaks" class="text-sm text-text-muted">
           {{ t("tournamentAdmin.tiebreaksLockedHint") }}
         </span>
@@ -140,6 +163,8 @@ async function onSubmit(): Promise<void> {
               id="restrictedProgram"
               v-model="configForm.restrictedProgram"
               type="text"
+              name="restrictedProgram"
+              autocomplete="off"
               :placeholder="t('tournamentAdmin.restrictedProgramPlaceholder')"
             />
           </div>
@@ -149,6 +174,8 @@ async function onSubmit(): Promise<void> {
               id="minimumSemester"
               v-model="configForm.minimumSemester"
               type="number"
+              name="minimumSemester"
+              autocomplete="off"
               min="1"
               :placeholder="t('tournamentAdmin.minimumSemesterPlaceholder')"
             />

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 import AuthLayout from "../../components/layout/AuthLayout.vue";
 import { extractErrorMessage } from "../../lib/errors";
+import { errorAttrs, errorId, focusFirstInvalid } from "../../lib/formErrors";
 import { HOME_PATH } from "../../lib/roleHome";
 import {
   registerUser,
@@ -56,6 +57,7 @@ function looksLikeEmail(value: string): boolean {
 const errors = reactive<Record<string, string>>({});
 const submitting = ref(false);
 const serverError = ref<string | null>(null);
+const formEl = useTemplateRef<HTMLFormElement>("formEl");
 
 /**
  * Validates the registration form, mirroring
@@ -128,6 +130,7 @@ async function onSubmit(): Promise<void> {
   serverError.value = null;
 
   if (!validate()) {
+    await focusFirstInvalid(formEl.value);
     return;
   }
 
@@ -168,7 +171,7 @@ async function onSubmit(): Promise<void> {
       </Transition>
     </template>
 
-    <form novalidate @submit.prevent="onSubmit">
+    <form ref="formEl" novalidate @submit.prevent="onSubmit">
       <div class="field">
         <span class="field-label">{{ t("register.roleLabel") }}</span>
         <div class="grid grid-cols-2 gap-2.5" role="radiogroup" :aria-label="t('register.roleLabel')">
@@ -195,10 +198,12 @@ async function onSubmit(): Promise<void> {
           id="name"
           v-model="form.name"
           type="text"
+          name="name"
           autocomplete="name"
           :placeholder="t('register.namePlaceholder')"
+          v-bind="errorAttrs(errors, 'name')"
         />
-        <span class="field-error">{{ errors.name }}</span>
+        <span :id="errorId('name')" class="field-error">{{ errors.name }}</span>
       </div>
 
       <div class="field" :class="{ 'has-error': errors.email }">
@@ -207,10 +212,13 @@ async function onSubmit(): Promise<void> {
           id="email"
           v-model="form.email"
           type="email"
+          name="email"
           autocomplete="email"
+          spellcheck="false"
           :placeholder="t('register.emailPlaceholder')"
+          v-bind="errorAttrs(errors, 'email')"
         />
-        <span class="field-error">{{ errors.email }}</span>
+        <span :id="errorId('email')" class="field-error">{{ errors.email }}</span>
       </div>
 
       <div class="field" :class="{ 'has-error': errors.password }">
@@ -219,10 +227,12 @@ async function onSubmit(): Promise<void> {
           id="password"
           v-model="form.password"
           type="password"
+          name="password"
           autocomplete="new-password"
           :placeholder="t('register.passwordPlaceholder')"
+          v-bind="errorAttrs(errors, 'password')"
         />
-        <span class="field-error">{{ errors.password }}</span>
+        <span :id="errorId('password')" class="field-error">{{ errors.password }}</span>
       </div>
 
       <Transition
@@ -245,15 +255,27 @@ async function onSubmit(): Promise<void> {
               id="universityCode"
               v-model="form.universityCode"
               type="text"
+              name="universityCode"
+              autocomplete="off"
+              spellcheck="false"
               :placeholder="t('register.universityCodePlaceholder')"
+              v-bind="errorAttrs(errors, 'universityCode')"
             />
-            <span class="field-error">{{ errors.universityCode }}</span>
+            <span :id="errorId('universityCode')" class="field-error">{{ errors.universityCode }}</span>
           </div>
 
           <div class="field" :class="{ 'has-error': errors.program }">
             <label for="program">{{ t("register.programLabel") }}</label>
-            <input id="program" v-model="form.program" type="text" :placeholder="t('register.programPlaceholder')" />
-            <span class="field-error">{{ errors.program }}</span>
+            <input
+              id="program"
+              v-model="form.program"
+              type="text"
+              name="program"
+              autocomplete="off"
+              :placeholder="t('register.programPlaceholder')"
+              v-bind="errorAttrs(errors, 'program')"
+            />
+            <span :id="errorId('program')" class="field-error">{{ errors.program }}</span>
           </div>
 
           <div class="field" :class="{ 'has-error': errors.semester }">
@@ -262,20 +284,30 @@ async function onSubmit(): Promise<void> {
               id="semester"
               v-model="form.semester"
               type="number"
+              name="semester"
+              autocomplete="off"
               min="1"
               :placeholder="t('register.semesterPlaceholder')"
+              v-bind="errorAttrs(errors, 'semester')"
             />
-            <span class="field-error">{{ errors.semester }}</span>
+            <span :id="errorId('semester')" class="field-error">{{ errors.semester }}</span>
           </div>
         </fieldset>
       </Transition>
 
       <div class="field" :class="{ 'has-error': errors.acceptDataPolicy }">
         <label class="flex cursor-pointer items-start gap-2 text-sm font-normal">
-          <input v-model="form.acceptDataPolicy" type="checkbox" class="mt-0.5" />
+          <input
+            id="acceptDataPolicy"
+            v-model="form.acceptDataPolicy"
+            type="checkbox"
+            name="acceptDataPolicy"
+            class="mt-0.5"
+            v-bind="errorAttrs(errors, 'acceptDataPolicy')"
+          />
           <span>{{ t("register.acceptDataPolicyLabel") }}</span>
         </label>
-        <span class="field-error">{{ errors.acceptDataPolicy }}</span>
+        <span :id="errorId('acceptDataPolicy')" class="field-error">{{ errors.acceptDataPolicy }}</span>
       </div>
 
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">

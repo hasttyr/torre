@@ -1,6 +1,6 @@
-import { mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../i18n";
@@ -69,8 +69,11 @@ async function mountAccountView() {
   router.push("/cuenta");
   await router.isReady();
 
-  return mount(AccountView, { global: { plugins: [router, i18n] } });
+  // attachTo: a failed submit moves focus, which jsdom only tracks for attached nodes.
+  return mount(AccountView, { global: { plugins: [router, i18n] }, attachTo: document.body });
 }
+
+enableAutoUnmount(afterEach);
 
 describe("AccountView", () => {
   beforeEach(() => {
@@ -216,6 +219,26 @@ describe("AccountView", () => {
       vi.useRealTimers();
       process.env.TZ = originalTimeZone;
     }
+  });
+
+  it("ties profile errors to their field and takes the user to the first one", async () => {
+    const auth = useAuthStore();
+    auth.$patch({ token: "token", user: PLAYER });
+    fetchMeMock.mockResolvedValue(PLAYER);
+
+    const wrapper = await mountAccountView();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    await wrapper.get("#name").setValue("A");
+    await wrapper.get("#program").setValue("");
+    await wrapper.get("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(updateProfileMock).not.toHaveBeenCalled();
+    expect(wrapper.get("#name").attributes("aria-describedby")).toBe("name-error");
+    expect(wrapper.get("#program").attributes("aria-invalid")).toBe("true");
+    expect(document.activeElement).toBe(wrapper.get("#name").element);
+    expect(wrapper.get("#universityCode").attributes()).toMatchObject({ autocomplete: "off", spellcheck: "false" });
   });
 
   it("saves profile changes and shows a success message (HU20)", async () => {

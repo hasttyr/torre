@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { reactive, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AuthLayout from "../../components/layout/AuthLayout.vue";
 import { extractErrorMessage } from "../../lib/errors";
+import { errorAttrs, errorId, focusFirstInvalid } from "../../lib/formErrors";
 import { requestPasswordReset } from "../../services/auth";
 
 const { t } = useI18n();
 
 const email = ref("");
+const errors = reactive<Record<string, string>>({});
 const submitting = ref(false);
 const submitted = ref(false);
 const errorMessage = ref<string | null>(null);
+const formEl = useTemplateRef<HTMLFormElement>("formEl");
 
 /**
  * Requests a password-reset link for the given email (HU19).
@@ -22,6 +25,14 @@ const errorMessage = ref<string | null>(null);
  */
 async function onSubmit(): Promise<void> {
   errorMessage.value = null;
+  // An empty email would still get the generic "check your inbox" answer.
+  delete errors.email;
+  if (!email.value.trim()) {
+    errors.email = t("auth.emailRequired");
+    await focusFirstInvalid(formEl.value);
+    return;
+  }
+
   submitting.value = true;
   try {
     await requestPasswordReset(email.value.trim());
@@ -49,17 +60,20 @@ async function onSubmit(): Promise<void> {
 
     <p v-if="submitted" class="banner banner--success">{{ t("forgotPassword.successMessage") }}</p>
 
-    <form v-else novalidate @submit.prevent="onSubmit">
-      <div class="field">
+    <form v-else ref="formEl" novalidate @submit.prevent="onSubmit">
+      <div class="field" :class="{ 'has-error': errors.email }">
         <label for="email">{{ t("auth.email") }}</label>
         <input
           id="email"
           v-model="email"
           type="email"
+          name="email"
           autocomplete="email"
-          required
+          spellcheck="false"
           :placeholder="t('login.emailPlaceholder')"
+          v-bind="errorAttrs(errors, 'email')"
         />
+        <span :id="errorId('email')" class="field-error">{{ errors.email }}</span>
       </div>
 
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">

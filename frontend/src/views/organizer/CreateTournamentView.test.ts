@@ -1,6 +1,6 @@
-import { mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
@@ -39,9 +39,12 @@ async function mountView() {
   router.push("/torneos/nuevo");
   await router.isReady();
 
-  const wrapper = mount(CreateTournamentView, { global: { plugins: [router, i18n] } });
+  // attachTo: a failed submit moves focus, which jsdom only tracks for attached nodes.
+  const wrapper = mount(CreateTournamentView, { global: { plugins: [router, i18n] }, attachTo: document.body });
   return { wrapper, router };
 }
+
+enableAutoUnmount(afterEach);
 
 describe("CreateTournamentView", () => {
   beforeEach(() => {
@@ -56,6 +59,27 @@ describe("CreateTournamentView", () => {
 
     expect(wrapper.text()).toContain("El nombre debe tener al menos 2 caracteres");
     expect(createTournamentMock).not.toHaveBeenCalled();
+  });
+
+  it("marks the fields with errors, dates included, and takes the user to the first one", async () => {
+    const { wrapper } = await mountView();
+
+    await wrapper.find("#name").setValue("Copa Universitaria");
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(wrapper.get("#name").attributes("aria-invalid")).toBeUndefined();
+    expect(wrapper.get("#startDate").attributes("aria-invalid")).toBe("true");
+    expect(wrapper.get("#endDate").attributes("aria-invalid")).toBe("true");
+    expect(document.activeElement).toBe(wrapper.get("#startDate").element);
+  });
+
+  it("keeps tournament fields out of autofill suggestions", async () => {
+    const { wrapper } = await mountView();
+
+    expect(wrapper.get("#name").attributes()).toMatchObject({ name: "name", autocomplete: "off" });
+    expect(wrapper.get("#format").attributes()).toMatchObject({ name: "format", autocomplete: "off" });
+    expect(wrapper.get("#startDate").attributes()).toMatchObject({ name: "startDate", autocomplete: "off" });
   });
 
   it("creates the tournament and navigates to its admin panel", async () => {

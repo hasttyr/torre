@@ -618,6 +618,8 @@
     "swapPlayerB": "Swap with",
     "choosePlayer": "Choose a player",
     "swapReason": "Reason for the adjustment",
+    "swapSamePlayer": "Pick a different player from the first one",
+    "swapReasonRequired": "Write the reason, at least 3 characters: it goes to the audit log",
     "swapReasonPlaceholder": "E.g. same club, requested by the organizer",
     "swapSubmit": "Apply adjustment",
     "publishRound": "Publish round {number}",

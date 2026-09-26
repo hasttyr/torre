@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from "vue";
+import { onMounted, reactive, ref, useTemplateRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import PlayerAffiliations from "../components/account/PlayerAffiliations.vue";
@@ -8,6 +8,7 @@ import AppHeader from "../components/layout/AppHeader.vue";
 import DateField from "../components/ui/DateField.vue";
 import { toIsoDate } from "../lib/dates";
 import { extractErrorMessage } from "../lib/errors";
+import { errorAttrs, errorId, focusFirstInvalid } from "../lib/formErrors";
 import { DISABILITIES, GENDERS, type Disability, type Gender } from "../services/auth";
 import { useAuthStore } from "../stores/auth";
 
@@ -55,6 +56,7 @@ onMounted(async () => {
 });
 
 const errors = reactive<Record<string, string>>({});
+const formEl = useTemplateRef<HTMLFormElement>("formEl");
 const submitting = ref(false);
 const successMessage = ref<string | null>(null);
 const serverError = ref<string | null>(null);
@@ -98,6 +100,7 @@ async function onSubmit(): Promise<void> {
   serverError.value = null;
 
   if (!validate()) {
+    await focusFirstInvalid(formEl.value);
     return;
   }
 
@@ -174,44 +177,79 @@ async function onSubmit(): Promise<void> {
           <p v-if="serverError" role="alert" class="banner banner--error mb-4">{{ serverError }}</p>
         </Transition>
 
-        <form novalidate class="flex flex-col gap-4" @submit.prevent="onSubmit">
+        <form ref="formEl" novalidate class="flex flex-col gap-4" @submit.prevent="onSubmit">
           <div class="field" :class="{ 'has-error': errors.name }">
             <label for="name">{{ t("account.nameLabel") }}</label>
-            <input id="name" v-model="form.name" type="text" autocomplete="name" />
-            <span class="field-error">{{ errors.name }}</span>
+            <input
+              id="name"
+              v-model="form.name"
+              type="text"
+              name="name"
+              autocomplete="name"
+              v-bind="errorAttrs(errors, 'name')"
+            />
+            <span :id="errorId('name')" class="field-error">{{ errors.name }}</span>
           </div>
 
           <template v-if="auth.user.player">
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="field" :class="{ 'has-error': errors.universityCode }">
                 <label for="universityCode">{{ t("account.universityCodeLabel") }}</label>
-                <input id="universityCode" v-model="form.universityCode" type="text" />
-                <span class="field-error">{{ errors.universityCode }}</span>
+                <input
+                  id="universityCode"
+                  v-model="form.universityCode"
+                  type="text"
+                  name="universityCode"
+                  autocomplete="off"
+                  spellcheck="false"
+                  v-bind="errorAttrs(errors, 'universityCode')"
+                />
+                <span :id="errorId('universityCode')" class="field-error">{{ errors.universityCode }}</span>
               </div>
               <div class="field" :class="{ 'has-error': errors.semester }">
                 <label for="semester">{{ t("account.semesterLabel") }}</label>
-                <input id="semester" v-model="form.semester" type="number" min="1" />
-                <span class="field-error">{{ errors.semester }}</span>
+                <input
+                  id="semester"
+                  v-model="form.semester"
+                  type="number"
+                  name="semester"
+                  autocomplete="off"
+                  min="1"
+                  v-bind="errorAttrs(errors, 'semester')"
+                />
+                <span :id="errorId('semester')" class="field-error">{{ errors.semester }}</span>
               </div>
             </div>
             <div class="field" :class="{ 'has-error': errors.program }">
               <label for="program">{{ t("account.programLabel") }}</label>
-              <input id="program" v-model="form.program" type="text" />
-              <span class="field-error">{{ errors.program }}</span>
+              <input
+                id="program"
+                v-model="form.program"
+                type="text"
+                name="program"
+                autocomplete="off"
+                v-bind="errorAttrs(errors, 'program')"
+              />
+              <span :id="errorId('program')" class="field-error">{{ errors.program }}</span>
             </div>
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="field" :class="{ 'has-error': errors.birthDate }">
                 <label for="birthDate">{{ t("account.birthDateLabel") }}</label>
-                <DateField id="birthDate" v-model="form.birthDate" :max-date="todayIso" />
-                <span class="field-error">{{ errors.birthDate }}</span>
+                <DateField
+                  id="birthDate"
+                  v-model="form.birthDate"
+                  :max-date="todayIso"
+                  :invalid="Boolean(errors.birthDate)"
+                />
+                <span :id="errorId('birthDate')" class="field-error">{{ errors.birthDate }}</span>
                 <span v-if="auth.user.player.age != null" class="text-sm text-text-muted">
                   {{ t("account.currentAge", { age: auth.user.player.age }) }}
                 </span>
               </div>
               <div class="field">
                 <label for="gender">{{ t("account.genderLabel") }}</label>
-                <select id="gender" v-model="form.gender">
+                <select id="gender" v-model="form.gender" name="gender">
                   <option value="">{{ t("account.genderPreferNotToSay") }}</option>
                   <option v-for="option in GENDERS" :key="option" :value="option">{{ t(`genero.${option}`) }}</option>
                 </select>
@@ -220,7 +258,7 @@ async function onSubmit(): Promise<void> {
 
             <div class="field">
               <label for="disability">{{ t("account.disabilityLabel") }}</label>
-              <select id="disability" v-model="form.disability">
+              <select id="disability" v-model="form.disability" name="disability">
                 <option value="">{{ t("account.disabilityNotSpecified") }}</option>
                 <option v-for="option in DISABILITIES" :key="option" :value="option">
                   {{ t(`discapacidad.${option}`) }}

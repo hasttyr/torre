@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
 import AuthLayout from "../../components/layout/AuthLayout.vue";
 import { extractErrorMessage } from "../../lib/errors";
+import { errorAttrs, errorId, focusFirstInvalid } from "../../lib/formErrors";
 import { confirmPasswordReset } from "../../services/auth";
 
 const route = useRoute();
@@ -18,6 +19,7 @@ const errors = reactive<Record<string, string>>({});
 const submitting = ref(false);
 const submitted = ref(false);
 const serverError = ref<string | null>(null);
+const formEl = useTemplateRef<HTMLFormElement>("formEl");
 
 /** Validates the reset-password form. */
 function validate(): boolean {
@@ -40,6 +42,7 @@ async function onSubmit(): Promise<void> {
   serverError.value = null;
 
   if (!validate()) {
+    await focusFirstInvalid(formEl.value);
     return;
   }
 
@@ -72,23 +75,32 @@ async function onSubmit(): Promise<void> {
 
     <p v-else-if="submitted" class="banner banner--success">{{ t("resetPassword.successMessage") }}</p>
 
-    <form v-else novalidate @submit.prevent="onSubmit">
+    <form v-else ref="formEl" novalidate @submit.prevent="onSubmit">
       <div class="field" :class="{ 'has-error': errors.newPassword }">
         <label for="newPassword">{{ t("resetPassword.newPasswordLabel") }}</label>
         <input
           id="newPassword"
           v-model="form.newPassword"
           type="password"
+          name="newPassword"
           autocomplete="new-password"
           :placeholder="t('register.passwordPlaceholder')"
+          v-bind="errorAttrs(errors, 'newPassword')"
         />
-        <span class="field-error">{{ errors.newPassword }}</span>
+        <span :id="errorId('newPassword')" class="field-error">{{ errors.newPassword }}</span>
       </div>
 
       <div class="field" :class="{ 'has-error': errors.confirmPassword }">
         <label for="confirmPassword">{{ t("resetPassword.confirmPasswordLabel") }}</label>
-        <input id="confirmPassword" v-model="form.confirmPassword" type="password" autocomplete="new-password" />
-        <span class="field-error">{{ errors.confirmPassword }}</span>
+        <input
+          id="confirmPassword"
+          v-model="form.confirmPassword"
+          type="password"
+          name="confirmPassword"
+          autocomplete="new-password"
+          v-bind="errorAttrs(errors, 'confirmPassword')"
+        />
+        <span :id="errorId('confirmPassword')" class="field-error">{{ errors.confirmPassword }}</span>
       </div>
 
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">

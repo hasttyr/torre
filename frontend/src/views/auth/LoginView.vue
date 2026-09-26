@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
 import AuthLayout from "../../components/layout/AuthLayout.vue";
 import { extractErrorMessage } from "../../lib/errors";
+import { errorAttrs, errorId, focusFirstInvalid } from "../../lib/formErrors";
 import { HOME_PATH } from "../../lib/roleHome";
 import { useAuthStore } from "../../stores/auth";
 
@@ -15,6 +16,7 @@ const { t } = useI18n();
 
 const form = reactive({ email: "", password: "" });
 const errors = reactive<Record<string, string>>({});
+const formEl = useTemplateRef<HTMLFormElement>("formEl");
 const submitting = ref(false);
 const serverError = ref<string | null>(null);
 // Set by lib/sessionExpiry.ts when the server rejected the previous session.
@@ -45,6 +47,7 @@ async function onSubmit(): Promise<void> {
   serverError.value = null;
 
   if (!validate()) {
+    await focusFirstInvalid(formEl.value);
     return;
   }
 
@@ -93,17 +96,20 @@ async function onSubmit(): Promise<void> {
       </Transition>
     </template>
 
-    <form novalidate @submit.prevent="onSubmit">
+    <form ref="formEl" novalidate @submit.prevent="onSubmit">
       <div class="field" :class="{ 'has-error': errors.email }">
         <label for="email">{{ t("auth.email") }}</label>
         <input
           id="email"
           v-model="form.email"
           type="email"
+          name="email"
           autocomplete="email"
+          spellcheck="false"
           :placeholder="t('login.emailPlaceholder')"
+          v-bind="errorAttrs(errors, 'email')"
         />
-        <span class="field-error">{{ errors.email }}</span>
+        <span :id="errorId('email')" class="field-error">{{ errors.email }}</span>
       </div>
 
       <div class="field" :class="{ 'has-error': errors.password }">
@@ -112,10 +118,12 @@ async function onSubmit(): Promise<void> {
           id="password"
           v-model="form.password"
           type="password"
+          name="password"
           autocomplete="current-password"
           :placeholder="t('login.passwordPlaceholder')"
+          v-bind="errorAttrs(errors, 'password')"
         />
-        <span class="field-error">{{ errors.password }}</span>
+        <span :id="errorId('password')" class="field-error">{{ errors.password }}</span>
       </div>
 
       <RouterLink to="/olvide-password" class="-mt-2 self-end text-sm text-text-muted hover:text-accent">

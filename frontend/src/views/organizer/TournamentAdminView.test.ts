@@ -247,6 +247,16 @@ describe("TournamentAdminView", () => {
     expect(tiebreaksInput.attributes("disabled")).toBeDefined();
   });
 
+  it("keeps the configuration fields out of autofill suggestions", async () => {
+    getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
+
+    const { wrapper } = await mountView();
+
+    for (const id of ["roundsCount", "timeControl", "tiebreaks", "restrictedProgram", "minimumSemester"]) {
+      expect(wrapper.get(`#${id}`).attributes()).toMatchObject({ name: id, autocomplete: "off" });
+    }
+  });
+
   it("saves the tournament configuration (HU05)", async () => {
     getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
     configureTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, roundsCount: 7, timeControl: "90+30" });

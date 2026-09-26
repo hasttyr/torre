@@ -58,6 +58,8 @@ function confirmCorrection(): void {
         :id="reasonId"
         v-model="reason"
         type="text"
+        name="correctionReason"
+        autocomplete="off"
         class="!py-2 text-sm"
         :placeholder="t('rounds.correctionPlaceholder')"
       />

@@ -1,6 +1,6 @@
-import { mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
@@ -28,9 +28,12 @@ async function mountLoginView() {
   router.push("/login-under-test");
   await router.isReady();
 
-  const wrapper = mount(LoginView, { global: { plugins: [router, i18n] } });
+  // attachTo: a failed submit moves focus, which jsdom only tracks for attached nodes.
+  const wrapper = mount(LoginView, { global: { plugins: [router, i18n] }, attachTo: document.body });
   return { wrapper, router };
 }
+
+enableAutoUnmount(afterEach);
 
 describe("LoginView", () => {
   beforeEach(() => {
@@ -47,6 +50,30 @@ describe("LoginView", () => {
     expect(wrapper.text()).toContain("El correo es requerido");
     expect(wrapper.text()).toContain("La contraseña es requerida");
     expect(loginUserMock).not.toHaveBeenCalled();
+  });
+
+  it("ties each error to its field and takes the user to the first one", async () => {
+    const { wrapper } = await mountLoginView();
+
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    const email = wrapper.get("#email");
+    expect(email.attributes("aria-invalid")).toBe("true");
+    expect(wrapper.get(`#${email.attributes("aria-describedby")}`).text()).toBe("El correo es requerido");
+    expect(wrapper.get("#password").attributes("aria-invalid")).toBe("true");
+    expect(document.activeElement).toBe(email.element);
+  });
+
+  it("names its fields for the browser's autofill, without spellchecking the email", async () => {
+    const { wrapper } = await mountLoginView();
+
+    expect(wrapper.get("#email").attributes()).toMatchObject({
+      name: "email",
+      autocomplete: "email",
+      spellcheck: "false",
+    });
+    expect(wrapper.get("#password").attributes()).toMatchObject({ name: "password", autocomplete: "current-password" });
   });
 
   it("logs in and navigates to their dashboard with valid credentials", async () => {

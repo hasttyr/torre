@@ -51,9 +51,20 @@ const props = withDefaults(
     disabled?: boolean;
     minDate?: string;
     maxDate?: string;
+    // Marks the input aria-invalid while the form shows an error for it.
+    invalid?: boolean;
   }>(),
-  { placeholder: undefined, disabled: false, minDate: undefined, maxDate: undefined },
+  { placeholder: undefined, disabled: false, minDate: undefined, maxDate: undefined, invalid: false },
 );
+
+// The picker has no aria-describedby option, so an invalid date field is
+// announced as invalid (via `state`), with its message shown right below.
+const inputAttrs = computed(() => ({
+  id: props.id,
+  name: props.id,
+  clearable: true,
+  state: props.invalid ? false : undefined,
+}));
 
 const resolvedPlaceholder = computed(() => props.placeholder ?? t("dateField.placeholder"));
 
@@ -71,7 +82,7 @@ const ARIA_LABELS = { input: undefined };
   <VueDatePicker
     v-model="selectedDate"
     :dark="theme.theme === 'dark'"
-    :input-attrs="{ id, clearable: true }"
+    :input-attrs="inputAttrs"
     :aria-labels="ARIA_LABELS"
     :formats="{ input: formatDate }"
     :locale="datePickerLocale"

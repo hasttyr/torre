@@ -226,6 +226,8 @@ async function onDelete(): Promise<void> {
               id="newClubName"
               v-model="newClubName"
               type="text"
+              name="newClubName"
+              autocomplete="off"
               class="flex-1"
               :placeholder="t('clubs.newClubPlaceholder')"
             />
@@ -268,7 +270,14 @@ async function onDelete(): Promise<void> {
 
           <form v-if="renaming" class="mb-4 flex gap-2" novalidate @submit.prevent="onRename">
             <label for="renameClubName" class="sr-only">{{ t("clubs.renameButton") }}</label>
-            <input id="renameClubName" v-model="renameName" type="text" class="flex-1" />
+            <input
+              id="renameClubName"
+              v-model="renameName"
+              type="text"
+              name="renameClubName"
+              autocomplete="off"
+              class="flex-1"
+            />
             <button type="submit" class="btn btn-primary shrink-0" :disabled="renameSubmitting">
               {{ renameSubmitting ? t("clubs.saving") : t("clubs.saveButton") }}
             </button>

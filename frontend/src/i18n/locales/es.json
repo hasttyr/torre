@@ -618,6 +618,8 @@
     "swapPlayerB": "Intercambiar con",
     "choosePlayer": "Elige un jugador",
     "swapReason": "Motivo del ajuste",
+    "swapSamePlayer": "Elige un jugador distinto del primero",
+    "swapReasonRequired": "Escribe el motivo, de al menos 3 caracteres: queda en la bitácora",
     "swapReasonPlaceholder": "Ej.: son del mismo club y lo pidió el organizador",
     "swapSubmit": "Aplicar ajuste",
     "publishRound": "Publicar ronda {number}",

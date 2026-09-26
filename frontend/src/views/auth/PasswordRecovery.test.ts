@@ -1,6 +1,6 @@
-import { flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
@@ -21,10 +21,13 @@ async function mountAt(component: unknown, path: string) {
     routes: [{ path: "/:p(.*)*", component: component as never }],
   });
   await router.push(path);
-  const wrapper = mount(component as never, { global: { plugins: [router, i18n] } });
+  // attachTo: a failed submit moves focus, which jsdom only tracks for attached nodes.
+  const wrapper = mount(component as never, { global: { plugins: [router, i18n] }, attachTo: document.body });
   await flushPromises();
   return wrapper;
 }
+
+enableAutoUnmount(afterEach);
 
 describe("ForgotPasswordView (HU19)", () => {
   beforeEach(() => {
@@ -43,6 +46,19 @@ describe("ForgotPasswordView (HU19)", () => {
     expect(requestPasswordReset).toHaveBeenCalledWith("ana@example.com");
     expect(wrapper.find("form").exists()).toBe(false);
     expect(wrapper.find(".banner--success").exists()).toBe(true);
+  });
+
+  it("asks for the email next to the field instead of sending an empty request", async () => {
+    const wrapper = await mountAt(ForgotPasswordView, "/olvide-password");
+
+    await wrapper.get("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(requestPasswordReset).not.toHaveBeenCalled();
+    const email = wrapper.get("#email");
+    expect(email.attributes()).toMatchObject({ "aria-invalid": "true", name: "email", spellcheck: "false" });
+    expect(wrapper.get(`#${email.attributes("aria-describedby")}`).text()).toBe("El correo es requerido");
+    expect(document.activeElement).toBe(email.element);
   });
 
   it("keeps the form and shows the server's error when the request fails", async () => {
@@ -83,6 +99,10 @@ describe("ResetPasswordView (HU19)", () => {
 
     expect(confirmPasswordReset).not.toHaveBeenCalled();
     expect(wrapper.findAll(".has-error")).toHaveLength(2);
+    await flushPromises();
+    expect(wrapper.get("#newPassword").attributes("aria-describedby")).toBe("newPassword-error");
+    expect(wrapper.get("#confirmPassword").attributes("aria-invalid")).toBe("true");
+    expect(document.activeElement).toBe(wrapper.get("#newPassword").element);
   });
 
   it("sends the token from the link with the new password", async () => {
