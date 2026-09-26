@@ -94,7 +94,10 @@ describe("dashboard widgets", () => {
       bestFinish: 1,
     });
     const summary = await mountWidget(PlayerSummaryWidget);
-    expect(summary.wrapper.findAll("dd").every((value) => value.classes("tabular-nums"))).toBe(true);
+    // Each term's first description is its number (a second one is a hint).
+    const values = summary.wrapper.findAll("dt + dd");
+    expect(values.length).toBeGreaterThan(0);
+    expect(values.every((value) => value.classes("tabular-nums"))).toBe(true);
 
     getWidgetDataMock.mockResolvedValue([
       {

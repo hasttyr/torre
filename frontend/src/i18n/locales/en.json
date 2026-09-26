@@ -606,6 +606,8 @@
   },
   "standings": {
     "pending": "Provisional standings: the round in play still has results missing.",
+    "rank": "Rank",
+    "pointsName": "Points",
     "empty": "Standings will show up once the first round is published.",
     "player": "Player",
     "points": "Pts",

@@ -6,6 +6,10 @@ import type { LinePoint } from "./types";
 // A single-series line over a fixed 0-100% scale (e.g. score rate per
 // tournament). Hovering or focusing a point shows its tooltip; the last
 // point is labelled directly. Width follows the container.
+//
+// For assistive tech it's a labelled group of points, each an image
+// with its data as its name (a role="img" chart would hide them), and a
+// single tab stop: arrow keys, Home and End move between the points.
 const props = defineProps<{
   points: LinePoint[];
   // Accessible name of the chart (announced by screen readers).
@@ -65,6 +69,27 @@ const showAllLabels = computed(() => plotWidth.value / Math.max(1, props.points.
 
 const tooltip = computed(() => (hovered.value === null ? null : coordinates.value[hovered.value]));
 
+// The point that takes the chart's one tab stop: the latest, until the
+// user moves to another.
+const current = ref<number | null>(null);
+const tabStop = computed(() => Math.min(current.value ?? Infinity, coordinates.value.length - 1));
+
+function onPointKeydown(event: KeyboardEvent, index: number): void {
+  const last = coordinates.value.length - 1;
+  const targets: Record<string, number> = {
+    ArrowLeft: index - 1,
+    ArrowDown: index - 1,
+    ArrowRight: index + 1,
+    ArrowUp: index + 1,
+    Home: 0,
+    End: last,
+  };
+  if (!(event.key in targets)) return;
+  event.preventDefault();
+  current.value = Math.min(Math.max(targets[event.key], 0), last);
+  root.value?.querySelectorAll<SVGElement>("circle")[current.value]?.focus();
+}
+
 /** Hover the point nearest to the pointer's x, so the hit area is the whole column, not the 8px dot. */
 function onPointerMove(event: PointerEvent): void {
   const bounds = (event.currentTarget as SVGElement).getBoundingClientRect();
@@ -83,13 +108,13 @@ function onPointerMove(event: PointerEvent): void {
       :width="width"
       :height="HEIGHT"
       :viewBox="`0 0 ${width} ${HEIGHT}`"
-      role="img"
+      role="group"
       :aria-label="label"
-      class="block max-w-full touch-none overflow-visible"
+      class="block max-w-full touch-pan-y overflow-visible"
       @pointermove="onPointerMove"
       @pointerleave="hovered = null"
     >
-      <g v-for="grid in GRID" :key="grid">
+      <g v-for="grid in GRID" :key="grid" aria-hidden="true">
         <line
           :x1="PADDING.left"
           :x2="width - PADDING.right"
@@ -109,8 +134,9 @@ function onPointerMove(event: PointerEvent): void {
         </text>
       </g>
 
-      <path v-if="areaPath" :d="areaPath" class="fill-chart-1" fill-opacity="0.1" />
+      <path v-if="areaPath" :d="areaPath" class="fill-chart-1" fill-opacity="0.1" aria-hidden="true" />
       <path
+        aria-hidden="true"
         :d="linePath"
         fill="none"
         class="stroke-chart-1"
@@ -121,6 +147,7 @@ function onPointerMove(event: PointerEvent): void {
 
       <line
         v-if="tooltip"
+        aria-hidden="true"
         :x1="tooltip.cx"
         :x2="tooltip.cx"
         :y1="PADDING.top"
@@ -136,13 +163,16 @@ function onPointerMove(event: PointerEvent): void {
           :r="hovered === index ? 6 : 4.5"
           class="fill-chart-1 stroke-surface transition-[r]"
           stroke-width="2"
-          tabindex="0"
+          role="img"
+          :tabindex="index === tabStop ? 0 : -1"
           :aria-label="point.tooltip.join(', ')"
           @focus="hovered = index"
           @blur="hovered = null"
+          @keydown="onPointKeydown($event, index)"
         />
         <text
           v-if="showAllLabels || index === 0 || index === coordinates.length - 1"
+          aria-hidden="true"
           :x="point.cx"
           :y="HEIGHT - 8"
           text-anchor="middle"
@@ -154,6 +184,7 @@ function onPointerMove(event: PointerEvent): void {
 
       <text
         v-if="coordinates.length > 0"
+        aria-hidden="true"
         :x="coordinates[coordinates.length - 1].cx + 10"
         :y="coordinates[coordinates.length - 1].cy"
         dominant-baseline="middle"

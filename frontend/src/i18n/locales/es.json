@@ -606,6 +606,8 @@
   },
   "standings": {
     "pending": "Clasificación provisional: faltan resultados de la ronda en juego.",
+    "rank": "Posición",
+    "pointsName": "Puntos",
     "empty": "La clasificación aparecerá cuando se publique la primera ronda.",
     "player": "Jugador",
     "points": "Pts",

@@ -59,17 +59,56 @@ describe("LineChart", () => {
     { key: "t2", label: "jun 26", value: 0.8, tooltip: ["Liga", "Rendimiento: 80 %"] },
   ];
 
-  it("draws one focusable marker per point and labels the last value", () => {
+  const threePoints = [
+    ...points,
+    { key: "t3", label: "sep 26", value: 0.6, tooltip: ["Abierto", "Rendimiento: 60 %"] },
+  ];
+
+  it("is a labelled group of points that each read their own data, and labels the last value", () => {
     const wrapper = mount(LineChart, {
       global,
       props: { points, label: "Evolución", formatValue: (value: number) => `${value * 100}%` },
     });
 
+    // Not role="img": that would hide the points from screen readers while they're still focusable.
+    expect(wrapper.get("svg").attributes("role")).toBe("group");
+    expect(wrapper.get("svg").attributes("aria-label")).toBe("Evolución");
     const markers = wrapper.findAll("circle");
     expect(markers).toHaveLength(2);
-    expect(markers[0].attributes("tabindex")).toBe("0");
+    expect(markers.map((marker) => marker.attributes("role"))).toEqual(["img", "img"]);
     expect(markers[1].attributes("aria-label")).toBe("Liga, Rendimiento: 80 %");
     expect(wrapper.text()).toContain("80%");
+  });
+
+  it("is a single tab stop, on the latest point; arrows, Home and End move between points", async () => {
+    const wrapper = mount(LineChart, {
+      global,
+      props: { points: threePoints, label: "Evolución", formatValue: String },
+      attachTo: document.body,
+    });
+    const markers = () => wrapper.findAll("circle");
+    expect(markers().map((marker) => marker.attributes("tabindex"))).toEqual(["-1", "-1", "0"]);
+
+    (markers()[2].element as SVGElement).focus();
+    await markers()[2].trigger("keydown", { key: "ArrowLeft" });
+    expect(document.activeElement).toBe(markers()[1].element);
+    expect(wrapper.get("[role='tooltip']").text()).toContain("Liga");
+    expect(markers().map((marker) => marker.attributes("tabindex"))).toEqual(["-1", "0", "-1"]);
+
+    await markers()[1].trigger("keydown", { key: "Home" });
+    expect(document.activeElement).toBe(markers()[0].element);
+    await markers()[0].trigger("keydown", { key: "ArrowLeft" });
+    expect(document.activeElement).toBe(markers()[0].element);
+    await markers()[0].trigger("keydown", { key: "End" });
+    expect(document.activeElement).toBe(markers()[2].element);
+    wrapper.unmount();
+  });
+
+  it("lets a touch that starts on the chart still scroll the page vertically", () => {
+    const wrapper = mount(LineChart, { global, props: { points, label: "Evolución", formatValue: String } });
+
+    expect(wrapper.get("svg").classes()).toContain("touch-pan-y");
+    expect(wrapper.get("svg").classes()).not.toContain("touch-none");
   });
 
   it("shows a point's tooltip on keyboard focus and hides it on blur", async () => {
