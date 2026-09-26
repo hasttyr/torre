@@ -1,4 +1,4 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h } from "vue";
 
@@ -19,14 +19,15 @@ const { socketMock, handlers } = vi.hoisted(() => {
 
 vi.mock("../services/socket", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../services/socket")>()),
-  socket: socketMock,
+  getSocket: vi.fn(() => Promise.resolve(socketMock)),
   joinTournamentRoom: vi.fn(),
   leaveTournamentRoom: vi.fn(),
 }));
 
 import { joinTournamentRoom, leaveTournamentRoom } from "../services/socket";
 
-function mountLive(onChange: () => void) {
+/** Mounts a component using the live connection, once the (lazily loaded) socket is ready. */
+async function mountLive(onChange: () => void) {
   let connected!: ReturnType<typeof useTournamentLive>["connected"];
   const wrapper = mount(
     defineComponent({
@@ -36,6 +37,7 @@ function mountLive(onChange: () => void) {
       },
     }),
   );
+  await flushPromises();
   return { wrapper, connected: () => connected.value };
 }
 
@@ -51,14 +53,14 @@ describe("useTournamentLive", () => {
     vi.useRealTimers();
   });
 
-  it("connects when needed and joins the room on every (re)connection", () => {
-    const { connected } = mountLive(vi.fn());
+  it("connects when needed and joins the room on every (re)connection", async () => {
+    const { connected } = await mountLive(vi.fn());
     expect(socketMock.connect).toHaveBeenCalledTimes(1);
     expect(connected()).toBe(false);
 
     handlers.get("connect")!();
     expect(connected()).toBe(true);
-    expect(joinTournamentRoom).toHaveBeenCalledWith("t-1");
+    expect(joinTournamentRoom).toHaveBeenCalledWith(socketMock, "t-1");
 
     handlers.get("disconnect")!();
     expect(connected()).toBe(false);
@@ -66,18 +68,18 @@ describe("useTournamentLive", () => {
     expect(joinTournamentRoom).toHaveBeenCalledTimes(2);
   });
 
-  it("joins right away when the socket is already connected", () => {
+  it("joins right away when the socket is already connected", async () => {
     socketMock.connected = true;
 
-    mountLive(vi.fn());
+    await mountLive(vi.fn());
 
     expect(socketMock.connect).not.toHaveBeenCalled();
-    expect(joinTournamentRoom).toHaveBeenCalledWith("t-1");
+    expect(joinTournamentRoom).toHaveBeenCalledWith(socketMock, "t-1");
   });
 
-  it("coalesces a burst of events (result + standings) into one refresh", () => {
+  it("coalesces a burst of events (result + standings) into one refresh", async () => {
     const onChange = vi.fn();
-    mountLive(onChange);
+    await mountLive(onChange);
 
     handlers.get("match.result.recorded")!();
     handlers.get("standings.updated")!();
@@ -87,16 +89,32 @@ describe("useTournamentLive", () => {
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 
-  it("leaves the room and stops listening on unmount, dropping a pending refresh", () => {
+  it("leaves the room and stops listening on unmount, dropping a pending refresh", async () => {
     const onChange = vi.fn();
-    const { wrapper } = mountLive(onChange);
+    const { wrapper } = await mountLive(onChange);
     handlers.get("pairing.published")!();
 
     wrapper.unmount();
     vi.advanceTimersByTime(200);
 
-    expect(leaveTournamentRoom).toHaveBeenCalledWith("t-1");
+    expect(leaveTournamentRoom).toHaveBeenCalledWith(socketMock, "t-1");
     expect(handlers.size).toBe(0);
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("never subscribes if the view is gone before the socket finishes loading", async () => {
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          useTournamentLive("t-1", vi.fn());
+          return () => h("div");
+        },
+      }),
+    );
+    wrapper.unmount();
+    await flushPromises();
+
+    expect(socketMock.on).not.toHaveBeenCalled();
+    expect(socketMock.connect).not.toHaveBeenCalled();
   });
 });

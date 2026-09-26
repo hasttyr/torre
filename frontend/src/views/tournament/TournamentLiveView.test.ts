@@ -15,7 +15,7 @@ const { socketMock } = vi.hoisted(() => ({
 
 vi.mock("../../services/socket", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../services/socket")>()),
-  socket: socketMock,
+  getSocket: vi.fn(() => Promise.resolve(socketMock)),
   joinTournamentRoom: vi.fn(),
   leaveTournamentRoom: vi.fn(),
 }));
@@ -182,7 +182,7 @@ describe("TournamentLiveView", () => {
 
     const wrapper = await mountRoom();
 
-    expect(joinTournamentRoom).toHaveBeenCalledWith("t-1");
+    expect(joinTournamentRoom).toHaveBeenCalledWith(socketMock, "t-1");
     expect(wrapper.text()).toContain("Ana Torres");
     expect(wrapper.text()).toContain("descansa esta ronda");
     expect(wrapper.text()).toContain("Clasificación provisional");
