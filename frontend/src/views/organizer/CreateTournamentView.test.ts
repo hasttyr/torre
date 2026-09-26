@@ -42,6 +42,9 @@ async function mountView() {
 
   // attachTo: a failed submit moves focus, which jsdom only tracks for attached nodes.
   const wrapper = mount(CreateTournamentView, { global: { plugins: [router, i18n] }, attachTo: document.body });
+  // The date picker is its own chunk: let it replace its placeholder.
+  await vi.dynamicImportSettled();
+  await flushPromises();
   return { wrapper, router };
 }
 
@@ -58,6 +61,7 @@ async function mountRouted() {
   });
   await router.push("/torneos/nuevo");
   const wrapper = mount({ template: "<RouterView />" }, { global: { plugins: [router, i18n] } });
+  await vi.dynamicImportSettled();
   await flushPromises();
   return { wrapper, router };
 }

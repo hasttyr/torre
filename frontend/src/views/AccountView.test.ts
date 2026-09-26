@@ -71,7 +71,11 @@ async function mountAccountView() {
   await router.isReady();
 
   // attachTo: a failed submit moves focus, which jsdom only tracks for attached nodes.
-  return mount(AccountView, { global: { plugins: [router, i18n] }, attachTo: document.body });
+  const wrapper = mount(AccountView, { global: { plugins: [router, i18n] }, attachTo: document.body });
+  // The date picker is its own chunk: let it replace its placeholder.
+  await vi.dynamicImportSettled();
+  await flushPromises();
+  return wrapper;
 }
 
 enableAutoUnmount(afterEach);
@@ -87,6 +91,7 @@ async function mountRouted() {
   });
   await router.push("/cuenta");
   const wrapper = mount({ template: "<RouterView />" }, { global: { plugins: [router, i18n] } });
+  await vi.dynamicImportSettled();
   await flushPromises();
   return { wrapper, router };
 }

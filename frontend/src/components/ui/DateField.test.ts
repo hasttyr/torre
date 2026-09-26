@@ -1,6 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { i18n } from "../../i18n";
 import { useLocaleStore } from "../../stores/locale";
@@ -16,7 +16,7 @@ afterAll(() => {
   process.env.TZ = originalTimeZone;
 });
 
-async function mountField(props: { modelValue?: string; maxDate?: string } = {}) {
+function mountFieldNow(props: { modelValue?: string; maxDate?: string } = {}) {
   const wrapper = mount(DateField, {
     props: {
       id: "date",
@@ -26,6 +26,13 @@ async function mountField(props: { modelValue?: string; maxDate?: string } = {})
     },
     global: { plugins: [i18n] },
   });
+  return wrapper;
+}
+
+/** Mounts the field once the picker (its own chunk) has loaded. */
+async function mountField(props: { modelValue?: string; maxDate?: string } = {}) {
+  const wrapper = mountFieldNow(props);
+  await vi.dynamicImportSettled();
   await flushPromises();
   return wrapper;
 }
@@ -41,6 +48,19 @@ describe("DateField", () => {
     localStorage.clear();
     setActivePinia(createPinia());
     await useLocaleStore().setLocale("es");
+  });
+
+  it("holds the picker's place with a same-looking input, already showing the date, while it loads", async () => {
+    const wrapper = mountFieldNow({ modelValue: "2026-10-01" });
+
+    const placeholder = wrapper.get("#date");
+    expect(placeholder.attributes("readonly")).toBeDefined();
+    expect((placeholder.element as HTMLInputElement).value).toBe("01/10/2026");
+
+    await vi.dynamicImportSettled();
+    await flushPromises();
+    expect(wrapper.get("#date").attributes("readonly")).toBeUndefined();
+    expect((wrapper.get("#date").element as HTMLInputElement).value).toBe("01/10/2026");
   });
 
   it("leaves naming the input to the field's own <label>", async () => {
