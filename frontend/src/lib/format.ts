@@ -4,14 +4,16 @@
 // them in the browser's zone would show the previous day west of UTC
 // (e.g. Colombia), so date-only values are formatted in UTC.
 
+const DAY_MONTH_YEAR: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short", year: "numeric" };
+
 /** "15 oct 2025" style date, for date-only values. */
 export function formatDate(date: string, locale: string): string {
-  return new Date(date).toLocaleDateString(locale, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  return new Date(date).toLocaleDateString(locale, { ...DAY_MONTH_YEAR, timeZone: "UTC" });
+}
+
+/** "15 oct 2025" style day of a timestamp (e.g. when a game was played), in the viewer's time zone. */
+export function formatLocalDate(date: string, locale: string): string {
+  return new Date(date).toLocaleDateString(locale, DAY_MONTH_YEAR);
 }
 
 /** "30 sept, 10:54" style timestamp, in the viewer's time zone. */

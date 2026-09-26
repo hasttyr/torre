@@ -3,7 +3,7 @@ import { createColumnHelper } from "@tanstack/vue-table";
 import { h } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { formatDate } from "../../../lib/format";
+import { formatLocalDate } from "../../../lib/format";
 import { usePlayerWidgetData } from "../../../lib/useWidgetData";
 import type { GameLogEntry } from "../../../services/dashboard";
 import { useLocaleStore } from "../../../stores/locale";
@@ -36,7 +36,7 @@ const columns = [
         h(
           "span",
           { class: "text-xs text-text-faint" },
-          `${t("widgets.PLAYER_GAME_LOG.round", { round: row.original.round })} · ${formatDate(row.original.recordedAt, locale.locale)}`,
+          `${t("widgets.PLAYER_GAME_LOG.round", { round: row.original.round })} · ${formatLocalDate(row.original.recordedAt, locale.locale)}`,
         ),
       ]),
   }),

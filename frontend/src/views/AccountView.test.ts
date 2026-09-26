@@ -192,6 +192,32 @@ describe("AccountView", () => {
     );
   });
 
+  it("doesn't take tomorrow as a birth date in the evening, when UTC is already on the next day", async () => {
+    const originalTimeZone = process.env.TZ;
+    process.env.TZ = "America/Bogota";
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-26T01:30:00.000Z")); // 25 Sep, 20:30 in Bogotá
+    try {
+      const auth = useAuthStore();
+      auth.$patch({ token: "token", user: PLAYER });
+      fetchMeMock.mockResolvedValue(PLAYER);
+      updateProfileMock.mockResolvedValue(PLAYER);
+
+      const wrapper = await mountAccountView();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      await wrapper.get("#birthDate").setValue("26/09/2026");
+      await wrapper.get("#birthDate").trigger("blur");
+      await wrapper.get("form").trigger("submit.prevent");
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(updateProfileMock).not.toHaveBeenCalledWith(expect.objectContaining({ birthDate: "2026-09-26" }));
+    } finally {
+      vi.useRealTimers();
+      process.env.TZ = originalTimeZone;
+    }
+  });
+
   it("saves profile changes and shows a success message (HU20)", async () => {
     const auth = useAuthStore();
     auth.$patch({ token: "token", user: USER });

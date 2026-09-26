@@ -6,6 +6,7 @@ import PlayerAffiliations from "../components/account/PlayerAffiliations.vue";
 import PrivacyDataRights from "../components/account/PrivacyDataRights.vue";
 import AppHeader from "../components/layout/AppHeader.vue";
 import DateField from "../components/ui/DateField.vue";
+import { toIsoDate } from "../lib/dates";
 import { extractErrorMessage } from "../lib/errors";
 import { DISABILITIES, GENDERS, type Disability, type Gender } from "../services/auth";
 import { useAuthStore } from "../stores/auth";
@@ -13,7 +14,7 @@ import { useAuthStore } from "../stores/auth";
 const auth = useAuthStore();
 const { t } = useI18n();
 const loadError = ref<string | null>(null);
-const todayIso = new Date().toISOString().slice(0, 10);
+const todayIso = toIsoDate(new Date());
 
 // HU20: form for editing the user's own profile. It gets populated from
 // auth.user as soon as it arrives (onMounted and the watch below, in case
@@ -83,7 +84,7 @@ function validate(): boolean {
     if (!Number.isInteger(Number(form.semester)) || Number(form.semester) <= 0) {
       errors.semester = t("account.semesterPositive");
     }
-    if (form.birthDate && form.birthDate > new Date().toISOString().slice(0, 10)) {
+    if (form.birthDate && form.birthDate > toIsoDate(new Date())) {
       errors.birthDate = t("account.birthDateInFuture");
     }
   }

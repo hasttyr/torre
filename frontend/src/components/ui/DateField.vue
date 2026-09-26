@@ -6,6 +6,7 @@ import { es } from "date-fns/locale/es";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { formatNumericDate, fromIsoDate, numericDatePattern, toIsoDate } from "../../lib/dates";
 import { useLocaleStore } from "../../stores/locale";
 import { useThemeStore } from "../../stores/theme";
 
@@ -25,16 +26,9 @@ const datePickerLocale = computed(() => (locale.locale === "en" ? enUS : es));
 const model = defineModel<string>({ default: "" });
 
 const selectedDate = computed<Date | null>({
-  get: () => (model.value ? new Date(`${model.value}T00:00:00`) : null),
+  get: () => (model.value ? fromIsoDate(model.value) : null),
   set: (value) => {
-    if (!value || Array.isArray(value)) {
-      model.value = "";
-      return;
-    }
-    const yyyy = value.getFullYear();
-    const mm = String(value.getMonth() + 1).padStart(2, "0");
-    const dd = String(value.getDate()).padStart(2, "0");
-    model.value = `${yyyy}-${mm}-${dd}`;
+    model.value = !value || Array.isArray(value) ? "" : toIsoDate(value);
   },
 });
 
@@ -43,9 +37,12 @@ const selectedDate = computed<Date | null>({
 // using the browser's default format instead of ours.
 /** Formats a Date for display in the picker's input, using the active locale. */
 function formatDate(date: Date): string {
-  const localeTag = locale.locale;
-  return new Intl.DateTimeFormat(localeTag, { day: "2-digit", month: "2-digit", year: "numeric" }).format(date);
+  return formatNumericDate(date, locale.locale);
 }
+
+// What the user types is read with the same day/month order the input
+// shows: a fixed "dd/MM/yyyy" read an English "10/01/2026" as 10 January.
+const textInputPattern = computed(() => numericDatePattern(locale.locale));
 
 const props = withDefaults(
   defineProps<{
@@ -59,6 +56,11 @@ const props = withDefaults(
 );
 
 const resolvedPlaceholder = computed(() => props.placeholder ?? t("dateField.placeholder"));
+
+// The picker reads a bare "YYYY-MM-DD" as UTC midnight, i.e. the day before
+// in Colombia, which made the max date itself unselectable.
+const minBound = computed(() => (props.minDate ? fromIsoDate(props.minDate) : undefined));
+const maxBound = computed(() => (props.maxDate ? fromIsoDate(props.maxDate) : undefined));
 </script>
 
 <template>
@@ -70,10 +72,10 @@ const resolvedPlaceholder = computed(() => props.placeholder ?? t("dateField.pla
     :locale="datePickerLocale"
     :time-config="{ enableTimePicker: false }"
     :disabled="disabled"
-    :min-date="minDate"
-    :max-date="maxDate"
+    :min-date="minBound"
+    :max-date="maxBound"
     :placeholder="resolvedPlaceholder"
-    :text-input="{ format: 'dd/MM/yyyy' }"
+    :text-input="{ format: textInputPattern }"
     auto-apply
     teleport
   />

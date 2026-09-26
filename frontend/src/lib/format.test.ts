@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { formatDate, formatNumber, formatPercent, formatResult, formatShortDate } from "./format";
+import { formatDate, formatLocalDate, formatNumber, formatPercent, formatResult, formatShortDate } from "./format";
 
 // The app is used in Colombia (UTC-5). Tournament dates are stored as UTC
 // midnight, so formatting them in the browser's zone showed the previous
@@ -18,6 +18,15 @@ describe("formatDate", () => {
     expect(new Date("2026-10-15T00:00:00.000Z").getTimezoneOffset()).toBe(300);
     expect(formatDate("2026-10-15T00:00:00.000Z", "es")).toContain("15");
     expect(formatShortDate("2026-01-01T00:00:00.000Z", "es")).toContain("26");
+  });
+});
+
+describe("formatLocalDate", () => {
+  it("dates a moment by the viewer's day, not UTC's", () => {
+    const eveningInBogota = "2026-09-24T01:00:00.000Z"; // 23 Sep, 20:00 local
+
+    expect(formatLocalDate(eveningInBogota, "es")).toContain("23");
+    expect(formatDate(eveningInBogota, "es")).toContain("24");
   });
 });
 

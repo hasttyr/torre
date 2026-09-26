@@ -205,6 +205,31 @@ describe("dashboard widgets", () => {
     expect(log.wrapper.text()).toContain("Bye");
   });
 
+  it("the game log dates each game by the viewer's day, not UTC's", async () => {
+    const originalTimeZone = process.env.TZ;
+    process.env.TZ = "America/Bogota";
+    try {
+      getWidgetDataMock.mockResolvedValue([
+        {
+          matchId: "m1",
+          tournamentId: "t1",
+          tournamentName: "Liga",
+          round: 1,
+          color: "WHITE",
+          opponent: "Carlos Ruiz",
+          outcome: "DRAW",
+          recordedAt: "2026-09-24T01:00:00Z", // 23 Sep, 20:00 in Bogotá
+        },
+      ]);
+
+      const { wrapper } = await mountWidget(GameLogWidget);
+
+      expect(wrapper.text()).toContain("23 sept 2026");
+    } finally {
+      process.env.TZ = originalTimeZone;
+    }
+  });
+
   it("clicking a player in the overview makes them the dashboard's subject", async () => {
     getWidgetDataMock.mockResolvedValue([
       {
