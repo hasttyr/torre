@@ -5,6 +5,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
 import { useAuthStore } from "../../stores/auth";
+import { useLocaleStore } from "../../stores/locale";
 import { clickConfirmDialogButton, mountConfirmDialogHost } from "../../test-support/confirmDialog";
 import PrivacyDataRights from "./PrivacyDataRights.vue";
 
@@ -49,6 +50,31 @@ describe("PrivacyDataRights", () => {
     vi.clearAllMocks();
   });
 
+  it("gives the consent date in the page's language, not the browser's", async () => {
+    const wrapper = await mountPanel();
+    useAuthStore().$patch({
+      user: { ...USER, dataConsent: { ...USER.dataConsent, date: "2026-03-15T15:00:00.000Z" } },
+    });
+    await wrapper.vm.$nextTick();
+    expect(wrapper.text()).toContain("15 mar 2026");
+
+    const locale = useLocaleStore();
+    await locale.setLocale("en");
+    try {
+      expect(wrapper.text()).toContain("Mar 15, 2026");
+    } finally {
+      await locale.setLocale("es");
+    }
+  });
+
+  it("marks the delete action with the theme's error color, which adapts to dark mode", async () => {
+    const wrapper = await mountPanel();
+    const remove = wrapper.findAll("button").find((button) => button.text().includes("Eliminar"))!;
+
+    expect(remove.classes()).toContain("text-error");
+    expect(remove.classes().some((name) => name.includes("red-"))).toBe(false);
+  });
+
   it("requests data suppression only after the confirm dialog is accepted", async () => {
     mountConfirmDialogHost();
     requestDataSuppressionMock.mockResolvedValue({
@@ -70,7 +96,8 @@ describe("PrivacyDataRights", () => {
     await wrapper.vm.$nextTick();
 
     expect(requestDataSuppressionMock).toHaveBeenCalled();
-    expect(wrapper.text()).toContain("Solicitud procesada");
+    // Announced by screen readers: the confirmation appears away from focus.
+    expect(wrapper.get("[role='status']").text()).toContain("Solicitud procesada");
   });
 
   it("does not request suppression when the dialog is cancelled", async () => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref, useTemplateRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
@@ -48,10 +48,22 @@ watch(
 function closeMobile(): void {
   mobileOpen.value = false;
 }
+
+const menuButton = useTemplateRef<HTMLButtonElement>("menuButton");
+
+/** Escape closes the mobile nav panel, handing focus back to the button that opened it. */
+function closeMobileFromKeyboard(): void {
+  if (!mobileOpen.value) return;
+  closeMobile();
+  menuButton.value?.focus();
+}
 </script>
 
 <template>
-  <header class="sticky top-0 z-10 border-b border-border-soft bg-header backdrop-blur-md">
+  <header
+    class="sticky top-0 z-10 border-b border-border-soft bg-header backdrop-blur-md"
+    @keydown.esc="closeMobileFromKeyboard"
+  >
     <div class="container flex items-center justify-between gap-4 py-4">
       <AppLogo />
 
@@ -87,8 +99,9 @@ function closeMobile(): void {
           <ThemeToggle />
         </template>
         <button
+          ref="menuButton"
           type="button"
-          class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text"
+          class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text transition-colors hover:bg-accent/10"
           :aria-expanded="mobileOpen"
           :aria-label="mobileOpen ? t('header.closeMenu') : t('header.openMenu')"
           @click="mobileOpen = !mobileOpen"

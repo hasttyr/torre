@@ -52,7 +52,7 @@ const summary = computed(() =>
       <div
         v-for="segment in segments"
         :key="segment.key"
-        class="h-full transition-[flex-grow] duration-500"
+        class="h-full"
         :class="segment.color"
         :style="{ flexGrow: segment.value, flexBasis: 0 }"
         :title="`${t(`${names}.${segment.key}`)}: ${segment.value}`"

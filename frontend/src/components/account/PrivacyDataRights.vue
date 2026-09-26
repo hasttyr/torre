@@ -6,10 +6,13 @@ import { useRouter } from "vue-router";
 import { useConfirm } from "../../lib/confirm";
 import { saveFile } from "../../lib/download";
 import { extractErrorMessage } from "../../lib/errors";
+import { formatLocalDate } from "../../lib/format";
 import { requestDataAccess, requestDataSuppression } from "../../services/dataRights";
 import { useAuthStore } from "../../stores/auth";
+import { useLocaleStore } from "../../stores/locale";
 
 const auth = useAuthStore();
+const locale = useLocaleStore();
 const router = useRouter();
 const confirm = useConfirm();
 const { t } = useI18n();
@@ -82,7 +85,7 @@ async function onDeleteData(): Promise<void> {
     <p v-if="auth.user?.dataConsent?.accepted" class="mb-4 text-sm text-text-muted">
       {{
         t("account.privacyConsentInfo", {
-          date: auth.user.dataConsent.date ? new Date(auth.user.dataConsent.date).toLocaleDateString() : "—",
+          date: auth.user.dataConsent.date ? formatLocalDate(auth.user.dataConsent.date, locale.locale) : "—",
           version: auth.user.dataConsent.version ?? "—",
         })
       }}
@@ -94,7 +97,7 @@ async function onDeleteData(): Promise<void> {
       leave-active-class="transition duration-180 ease-in"
       leave-to-class="opacity-0 -translate-y-1.5"
     >
-      <p v-if="deleteMessage" class="banner banner--success mb-4">{{ deleteMessage }}</p>
+      <p v-if="deleteMessage" role="status" class="banner banner--success mb-4">{{ deleteMessage }}</p>
     </Transition>
     <Transition
       enter-active-class="transition duration-180 ease-out"
@@ -113,7 +116,7 @@ async function onDeleteData(): Promise<void> {
       </button>
       <button
         type="button"
-        class="btn border-red-500/50 text-red-500 hover:bg-red-500/10"
+        class="btn border-error/50 text-error hover:bg-error/10"
         :disabled="deleting || Boolean(deleteMessage)"
         @click="onDeleteData"
       >

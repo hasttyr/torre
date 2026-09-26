@@ -31,6 +31,21 @@ describe("BarList", () => {
   });
 });
 
+describe("bar charts", () => {
+  // Animating width or flex-grow re-lays out the page on every frame.
+  const layoutTransitions = (classes: string[]) =>
+    classes.filter((name) => /^transition-\[(width|flex-grow)\]$|^transition-all$/.test(name));
+
+  it("never animate a layout property", () => {
+    const bars = mount(BarList, { global, props: { label: "x", items: [{ key: "a", label: "A", value: 1 }] } });
+    const split = mount(ResultSplitBar, { global, props: { tally: { wins: 1, draws: 1, losses: 1 } } });
+
+    for (const node of [...bars.findAll("div"), ...split.findAll("div")]) {
+      expect(layoutTransitions(node.classes())).toEqual([]);
+    }
+  });
+});
+
 describe("ResultSplitBar", () => {
   it("sizes segments by count, skips empty ones and states the split in text", () => {
     const wrapper = mount(ResultSplitBar, {

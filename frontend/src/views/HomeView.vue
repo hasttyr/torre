@@ -66,7 +66,7 @@ const STEPS = [
             <article
               v-for="feature in FEATURES"
               :key="feature.titleKey"
-              class="rounded-2xl border border-border-soft bg-surface p-6 transition-all hover:-translate-y-0.5 hover:border-accent/40"
+              class="rounded-2xl border border-border-soft bg-surface p-6"
             >
               <span class="mb-3 inline-flex text-2xl text-accent" aria-hidden="true">{{ feature.glyph }}</span>
               <h3 class="mb-1.5 text-base">{{ t(`home.${feature.titleKey}`) }}</h3>

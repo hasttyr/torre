@@ -30,10 +30,7 @@ const max = computed(() => Math.max(1, ...props.items.map((item) => item.value))
         <!-- The longest bar spans 85% of the track, leaving room for its value
              at the tip; a zero value still gets a 2px stub so the row doesn't
              look missing. -->
-        <div
-          class="h-3 min-w-[2px] rounded-r-[4px] bg-chart-1 transition-[width] duration-500"
-          :style="{ width: `${(item.value / max) * 85}%` }"
-        />
+        <div class="h-3 min-w-[2px] rounded-r-[4px] bg-chart-1" :style="{ width: `${(item.value / max) * 85}%` }" />
         <span class="shrink-0 font-semibold text-text tabular-nums">{{ item.valueLabel ?? item.value }}</span>
       </div>
     </li>

@@ -91,4 +91,24 @@ describe("AppHeader navigation", () => {
     await mobileNav.findAll("a")[0].trigger("click");
     expect(toggle().attributes("aria-expanded")).toBe("false");
   });
+
+  it("closes the mobile menu on Escape, handing focus back to its button", async () => {
+    useAuthStore().$patch({ token: "token", user: { id: "u-1", name: "Ana Torres", role: "COACH" } as never });
+    const router = createRouter({
+      history: createWebHistory(),
+      routes: [{ path: "/:p(.*)*", component: { template: "<div />" } }],
+    });
+    await router.push("/");
+    // attachTo: focus only moves between attached nodes in jsdom.
+    const wrapper = mount(AppHeader, { global: { plugins: [router, i18n] }, attachTo: document.body });
+    await wrapper.get("button[aria-label='Abrir menú']").trigger("click");
+    const link = wrapper.findAll("nav").at(-1)!.findAll("a")[1];
+    (link.element as HTMLElement).focus();
+
+    await link.trigger("keydown", { key: "Escape" });
+
+    expect(wrapper.findAll("nav")).toHaveLength(1);
+    expect(document.activeElement).toBe(wrapper.get("button[aria-label='Abrir menú']").element);
+    wrapper.unmount();
+  });
 });
