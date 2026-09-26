@@ -4,11 +4,14 @@ import { useI18n } from "vue-i18n";
 
 import PlayerPicker from "../../components/dashboard/PlayerPicker.vue";
 import { isRenderableWidget, WIDGET_VIEWS } from "../../components/dashboard/widgetRegistry";
+import WidgetSkeleton from "../../components/dashboard/WidgetSkeleton.vue";
 import AppHeader from "../../components/layout/AppHeader.vue";
+import LazyMount from "../../components/ui/LazyMount.vue";
 import { extractErrorMessage } from "../../lib/errors";
 import { loadDashboard } from "../../lib/pageData";
 import { providePlayerSelection } from "../../lib/playerSelection";
 import { DATA_KEYS, takeData } from "../../lib/routeData";
+import { prefetchWidgetData } from "../../lib/useWidgetData";
 import type { WidgetSummary } from "../../services/dashboard";
 import { useAuthStore } from "../../stores/auth";
 
@@ -28,6 +31,14 @@ const selection = providePlayerSelection({ hasPlayerWidgets: () => hasPlayerWidg
 const role = computed(() => auth.user?.role ?? "");
 const firstName = computed(() => auth.user?.name.split(/\s+/)[0] ?? "");
 const noSubjects = computed(() => hasPlayerWidgets.value && selection.players.value.length === 0);
+
+/** A widget coming into view: its data starts loading while its code downloads. */
+function prefetchWidget(widget: WidgetSummary): void {
+  const playerId = widget.subject === "player" ? selection.selectedId.value : null;
+  // A player widget with no player to show asks for nothing.
+  if (widget.subject === "player" && !playerId) return;
+  prefetchWidgetData(widget.key, playerId);
+}
 
 onMounted(async () => {
   try {
@@ -95,7 +106,12 @@ onMounted(async () => {
             :class="{ 'lg:col-span-2': WIDGET_VIEWS[widget.key].wide }"
             :data-widget="widget.key"
           >
-            <component :is="WIDGET_VIEWS[widget.key].component" />
+            <!-- A widget far down the page loads its code and data only
+                 as the user scrolls toward it, both at once. -->
+            <LazyMount @visible="prefetchWidget(widget)">
+              <component :is="WIDGET_VIEWS[widget.key].component" />
+              <template #placeholder><WidgetSkeleton :widget="widget.key" /></template>
+            </LazyMount>
           </div>
         </div>
       </template>

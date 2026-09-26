@@ -19,6 +19,7 @@ export const DATA_KEYS = {
   panel: "panel",
   room: (tournamentId: string) => `room:${tournamentId}`,
   tournamentAdmin: (tournamentId: string) => `tournament-admin:${tournamentId}`,
+  widget: (widgetKey: string, playerId: string | null) => `widget:${widgetKey}:${playerId ?? ""}`,
 };
 
 /** Starts loading data for the page about to open, under `key`. */

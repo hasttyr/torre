@@ -1,6 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
@@ -56,7 +56,26 @@ async function mountView(url = "/panel") {
 
   const wrapper = mount(PanelView, { global: { plugins: [router, i18n] } });
   await flushPromises();
+  // Each widget is its own chunk: let them load, then let them fetch.
+  await vi.dynamicImportSettled();
+  await flushPromises();
   return wrapper;
+}
+
+/** Widgets wait off-screen until the returned `revealAll()` brings every one of them into view. */
+function stubIntersectionObserver(): () => void {
+  const callbacks: IntersectionObserverCallback[] = [];
+  vi.stubGlobal(
+    "IntersectionObserver",
+    vi.fn(function (callback: IntersectionObserverCallback) {
+      callbacks.push(callback);
+      return { observe: vi.fn(), disconnect: vi.fn() };
+    }),
+  );
+  return () =>
+    callbacks.forEach((callback) =>
+      callback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver),
+    );
 }
 
 const TWO_PLAYERS = {
@@ -72,6 +91,33 @@ describe("PanelView", () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     getWidgetDataMock.mockImplementation(async (key) => (key === "PLAYER_SUMMARY" ? SUMMARY : []));
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("requests a widget's data as it nears the viewport, alongside its code rather than after it", async () => {
+    const revealAll = stubIntersectionObserver();
+    signIn("PLAYER");
+    getDashboardMock.mockResolvedValue({
+      widgets: [{ key: "PLAYER_SUMMARY", subject: "player" }],
+      players: [{ id: "self", name: "Ana Torres" }],
+    });
+    const wrapper = await mountView();
+    expect(wrapper.find("[data-test='widget-skeleton']").exists()).toBe(true);
+    expect(getWidgetDataMock).not.toHaveBeenCalled();
+
+    revealAll();
+    // Same tick: the request is out before the widget has even rendered.
+    expect(getWidgetDataMock).toHaveBeenCalledExactlyOnceWith("PLAYER_SUMMARY", "self");
+
+    await flushPromises();
+    await vi.dynamicImportSettled();
+    await flushPromises();
+    // The widget took that request instead of making its own.
+    expect(getWidgetDataMock).toHaveBeenCalledOnce();
+    expect(wrapper.text()).toContain("57");
   });
 
   it("renders the role's widgets in order and shows a player their own stats without a picker", async () => {

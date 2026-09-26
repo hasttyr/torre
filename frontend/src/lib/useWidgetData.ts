@@ -4,12 +4,26 @@ import { useI18n } from "vue-i18n";
 import { getWidgetData, type WidgetKey } from "../services/dashboard";
 import { extractErrorMessage } from "./errors";
 import { usePlayerSelection } from "./playerSelection";
+import { DATA_KEYS, prefetchData, takeData } from "./routeData";
 
 export interface WidgetData<T> {
   data: Ref<T | null>;
   loading: Ref<boolean>;
   error: Ref<string | null>;
   reload: () => Promise<void>;
+}
+
+const requestWidgetData = <T>(key: WidgetKey, playerId: string | null): Promise<T> =>
+  getWidgetData<T>(key, playerId ?? undefined);
+
+/**
+ * Starts loading a widget's data before its code has arrived; the widget
+ * takes that request when it mounts instead of starting its own.
+ *
+ * @param playerId - The selected player, for a widget about one player.
+ */
+export function prefetchWidgetData(key: WidgetKey, playerId: string | null): void {
+  prefetchData(DATA_KEYS.widget(key, playerId), () => requestWidgetData(key, playerId));
 }
 
 /**
@@ -40,7 +54,8 @@ export function useWidgetData<T>(key: WidgetKey, subject?: () => string | null):
     loading.value = true;
     error.value = null;
     try {
-      const result = await getWidgetData<T>(key, playerId ?? undefined);
+      // Usually already on its way: see prefetchWidgetData.
+      const result = await takeData(DATA_KEYS.widget(key, playerId), () => requestWidgetData<T>(key, playerId));
       if (request === latestRequest) data.value = result;
     } catch (err) {
       if (request === latestRequest) error.value = extractErrorMessage(err, t("panel.widgetError"));
