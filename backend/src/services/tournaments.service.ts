@@ -349,7 +349,8 @@ export async function listEnrolledPlayers(
 
 /**
  * Withdraws a player from a tournament (HU27): their enrollment is kept for
- * history but excluded from the active roster and future pairings.
+ * history but excluded from the active roster and future pairings. Whoever
+ * follows the tournament's room sees it in the standings and stats.
  *
  * @throws {HttpError} 404 if the tournament doesn't exist or the player
  * isn't (actively) enrolled, 403 if not allowed to manage the tournament.
@@ -384,6 +385,7 @@ export async function withdrawPlayer(
     await tx.enrollment.update({ where: { id: enrollment.id }, data: { withdrawnAt: new Date() } });
     await recordAuditLog(tx, userId, "PLAYER_WITHDRAWN", detail);
   });
+  emitToTournament(tournamentId, SOCKET_EVENTS.PLAYER_WITHDRAWN, { tournamentId, playerId });
 }
 
 // HU18: where players, coaches and arbiters find tournaments to follow: the

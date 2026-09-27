@@ -44,17 +44,23 @@ Los servicios reciben el cliente de Prisma como parámetro (inversión de depend
 
 | Carpeta | Responsabilidad |
 |---|---|
-| `views/` | Pantallas por ruta. Componen componentes; no llaman a axios directamente |
-| `components/` | Piezas reutilizables: `ui/` genéricas, `charts/` gráficos, `dashboard/` widgets, `tournament/` sala y mesas, `tournament-admin/` gestión |
-| `stores/` (Pinia) | Estado compartido entre pantallas (sesión, torneo actual, rondas) |
+| `views/` | Pantallas por ruta, agrupadas por rol. Componen componentes; no llaman a axios directamente |
+| `components/` | Piezas reutilizables: `ui/` genéricas, `layout/` encabezado y menús, `charts/` gráficos, `dashboard/` widgets, `tournament/` sala y mesas, `tournament-admin/` gestión, `account/` perfil y privacidad, `home/` portada |
+| `stores/` (Pinia) | Estado compartido entre pantallas (sesión, torneo actual, rondas, tema, idioma, diálogo de confirmación) |
 | `services/` | Un módulo por recurso de la API. Es la única capa que conoce URLs y formatos |
-| `lib/` | Composables y utilidades sin estado global: formato, acceso por rol, datos de widgets, tiempo real, expiración de sesión |
+| `lib/` | Composables y utilidades sin estado global: formato y fechas, acceso por rol, datos de widgets, tiempo real, expiración de sesión, carga anticipada, estado en la URL |
+| `i18n/` | Textos en español (van en el arranque) e inglés (se descarga al elegirlo) |
 
 Decisiones:
 
-- **Rutas con carga diferida.** Solo la portada y el login van en el paquete inicial (134 KB, 44 KB gzip). Antes era un único paquete de más de 500 KB.
+- **Arranque mínimo.** Solo la portada y el login van en el paquete inicial. Al arrancar se cargan la app (83 KB, 24 KB gzip), Vue con sus plugins en un solo archivo (192 KB, 71 KB gzip) y el CSS (62 KB, 12 KB gzip). Todo lo demás llega cuando hace falta: cada página, el cliente de Socket.IO (solo en las vistas en vivo), el selector de fechas, el menú de usuario, el diálogo de confirmación y el inglés.
+- **Datos en paralelo con el código.** Las páginas pesadas (panel, sala del torneo, gestión del torneo) inician sus peticiones en el `beforeEnter` de su ruta, antes de que se descargue su código, y la página toma la petición en vuelo al montarse (`lib/routeData.ts`, `lib/pageData.ts`). Los widgets del panel cargan código y datos juntos al acercarse a la pantalla, y el código de una página se precarga cuando el usuario pasa por su enlace.
+- **Despliegues sin pestañas rotas.** Los archivos compilados llevan un hash en el nombre y se cachean un año; `index.html` nunca. Una pestaña abierta antes de un despliegue que ya no encuentra un archivo pasa a navegar con recargas completas, que traen la versión nueva (`lib/staleChunks.ts`).
 - **Sesión expirada o invalidada.** `services/api.ts` detecta un 401 en una petición que llevaba token y avisa a `lib/sessionExpiry.ts`, que limpia la sesión local y lleva al login con un mensaje y la ruta de regreso. El gancho evita el ciclo de imports entre `api.ts` y el store.
-- **Tiempo real con coalescencia.** `lib/useTournamentLive.ts` entra a la sala del torneo, vuelve a entrar tras cada reconexión y agrupa ráfagas de eventos en un solo refresco. El store de rondas descarta respuestas tardías de un torneo que el usuario ya dejó.
+- **Tiempo real con coalescencia.** `lib/useTournamentLive.ts` entra a la sala del torneo, vuelve a entrar tras cada reconexión, escucha todo el catálogo de eventos y agrupa ráfagas en un solo refresco. El store de rondas descarta respuestas tardías de un torneo que el usuario ya dejó.
+- **Estado en la URL.** La pestaña, la ronda, el jugador o el club seleccionados viven en la query (`lib/useQueryParam.ts`): sobreviven a una recarga y un enlace copiado abre la página igual.
+- **Fechas de calendario.** Las fechas de torneo se guardan como medianoche UTC y se muestran en UTC (`lib/format.ts`); lo que el usuario escribe en un campo de fecha es un día de su calendario local (`lib/dates.ts`). Así ninguna fecha se corre un día en Colombia.
+- **Accesibilidad.** Menús, pestañas y diálogos sobre reka-ui; enlace para saltar al contenido; el foco se conserva cuando un control se reemplaza a sí mismo; los errores de formulario quedan atados a su campo; cargas, errores y éxitos se anuncian en regiones vivas; las acciones con consecuencias se confirman con un diálogo propio en lugar de `window.confirm`.
 - **Registros tipados.** `components/dashboard/widgetRegistry.ts` es un `Record<WidgetKey, …>`: si falta el componente de un widget, el build falla.
 - **Tipos de prueba separados.** Los tests se chequean con `tsconfig.vitest.json` (con tipos de Node, porque corren en Node). El código de la app no tiene esos tipos, así que no puede usar APIs de Node por accidente.
 
@@ -81,6 +87,8 @@ Son dos proyectos npm sin paquete compartido, así que algunos catálogos están
 | Paquete JS único de más de 500 KB | Carga inicial lenta | Rutas con carga diferida (134 KB) |
 | Validación, errores de unicidad y descarga de archivos copiados en varios módulos | Duplicación | `parseOrThrow`, `prismaErrors.ts` y `lib/download.ts` compartidos |
 | Tipo de registro escrito a mano que admitía roles que la API rechaza | Tipo engañoso | Derivado del esquema zod |
+| La bitácora se devolvía completa en cada consulta | Respuesta sin límite a medida que crece | Paginación por cursor (50 entradas por página, máximo 100) con índice sobre `(created_at, id)` |
+| El evento `player.withdrawn` estaba en el catálogo, pero ningún servicio lo emitía | La sala en vivo no mostraba un retiro hasta recargar, aunque `DOCUMENTACION.md` lo especifica | Se emite al confirmar el retiro, y nunca si la acción falla. Lo cubren pruebas del servicio y del composable de tiempo real, y una prueba contra la API real |
 
 ### Historias completadas en esta revisión
 
@@ -95,7 +103,7 @@ Son dos proyectos npm sin paquete compartido, así que algunos catálogos están
 - **Integración continua**: un flujo de GitHub Actions que corra lint, tipos, tests y cobertura en cada push.
 - **Pruebas de extremo a extremo en navegador** (por ejemplo Playwright) para los flujos críticos. Hoy existen como scripts contra la API real, no en el repositorio.
 - **Emparejamiento imposible**: si ninguna combinación evita repetir un enfrentamiento, la generación se rechaza. Una mejora sería generar el borrador marcando la repetición, para que el organizador la autorice con un ajuste manual (RN-02).
-- **Paginación** en listados que crecen sin límite (usuarios, bitácora) si el sistema escala más allá de una universidad.
+- **Paginación del listado de usuarios** si el sistema escala más allá de una universidad. La bitácora ya se pagina.
 - **Autenticación en Socket.IO**: hoy cualquiera puede entrar a la sala de un torneo. Es aceptable porque los eventos solo avisan "algo cambió" y los datos se piden por REST con permisos, pero conviene cerrarlo si los eventos llegan a llevar datos.
 
 ## Estrategia de pruebas
@@ -107,10 +115,11 @@ Son dos proyectos npm sin paquete compartido, así que algunos catálogos están
 | HTTP | Códigos de estado, compuertas de rol, validación y cabeceras | `routes/*.test.ts` |
 | Componentes y vistas | Interacción, estados vacíos y de error, accesibilidad básica | `frontend/src/**/*.test.ts` |
 | Contratos | Catálogos duplicados y llamadas a la API | `contracts.test.ts`, `services/http.test.ts` |
+| Despliegue | Reglas de caché y reescritura de `vercel.json` | `deployment.test.ts` |
 
 ```bash
 npm test               # en backend/ y en frontend/
 npm run test:coverage  # informe de cobertura en coverage/
 ```
 
-Cobertura al cierre de la revisión: backend 95 % de líneas y 87 % de ramas (331 tests); frontend 90 % de líneas y 82 % de ramas (257 tests).
+Cobertura actual: backend 95 % de líneas y 88 % de ramas (341 tests); frontend 91 % de líneas y 84 % de ramas (437 tests).

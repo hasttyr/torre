@@ -10,10 +10,13 @@ Torre Central Hub automatiza el ciclo completo de un torneo de ajedrez universit
 - [Stack tecnológico](#stack-tecnológico)
 - [Arquitectura](#arquitectura)
 - [Reglas de negocio clave](#reglas-de-negocio-clave)
-- [Roadmap](#roadmap)
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [Puesta en marcha](#puesta-en-marcha)
 - [Datos de prueba](#datos-de-prueba)
+- [Ciclo de un torneo](#ciclo-de-un-torneo)
+- [Paneles por rol](#paneles-por-rol)
+- [Pruebas y calidad](#pruebas-y-calidad)
+- [Roadmap](#roadmap)
 - [Documentación](#documentación)
 - [Autor](#autor)
 
@@ -35,6 +38,8 @@ El sistema cubre de extremo a extremo:
 - Exportación e impresión de clasificación y emparejamientos en PDF
 - Bitácora de auditoría de acciones administrativas críticas
 - Consulta de historial, estadísticas y finalización del torneo
+- Panel de inicio por rol, configurable por el administrador
+- Interfaz en español e inglés, con tema claro y oscuro
 
 Fuera de alcance (decisión definitiva de producto, no trabajo pendiente): cálculo de rating federativo, exportación en formato TRF, y gestión de sanciones o incidencias arbitrales — estos corresponden a un dominio normativo y disciplinario distinto al de gestión operativa del torneo.
 
@@ -42,14 +47,28 @@ Fuera de alcance (decisión definitiva de producto, no trabajo pendiente): cálc
 
 | Capa | Tecnología |
 |---|---|
-| Frontend | Vue.js |
-| Backend | Node.js + Express |
-| Tiempo real | Socket.IO |
-| Persistencia | PostgreSQL |
+| Frontend | Vue 3 + TypeScript, Vite, Pinia, vue-router, vue-i18n, Tailwind CSS 4, reka-ui |
+| Backend | Node.js + Express 4 + TypeScript, validación con zod, PDF con pdfkit |
+| Tiempo real | Socket.IO 4 |
+| Persistencia | PostgreSQL con Prisma 6 (esquema y migraciones) |
+| Pruebas | Vitest (backend y frontend), Supertest, Vue Test Utils |
 
 ## Arquitectura
 
-Arquitectura cliente-servidor: el frontend consume una API REST para operaciones transaccionales (crear torneo, registrar resultado, etc.) y un canal Socket.IO para eventos en tiempo real (`pairing.published`, `match.result.recorded`, `standings.updated`, `player.withdrawn`, `pairing.adjusted`), de modo que emparejamientos y clasificación se actualizan para todos los clientes conectados sin recargar.
+Arquitectura cliente-servidor con dos canales:
+
+- **REST** (`/api`) para toda operación que consulta o cambia datos (crear torneo, registrar resultado, etc.).
+- **Socket.IO** para avisar en tiempo real que algo cambió en un torneo. Cada torneo tiene su sala, y los eventos son `pairing.published`, `pairing.adjusted`, `match.result.recorded`, `standings.updated`, `player.withdrawn` y `tournament.finished` (detalle en [`backend/README.md`](./backend/README.md#tiempo-real)).
+
+Los eventos solo avisan: el cliente vuelve a pedir los datos por REST, con sus permisos. Así hay una sola fuente de verdad, y emparejamientos, clasificación, retiros y estadísticas se actualizan para todos los clientes conectados sin recargar.
+
+```
+Vue 3 SPA ──REST──▶ Express ──▶ servicios de dominio ──▶ Prisma ──▶ PostgreSQL
+    ▲                                   │
+    └────────── Socket.IO ◀── emitToTournament (tras confirmar la transacción)
+```
+
+El detalle de capas y decisiones está en [`docs/arquitectura.md`](./docs/arquitectura.md).
 
 ## Reglas de negocio clave
 
@@ -61,56 +80,42 @@ Arquitectura cliente-servidor: el frontend consume una API REST para operaciones
 - Si el número de jugadores activos en una ronda es impar, se asigna bye automático a quien no lo haya recibido antes.
 - Todo ajuste manual de emparejamiento y toda acción administrativa crítica quedan registrados en la bitácora de auditoría.
 
-## Roadmap
-
-El desarrollo está planificado en 14 semanas (metodología Scrum adaptada), distribuidas en 2 semanas de levantamiento, 2 de diseño, 9 incrementos funcionales de una semana cada uno, y 1 semana de validación final.
-
-El seguimiento se lleva en este repositorio mediante:
-
-- **[Issues](../../issues)** — una historia de usuario o tarea por issue, organizadas como sub-issues de su Fase/Incremento correspondiente.
-- **[Milestones](../../milestones)** — uno por semana, con fecha límite real.
-- **[Project](../../projects)** — vista Roadmap con fechas de inicio/fin por actividad.
-
-Esta estructura se genera y actualiza con los scripts de [`tools/github-roadmap/`](./tools/github-roadmap).
-
 ## Estructura del proyecto
 
 ```
-torre-central-hub/
-├── backend/                    # API REST (Express + TypeScript) y lógica de negocio
-│   ├── prisma/schema.prisma    # Modelo de datos (Prisma + PostgreSQL)
-│   ├── src/
-│   │   ├── config/             # Variables de entorno y cliente Prisma
-│   │   ├── middlewares/        # Manejo de errores, futuros guards de auth
-│   │   ├── routes/             # Routers de dominio (montados bajo /api)
-│   │   ├── sockets/            # Catálogo de eventos y handlers de Socket.IO
-│   │   ├── app.ts              # Configuración de Express
-│   │   └── server.ts           # Punto de entrada (HTTP + Socket.IO)
-│   └── .env.example
-├── frontend/                   # Aplicación Vue 3 + TypeScript (Vite)
-│   ├── src/
-│   │   ├── router/              # Rutas de la SPA (vue-router)
-│   │   ├── stores/               # Estado global (Pinia)
-│   │   ├── services/             # Cliente HTTP (axios) y cliente Socket.IO
-│   │   └── views/                # Vistas de la aplicación
-│   └── .env.example
-├── docs/                       # Documento de práctica y diagramas del sistema
-├── tools/
-│   └── github-roadmap/         # Scripts para sincronizar el roadmap con Issues/Milestones/Project
-│       ├── roadmap_github.csv
-│       ├── bulk_upload_github.py
-│       ├── delete_roadmap_github.py
-│       └── README.md
+torre/
+├── backend/                  # API REST y tiempo real → backend/README.md
+│   ├── prisma/               # Esquema, migraciones y seed de datos de prueba
+│   └── src/
+│       ├── routes/           # Rutas bajo /api y compuerta de rol
+│       ├── controllers/      # Validan la entrada y responden
+│       ├── validators/       # Esquemas zod de cada petición
+│       ├── services/         # Casos de uso: pairing/, dashboard/, exports/…
+│       ├── sockets/          # Salas por torneo y catálogo de eventos
+│       ├── middlewares/      # Autenticación, errores, envoltura async
+│       └── config/           # Variables de entorno, cliente Prisma, política de datos
+├── frontend/                 # SPA Vue 3 + TypeScript (Vite) → frontend/README.md
+│   ├── DESIGN.md             # Referencia visual que sigue la portada
+│   └── src/
+│       ├── views/            # Pantallas por ruta, agrupadas por rol
+│       ├── components/       # ui/, charts/, dashboard/, tournament/, home/…
+│       ├── stores/           # Estado compartido (Pinia)
+│       ├── services/         # Un módulo por recurso de la API y el cliente Socket.IO
+│       ├── lib/              # Composables y utilidades
+│       ├── i18n/             # Español (por defecto) e inglés
+│       └── router/           # Rutas y guardas de sesión y rol
+├── docs/                     # Documento de sustentación, arquitectura y diagramas
+├── tools/github-roadmap/     # Scripts que sincronizan el roadmap con Issues/Milestones/Project
 └── README.md
 ```
 
-> La estructura interna de `backend/` y `frontend/` crecerá con cada incremento; lo anterior es el esqueleto inicial. Ver [`tools/github-roadmap/README.md`](./tools/github-roadmap/README.md) para el detalle de cómo sincronizar el roadmap.
+Cada proyecto tiene su propio README con scripts, variables de entorno y convenciones: [`backend/README.md`](./backend/README.md) y [`frontend/README.md`](./frontend/README.md).
 
 ## Puesta en marcha
 
 ### Requisitos previos
 
-- Node.js 20+
+- Node.js 22.12 o superior (Vitest 5 no corre en Node 20)
 - PostgreSQL
 
 ### Instalación
@@ -122,16 +127,19 @@ cd torre
 # Backend
 cd backend
 npm install
-cp .env.example .env      # completar DATABASE_URL, JWT_SECRET, etc.
-npx prisma migrate dev    # crea la base de datos y aplica el esquema inicial
-npm run dev                # http://localhost:4000 (GET /api/health)
+cp .env.example .env        # completar DATABASE_URL y JWT_SECRET
+npm run prisma:migrate      # crea la base de datos y aplica las migraciones
+npm run prisma:seed         # opcional: cuentas por rol y torneos de ejemplo
+npm run dev                 # http://localhost:4000 (GET /api/health)
 
-# Frontend
-cd ../frontend
+# Frontend (en otra terminal)
+cd frontend
 npm install
-cp .env.example .env
-npm run dev                # http://localhost:5173
+cp .env.example .env        # los valores por defecto apuntan al backend local
+npm run dev                 # http://localhost:5173
 ```
+
+No hay proveedor de correo configurado: al pedir la recuperación de contraseña, el backend escribe el enlace de un solo uso en su consola.
 
 ## Datos de prueba
 
@@ -178,20 +186,38 @@ Cada usuario aterriza en `/panel`, que muestra los controles (widgets) asignados
 
 Agregar un control nuevo requiere tres pasos, sin tocar rutas ni controladores: su clave en `backend/src/services/dashboard/widgetCatalog.ts`, su loader en `widgetRegistry.ts` y su componente en `frontend/src/components/dashboard/widgetRegistry.ts`.
 
-## Pruebas
+## Pruebas y calidad
+
+Cada proyecto se prueba y se revisa por separado, desde su carpeta:
 
 ```bash
-npm test               # en backend/ y en frontend/
+npm test               # pruebas (Vitest)
 npm run test:coverage  # informe de cobertura en coverage/
+npm run lint           # ESLint
+npm run build          # compila; en frontend incluye el chequeo de tipos (vue-tsc)
 ```
 
-Además de las pruebas unitarias, de servicios y de rutas, `frontend/src/contracts.test.ts` compara los catálogos que frontend y backend duplican (widgets, roles, eventos, resultados…) y falla si se desalinean. La estrategia completa está en [`docs/arquitectura.md`](./docs/arquitectura.md#estrategia-de-pruebas).
+Además de las pruebas unitarias, de servicios, de rutas y de componentes, `frontend/src/contracts.test.ts` compara los catálogos que frontend y backend duplican (widgets, roles, eventos, resultados…) y falla si se desalinean. La estrategia completa está en [`docs/arquitectura.md`](./docs/arquitectura.md#estrategia-de-pruebas).
+
+## Roadmap
+
+El desarrollo está planificado en 14 semanas (metodología Scrum adaptada), distribuidas en 2 semanas de levantamiento, 2 de diseño, 9 incrementos funcionales de una semana cada uno, y 1 semana de validación final.
+
+El seguimiento se lleva en este repositorio mediante:
+
+- **[Issues](../../issues)** — una historia de usuario o tarea por issue, organizadas como sub-issues de su Fase/Incremento correspondiente.
+- **[Milestones](../../milestones)** — uno por semana, con fecha límite real.
+- **[Project](../../projects)** — vista Roadmap con fechas de inicio/fin por actividad.
+
+Esta estructura se genera y actualiza con los scripts de [`tools/github-roadmap/`](./tools/github-roadmap) (ver su [README](./tools/github-roadmap/README.md)).
 
 ## Documentación
 
-La arquitectura interna, las decisiones de diseño y la revisión de septiembre de 2026 están en [`docs/arquitectura.md`](./docs/arquitectura.md).
-
-El documento completo de sustentación (planteamiento del problema, marco referencial, requisitos, casos de uso, modelo de datos, plan de pruebas y trazabilidad completa) está en [`docs/`](./docs).
+- [`backend/README.md`](./backend/README.md) y [`frontend/README.md`](./frontend/README.md): cómo correr, probar y extender cada proyecto.
+- [`docs/arquitectura.md`](./docs/arquitectura.md): arquitectura interna, decisiones de diseño y la revisión de septiembre de 2026.
+- [`docs/diagrama-componentes.md`](./docs/diagrama-componentes.md): relación entre el diagrama de componentes y las carpetas del código.
+- [`docs/DOCUMENTACION.md`](./docs/DOCUMENTACION.md): documento completo de sustentación (planteamiento del problema, marco referencial, requisitos, casos de uso, modelo de datos, plan de pruebas y trazabilidad).
+- [`frontend/DESIGN.md`](./frontend/DESIGN.md): lenguaje visual de referencia de la portada.
 
 ## Autor
 

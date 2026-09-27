@@ -77,6 +77,23 @@ describe("useTournamentLive", () => {
     expect(joinTournamentRoom).toHaveBeenCalledWith(socketMock, "t-1");
   });
 
+  it.each([
+    "pairing.published",
+    "pairing.adjusted",
+    "match.result.recorded",
+    "standings.updated",
+    "player.withdrawn",
+    "tournament.finished",
+  ])("refreshes on %s", async (event) => {
+    const onChange = vi.fn();
+    await mountLive(onChange);
+
+    handlers.get(event)!();
+    vi.advanceTimersByTime(200);
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+
   it("coalesces a burst of events (result + standings) into one refresh", async () => {
     const onChange = vi.fn();
     await mountLive(onChange);

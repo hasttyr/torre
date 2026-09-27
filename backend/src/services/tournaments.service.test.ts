@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HttpError } from "../middlewares/errorHandler";
+import { emitToTournament } from "../sockets/broadcast";
 import {
   openRegistration,
   closeRegistration,
@@ -14,7 +15,10 @@ import {
   listAvailableTournaments,
   listEnrolledTournaments,
   getTournament,
+  withdrawPlayer,
 } from "./tournaments.service";
+
+vi.mock("../sockets/broadcast", () => ({ emitToTournament: vi.fn() }));
 
 function buildPrismaMock() {
   const mock = {
@@ -652,5 +656,66 @@ describe("configureTournament — rounds already generated", () => {
         timeControl: "5+3",
       }),
     ).rejects.toMatchObject({ status: 409 } satisfies Partial<HttpError>);
+  });
+});
+
+describe("withdrawPlayer (HU27)", () => {
+  function withdrawMock(enrollment: { withdrawnAt: Date | null }) {
+    const mock = {
+      tournament: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: "t-1",
+          name: "Copa",
+          organizerId: "org-1",
+          status: "IN_PROGRESS",
+        }),
+      },
+      enrollment: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: "enr-1",
+          ...enrollment,
+          player: { user: { name: "Ana Torres" } },
+        }),
+        update: vi.fn().mockResolvedValue({}),
+      },
+      auditLog: { create: vi.fn().mockResolvedValue({ id: "log-1" }) },
+      $transaction: vi.fn(),
+    };
+    mock.$transaction.mockImplementation((work: (tx: typeof mock) => unknown) => work(mock));
+    return mock;
+  }
+  const withdraw = (prisma: ReturnType<typeof withdrawMock>) =>
+    withdrawPlayer(prisma as unknown as PrismaClient, "t-1", "p-1", "org-1", "ORGANIZER", {});
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("tells the tournament's room once the withdrawal is saved, so standings and stats refresh live", async () => {
+    const prisma = withdrawMock({ withdrawnAt: null });
+
+    await withdraw(prisma);
+
+    expect(prisma.enrollment.update).toHaveBeenCalledWith({
+      where: { id: "enr-1" },
+      data: { withdrawnAt: expect.any(Date) },
+    });
+    expect(emitToTournament).toHaveBeenCalledWith("t-1", "player.withdrawn", { tournamentId: "t-1", playerId: "p-1" });
+  });
+
+  it("tells no one when the withdrawal doesn't commit", async () => {
+    const prisma = withdrawMock({ withdrawnAt: null });
+    prisma.auditLog.create.mockRejectedValue(new Error("audit write failed"));
+
+    await expect(withdraw(prisma)).rejects.toThrow("audit write failed");
+    expect(emitToTournament).not.toHaveBeenCalled();
+  });
+
+  it("refuses a player who already withdrew, and tells no one", async () => {
+    const prisma = withdrawMock({ withdrawnAt: new Date("2026-09-01") });
+
+    await expect(withdraw(prisma)).rejects.toMatchObject({ status: 404 } satisfies Partial<HttpError>);
+    expect(prisma.enrollment.update).not.toHaveBeenCalled();
+    expect(emitToTournament).not.toHaveBeenCalled();
   });
 });
