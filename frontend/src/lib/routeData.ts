@@ -16,10 +16,8 @@ const pending = new Map<string, Pending>();
 
 /** The key each prefetching page's data is kept under (shared by its route and the page). */
 export const DATA_KEYS = {
-  panel: "panel",
   room: (tournamentId: string) => `room:${tournamentId}`,
   tournamentAdmin: (tournamentId: string) => `tournament-admin:${tournamentId}`,
-  widget: (widgetKey: string, playerId: string | null) => `widget:${widgetKey}:${playerId ?? ""}`,
 };
 
 /** Starts loading data for the page about to open, under `key`. */

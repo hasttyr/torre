@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { useQuery } from "@pinia/colada";
+import { computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import PlayerPicker from "../../components/dashboard/PlayerPicker.vue";
@@ -8,11 +9,9 @@ import WidgetSkeleton from "../../components/dashboard/WidgetSkeleton.vue";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LazyMount from "../../components/ui/LazyMount.vue";
 import LoadError from "../../components/ui/LoadError.vue";
+import { currentUserId, panelQuery, prefetchWidget } from "../../lib/dashboardQueries";
 import { extractErrorMessage } from "../../lib/errors";
-import { loadDashboard } from "../../lib/pageData";
 import { providePlayerSelection } from "../../lib/playerSelection";
-import { DATA_KEYS, takeData } from "../../lib/routeData";
-import { prefetchWidget } from "../../lib/dashboardQueries";
 import type { WidgetSummary } from "../../services/dashboard";
 import { useAuthStore } from "../../stores/auth";
 
@@ -22,12 +21,22 @@ import { useAuthStore } from "../../stores/auth";
 const auth = useAuthStore();
 const { t } = useI18n();
 
-const widgets = ref<WidgetSummary[]>([]);
-const loading = ref(true);
-const loadError = ref<string | null>(null);
+// Usually already on its way: the route started it (lib/dashboardQueries.ts).
+const panel = useQuery(() => panelQuery(currentUserId()));
+const loading = computed(() => panel.status.value === "pending");
+const loadError = computed(() =>
+  panel.status.value === "error" ? extractErrorMessage(panel.error.value, t("panel.loadError")) : null,
+);
+const widgets = computed(() => (panel.data.value?.widgets ?? []).filter((widget) => isRenderableWidget(widget.key)));
 
 const hasPlayerWidgets = computed(() => widgets.value.some((widget) => widget.subject === "player"));
 const selection = providePlayerSelection({ hasPlayerWidgets: () => hasPlayerWidgets.value, urlParam: "jugador" });
+// The selected player follows: the one in the URL, else the first.
+watch(
+  () => panel.data.value?.players,
+  (players) => (selection.players.value = players ?? []),
+  { immediate: true },
+);
 
 const role = computed(() => auth.user?.role ?? "");
 const firstName = computed(() => auth.user?.name.split(/\s+/)[0] ?? "");
@@ -40,20 +49,6 @@ function prefetchNearingWidget(widget: WidgetSummary): void {
   if (widget.subject === "player" && !playerId) return;
   prefetchWidget(widget.key, playerId);
 }
-
-onMounted(async () => {
-  try {
-    // Usually already on its way: the route started it (lib/routeData.ts).
-    const dashboard = await takeData(DATA_KEYS.panel, loadDashboard);
-    widgets.value = dashboard.widgets.filter((widget) => isRenderableWidget(widget.key));
-    // The selected player follows: the one in the URL, else the first.
-    selection.players.value = dashboard.players;
-  } catch (error) {
-    loadError.value = extractErrorMessage(error, t("panel.loadError"));
-  } finally {
-    loading.value = false;
-  }
-});
 </script>
 
 <template>

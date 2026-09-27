@@ -10,6 +10,7 @@ import HomeView from "../views/HomeView.vue";
 // The heavier pages also start their data in beforeEnter, which runs before
 // the page's chunk downloads, so data and code arrive in parallel.
 const pageData = () => import("../lib/pageData");
+const dashboardQueries = () => import("../lib/dashboardQueries");
 
 // Roles that manage tournaments (HU04-HU07). Mirrors
 // backend/src/routes/tournaments.routes.ts (requireRole("ORGANIZER", "ADMINISTRATOR")).
@@ -50,7 +51,12 @@ export const router = createRouter({
       name: "panel",
       component: () => import("../views/dashboard/PanelView.vue"),
       meta: { requiresAuth: true },
-      beforeEnter: () => prefetchData(DATA_KEYS.panel, () => pageData().then((data) => data.loadDashboard())),
+      beforeEnter: () => {
+        // A failed prefetch leaves it to the page, which loads (or shows the error) itself.
+        dashboardQueries()
+          .then((queries) => queries.prefetchPanel())
+          .catch(() => undefined);
+      },
     },
     {
       path: "/panel/configuracion",

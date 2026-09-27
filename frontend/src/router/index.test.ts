@@ -1,14 +1,16 @@
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Pages' first data requests, started by their routes (see lib/pageData.ts).
+// Pages' first data requests, started by their routes (see lib/pageData.ts
+// and lib/dashboardQueries.ts).
 vi.mock("../lib/pageData", () => ({
-  loadDashboard: vi.fn(() => new Promise(() => {})),
   loadTournamentRoom: vi.fn(() => new Promise(() => {})),
   loadTournamentAdmin: vi.fn(() => new Promise(() => {})),
 }));
+vi.mock("../lib/dashboardQueries", () => ({ prefetchPanel: vi.fn() }));
 
-import { loadDashboard, loadTournamentAdmin, loadTournamentRoom } from "../lib/pageData";
+import { prefetchPanel } from "../lib/dashboardQueries";
+import { loadTournamentAdmin, loadTournamentRoom } from "../lib/pageData";
 import { useAuthStore } from "../stores/auth";
 import { router } from "./index";
 
@@ -106,7 +108,7 @@ describe("router data prefetch", () => {
     await router.push("/torneos/t-8");
     await vi.dynamicImportSettled();
 
-    expect(loadDashboard).toHaveBeenCalledOnce();
+    expect(prefetchPanel).toHaveBeenCalledOnce();
     expect(loadTournamentRoom).toHaveBeenCalledWith("t-7");
     expect(loadTournamentAdmin).toHaveBeenCalledWith("t-8");
   });
@@ -116,6 +118,18 @@ describe("router data prefetch", () => {
     await vi.dynamicImportSettled();
 
     expect(router.currentRoute.value.path).toBe("/login");
-    expect(loadDashboard).not.toHaveBeenCalled();
+    expect(prefetchPanel).not.toHaveBeenCalled();
+  });
+
+  it("still opens the page when its prefetch fails, leaving the loading to the page", async () => {
+    signIn("ADMINISTRATOR");
+    vi.mocked(prefetchPanel).mockImplementationOnce(() => {
+      throw new Error("chunk gone");
+    });
+
+    await router.push("/panel");
+    await vi.dynamicImportSettled();
+
+    expect(router.currentRoute.value.path).toBe("/panel");
   });
 });
