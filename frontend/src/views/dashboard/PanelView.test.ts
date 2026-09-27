@@ -1,5 +1,5 @@
 import { flushPromises, mount } from "@vue/test-utils";
-import { createPinia, setActivePinia } from "pinia";
+import { createPinia, setActivePinia, type Pinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
@@ -30,6 +30,8 @@ const SUMMARY = {
   bestFinish: 1,
 };
 
+let pinia: Pinia;
+
 function signIn(role: string, name = "Ana Torres"): void {
   useAuthStore().user = {
     id: "user-1",
@@ -54,7 +56,7 @@ async function mountView(url = "/panel") {
   router.push(url);
   await router.isReady();
 
-  const wrapper = mount(PanelView, { global: { plugins: [router, i18n] } });
+  const wrapper = mount(PanelView, { global: { plugins: [router, i18n, pinia] } });
   await flushPromises();
   // Each widget is its own chunk: let them load, then let them fetch.
   await vi.dynamicImportSettled();
@@ -88,7 +90,8 @@ const TWO_PLAYERS = {
 
 describe("PanelView", () => {
   beforeEach(() => {
-    setActivePinia(createPinia());
+    pinia = createPinia();
+    setActivePinia(pinia);
     vi.clearAllMocks();
     getWidgetDataMock.mockImplementation(async (key) => (key === "PLAYER_SUMMARY" ? SUMMARY : []));
   });

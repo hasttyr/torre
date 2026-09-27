@@ -1,10 +1,11 @@
-import { ref, shallowRef, watch, type Ref } from "vue";
+import { useQuery } from "@pinia/colada";
+import { computed, type Ref } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { getWidgetData, type WidgetKey } from "../services/dashboard";
+import type { WidgetKey } from "../services/dashboard";
+import { currentUserId, widgetQuery } from "./dashboardQueries";
 import { extractErrorMessage } from "./errors";
 import { usePlayerSelection } from "./playerSelection";
-import { DATA_KEYS, prefetchData, takeData } from "./routeData";
 
 export interface WidgetData<T> {
   data: Ref<T | null>;
@@ -13,60 +14,38 @@ export interface WidgetData<T> {
   reload: () => Promise<void>;
 }
 
-const requestWidgetData = <T>(key: WidgetKey, playerId: string | null): Promise<T> =>
-  getWidgetData<T>(key, playerId ?? undefined);
-
 /**
- * Starts loading a widget's data before its code has arrived; the widget
- * takes that request when it mounts instead of starting its own.
+ * A widget's data in the shape WidgetCard shows: loading, an error message,
+ * or the data. Each subject is its own cache entry, so a slower answer for
+ * the previous player lands in that player's entry and never shows for the
+ * new one.
  *
- * @param playerId - The selected player, for a widget about one player.
- */
-export function prefetchWidgetData(key: WidgetKey, playerId: string | null): void {
-  prefetchData(DATA_KEYS.widget(key, playerId), () => requestWidgetData(key, playerId));
-}
-
-/**
- * Loads a widget's data, and reloads it whenever `subject` changes.
- *
- * @param subject - For player widgets: a getter for the selected player id.
- * While it returns null nothing is requested (the widget shows its "pick a
- * player" state instead). Omit it for widgets that aren't about one player.
+ * @param subject - For a widget about one player: who it is. Until there's
+ *   one, nothing is requested and the widget isn't loading.
  */
 export function useWidgetData<T>(key: WidgetKey, subject?: () => string | null): WidgetData<T> {
   const { t } = useI18n();
-  const data = shallowRef<T | null>(null);
-  const loading = ref(true);
-  const error = ref<string | null>(null);
-  // Switching players quickly can resolve requests out of order; only the
-  // latest one is allowed to write.
-  let latestRequest = 0;
+  const playerId = (): string | null => subject?.() ?? null;
+  const enabled = (): boolean => !subject || playerId() !== null;
+  // Usually already on its way: PanelView prefetches a widget as it nears the viewport.
+  const query = useQuery(() => ({ ...widgetQuery<T>(currentUserId(), key, playerId()), enabled: enabled() }));
 
-  async function load(): Promise<void> {
-    const playerId = subject?.() ?? null;
-    const request = ++latestRequest;
-    if (subject && !playerId) {
-      data.value = null;
-      loading.value = false;
-      return;
-    }
-
-    loading.value = true;
-    error.value = null;
-    try {
-      // Usually already on its way: see prefetchWidgetData.
-      const result = await takeData(DATA_KEYS.widget(key, playerId), () => requestWidgetData<T>(key, playerId));
-      if (request === latestRequest) data.value = result;
-    } catch (err) {
-      if (request === latestRequest) error.value = extractErrorMessage(err, t("panel.widgetError"));
-    } finally {
-      if (request === latestRequest) loading.value = false;
-    }
-  }
-
-  watch(() => subject?.() ?? null, load, { immediate: true });
-
-  return { data, loading, error, reload: load };
+  return {
+    data: computed(() => query.data.value ?? null),
+    // Nothing to show yet, with a request in flight or about to start (a
+    // retry after an error shows the skeleton again).
+    loading: computed(
+      () => enabled() && query.data.value === undefined && (query.isPending.value || query.isLoading.value),
+    ),
+    error: computed(() =>
+      query.status.value === "error" && !query.isLoading.value
+        ? extractErrorMessage(query.error.value, t("panel.widgetError"))
+        : null,
+    ),
+    reload: async () => {
+      await query.refetch();
+    },
+  };
 }
 
 /** {@link useWidgetData} for a widget about the dashboard's selected player. */

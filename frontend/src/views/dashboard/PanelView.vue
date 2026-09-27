@@ -12,7 +12,7 @@ import { extractErrorMessage } from "../../lib/errors";
 import { loadDashboard } from "../../lib/pageData";
 import { providePlayerSelection } from "../../lib/playerSelection";
 import { DATA_KEYS, takeData } from "../../lib/routeData";
-import { prefetchWidgetData } from "../../lib/useWidgetData";
+import { prefetchWidget } from "../../lib/dashboardQueries";
 import type { WidgetSummary } from "../../services/dashboard";
 import { useAuthStore } from "../../stores/auth";
 
@@ -34,11 +34,11 @@ const firstName = computed(() => auth.user?.name.split(/\s+/)[0] ?? "");
 const noSubjects = computed(() => hasPlayerWidgets.value && selection.players.value.length === 0);
 
 /** A widget coming into view: its data starts loading while its code downloads. */
-function prefetchWidget(widget: WidgetSummary): void {
+function prefetchNearingWidget(widget: WidgetSummary): void {
   const playerId = widget.subject === "player" ? selection.selectedId.value : null;
   // A player widget with no player to show asks for nothing.
   if (widget.subject === "player" && !playerId) return;
-  prefetchWidgetData(widget.key, playerId);
+  prefetchWidget(widget.key, playerId);
 }
 
 onMounted(async () => {
@@ -109,7 +109,7 @@ onMounted(async () => {
           >
             <!-- A widget far down the page loads its code and data only
                  as the user scrolls toward it, both at once. -->
-            <LazyMount @visible="prefetchWidget(widget)">
+            <LazyMount @visible="prefetchNearingWidget(widget)">
               <component :is="WIDGET_VIEWS[widget.key].component" />
               <template #placeholder><WidgetSkeleton :widget="widget.key" /></template>
             </LazyMount>

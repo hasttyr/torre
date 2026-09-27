@@ -1,5 +1,5 @@
 import { flushPromises, mount } from "@vue/test-utils";
-import { createPinia, setActivePinia } from "pinia";
+import { createPinia, setActivePinia, type Pinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h, type Component } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
@@ -32,6 +32,8 @@ const PLAYERS = [
   { id: "p2", name: "Luis Gómez" },
 ];
 
+let pinia: Pinia;
+
 /** Mounts a widget the way the dashboard does: inside a provided player selection. */
 async function mountWidget(widget: Component, options: { selected?: string | null; playerWidgets?: boolean } = {}) {
   let selection!: ReturnType<typeof providePlayerSelection>;
@@ -47,14 +49,15 @@ async function mountWidget(widget: Component, options: { selected?: string | nul
     history: createWebHistory(),
     routes: [{ path: "/:p(.*)*", component: { template: "<div />" } }],
   });
-  const wrapper = mount(Host, { global: { plugins: [router, i18n] } });
+  const wrapper = mount(Host, { global: { plugins: [router, i18n, pinia] } });
   await flushPromises();
   return { wrapper, selection };
 }
 
 describe("dashboard widgets", () => {
   beforeEach(() => {
-    setActivePinia(createPinia());
+    pinia = createPinia();
+    setActivePinia(pinia);
     vi.clearAllMocks();
   });
 
@@ -124,6 +127,7 @@ describe("dashboard widgets", () => {
 
     expect(getWidgetDataMock).not.toHaveBeenCalled();
     expect(wrapper.text()).toContain("Elige un jugador");
+    expect(wrapper.find("[data-test='widget-loading']").exists()).toBe(false);
   });
 
   it("reloads when the dashboard's subject changes, ignoring a slower earlier answer", async () => {
