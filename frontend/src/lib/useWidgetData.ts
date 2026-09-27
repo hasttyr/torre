@@ -28,7 +28,12 @@ export function useWidgetData<T>(key: WidgetKey, subject?: () => string | null):
   const playerId = (): string | null => subject?.() ?? null;
   const enabled = (): boolean => !subject || playerId() !== null;
   // Usually already on its way: PanelView prefetches a widget as it nears the viewport.
-  const query = useQuery(() => ({ ...widgetQuery<T>(currentUserId(), key, playerId()), enabled: enabled() }));
+  // Combined with the signed-in check, not overriding it: logging out must
+  // still disable the query even when there's no player-selection condition.
+  const query = useQuery(() => ({
+    ...widgetQuery<T>(currentUserId(), key, playerId()),
+    enabled: currentUserId() !== "" && enabled(),
+  }));
 
   return {
     data: computed(() => query.data.value ?? null),

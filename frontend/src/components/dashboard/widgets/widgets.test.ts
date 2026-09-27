@@ -6,6 +6,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../../i18n";
 import { providePlayerSelection } from "../../../lib/playerSelection";
+import { useAuthStore } from "../../../stores/auth";
 import GameLogWidget from "./GameLogWidget.vue";
 import PerformanceTrendWidget from "./PerformanceTrendWidget.vue";
 import PlayersOverviewWidget from "./PlayersOverviewWidget.vue";
@@ -59,6 +60,9 @@ describe("dashboard widgets", () => {
     pinia = createPinia();
     setActivePinia(pinia);
     vi.clearAllMocks();
+    // Widgets only ever render inside an authenticated panel; their query is
+    // disabled without a signed-in user (dashboardQueries.ts).
+    useAuthStore().user = { id: "user-1" } as ReturnType<typeof useAuthStore>["user"];
   });
 
   it("player widgets ask for the selected player and show whose data it is", async () => {

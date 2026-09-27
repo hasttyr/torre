@@ -223,6 +223,25 @@ describe("PanelView", () => {
     expect(wrapper.text()).toContain("Tu panel todavía no tiene controles");
   });
 
+  it("stops asking the server the instant a signed-in user logs out or their session expires", async () => {
+    signIn("PLAYER");
+    getDashboardMock.mockResolvedValue({
+      widgets: [{ key: "PLAYER_SUMMARY", subject: "player" }],
+      players: [{ id: "self", name: "Ana Torres" }],
+    });
+    await mountView();
+    expect(getDashboardMock).toHaveBeenCalledOnce();
+    expect(getWidgetDataMock).toHaveBeenCalledOnce();
+
+    useAuthStore().clearSession();
+    await flushPromises();
+
+    // The key watcher fires on logout too, but the entry must stay disabled
+    // instead of making a fresh, tokenless request.
+    expect(getDashboardMock).toHaveBeenCalledOnce();
+    expect(getWidgetDataMock).toHaveBeenCalledOnce();
+  });
+
   it("isolates a failing widget: it shows its own error while the rest still render", async () => {
     signIn("ORGANIZER");
     getDashboardMock.mockResolvedValue({

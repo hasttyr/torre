@@ -92,6 +92,15 @@ describe("dashboard queries", () => {
     expect(getDashboardMock).toHaveBeenCalledTimes(2);
   });
 
+  it("makes no request when nobody is signed in (logout or a session expiring just before)", async () => {
+    prefetchPanel();
+    prefetchWidget("TOP_PLAYERS", null);
+    await flushPromises();
+
+    expect(getDashboardMock).not.toHaveBeenCalled();
+    expect(getWidgetDataMock).not.toHaveBeenCalled();
+  });
+
   it("sends a widget's request in the same tick, and keeps a failure in the cache for the widget to show", async () => {
     signIn("u-1");
     getWidgetDataMock.mockRejectedValue(new Error("down"));

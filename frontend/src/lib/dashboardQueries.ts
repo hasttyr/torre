@@ -14,7 +14,9 @@ const FRESHNESS = { staleTime: 15_000, refetchOnWindowFocus: false } as const;
 
 /** The dashboard's widget list and selectable players. */
 export function panelQuery(userId: string): DefineQueryOptions<Dashboard> {
-  return { key: ["dashboard", userId], query: () => getDashboard(), ...FRESHNESS };
+  // Signing out or a session expiring nulls the user before the router leaves
+  // /panel; without this, the key watcher would fire a request with no token.
+  return { key: ["dashboard", userId], query: () => getDashboard(), enabled: userId !== "", ...FRESHNESS };
 }
 
 /** One widget's data; `playerId` for a widget about one player. */
@@ -22,6 +24,7 @@ export function widgetQuery<T>(userId: string, key: WidgetKey, playerId: string 
   return {
     key: ["dashboard", userId, "widget", key, playerId ?? ""],
     query: () => getWidgetData<T>(key, playerId ?? undefined),
+    enabled: userId !== "",
     ...FRESHNESS,
   };
 }
@@ -37,6 +40,9 @@ export function currentUserId(): string {
  * which is reused. A failure stays in the entry, for the page to show.
  */
 function prefetch<T>(options: DefineQueryOptions<T>): void {
+  // cache.fetch ignores `enabled`, so a signed-out prefetch must stop here
+  // instead of relying on the query option (see panelQuery/widgetQuery).
+  if (currentUserId() === "") return;
   const cache = useQueryCache();
   const entry = cache.ensure(options);
   (entry.pending?.refreshCall ?? cache.fetch(entry)).catch(() => undefined);
