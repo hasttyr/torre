@@ -134,6 +134,15 @@ describe("dashboard widgets", () => {
     expect(wrapper.find("[data-test='widget-loading']").exists()).toBe(false);
   });
 
+  it("signed out, a widget requests nothing and isn't left loading", async () => {
+    useAuthStore().user = null;
+
+    const { wrapper } = await mountWidget(TopPlayersWidget);
+
+    expect(getWidgetDataMock).not.toHaveBeenCalled();
+    expect(wrapper.find("[data-test='widget-loading']").exists()).toBe(false);
+  });
+
   it("reloads when the dashboard's subject changes, ignoring a slower earlier answer", async () => {
     let resolveFirst!: (value: unknown) => void;
     getWidgetDataMock
