@@ -101,7 +101,7 @@ Al agregar una dependencia pesada, conviene importarla de forma dinámica en la 
 
 - **Textos.** Todo texto visible sale de `i18n/locales/es.json` y `en.json` con `t("…")`, y cada clave debe existir en los dos (`i18n/locales.test.ts` lo exige). El español es el idioma por defecto.
 - **Tema e idioma.** Se guardan en `localStorage` (`torre.theme`, `torre.locale`). El tema se aplica en `index.html` antes del primer render, para que no parpadee.
-- **Estilos.** Tailwind con los tokens de color de [`style.css`](src/style.css) (`bg-bg`, `text-text-muted`, `bg-surface`, `text-accent`…), que cambian solos con el tema. La portada sigue el lenguaje visual de [`DESIGN.md`](DESIGN.md).
+- **Estilos.** Tailwind con los tokens de color de [`style.css`](src/style.css) (`bg-bg`, `text-text-muted`, `bg-surface`, `text-accent`…), que cambian solos con el tema.
 - **Estado en la URL.** La pestaña, la ronda, el jugador o el club seleccionados viven en la URL con `useQueryParam`, así que sobreviven a una recarga y un enlace copiado abre la página igual.
 - **Cargas y errores.** Toda carga que falla muestra `LoadError` con un botón para reintentar, y lo que llega o cambia se anuncia a los lectores de pantalla.
 - **Acciones con consecuencias.** Se confirman con `useConfirm()` (un diálogo accesible, no `window.confirm`). Los formularios con cambios sin guardar avisan antes de salir (`useUnsavedChangesGuard`).

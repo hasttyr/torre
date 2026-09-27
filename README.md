@@ -95,7 +95,6 @@ torre/
 │       ├── middlewares/      # Autenticación, errores, envoltura async
 │       └── config/           # Variables de entorno, cliente Prisma, política de datos
 ├── frontend/                 # SPA Vue 3 + TypeScript (Vite) → frontend/README.md
-│   ├── DESIGN.md             # Referencia visual que sigue la portada
 │   └── src/
 │       ├── views/            # Pantallas por ruta, agrupadas por rol
 │       ├── components/       # ui/, charts/, dashboard/, tournament/, home/…
@@ -217,7 +216,6 @@ Esta estructura se genera y actualiza con los scripts de [`tools/github-roadmap/
 - [`docs/arquitectura.md`](./docs/arquitectura.md): arquitectura interna, decisiones de diseño y la revisión de septiembre de 2026.
 - [`docs/diagrama-componentes.md`](./docs/diagrama-componentes.md): relación entre el diagrama de componentes y las carpetas del código.
 - [`docs/DOCUMENTACION.md`](./docs/DOCUMENTACION.md): documento completo de sustentación (planteamiento del problema, marco referencial, requisitos, casos de uso, modelo de datos, plan de pruebas y trazabilidad).
-- [`frontend/DESIGN.md`](./frontend/DESIGN.md): lenguaje visual de referencia de la portada.
 
 ## Autor
 
