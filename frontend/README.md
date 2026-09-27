@@ -91,7 +91,7 @@ Sin sesión, una ruta protegida lleva a `/login?redirect=<ruta>`; con un rol que
 El paquete inicial lleva solo lo que necesitan la portada y el login. El resto llega cuando hace falta:
 
 - **Páginas con carga diferida.** Cada vista es su propio archivo, y el código de una página empieza a descargarse cuando el usuario pasa el puntero, el foco o el dedo por su enlace en el encabezado ([`lib/prefetchRoute.ts`](src/lib/prefetchRoute.ts)).
-- **Datos en paralelo con el código.** Las páginas pesadas (panel, sala del torneo, gestión del torneo) piden sus datos en el `beforeEnter` de su ruta, mientras se descarga su código, y la página toma esa petición al montarse ([`lib/routeData.ts`](src/lib/routeData.ts), [`lib/pageData.ts`](src/lib/pageData.ts)).
+- **Datos en paralelo con el código.** Las páginas pesadas (panel, sala del torneo, gestión del torneo) piden sus datos en el `beforeEnter` de su ruta, mientras se descarga su código, y la página toma esa petición al montarse. El panel usa la caché de [Pinia Colada](https://pinia-colada.esm.dev/) ([`lib/dashboardQueries.ts`](src/lib/dashboardQueries.ts)); la sala y la gestión, [`lib/routeData.ts`](src/lib/routeData.ts) y [`lib/pageData.ts`](src/lib/pageData.ts), hasta su migración.
 - **Bajo demanda.** Los widgets del panel cargan código y datos al acercarse a la pantalla (`LazyMount`); el cliente de Socket.IO, solo en las vistas en vivo; el selector de fechas, el menú de usuario, el diálogo de confirmación y el inglés, cuando se necesitan.
 - **Despliegues nuevos.** Los archivos compilados llevan un hash en el nombre y se cachean para siempre (ver `vercel.json`). Una pestaña abierta antes de un despliegue que ya no encuentra un archivo pasa a navegar con recargas completas, que traen la versión nueva ([`lib/staleChunks.ts`](src/lib/staleChunks.ts)).
 
@@ -134,6 +134,6 @@ En otro servidor estático hay que replicar esas dos reglas, y definir `VITE_API
 
 ## Cómo extender
 
-- **Una página nueva**: la vista en `views/`, y su ruta en [`router/index.ts`](src/router/index.ts) con `component: () => import(…)` y, si es privada, `meta: { requiresAuth: true, roles: […] }`. Si su carga es pesada, se agrega su función a `lib/pageData.ts` y se inicia en `beforeEnter` con `prefetchData`.
+- **Una página nueva**: la vista en `views/`, y su ruta en [`router/index.ts`](src/router/index.ts) con `component: () => import(…)` y, si es privada, `meta: { requiresAuth: true, roles: […] }`. Si su carga es pesada, se define su query (como en [`lib/dashboardQueries.ts`](src/lib/dashboardQueries.ts), con el usuario en la clave si sus datos dependen de quién la ve) y se precarga en `beforeEnter`.
 - **Un recurso nuevo de la API**: un módulo en `services/`, y su caso en `services/http.test.ts`.
 - **Un widget del panel**: su componente en `components/dashboard/widgets/` y su entrada en [`components/dashboard/widgetRegistry.ts`](src/components/dashboard/widgetRegistry.ts). El registro está tipado con las claves del catálogo, así que el build falla si falta alguno. Del lado del backend, ver su [README](../backend/README.md#cómo-extender).
