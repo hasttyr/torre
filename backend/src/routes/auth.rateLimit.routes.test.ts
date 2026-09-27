@@ -56,6 +56,28 @@ describe("login attempts limit", () => {
     expect((await tryLogin(app, "  ANA@Example.com ")).status).toBe(429);
   });
 
+  it("ignores X-Forwarded-For without TRUST_PROXY set, so it can't be used to dodge the limit", async () => {
+    const app = createApp();
+    const statuses: number[] = [];
+    for (let attempt = 0; attempt < 10; attempt++) {
+      statuses.push(
+        (
+          await request(app)
+            .post("/api/auth/login")
+            .set("X-Forwarded-For", "1.1.1.1")
+            .send({ email: "ana@example.com", password: "wrong-password" })
+        ).status,
+      );
+    }
+    const blocked = await request(app)
+      .post("/api/auth/login")
+      .set("X-Forwarded-For", "2.2.2.2")
+      .send({ email: "ana@example.com", password: "wrong-password" });
+
+    expect(statuses).toEqual(Array(10).fill(401));
+    expect(blocked.status).toBe(429);
+  });
+
   it("doesn't count successful logins", async () => {
     const passwordHash = await bcrypt.hash("password123", 4);
     prismaMock.user.findUnique.mockResolvedValue({

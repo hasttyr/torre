@@ -17,6 +17,12 @@ function required(name: string): string {
  */
 export function parseTrustProxy(value: string | undefined): number | string | undefined {
   if (!value) return undefined;
+  if (/^(true|false)$/i.test(value)) {
+    throw new Error(
+      "TRUST_PROXY must be a number of proxy hops (e.g. 1) or an address/subnet list; " +
+        "'true' would trust any client's X-Forwarded-For.",
+    );
+  }
   return /^\d+$/.test(value) ? Number(value) : value;
 }
 

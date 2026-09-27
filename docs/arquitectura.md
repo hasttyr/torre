@@ -99,7 +99,6 @@ Son dos proyectos npm sin paquete compartido, así que algunos catálogos están
 
 ### Recomendaciones no aplicadas
 
-- **Limitar intentos de login y de recuperación de contraseña** (por ejemplo con `express-rate-limit`), contra fuerza bruta.
 - **Integración continua**: un flujo de GitHub Actions que corra lint, tipos, tests y cobertura en cada push.
 - **Pruebas de extremo a extremo en navegador** (por ejemplo Playwright) para los flujos críticos. Hoy existen como scripts contra la API real, no en el repositorio.
 - **Emparejamiento imposible**: si ninguna combinación evita repetir un enfrentamiento, la generación se rechaza. Una mejora sería generar el borrador marcando la repetición, para que el organizador la autorice con un ajuste manual (RN-02).

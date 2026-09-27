@@ -4,10 +4,11 @@ import { ipKeyGenerator, rateLimit, type AugmentedRequest } from "express-rate-l
 const MINUTE_MS = 60_000;
 
 /**
- * Who is trying: the client's address plus the email being tried. Students
- * on the campus network share one address, so keying by address alone would
- * let one person's typos lock everyone out; keying by email alone would let
- * a single client try every account.
+ * Who is trying: the client's address plus the email being tried. Keying by
+ * address and email together limits guessing per account, not across
+ * accounts: classmates behind one campus address don't lock each other out
+ * (each has their own email), and a stranger elsewhere can't lock out a
+ * victim by failing logins for their email from a different address.
  */
 function addressAndEmail(req: Request): string {
   const email: unknown = req.body?.email;

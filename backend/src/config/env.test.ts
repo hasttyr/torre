@@ -16,4 +16,10 @@ describe("parseTrustProxy", () => {
     expect(parseTrustProxy("loopback")).toBe("loopback");
     expect(parseTrustProxy("10.0.0.0/8")).toBe("10.0.0.0/8");
   });
+
+  it("rejects 'true'/'false' instead of letting Express crash later with a cryptic IP-address error", () => {
+    for (const value of ["true", "TRUE", "True", "false", "FALSE"]) {
+      expect(() => parseTrustProxy(value)).toThrow(/TRUST_PROXY must be a number of proxy hops/);
+    }
+  });
 });

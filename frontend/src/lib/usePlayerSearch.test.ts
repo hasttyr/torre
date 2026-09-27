@@ -1,4 +1,4 @@
-import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defineComponent, h } from "vue";
 
@@ -20,9 +20,14 @@ const LUIS = {
 
 enableAutoUnmount(afterEach);
 
-function mountSearch() {
+function mountSearch(): ReturnType<typeof usePlayerSearch> {
+  return mountSearchWithWrapper().search;
+}
+
+/** Like {@link mountSearch}, but also hands back the wrapper so a test can unmount early. */
+function mountSearchWithWrapper(): { search: ReturnType<typeof usePlayerSearch>; wrapper: VueWrapper } {
   let search!: ReturnType<typeof usePlayerSearch>;
-  mount(
+  const wrapper = mount(
     defineComponent({
       setup() {
         search = usePlayerSearch();
@@ -31,7 +36,7 @@ function mountSearch() {
     }),
     { global: { plugins: [i18n] } },
   );
-  return search;
+  return { search, wrapper };
 }
 
 describe("usePlayerSearch", () => {
@@ -108,6 +113,16 @@ describe("usePlayerSearch", () => {
 
     expect(search.results.value).toEqual([]);
     expect(search.pending.value).toBe(false);
+  });
+
+  it("clears the pending debounce timer on unmount, so it never fires a search for a gone component", async () => {
+    const { search, wrapper } = mountSearchWithWrapper();
+
+    search.query.value = "Luis";
+    wrapper.unmount();
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(searchPlayers).not.toHaveBeenCalled();
   });
 
   it("treats a failed search as no results", async () => {

@@ -1,6 +1,6 @@
 # Frontend — Torre Central Hub
 
-Aplicación web de Torre Central Hub: una SPA en Vue 3 + TypeScript con Vite, Pinia, vue-router, vue-i18n (español e inglés), Tailwind CSS 4 y reka-ui para los componentes accesibles (menús, pestañas, diálogos).
+Aplicación web de Torre Central Hub: una SPA en Vue 3 + TypeScript con Vite, Pinia, Pinia Colada, vue-router, vue-i18n (español e inglés), Tailwind CSS 4 y reka-ui para los componentes accesibles (menús, pestañas, diálogos).
 
 La visión general del sistema está en el [README raíz](../README.md), y las decisiones de arquitectura en [`docs/arquitectura.md`](../docs/arquitectura.md).
 

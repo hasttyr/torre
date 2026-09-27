@@ -242,6 +242,16 @@ describe("PanelView", () => {
     expect(getWidgetDataMock).toHaveBeenCalledOnce();
   });
 
+  it("shows a load error and no widgets when the panel's own request fails", async () => {
+    signIn("PLAYER");
+    getDashboardMock.mockRejectedValue(new Error("down"));
+
+    const wrapper = await mountView();
+
+    expect(wrapper.text()).toContain("No se pudo cargar tu panel");
+    expect(wrapper.findAll("[data-widget]")).toHaveLength(0);
+  });
+
   it("isolates a failing widget: it shows its own error while the rest still render", async () => {
     signIn("ORGANIZER");
     getDashboardMock.mockResolvedValue({
