@@ -44,7 +44,8 @@ Un único lugar con las queries del panel:
 - `panelQuery(userId)`: clave `['dashboard', userId]` y función `getDashboard()`.
 - `widgetQuery(userId, key, playerId)`: clave `['dashboard', userId, 'widget', key, playerId ?? '']` y función `getWidgetData(key, playerId)`.
 - Ambas llevan `staleTime: 15_000` y `refetchOnWindowFocus: false`, en una constante compartida del módulo.
-- `prefetchPanel()` y `prefetchWidget(key, playerId)`: `queryCache.refresh(queryCache.ensure(...))`, con el usuario actual del store de auth. Se usan desde el router y desde `PanelView`.
+- `prefetchPanel()` y `prefetchWidget(key, playerId)`: con el usuario actual del store de auth, **piden siempre al servidor** (`queryCache.fetch`), salvo que ya haya una petición en curso para esa entrada, que se reutiliza. Así cada visita al panel trae datos nuevos, como hoy; por ejemplo, un resultado recién registrado en la sala aparece en los widgets al volver al panel, aunque no hayan pasado 15 s. Mientras llega la respuesta se muestran los datos de la visita anterior en vez del esqueleto de carga. Se usan desde el router y desde `PanelView`.
+- `staleTime: 15_000` solo sirve para que la página y los widgets tomen la petición que inició su ruta o su prefetch, en lugar de repetirla, que es lo que hace hoy `routeData`.
 
 El router importa este módulo de forma diferida, como hoy hace con `pageData`, para que ni Colada ni los servicios del panel entren en el bundle inicial.
 
@@ -95,6 +96,7 @@ Los tests solo cambian en el montaje, que ahora instala Pinia como plugin de la 
 
 - Las claves de `dashboardQueries` incluyen el usuario: dos usuarios distintos no comparten entradas.
 - El prefetch del router y la página comparten una sola petición del panel.
+- Cada visita vuelve a pedir: dos prefetch sucesivos (uno por visita) hacen dos peticiones, y dos simultáneos, una sola.
 - Con la query de un widget deshabilitada (sin jugador), `loading` es `false` y no hay petición.
 
 ## Verificación
