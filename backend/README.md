@@ -1,6 +1,6 @@
 # Backend — Torre Central Hub
 
-API REST y canal de tiempo real de Torre Central Hub: Express 4 + TypeScript, Prisma 6 sobre PostgreSQL, Socket.IO 4, validación con zod y PDF con pdfkit.
+API REST y canal de tiempo real de Torre Central Hub: Express 5 + TypeScript, Prisma 6 sobre PostgreSQL, Socket.IO 4, validación con zod y PDF con pdfkit.
 
 La visión general del sistema está en el [README raíz](../README.md), y las decisiones de arquitectura en [`docs/arquitectura.md`](../docs/arquitectura.md).
 
@@ -193,7 +193,7 @@ Las pruebas viven junto al archivo que prueban (`x.ts` → `x.test.ts`).
 
 ## Cómo extender
 
-- **Un endpoint nuevo**: esquema zod en `validators/`, caso de uso en `services/` (que lanza `HttpError` para los errores esperados), controlador en `controllers/` que valida con `parseOrThrow` y llama al servicio envuelto en `asyncHandler`, y la ruta en `routes/` con su `requireAuth` / `requireRole`. Si es un recurso nuevo, se monta en [`routes/index.ts`](src/routes/index.ts).
+- **Un endpoint nuevo**: esquema zod en `validators/`, caso de uso en `services/` (que lanza `HttpError` para los errores esperados), controlador `async` en `controllers/` que valida con `parseOrThrow` y llama al servicio (Express 5 lleva sus errores al `errorHandler`, sin try/catch), y la ruta en `routes/` con su `requireAuth` / `requireRole`. Si es un recurso nuevo, se monta en [`routes/index.ts`](src/routes/index.ts).
 - **Una acción crítica**: su entrada de bitácora se escribe con el mismo cliente transaccional que la acción ([`services/auditLog.service.ts`](src/services/auditLog.service.ts)), para que se confirmen juntas.
 - **Un aviso en tiempo real**: el evento se agrega en `sockets/events.ts` y en su copia del frontend, y se emite con `emitToTournament` después de la transacción.
 - **Un widget del panel**: clave en `services/dashboard/widgetCatalog.ts`, cargador en `services/dashboard/widgetRegistry.ts` y componente en `frontend/src/components/dashboard/widgetRegistry.ts`. No se tocan rutas ni controladores.

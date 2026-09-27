@@ -48,7 +48,7 @@ Fuera de alcance (decisión definitiva de producto, no trabajo pendiente): cálc
 | Capa | Tecnología |
 |---|---|
 | Frontend | Vue 3 + TypeScript, Vite, Pinia, vue-router, vue-i18n, Tailwind CSS 4, reka-ui |
-| Backend | Node.js + Express 4 + TypeScript, validación con zod, PDF con pdfkit |
+| Backend | Node.js + Express 5 + TypeScript, validación con zod, PDF con pdfkit |
 | Tiempo real | Socket.IO 4 |
 | Persistencia | PostgreSQL con Prisma 6 (esquema y migraciones) |
 | Pruebas | Vitest (backend y frontend), Supertest, Vue Test Utils |
