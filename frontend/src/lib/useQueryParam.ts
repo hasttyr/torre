@@ -4,7 +4,9 @@ import { useRoute, useRouter, type LocationQueryRaw, type Router } from "vue-rou
 // The query the page asked for last. Several params can change in the same
 // tick (a new filter also resets the page), and a navigation lands a few
 // ticks later: building each write on this, not on the current route, keeps
-// a write from dropping another that hasn't landed yet.
+// a write from dropping another that hasn't landed yet. (That's why this
+// isn't VueUse's useRouteQuery: it builds on the current route, and a sort
+// followed by the table's page reset a tick later loses the sort.)
 let requested: LocationQueryRaw | null = null;
 
 function writeParam(router: Router, name: string, value: string | undefined): void {

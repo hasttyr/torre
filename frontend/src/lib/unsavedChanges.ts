@@ -1,4 +1,4 @@
-import { onBeforeUnmount, onMounted } from "vue";
+import { useEventListener } from "@vueuse/core";
 import { useI18n } from "vue-i18n";
 import { onBeforeRouteLeave } from "vue-router";
 
@@ -31,13 +31,11 @@ export function useUnsavedChangesGuard(isDirty: () => boolean, messageKey = "uns
     });
   });
 
-  function onBeforeUnload(event: BeforeUnloadEvent): void {
+  // Removed again when the page's component goes away.
+  useEventListener(window, "beforeunload", (event) => {
     if (!isDirty()) return;
     event.preventDefault();
     // Older Safari/Chrome only show the prompt when returnValue is set too.
     event.returnValue = "";
-  }
-
-  onMounted(() => window.addEventListener("beforeunload", onBeforeUnload));
-  onBeforeUnmount(() => window.removeEventListener("beforeunload", onBeforeUnload));
+  });
 }

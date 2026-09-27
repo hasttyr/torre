@@ -76,14 +76,25 @@ describe("useUnsavedChangesGuard", () => {
 
   it("has the browser warn before a reload or tab close, only with unsaved changes", async () => {
     await mountAt();
-    const unload = () => {
-      const event = new Event("beforeunload", { cancelable: true });
-      window.dispatchEvent(event);
-      return event.defaultPrevented;
-    };
 
     expect(unload()).toBe(false);
     dirty.value = true;
     expect(unload()).toBe(true);
   });
+
+  it("stops the browser's warning once the page is left", async () => {
+    const router = await mountAt();
+    await router.push("/elsewhere");
+
+    dirty.value = true;
+
+    expect(unload()).toBe(false);
+  });
 });
+
+/** Fires the browser's reload/close event; whether something asked it to warn. */
+function unload(): boolean {
+  const event = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(event);
+  return event.defaultPrevented;
+}

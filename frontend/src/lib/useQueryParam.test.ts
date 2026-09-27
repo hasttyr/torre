@@ -1,6 +1,6 @@
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, describe, expect, it } from "vitest";
-import { defineComponent, h } from "vue";
+import { defineComponent, h, nextTick } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { useQueryParam } from "./useQueryParam";
@@ -34,6 +34,13 @@ describe("useQueryParam", () => {
     expect(page.value).toBe("1");
   });
 
+  it("reads a hand-edited param that's empty or repeated as its default: always a single string", async () => {
+    const { round, page } = await mountAt("/sala?ronda=1&ronda=2&pagina=");
+
+    expect(round.value).toBe("");
+    expect(page.value).toBe("1");
+  });
+
   it("writes to the URL without adding history entries, keeping other params", async () => {
     const { router, round } = await mountAt("/sala?vista=tabla");
     const historyLength = window.history.length;
@@ -62,5 +69,18 @@ describe("useQueryParam", () => {
     await flushPromises();
 
     expect(router.currentRoute.value.query).toEqual({ ronda: "2", pagina: "3" });
+  });
+
+  it("keeps a param written while an earlier write's navigation hasn't landed yet", async () => {
+    // A table does this: sorting writes one param, and resetting its page
+    // writes another a tick later.
+    const { router, round, page } = await mountAt("/sala?pagina=4");
+
+    round.value = "2";
+    await nextTick();
+    page.value = "1";
+    await flushPromises();
+
+    expect(router.currentRoute.value.query).toEqual({ ronda: "2" });
   });
 });
