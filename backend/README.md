@@ -20,14 +20,15 @@ Las cuentas que crea el seed (todas con contraseña `Test1234`) están en el [RE
 
 ## Variables de entorno
 
-| Variable         | Por defecto             | Uso                                                                    |
-| ---------------- | ----------------------- | ---------------------------------------------------------------------- |
-| `DATABASE_URL`   | — (obligatoria)         | Conexión a PostgreSQL                                                  |
-| `JWT_SECRET`     | — (obligatoria)         | Firma de los tokens de sesión                                          |
-| `JWT_EXPIRES_IN` | `1d`                    | Vigencia de un token                                                   |
-| `PORT`           | `4000`                  | Puerto HTTP y de Socket.IO                                             |
-| `CORS_ORIGIN`    | `http://localhost:5173` | Origen del frontend, para REST y Socket.IO                             |
-| `APP_TIMEZONE`   | `America/Bogota`        | Zona horaria de las fechas que escribe el servidor (p. ej. en los PDF) |
+| Variable         | Por defecto             | Uso                                                                                                                       |
+| ---------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`   | — (obligatoria)         | Conexión a PostgreSQL                                                                                                     |
+| `JWT_SECRET`     | — (obligatoria)         | Firma de los tokens de sesión                                                                                             |
+| `JWT_EXPIRES_IN` | `1d`                    | Vigencia de un token                                                                                                      |
+| `PORT`           | `4000`                  | Puerto HTTP y de Socket.IO                                                                                                |
+| `CORS_ORIGIN`    | `http://localhost:5173` | Origen del frontend, para REST y Socket.IO                                                                                |
+| `APP_TIMEZONE`   | `America/Bogota`        | Zona horaria de las fechas que escribe el servidor (p. ej. en los PDF)                                                    |
+| `TRUST_PROXY`    | — (ningún proxy)        | Detrás de un proxy inverso, cuántos saltos confiar (p. ej. `1`), para que la IP del cliente sea la real y no la del proxy |
 
 Si falta una variable obligatoria, el servidor no arranca y dice cuál es ([`src/config/env.ts`](src/config/env.ts)).
 
@@ -95,6 +96,8 @@ La columna "Acceso" es la compuerta de la ruta. Los servicios afinan después: "
 | POST     | `/users/me/data-requests`              | Sesión        | Derechos sobre datos personales: acceso, rectificación o supresión     |
 | GET      | `/users`                               | Administrador | Listado de usuarios                                                    |
 | PATCH    | `/users/:id/role`, `/users/:id/status` | Administrador | Cambiar el rol; activar o desactivar la cuenta                         |
+
+Contra fuerza bruta, `/auth/login` admite 10 intentos fallidos cada 15 minutos y `/auth/password/forgot` 5 solicitudes por hora, contados por IP y correo: los estudiantes que comparten la IP del campus no se bloquean entre sí. Al pasarse responde `429` con `Retry-After` ([`src/middlewares/rateLimits.ts`](src/middlewares/rateLimits.ts)).
 
 ### Torneos, rondas y resultados
 
