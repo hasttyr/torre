@@ -4,7 +4,6 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { readEnvFile } from "../config/localEnvFile";
 import { PrismaClient } from "../generated/prisma/client";
-import { resetDatabase } from "./testDatabase";
 import { resolveE2eDatabaseUrl } from "./testDatabaseUrl";
 
 // Prepares the browser (E2E) suite's database before a run: migrated, emptied
@@ -12,16 +11,19 @@ import { resolveE2eDatabaseUrl } from "./testDatabaseUrl";
 // every suite database, only ever one whose name ends in _test.
 async function main(): Promise<void> {
   const url = resolveE2eDatabaseUrl({ ...readEnvFile(), ...process.env });
-  const env = { ...process.env, DATABASE_URL: url };
+  // Set before testDatabase.ts is imported: it loads config/env.ts, which
+  // reads the environment once, on first import (and CI has no .env).
+  process.env.DATABASE_URL = url;
+  const { resetDatabase } = await import("./testDatabase");
 
-  execSync("npx prisma migrate deploy", { env, stdio: "inherit" });
+  execSync("npx prisma migrate deploy", { stdio: "inherit" });
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
   try {
     await resetDatabase(prisma);
   } finally {
     await prisma.$disconnect();
   }
-  execSync("npx tsx prisma/seed.ts", { env, stdio: "inherit" });
+  execSync("npx tsx prisma/seed.ts", { stdio: "inherit" });
 }
 
 main().catch((error: Error) => {
