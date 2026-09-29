@@ -1,4 +1,3 @@
-import jwt from "jsonwebtoken";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -22,10 +21,12 @@ const { prismaMock } = vi.hoisted(() => ({
 vi.mock("../config/prisma", () => ({ prisma: prismaMock }));
 vi.mock("../services/rounds.service", () => ({
   listRounds: vi.fn().mockResolvedValue([{ id: "r-1", number: 1 }]),
-  generateRound: vi.fn().mockResolvedValue({ id: "r-2", number: 2, status: "GENERATED" }),
+  generateRound: vi
+    .fn()
+    .mockResolvedValue({ id: "8a72ea86-e571-5811-ad69-735b423fb932", number: 2, status: "GENERATED" }),
   discardRound: vi.fn().mockResolvedValue(undefined),
-  swapPlayers: vi.fn().mockResolvedValue({ id: "r-2" }),
-  publishRound: vi.fn().mockResolvedValue({ id: "r-2", status: "RECORDING_RESULTS" }),
+  swapPlayers: vi.fn().mockResolvedValue({ id: "8a72ea86-e571-5811-ad69-735b423fb932" }),
+  publishRound: vi.fn().mockResolvedValue({ id: "8a72ea86-e571-5811-ad69-735b423fb932", status: "RECORDING_RESULTS" }),
 }));
 vi.mock("../services/results.service", () => ({
   recordResult: vi.fn().mockResolvedValue(undefined),
@@ -34,9 +35,9 @@ vi.mock("../services/results.service", () => ({
 
 import { correctResult, recordResult } from "../services/results.service";
 import { discardRound, generateRound, listRounds, publishRound, swapPlayers } from "../services/rounds.service";
+import { signSessionToken } from "../services/sessionToken";
 
-const bearer = (role: string, id = "user-1") =>
-  `Bearer ${jwt.sign({ sub: id, role }, "test-secret", { expiresIn: "1h" })}`;
+const bearer = (role: string, id = "user-1") => `Bearer ${signSessionToken({ id: id, role })}`;
 const ORGANIZER = { id: "org-1", role: "ORGANIZER" };
 
 describe("round endpoints", () => {
@@ -44,21 +45,24 @@ describe("round endpoints", () => {
 
   it("GET /tournaments/:id/rounds lists rounds for any signed-in role", async () => {
     const response = await request(createApp())
-      .get("/api/tournaments/t-1/rounds")
+      .get("/api/tournaments/8eedb80f-c149-5eb9-a514-93f2fb9eeca0/rounds")
       .set("Authorization", bearer("PLAYER"));
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual([{ id: "r-1", number: 1 }]);
-    expect(listRounds).toHaveBeenCalledWith(prismaMock, "t-1", { id: "user-1", role: "PLAYER" });
+    expect(listRounds).toHaveBeenCalledWith(prismaMock, "8eedb80f-c149-5eb9-a514-93f2fb9eeca0", {
+      id: "user-1",
+      role: "PLAYER",
+    });
   });
 
   it("POST /tournaments/:id/rounds creates the next draft (201)", async () => {
     const response = await request(createApp())
-      .post("/api/tournaments/t-1/rounds")
+      .post("/api/tournaments/8eedb80f-c149-5eb9-a514-93f2fb9eeca0/rounds")
       .set("Authorization", bearer("ORGANIZER", "org-1"));
 
     expect(response.status).toBe(201);
-    expect(generateRound).toHaveBeenCalledWith(prismaMock, "t-1", ORGANIZER);
+    expect(generateRound).toHaveBeenCalledWith(prismaMock, "8eedb80f-c149-5eb9-a514-93f2fb9eeca0", ORGANIZER);
   });
 
   it("POST /rounds/:id/swap passes the validated adjustment on", async () => {
@@ -69,25 +73,32 @@ describe("round endpoints", () => {
     };
 
     const response = await request(createApp())
-      .post("/api/rounds/r-2/swap")
+      .post("/api/rounds/8a72ea86-e571-5811-ad69-735b423fb932/swap")
       .set("Authorization", bearer("ORGANIZER", "org-1"))
       .send(body);
 
     expect(response.status).toBe(200);
-    expect(swapPlayers).toHaveBeenCalledWith(prismaMock, "r-2", { ...body, reason: "Mismo club" }, ORGANIZER);
+    expect(swapPlayers).toHaveBeenCalledWith(
+      prismaMock,
+      "8a72ea86-e571-5811-ad69-735b423fb932",
+      { ...body, reason: "Mismo club" },
+      ORGANIZER,
+    );
   });
 
   it("POST /rounds/:id/publish and DELETE /rounds/:id", async () => {
     const app = createApp();
     const published = await request(app)
-      .post("/api/rounds/r-2/publish")
+      .post("/api/rounds/8a72ea86-e571-5811-ad69-735b423fb932/publish")
       .set("Authorization", bearer("ORGANIZER", "org-1"));
-    const discarded = await request(app).delete("/api/rounds/r-3").set("Authorization", bearer("ORGANIZER", "org-1"));
+    const discarded = await request(app)
+      .delete("/api/rounds/632dfc18-be3f-57eb-83a8-ce37e20ee667")
+      .set("Authorization", bearer("ORGANIZER", "org-1"));
 
     expect(published.status).toBe(200);
-    expect(publishRound).toHaveBeenCalledWith(prismaMock, "r-2", ORGANIZER);
+    expect(publishRound).toHaveBeenCalledWith(prismaMock, "8a72ea86-e571-5811-ad69-735b423fb932", ORGANIZER);
     expect(discarded.status).toBe(204);
-    expect(discardRound).toHaveBeenCalledWith(prismaMock, "r-3", ORGANIZER);
+    expect(discardRound).toHaveBeenCalledWith(prismaMock, "632dfc18-be3f-57eb-83a8-ce37e20ee667", ORGANIZER);
   });
 });
 
@@ -96,29 +107,49 @@ describe("result endpoints", () => {
 
   it("POST /matches/:id/result records (204)", async () => {
     const response = await request(createApp())
-      .post("/api/matches/m-1/result")
+      .post("/api/matches/8ac10de7-d281-568d-b784-edbcad9b551f/result")
       .set("Authorization", bearer("ARBITER"))
       .send({ value: "1/2-1/2" });
 
     expect(response.status).toBe(204);
-    expect(recordResult).toHaveBeenCalledWith(prismaMock, "m-1", "1/2-1/2", { id: "user-1", role: "ARBITER" });
+    expect(recordResult).toHaveBeenCalledWith(prismaMock, "8ac10de7-d281-568d-b784-edbcad9b551f", "1/2-1/2", {
+      id: "user-1",
+      role: "ARBITER",
+    });
   });
 
   it("PUT /matches/:id/result corrects, with or without a reason (204)", async () => {
     const app = createApp();
     await request(app)
-      .put("/api/matches/m-1/result")
+      .put("/api/matches/8ac10de7-d281-568d-b784-edbcad9b551f/result")
       .set("Authorization", bearer("ARBITER"))
       .send({ value: "0-1", reason: "Planilla" });
-    await request(app).put("/api/matches/m-1/result").set("Authorization", bearer("ARBITER")).send({ value: "1-0" });
+    await request(app)
+      .put("/api/matches/8ac10de7-d281-568d-b784-edbcad9b551f/result")
+      .set("Authorization", bearer("ARBITER"))
+      .send({ value: "1-0" });
 
-    expect(correctResult).toHaveBeenNthCalledWith(1, prismaMock, "m-1", "0-1", "Planilla", {
-      id: "user-1",
-      role: "ARBITER",
-    });
-    expect(correctResult).toHaveBeenNthCalledWith(2, prismaMock, "m-1", "1-0", undefined, {
-      id: "user-1",
-      role: "ARBITER",
-    });
+    expect(correctResult).toHaveBeenNthCalledWith(
+      1,
+      prismaMock,
+      "8ac10de7-d281-568d-b784-edbcad9b551f",
+      "0-1",
+      "Planilla",
+      {
+        id: "user-1",
+        role: "ARBITER",
+      },
+    );
+    expect(correctResult).toHaveBeenNthCalledWith(
+      2,
+      prismaMock,
+      "8ac10de7-d281-568d-b784-edbcad9b551f",
+      "1-0",
+      undefined,
+      {
+        id: "user-1",
+        role: "ARBITER",
+      },
+    );
   });
 });

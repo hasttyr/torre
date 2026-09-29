@@ -1,4 +1,5 @@
 import { pointsFor, type RecordedGame } from "../standings.calculator";
+import type { PlayerTotals, ResultTally } from "../../contracts/responses";
 
 // Pure per-player game statistics (no Prisma): shared by every widget that
 // shows win/draw/loss numbers, so "a win" is counted in exactly one place.
@@ -6,12 +7,6 @@ import { pointsFor, type RecordedGame } from "../standings.calculator";
 // RN-04: only games from published rounds are official. A draft round
 // already holds its bye (created with the draft), which must not count yet.
 export const OFFICIAL_GAME = { result: { isNot: null }, round: { status: { not: "GENERATED" } } } as const;
-
-export interface ResultTally {
-  wins: number;
-  draws: number;
-  losses: number;
-}
 
 export interface PlayerTally {
   white: ResultTally;
@@ -24,15 +19,6 @@ export interface PlayerTally {
 // A game plus, for byes, the value its tournament gives them (default 1).
 export interface TalliedGame extends RecordedGame {
   byePoints?: number;
-}
-
-export interface PlayerTotals extends ResultTally {
-  games: number;
-  byes: number;
-  points: number;
-  // Points per game actually played (0-1), null before the first game.
-  // Byes are excluded: they're not a performance.
-  scoreRate: number | null;
 }
 
 export function emptyTally(): PlayerTally {
@@ -101,3 +87,5 @@ export function totalsOf(tally: PlayerTally): PlayerTotals {
     scoreRate: scoreRateOf(overall),
   };
 }
+
+export type { PlayerTotals, ResultTally };

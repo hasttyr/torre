@@ -57,8 +57,8 @@ describe("rankStandings", () => {
   it("orders by score, then by the tournament's tiebreaks in their configured order", () => {
     const rows = [row("low", 1, 9, 9), row("sb", 2, 3, 5), row("bh", 2, 4, 1)];
 
-    expect(rankStandings(rows, ["Sonneborn-Berger", "Buchholz"]).map((r) => r.playerId)).toEqual(["sb", "bh", "low"]);
-    expect(rankStandings(rows, ["Buchholz"]).map((r) => r.playerId)).toEqual(["bh", "sb", "low"]);
+    expect(rankStandings(rows, ["SONNEBORN_BERGER", "BUCHHOLZ"]).map((r) => r.playerId)).toEqual(["sb", "bh", "low"]);
+    expect(rankStandings(rows, ["BUCHHOLZ"]).map((r) => r.playerId)).toEqual(["bh", "sb", "low"]);
   });
 
   it("ignores tiebreak names it can't compute (ARO) and uses a default order when none is set", () => {
@@ -68,12 +68,12 @@ describe("rankStandings", () => {
     expect(rankStandings(rows, []).map((r) => r.playerId)).toEqual(["b", "a"]);
   });
 
-  it("breaks a remaining tie by direct encounter (Resultado particular)", () => {
+  it("breaks a remaining tie by direct encounter (resultado particular)", () => {
     const rows = [row("a", 2, 3, 0), row("b", 2, 3, 0)];
     const games = [{ whiteId: "a", blackId: "b", value: "0-1" }];
 
-    expect(rankStandings(rows, ["Buchholz", "Resultado particular"], games).map((r) => r.playerId)).toEqual(["b", "a"]);
+    expect(rankStandings(rows, ["BUCHHOLZ", "DIRECT_ENCOUNTER"], games).map((r) => r.playerId)).toEqual(["b", "a"]);
     // Without their game on record, the tie stays as it was.
-    expect(rankStandings(rows, ["Resultado particular"]).map((r) => r.playerId)).toEqual(["a", "b"]);
+    expect(rankStandings(rows, ["DIRECT_ENCOUNTER"]).map((r) => r.playerId)).toEqual(["a", "b"]);
   });
 });

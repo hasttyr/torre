@@ -1,8 +1,8 @@
-import jwt from "jsonwebtoken";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../app";
+import { signSessionToken } from "../services/sessionToken";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
@@ -20,10 +20,14 @@ const { prismaMock } = vi.hoisted(() => ({
 vi.mock("../config/prisma", () => ({ prisma: prismaMock }));
 
 function tokenFor(role: string, id = "user-1"): string {
-  return jwt.sign({ sub: id, role }, "test-secret", { expiresIn: "1h" });
+  return signSessionToken({ id: id, role });
 }
 
-const clubBase = { id: "club-1", name: "Club Ajedrez Central", createdAt: new Date("2026-09-17") };
+const clubBase = {
+  id: "be2339ee-f2b3-5c91-b543-039e876a8dea",
+  name: "Club Ajedrez Central",
+  createdAt: new Date("2026-09-17"),
+};
 
 describe("POST /api/clubs", () => {
   beforeEach(() => {
@@ -40,7 +44,7 @@ describe("POST /api/clubs", () => {
 
     expect(response.status).toBe(201);
     expect(response.body).toEqual({
-      id: "club-1",
+      id: "be2339ee-f2b3-5c91-b543-039e876a8dea",
       name: "Club Ajedrez Central",
       createdAt: clubBase.createdAt.toISOString(),
     });
@@ -97,14 +101,14 @@ describe("POST /api/clubs/:id/players", () => {
   it("assigns a player to the club", async () => {
     prismaMock.club.findUnique.mockResolvedValue(clubBase);
     prismaMock.player.findUnique.mockResolvedValue({
-      id: "player-1",
+      id: "1713759c-231e-5eef-93fa-5846543beb8b",
       universityCode: "U123",
       program: "Sistemas",
       semester: 5,
       user: { name: "Luis Gómez" },
     });
     prismaMock.player.update.mockResolvedValue({
-      id: "player-1",
+      id: "1713759c-231e-5eef-93fa-5846543beb8b",
       universityCode: "U123",
       program: "Sistemas",
       semester: 5,
@@ -112,21 +116,21 @@ describe("POST /api/clubs/:id/players", () => {
     });
 
     const response = await request(createApp())
-      .post("/api/clubs/club-1/players")
+      .post("/api/clubs/be2339ee-f2b3-5c91-b543-039e876a8dea/players")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`)
-      .send({ playerId: "player-1" });
+      .send({ playerId: "1713759c-231e-5eef-93fa-5846543beb8b" });
 
     expect(response.status).toBe(201);
-    expect(response.body.playerId).toBe("player-1");
+    expect(response.body.playerId).toBe("1713759c-231e-5eef-93fa-5846543beb8b");
   });
 
   it("responds 404 when the club doesn't exist", async () => {
     prismaMock.club.findUnique.mockResolvedValue(null);
 
     const response = await request(createApp())
-      .post("/api/clubs/missing-club/players")
+      .post("/api/clubs/a8387d72-b792-5dea-af93-5860ab33bf54/players")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`)
-      .send({ playerId: "player-1" });
+      .send({ playerId: "1713759c-231e-5eef-93fa-5846543beb8b" });
 
     expect(response.status).toBe(404);
   });
@@ -143,11 +147,11 @@ describe("DELETE /api/clubs/:id", () => {
     prismaMock.club.delete.mockResolvedValue(clubBase);
 
     const response = await request(createApp())
-      .delete("/api/clubs/club-1")
+      .delete("/api/clubs/be2339ee-f2b3-5c91-b543-039e876a8dea")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`);
 
     expect(response.status).toBe(204);
-    expect(prismaMock.club.delete).toHaveBeenCalledWith({ where: { id: "club-1" } });
+    expect(prismaMock.club.delete).toHaveBeenCalledWith({ where: { id: "be2339ee-f2b3-5c91-b543-039e876a8dea" } });
   });
 
   it("responds 409 when the club still has players assigned", async () => {
@@ -155,7 +159,7 @@ describe("DELETE /api/clubs/:id", () => {
     prismaMock.player.count.mockResolvedValue(2);
 
     const response = await request(createApp())
-      .delete("/api/clubs/club-1")
+      .delete("/api/clubs/be2339ee-f2b3-5c91-b543-039e876a8dea")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`);
 
     expect(response.status).toBe(409);
@@ -166,7 +170,7 @@ describe("DELETE /api/clubs/:id", () => {
     prismaMock.club.findUnique.mockResolvedValue(null);
 
     const response = await request(createApp())
-      .delete("/api/clubs/missing-club")
+      .delete("/api/clubs/a8387d72-b792-5dea-af93-5860ab33bf54")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`);
 
     expect(response.status).toBe(404);
@@ -174,14 +178,14 @@ describe("DELETE /api/clubs/:id", () => {
 
   it("responds 403 for a role without permission (PLAYER)", async () => {
     const response = await request(createApp())
-      .delete("/api/clubs/club-1")
+      .delete("/api/clubs/be2339ee-f2b3-5c91-b543-039e876a8dea")
       .set("Authorization", `Bearer ${tokenFor("PLAYER")}`);
 
     expect(response.status).toBe(403);
   });
 
   it("responds 401 without a token", async () => {
-    const response = await request(createApp()).delete("/api/clubs/club-1");
+    const response = await request(createApp()).delete("/api/clubs/be2339ee-f2b3-5c91-b543-039e876a8dea");
     expect(response.status).toBe(401);
   });
 });

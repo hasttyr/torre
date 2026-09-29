@@ -160,7 +160,7 @@ const year = new Date().getFullYear();
           <div class="mt-8 flex flex-wrap justify-center gap-3">
             <RouterLink
               to="/registro"
-              class="btn bg-tile-ink-accent text-[#17130a] hover:-translate-y-px hover:bg-[#ddb84a]"
+              class="btn bg-tile-ink-accent text-tile-ink-on-accent hover:-translate-y-px hover:bg-tile-ink-accent-hover"
               :class="PILL"
             >
               {{ t("home.ctaButton") }}

@@ -5,11 +5,14 @@ import { useRoute, useRouter } from "vue-router";
 
 import AuthLayout from "../../components/layout/AuthLayout.vue";
 import { extractErrorMessage } from "../../lib/errors";
-import { errorAttrs, errorId, focusFirstInvalid } from "../../lib/formErrors";
+import { errorAttrs, errorId, focusFirstInvalid, resetErrors } from "../../lib/formErrors";
 import { whenIdle } from "../../lib/idle";
 import { prefetchRoute } from "../../lib/prefetchRoute";
 import { HOME_PATH } from "../../lib/roleHome";
 import { useAuthStore } from "../../stores/auth";
+import FadeSlide from "../../components/ui/FadeSlide.vue";
+import FormBanner from "../../components/ui/FormBanner.vue";
+import Spinner from "../../components/ui/Spinner.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -27,6 +30,8 @@ const submitting = ref(false);
 const serverError = ref<string | null>(null);
 // Set by lib/sessionExpiry.ts when the server rejected the previous session.
 const sessionExpired = computed(() => route.query.expired === "1");
+// Set by the registration page when the account was created but its automatic sign-in failed.
+const justRegistered = computed(() => route.query.registered === "1");
 
 /**
  * Validates the login form.
@@ -34,9 +39,7 @@ const sessionExpired = computed(() => route.query.expired === "1");
  * @returns `true` if the form has no validation errors.
  */
 function validate(): boolean {
-  for (const key of Object.keys(errors)) {
-    delete errors[key];
-  }
+  resetErrors(errors);
 
   if (!form.email.trim()) {
     errors.email = t("auth.emailRequired");
@@ -67,7 +70,7 @@ async function onSubmit(): Promise<void> {
     const isSafeInternalPath = typeof redirect === "string" && redirect.startsWith("/") && !redirect.startsWith("//");
     router.push(isSafeInternalPath ? redirect : HOME_PATH);
   } catch (error) {
-    serverError.value = extractErrorMessage(error, t("auth.serverError"));
+    serverError.value = extractErrorMessage(error, t("common.genericServerError"));
   } finally {
     submitting.value = false;
   }
@@ -85,21 +88,10 @@ async function onSubmit(): Promise<void> {
       <p v-if="sessionExpired && !serverError" role="status" class="banner border-border bg-surface-2 text-text-muted">
         {{ t("login.sessionExpired") }}
       </p>
-      <Transition
-        enter-active-class="transition duration-180 ease-out"
-        enter-from-class="opacity-0 -translate-y-1.5"
-        leave-active-class="transition duration-180 ease-in"
-        leave-to-class="opacity-0 -translate-y-1.5"
-      >
-        <p v-if="serverError" role="alert" class="banner banner--error">
-          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true" class="mt-0.5 shrink-0">
-            <path d="M10 2 1 17h18L10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-            <path d="M10 8v3.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
-            <circle cx="10" cy="14" r="0.9" fill="currentColor" />
-          </svg>
-          <span>{{ serverError }}</span>
-        </p>
-      </Transition>
+      <FormBanner v-if="justRegistered && !serverError" kind="success">{{ t("login.registered") }}</FormBanner>
+      <FadeSlide>
+        <FormBanner v-if="serverError" kind="error">{{ serverError }}</FormBanner>
+      </FadeSlide>
     </template>
 
     <form ref="formEl" novalidate @submit.prevent="onSubmit">
@@ -137,18 +129,7 @@ async function onSubmit(): Promise<void> {
       </RouterLink>
 
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
-        <svg
-          v-if="submitting"
-          class="h-4 w-4 animate-spin"
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
-          fill="none"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" opacity="0.25" />
-          <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-        </svg>
+        <Spinner v-if="submitting" />
         {{ submitting ? t("login.submitting") : t("login.submit") }}
       </button>
     </form>

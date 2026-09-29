@@ -76,6 +76,21 @@ describe("ForgotPasswordView (HU19)", () => {
     expect(wrapper.text()).toContain("Servicio no disponible");
     expect(wrapper.find("form").exists()).toBe(true);
   });
+
+  it("says recovery isn't available when the server has no way to send the email", async () => {
+    vi.mocked(requestPasswordReset).mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 503, data: { error: "No disponible", code: "PASSWORD_RESET_UNAVAILABLE" } },
+    });
+    const wrapper = await mountAt(ForgotPasswordView, "/olvide-password");
+
+    await wrapper.get("input[type='email']").setValue("ana@example.com");
+    await wrapper.get("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("La recuperación de contraseña no está disponible por ahora");
+    expect(wrapper.text()).not.toContain("recibirás");
+  });
 });
 
 describe("ResetPasswordView (HU19)", () => {
@@ -106,6 +121,13 @@ describe("ResetPasswordView (HU19)", () => {
     expect(wrapper.get("#newPassword").attributes("aria-describedby")).toBe("newPassword-error");
     expect(wrapper.get("#confirmPassword").attributes("aria-invalid")).toBe("true");
     expect(document.activeElement).toBe(wrapper.get("#newPassword").element);
+  });
+
+  it("takes the one-time token out of the address bar and history as soon as it's read", async () => {
+    await mountAt(ResetPasswordView, "/restablecer-password?token=abc");
+
+    expect(window.location.pathname).toBe("/restablecer-password");
+    expect(window.location.search).toBe("");
   });
 
   it("sends the token from the link with the new password", async () => {

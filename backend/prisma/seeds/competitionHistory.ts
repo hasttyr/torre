@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../src/generated/prisma/client";
 
 import { candidatesFromHistory, drawPairingNumbers, type PlayedGame } from "../../src/services/pairing/pairingHistory";
 import { pairRound } from "../../src/services/pairing/swissPairing";

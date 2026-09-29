@@ -1,27 +1,30 @@
 import { z } from "zod";
 
+import { idSchema, MAX_LENGTH, reasonSchema, tooLong } from "./fields";
+import { GAME_RESULTS, type GameResult } from "../contracts/catalogs";
+
 // RN-03: the results a person can record. "BYE" is also in the DB catalog,
 // but only the pairing engine assigns it (HU28), never a user.
-export const GAME_RESULTS = ["1-0", "0-1", "1/2-1/2"] as const;
-export type GameResult = (typeof GAME_RESULTS)[number];
+export { GAME_RESULTS, type GameResult };
 
-const resultValue = z.enum(GAME_RESULTS, { message: "El resultado debe ser 1-0, 0-1 o 1/2-1/2" });
+const resultValue = z.enum(GAME_RESULTS, { error: "El resultado debe ser 1-0, 0-1 o 1/2-1/2" });
 
 export const recordResultSchema = z.object({ value: resultValue });
 
 export const correctResultSchema = z.object({
   value: resultValue,
-  reason: z.string().trim().min(1, "El motivo no puede quedar vacío").optional(),
+  reason: reasonSchema.optional(),
 });
 
 // HU29/RN-09: a manual adjustment must say why.
 export const swapPlayersSchema = z.object({
-  playerAId: z.string().uuid("El id de jugador no es válido"),
-  playerBId: z.string().uuid("El id de jugador no es válido"),
+  playerAId: idSchema,
+  playerBId: idSchema,
   reason: z
-    .string({ required_error: "Indicá el motivo del ajuste (RN-09)" })
+    .string({ error: "Indica el motivo del ajuste (RN-09)" })
     .trim()
-    .min(3, "Indicá el motivo del ajuste (RN-09)"),
+    .min(3, "Indica el motivo del ajuste (RN-09)")
+    .max(MAX_LENGTH.reason, tooLong(MAX_LENGTH.reason)),
 });
 
 export type SwapPlayersSchemaInput = z.infer<typeof swapPlayersSchema>;

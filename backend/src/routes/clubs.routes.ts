@@ -6,13 +6,15 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 export const clubsRouter = Router();
 
 // Same roles that manage tournaments in tournaments.routes.ts: club
-// management (HU23) is another organizer/administrator responsibility.
+// management (HU23) is another organizer/administrator responsibility. A
+// roster carries personal data (university code, program, semester), so it's
+// theirs to read too, like a tournament's roster.
 const canManage = requireRole("ORGANIZER", "ADMINISTRATOR");
 
 clubsRouter.get("/", requireAuth, list);
 clubsRouter.post("/", requireAuth, canManage, create);
 clubsRouter.put("/:id", requireAuth, canManage, update);
 clubsRouter.delete("/:id", requireAuth, canManage, remove);
-clubsRouter.get("/:id/players", requireAuth, listPlayers);
+clubsRouter.get("/:id/players", requireAuth, canManage, listPlayers);
 clubsRouter.post("/:id/players", requireAuth, canManage, assignPlayer);
 clubsRouter.delete("/:id/players/:playerId", requireAuth, canManage, removePlayer);

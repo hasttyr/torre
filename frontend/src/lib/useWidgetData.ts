@@ -3,7 +3,7 @@ import { computed, type Ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import type { WidgetKey } from "../services/dashboard";
-import { currentUserId, widgetQuery } from "./dashboardQueries";
+import { currentUserId, widgetQuery } from "../queries/dashboard";
 import { extractErrorMessage } from "./errors";
 import { usePlayerSelection } from "./playerSelection";
 

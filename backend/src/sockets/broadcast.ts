@@ -1,6 +1,6 @@
 import type { Server } from "socket.io";
 
-import { tournamentRoom } from "./rooms";
+import { tournamentManagersRoom, tournamentRoom } from "./rooms";
 
 // Mirrors config/prisma.ts's singleton pattern: `server.ts` creates the one
 // real Server instance at boot and registers it here, so any future service
@@ -33,4 +33,12 @@ export function resetSocketServer(): void {
  */
 export function emitToTournament(tournamentId: string, event: string, payload: unknown): void {
   ioInstance?.to(tournamentRoom(tournamentId)).emit(event, payload);
+}
+
+/**
+ * Like {@link emitToTournament}, to the tournament's managers only: for
+ * what isn't public yet, like a draft round being adjusted (HU29).
+ */
+export function emitToTournamentManagers(tournamentId: string, event: string, payload: unknown): void {
+  ioInstance?.to(tournamentManagersRoom(tournamentId)).emit(event, payload);
 }

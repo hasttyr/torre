@@ -1,8 +1,8 @@
-import jwt from "jsonwebtoken";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../app";
+import { signSessionToken } from "../services/sessionToken";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
@@ -18,6 +18,8 @@ const { prismaMock } = vi.hoisted(() => ({
     enrollment: { create: vi.fn(), findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
     tiebreakCriterion: { deleteMany: vi.fn(), createMany: vi.fn() },
     auditLog: { create: vi.fn() },
+    // The tournament's row lock (lockTournament): nothing to read back.
+    $queryRaw: vi.fn(),
     $transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn(prismaMock)),
   },
 }));
@@ -25,11 +27,11 @@ const { prismaMock } = vi.hoisted(() => ({
 vi.mock("../config/prisma", () => ({ prisma: prismaMock }));
 
 function tokenFor(role: string, id = "user-1"): string {
-  return jwt.sign({ sub: id, role }, "test-secret", { expiresIn: "1h" });
+  return signSessionToken({ id: id, role });
 }
 
 const tournamentBase = {
-  id: "tournament-1",
+  id: "fb92c02e-7903-5cb2-a404-1908a1296d1d",
   name: "Copa Universitaria",
   startDate: new Date("2026-10-01"),
   endDate: new Date("2026-10-03"),
@@ -94,7 +96,7 @@ describe("GET /api/tournaments/enrolled", () => {
   });
 
   it("returns the tournaments the authenticated player is enrolled in", async () => {
-    prismaMock.player.findUnique.mockResolvedValue({ id: "player-1", userId: "user-1" });
+    prismaMock.player.findUnique.mockResolvedValue({ id: "1713759c-231e-5eef-93fa-5846543beb8b", userId: "user-1" });
     prismaMock.enrollment.findMany.mockResolvedValue([{ id: "enrollment-1", tournament: tournamentBase }]);
 
     const response = await request(createApp())
@@ -103,11 +105,12 @@ describe("GET /api/tournaments/enrolled", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
-    expect(response.body[0].id).toBe("tournament-1");
+    expect(response.body[0].id).toBe("fb92c02e-7903-5cb2-a404-1908a1296d1d");
   });
 
   it("returns an empty list when the user has no player profile", async () => {
-    prismaMock.player.findUnique.mockResolvedValue(null);
+    // The enrollments of the user's player profile: none, when there's no profile.
+    prismaMock.enrollment.findMany.mockResolvedValue([]);
 
     const response = await request(createApp())
       .get("/api/tournaments/enrolled")
@@ -174,18 +177,18 @@ describe("GET /api/tournaments/:id", () => {
     prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
 
     const response = await request(createApp())
-      .get("/api/tournaments/tournament-1")
+      .get("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`);
 
     expect(response.status).toBe(200);
-    expect(response.body.id).toBe("tournament-1");
+    expect(response.body.id).toBe("fb92c02e-7903-5cb2-a404-1908a1296d1d");
   });
 
   it("an administrator can see any tournament even without being the owner", async () => {
     prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
 
     const response = await request(createApp())
-      .get("/api/tournaments/tournament-1")
+      .get("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d")
       .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "admin-1")}`);
 
     expect(response.status).toBe(200);
@@ -195,8 +198,8 @@ describe("GET /api/tournaments/:id", () => {
     prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
 
     const response = await request(createApp())
-      .get("/api/tournaments/tournament-1")
-      .set("Authorization", `Bearer ${tokenFor("PLAYER", "player-1")}`);
+      .get("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d")
+      .set("Authorization", `Bearer ${tokenFor("PLAYER", "1713759c-231e-5eef-93fa-5846543beb8b")}`);
 
     expect(response.status).toBe(404);
   });
@@ -205,7 +208,7 @@ describe("GET /api/tournaments/:id", () => {
     prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
 
     const response = await request(createApp())
-      .get("/api/tournaments/tournament-1")
+      .get("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "other-organizer")}`);
 
     expect(response.status).toBe(404);
@@ -215,14 +218,14 @@ describe("GET /api/tournaments/:id", () => {
     prismaMock.tournament.findUnique.mockResolvedValue({ ...tournamentBase, status: "IN_PROGRESS" });
 
     const response = await request(createApp())
-      .get("/api/tournaments/tournament-1")
-      .set("Authorization", `Bearer ${tokenFor("PLAYER", "player-1")}`);
+      .get("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d")
+      .set("Authorization", `Bearer ${tokenFor("PLAYER", "1713759c-231e-5eef-93fa-5846543beb8b")}`);
 
     expect(response.status).toBe(200);
   });
 
   it("responds 401 without a token", async () => {
-    const response = await request(createApp()).get("/api/tournaments/tournament-1");
+    const response = await request(createApp()).get("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d");
     expect(response.status).toBe(401);
   });
 });
@@ -237,12 +240,12 @@ describe("GET /api/tournaments/:id/players", () => {
     prismaMock.enrollment.findMany.mockResolvedValue([]);
 
     const response = await request(createApp())
-      .get("/api/tournaments/tournament-1/players")
+      .get("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`);
 
     expect(response.status).toBe(200);
     expect(prismaMock.enrollment.findMany.mock.calls[0][0].where).toEqual({
-      tournamentId: "tournament-1",
+      tournamentId: "fb92c02e-7903-5cb2-a404-1908a1296d1d",
       withdrawnAt: null,
     });
   });
@@ -251,8 +254,8 @@ describe("GET /api/tournaments/:id/players", () => {
     prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
 
     const response = await request(createApp())
-      .get("/api/tournaments/tournament-1/players")
-      .set("Authorization", `Bearer ${tokenFor("PLAYER", "player-1")}`);
+      .get("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players")
+      .set("Authorization", `Bearer ${tokenFor("PLAYER", "1713759c-231e-5eef-93fa-5846543beb8b")}`);
 
     expect(response.status).toBe(403);
     expect(prismaMock.enrollment.findMany).not.toHaveBeenCalled();
@@ -262,14 +265,14 @@ describe("GET /api/tournaments/:id/players", () => {
     prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
 
     const response = await request(createApp())
-      .get("/api/tournaments/tournament-1/players")
+      .get("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players")
       .set("Authorization", `Bearer ${tokenFor("ARBITER", "arbiter-1")}`);
 
     expect(response.status).toBe(403);
   });
 
   it("responds 401 without a token", async () => {
-    const response = await request(createApp()).get("/api/tournaments/tournament-1/players");
+    const response = await request(createApp()).get("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players");
     expect(response.status).toBe(401);
   });
 });
@@ -284,7 +287,7 @@ describe("POST /api/tournaments/:id/registration/open and /close", () => {
     prismaMock.tournament.update.mockResolvedValue({ ...tournamentBase, status: "REGISTRATION_OPEN" });
 
     const response = await request(createApp())
-      .post("/api/tournaments/tournament-1/registration/open")
+      .post("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/registration/open")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`);
 
     expect(response.status).toBe(200);
@@ -295,7 +298,7 @@ describe("POST /api/tournaments/:id/registration/open and /close", () => {
     prismaMock.tournament.findUnique.mockResolvedValue({ ...tournamentBase, status: "CREATED" });
 
     const response = await request(createApp())
-      .post("/api/tournaments/tournament-1/registration/close")
+      .post("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/registration/close")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`);
 
     expect(response.status).toBe(409);
@@ -310,7 +313,7 @@ describe("POST /api/tournaments/:id/players", () => {
   it("enrolls a player and responds 201", async () => {
     prismaMock.tournament.findUnique.mockResolvedValue({ ...tournamentBase, status: "REGISTRATION_OPEN" });
     prismaMock.player.findUnique.mockResolvedValue({
-      id: "player-1",
+      id: "1713759c-231e-5eef-93fa-5846543beb8b",
       universityCode: "U1",
       program: "Sistemas",
       semester: 5,
@@ -319,27 +322,27 @@ describe("POST /api/tournaments/:id/players", () => {
     prismaMock.enrollment.create.mockResolvedValue({ id: "enrollment-1", createdAt: new Date("2026-09-17") });
 
     const response = await request(createApp())
-      .post("/api/tournaments/tournament-1/players")
+      .post("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`)
       .send({ playerId: "11111111-1111-1111-1111-111111111111" });
 
     expect(response.status).toBe(201);
-    expect(response.body).toMatchObject({ playerId: "player-1", name: "Luis Gómez" });
+    expect(response.body).toMatchObject({ playerId: "1713759c-231e-5eef-93fa-5846543beb8b", name: "Luis Gómez" });
   });
 
   it("responds 409 (RN-01) for a player already enrolled in the same tournament", async () => {
     prismaMock.tournament.findUnique.mockResolvedValue({ ...tournamentBase, status: "REGISTRATION_OPEN" });
     prismaMock.player.findUnique.mockResolvedValue({
-      id: "player-1",
+      id: "1713759c-231e-5eef-93fa-5846543beb8b",
       universityCode: "U1",
       program: "Sistemas",
       semester: 5,
       user: { name: "Luis Gómez" },
     });
-    prismaMock.enrollment.create.mockRejectedValue({ code: "P2002" });
+    prismaMock.enrollment.findUnique.mockResolvedValue({ id: "enrollment-1" });
 
     const response = await request(createApp())
-      .post("/api/tournaments/tournament-1/players")
+      .post("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`)
       .send({ playerId: "11111111-1111-1111-1111-111111111111" });
 
@@ -350,7 +353,7 @@ describe("POST /api/tournaments/:id/players", () => {
     prismaMock.tournament.findUnique.mockResolvedValue({ ...tournamentBase, status: "REGISTRATION_CLOSED" });
 
     const response = await request(createApp())
-      .post("/api/tournaments/tournament-1/players")
+      .post("/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`)
       .send({ playerId: "11111111-1111-1111-1111-111111111111" });
 
@@ -369,11 +372,13 @@ describe("POST /api/tournaments/:id/players/:playerId/withdraw", () => {
     prismaMock.enrollment.findUnique.mockResolvedValue({
       id: "enrollment-1",
       withdrawnAt: null,
-      player: { user: { name: "Luis Gómez" } },
+      player: { userId: "user-luis", user: { name: "Luis Gómez" } },
     });
 
     const response = await request(createApp())
-      .post("/api/tournaments/tournament-1/players/player-1/withdraw")
+      .post(
+        "/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players/1713759c-231e-5eef-93fa-5846543beb8b/withdraw",
+      )
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`)
       .send({ reason: "Motivos personales" });
 
@@ -386,7 +391,7 @@ describe("POST /api/tournaments/:id/players/:playerId/withdraw", () => {
       data: {
         userId: "user-1",
         action: "PLAYER_WITHDRAWN",
-        detail: 'Luis Gómez de "Copa Universitaria" — Motivos personales',
+        detail: '{{user:user-luis}} de "Copa Universitaria" — Motivos personales',
       },
       select: { id: true },
     });
@@ -397,7 +402,9 @@ describe("POST /api/tournaments/:id/players/:playerId/withdraw", () => {
     prismaMock.enrollment.findUnique.mockResolvedValue(null);
 
     const response = await request(createApp())
-      .post("/api/tournaments/tournament-1/players/player-1/withdraw")
+      .post(
+        "/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players/1713759c-231e-5eef-93fa-5846543beb8b/withdraw",
+      )
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`)
       .send({});
 
@@ -410,11 +417,13 @@ describe("POST /api/tournaments/:id/players/:playerId/withdraw", () => {
     prismaMock.enrollment.findUnique.mockResolvedValue({
       id: "enrollment-1",
       withdrawnAt: new Date("2026-09-01"),
-      player: { user: { name: "Luis Gómez" } },
+      player: { userId: "user-luis", user: { name: "Luis Gómez" } },
     });
 
     const response = await request(createApp())
-      .post("/api/tournaments/tournament-1/players/player-1/withdraw")
+      .post(
+        "/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players/1713759c-231e-5eef-93fa-5846543beb8b/withdraw",
+      )
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`)
       .send({});
 
@@ -425,7 +434,9 @@ describe("POST /api/tournaments/:id/players/:playerId/withdraw", () => {
     prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
 
     const response = await request(createApp())
-      .post("/api/tournaments/tournament-1/players/player-1/withdraw")
+      .post(
+        "/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players/1713759c-231e-5eef-93fa-5846543beb8b/withdraw",
+      )
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "other-user")}`)
       .send({});
 
@@ -433,7 +444,9 @@ describe("POST /api/tournaments/:id/players/:playerId/withdraw", () => {
   });
 
   it("responds 401 without a token", async () => {
-    const response = await request(createApp()).post("/api/tournaments/tournament-1/players/player-1/withdraw");
+    const response = await request(createApp()).post(
+      "/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players/1713759c-231e-5eef-93fa-5846543beb8b/withdraw",
+    );
     expect(response.status).toBe(401);
   });
 });

@@ -28,7 +28,3 @@ Thumbs.db
 
 # Prisma
 backend/prisma/migrations/.env
-
-# AI agent context (index in .claude/CLAUDE.md): kept locally, not part of the project
-.claude/
-.superpowers/

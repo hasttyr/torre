@@ -71,7 +71,9 @@ const CELL = "border-b border-border-soft px-2 py-2";
     </div>
 
     <p v-if="standings.tiebreaks.length > 0" class="text-xs text-text-faint">
-      {{ t("standings.tiebreakOrder", { order: standings.tiebreaks.join(" › ") }) }}
+      {{
+        t("standings.tiebreakOrder", { order: standings.tiebreaks.map((code) => t(`tiebreaks.${code}`)).join(" › ") })
+      }}
     </p>
   </div>
 </template>

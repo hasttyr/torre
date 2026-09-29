@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { createColumnHelper } from "@tanstack/vue-table";
 import { h } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -13,13 +12,14 @@ import ResultSplitBar from "../../charts/ResultSplitBar.vue";
 import DataTable from "../../ui/DataTable.vue";
 import PlayerName from "../PlayerName.vue";
 import WidgetCard from "../WidgetCard.vue";
+import { dataTableColumns } from "../../ui/dataTableFeatures";
 
 const { t } = useI18n();
 const locale = useLocaleStore();
 const selection = usePlayerSelection();
 const { data, loading, error, reload } = useWidgetData<PlayerOverviewRow[]>("PLAYERS_OVERVIEW");
 
-const column = createColumnHelper<PlayerOverviewRow>();
+const column = dataTableColumns<PlayerOverviewRow>();
 
 const columns = [
   column.accessor("name", {

@@ -4,17 +4,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
+import { router as appRouter } from "../../router";
 import { useAuthStore } from "../../stores/auth";
 import AppHeader from "./AppHeader.vue";
 
+// The app's own routes (they declare the nav's sections, meta.nav), with stand-in pages.
+const appRoutes = () =>
+  createRouter({
+    history: createWebHistory(),
+    routes: appRouter.getRoutes().map(({ path, meta }) => ({ path, meta, component: { template: "<div />" } })),
+  });
+
 async function mountHeader(role: string | null) {
   if (role) {
-    useAuthStore().$patch({ token: "token", user: { id: "u-1", name: "Ana Torres", role } as never });
+    useAuthStore().$patch({ user: { id: "u-1", name: "Ana Torres", role } as never });
   }
-  const router = createRouter({
-    history: createWebHistory(),
-    routes: [{ path: "/:p(.*)*", component: { template: "<div />" } }],
-  });
+  const router = appRoutes();
   await router.push("/");
   return mount(AppHeader, { global: { plugins: [router, i18n] } });
 }
@@ -47,12 +52,12 @@ describe("AppHeader navigation", () => {
   });
 
   it.each(["mouseenter", "focus"])("starts downloading a section's page on %s of its link", async (event) => {
-    useAuthStore().$patch({ token: "token", user: { id: "u-1", name: "Ana Torres", role: "ORGANIZER" } as never });
+    useAuthStore().$patch({ user: { id: "u-1", name: "Ana Torres", role: "ORGANIZER" } as never });
     const loadClubs = vi.fn(() => Promise.resolve({ default: { template: "<div />" } }));
     const router = createRouter({
       history: createWebHistory(),
       routes: [
-        { path: "/clubes", component: loadClubs },
+        { path: "/clubes", component: loadClubs, meta: { nav: { labelKey: "header.clubs", order: 1 } } },
         { path: "/:p(.*)*", component: { template: "<div />" } },
       ],
     });
@@ -93,11 +98,8 @@ describe("AppHeader navigation", () => {
   });
 
   it("closes the mobile menu on Escape, handing focus back to its button", async () => {
-    useAuthStore().$patch({ token: "token", user: { id: "u-1", name: "Ana Torres", role: "COACH" } as never });
-    const router = createRouter({
-      history: createWebHistory(),
-      routes: [{ path: "/:p(.*)*", component: { template: "<div />" } }],
-    });
+    useAuthStore().$patch({ user: { id: "u-1", name: "Ana Torres", role: "COACH" } as never });
+    const router = appRoutes();
     await router.push("/");
     // attachTo: focus only moves between attached nodes in jsdom.
     const wrapper = mount(AppHeader, { global: { plugins: [router, i18n] }, attachTo: document.body });

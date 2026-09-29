@@ -1,9 +1,12 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "../generated/prisma/client";
 
-import { HttpError } from "../middlewares/errorHandler";
+import { HttpError } from "../errors/apiErrors";
+import type { AuthUser } from "../types/express";
 import type { UpdateProfileSchemaInput } from "../validators/users.schemas";
-import { recordAuditLog } from "./auditLog.service";
+import { mention, recordAuditLog } from "./auditLog.service";
+import { REVOKE_SESSIONS } from "./sessionToken";
 import { toUserDto, type UserDto } from "./user.mapper";
+import type { MyCoachDto } from "../contracts/responses";
 
 const PLAYER_FIELDS = ["universityCode", "program", "semester", "birthDate", "gender", "disability"] as const;
 
@@ -22,6 +25,26 @@ function buildPlayerData(data: UpdateProfileSchemaInput): Prisma.PlayerUpdateWit
     ...(data.gender !== undefined ? { gender: data.gender } : {}),
     ...(data.disability !== undefined ? { disability: data.disability } : {}),
   };
+}
+
+/**
+ * Refuses a change that would take away `userId`'s active administrator
+ * status (demotion, block, suppression) when they're the last one: nobody
+ * could manage roles or accounts anymore. Call it inside the change's
+ * transaction: it locks the active administrators' rows, so two of them
+ * demoting each other at once are serialized and the second one sees the
+ * first's change.
+ *
+ * @throws {HttpError} 409 if `userId` is the only active administrator.
+ */
+export async function assertAnotherAdministratorRemains(tx: Prisma.TransactionClient, userId: string): Promise<void> {
+  const admins = await tx.$queryRaw<{ id: string }[]>`
+    SELECT u.id FROM users u JOIN roles r ON r.id = u.role_id
+    WHERE r.name = 'ADMINISTRATOR' AND u.status = 'ACTIVE'
+    FOR UPDATE OF u`;
+  if (admins.length === 1 && admins[0]!.id === userId) {
+    throw new HttpError("LAST_ADMINISTRATOR");
+  }
 }
 
 // Admin-only oversight (HU03 completion): without this, an administrator
@@ -47,7 +70,7 @@ export async function getUserById(prisma: PrismaClient, id: string): Promise<Use
     include: { role: true, player: { include: { club: true } } },
   });
   if (!user) {
-    throw new HttpError(404, "Usuario no encontrado");
+    throw new HttpError("USER_NOT_FOUND");
   }
   return toUserDto(user);
 }
@@ -61,32 +84,28 @@ export async function updateUserRole(
   prisma: PrismaClient,
   id: string,
   newRole: string,
-  actingAdminId: string,
+  actor: AuthUser,
 ): Promise<UserDto> {
   const role = await prisma.role.findUnique({ where: { name: newRole } });
   if (!role) {
-    throw new HttpError(400, `El rol "${newRole}" no existe`);
+    throw new HttpError("ROLE_NOT_FOUND", { role: newRole });
   }
 
   const existingUser = await prisma.user.findUnique({ where: { id }, include: { role: true } });
   if (!existingUser) {
-    throw new HttpError(404, "Usuario no encontrado");
+    throw new HttpError("USER_NOT_FOUND");
   }
 
   // RN-11: role changes are a critical administrative action, audited in
   // the same transaction as the change itself.
   const user = await prisma.$transaction(async (tx) => {
+    if (newRole !== "ADMINISTRATOR") await assertAnotherAdministratorRemains(tx, id);
     const updated = await tx.user.update({
       where: { id },
-      data: { roleId: role.id },
+      data: { roleId: role.id, ...REVOKE_SESSIONS },
       include: { role: true, player: { include: { club: true } } },
     });
-    await recordAuditLog(
-      tx,
-      actingAdminId,
-      "ROLE_CHANGED",
-      `${existingUser.name} (${existingUser.role.name} -> ${newRole})`,
-    );
+    await recordAuditLog(tx, actor.id, "ROLE_CHANGED", `${mention(id)} (${existingUser.role.name} -> ${newRole})`);
     return updated;
   });
 
@@ -97,32 +116,39 @@ export async function updateUserRole(
  * Activates or deactivates a user account (admin action).
  *
  * @throws {HttpError} 404 if the user doesn't exist, 409 if the admin
- * targets their own account (would risk locking out the only admin).
+ * targets their own account (would risk locking out the only admin), the
+ * last active administrator, or reactivates a suppressed account.
  */
 export async function updateUserStatus(
   prisma: PrismaClient,
   id: string,
   status: "ACTIVE" | "INACTIVE",
-  actingAdminId: string,
+  actor: AuthUser,
 ): Promise<UserDto> {
-  if (id === actingAdminId) {
-    throw new HttpError(409, "No podés cambiar el estado de tu propia cuenta");
+  if (id === actor.id) {
+    throw new HttpError("OWN_ACCOUNT_STATUS");
   }
 
   const existingUser = await prisma.user.findUnique({ where: { id } });
   if (!existingUser) {
-    throw new HttpError(404, "Usuario no encontrado");
+    throw new HttpError("USER_NOT_FOUND");
+  }
+  // HU22: suppression is final; there's no one left to reactivate.
+  if (existingUser.suppressedAt && status === "ACTIVE") {
+    throw new HttpError("ACCOUNT_SUPPRESSED");
   }
 
   // Blocking/reactivating an account is a critical administrative action,
   // same trust boundary as a role change.
   const user = await prisma.$transaction(async (tx) => {
+    if (status === "INACTIVE") await assertAnotherAdministratorRemains(tx, id);
     const updated = await tx.user.update({
       where: { id },
-      data: { status },
+      // Revoked on reactivation too: a block must end the sessions for good.
+      data: { status, ...REVOKE_SESSIONS },
       include: { role: true, player: { include: { club: true } } },
     });
-    await recordAuditLog(tx, actingAdminId, "ACCOUNT_STATUS_CHANGED", `${existingUser.name} -> ${status}`);
+    await recordAuditLog(tx, actor.id, "ACCOUNT_STATUS_CHANGED", `${mention(id)} -> ${status}`);
     return updated;
   });
 
@@ -142,21 +168,21 @@ export async function updateUserStatus(
  */
 export async function updateOwnProfile(
   prisma: PrismaClient,
-  userId: string,
   data: UpdateProfileSchemaInput,
+  actor: AuthUser,
 ): Promise<UserDto> {
-  const existingUser = await prisma.user.findUnique({ where: { id: userId }, include: { player: true } });
+  const existingUser = await prisma.user.findUnique({ where: { id: actor.id }, include: { player: true } });
   if (!existingUser) {
-    throw new HttpError(404, "Usuario no encontrado");
+    throw new HttpError("USER_NOT_FOUND");
   }
 
   const hasPlayerUpdates = hasPlayerChanges(data);
   if (hasPlayerUpdates && !existingUser.player) {
-    throw new HttpError(400, "Este usuario no tiene un perfil de jugador para actualizar");
+    throw new HttpError("NOT_A_PLAYER");
   }
 
   const user = await prisma.user.update({
-    where: { id: userId },
+    where: { id: actor.id },
     data: {
       ...(data.name !== undefined ? { name: data.name.trim() } : {}),
       ...(hasPlayerUpdates ? { player: { update: buildPlayerData(data) } } : {}),
@@ -167,27 +193,24 @@ export async function updateOwnProfile(
   return toUserDto(user);
 }
 
-export interface MyCoachDto {
-  id: string;
-  name: string;
-  email: string;
-}
-
 // HU24 (the player's side of the link): a player can see who follows their
 // progress. Empty for a user without a player profile, same rule as
 // listEnrolledTournaments in tournaments.service.ts.
-/** Lists the coaches linked to the current user (as a player). */
-export async function listMyCoaches(prisma: PrismaClient, userId: string): Promise<MyCoachDto[]> {
-  const player = await prisma.player.findUnique({ where: { userId } });
-  if (!player) {
-    return [];
-  }
-
+/** Lists the coaches who follow the actor (as a player), and the requests waiting for them. */
+export async function listMyCoaches(prisma: PrismaClient, actor: AuthUser): Promise<MyCoachDto[]> {
   const links = await prisma.coachPlayer.findMany({
-    where: { playerId: player.id },
+    // Through the actor's player profile: without one, nobody follows them.
+    where: { player: { userId: actor.id } },
     include: { coach: true },
     orderBy: { createdAt: "desc" },
   });
 
-  return links.map((link) => ({ id: link.coach.id, name: link.coach.name, email: link.coach.email }));
+  return links.map((link) => ({
+    id: link.coach.id,
+    name: link.coach.name,
+    email: link.coach.email,
+    acceptedAt: link.acceptedAt,
+  }));
 }
+
+export type { MyCoachDto };

@@ -1,8 +1,8 @@
-import jwt from "jsonwebtoken";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../app";
+import { signSessionToken } from "../services/sessionToken";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
@@ -16,10 +16,12 @@ const { prismaMock } = vi.hoisted(() => ({
       update: vi.fn(),
     },
     player: { findUnique: vi.fn() },
-    coachPlayer: { findMany: vi.fn() },
+    coachPlayer: { findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn() },
     enrollment: { findFirst: vi.fn() },
     dataRequest: { create: vi.fn() },
     auditLog: { create: vi.fn() },
+    // The active administrators, locked: two of them, so any one can be demoted.
+    $queryRaw: vi.fn(async () => [{ id: "admin-1" }, { id: "admin-2" }]),
     $transaction: vi.fn(async (work: (tx: unknown) => unknown) => work(prismaMock)),
   },
 }));
@@ -27,7 +29,7 @@ const { prismaMock } = vi.hoisted(() => ({
 vi.mock("../config/prisma", () => ({ prisma: prismaMock }));
 
 function tokenFor(role: string, id = "user-1"): string {
-  return jwt.sign({ sub: id, role }, "test-secret", { expiresIn: "1h" });
+  return signSessionToken({ id: id, role });
 }
 
 describe("GET /api/users/me", () => {
@@ -108,9 +110,8 @@ describe("GET /api/users/me/coaches", () => {
   });
 
   it("lists the coaches linked to the current player", async () => {
-    prismaMock.player.findUnique.mockResolvedValue({ id: "player-1", userId: "user-1" });
     prismaMock.coachPlayer.findMany.mockResolvedValue([
-      { coach: { id: "coach-1", name: "Marta Ríos", email: "marta@example.com" } },
+      { coach: { id: "coach-1", name: "Marta Ríos", email: "marta@example.com" }, acceptedAt: null },
     ]);
 
     const response = await request(createApp())
@@ -118,11 +119,13 @@ describe("GET /api/users/me/coaches", () => {
       .set("Authorization", `Bearer ${tokenFor("PLAYER", "user-1")}`);
 
     expect(response.status).toBe(200);
-    expect(response.body).toEqual([{ id: "coach-1", name: "Marta Ríos", email: "marta@example.com" }]);
+    expect(response.body).toEqual([
+      { id: "coach-1", name: "Marta Ríos", email: "marta@example.com", acceptedAt: null },
+    ]);
   });
 
-  it("returns an empty list when the user has no player profile", async () => {
-    prismaMock.player.findUnique.mockResolvedValue(null);
+  it("looks the links up through the user's player profile, so someone without one has none", async () => {
+    prismaMock.coachPlayer.findMany.mockResolvedValue([]);
 
     const response = await request(createApp())
       .get("/api/users/me/coaches")
@@ -130,6 +133,51 @@ describe("GET /api/users/me/coaches", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual([]);
+    expect(prismaMock.coachPlayer.findMany.mock.calls[0][0].where).toEqual({ player: { userId: "user-1" } });
+  });
+});
+
+describe("POST /api/users/me/coaches/:coachId/accept", () => {
+  const COACH_ID = "3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b";
+  const accept = () =>
+    request(createApp())
+      .post(`/api/users/me/coaches/${COACH_ID}/accept`)
+      .set("Authorization", `Bearer ${tokenFor("PLAYER", "user-1")}`);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("gives the coach access to the player's progress from now on (HU24)", async () => {
+    prismaMock.coachPlayer.findFirst.mockResolvedValue({ id: "link-1", acceptedAt: null });
+
+    const response = await accept();
+
+    expect(response.status).toBe(204);
+    expect(prismaMock.coachPlayer.findFirst.mock.calls[0][0].where).toEqual({
+      coachId: COACH_ID,
+      player: { userId: "user-1" },
+    });
+    expect(prismaMock.coachPlayer.update).toHaveBeenCalledWith({
+      where: { id: "link-1" },
+      data: { acceptedAt: expect.any(Date) },
+    });
+  });
+
+  it("keeps the original date when the link was already accepted", async () => {
+    prismaMock.coachPlayer.findFirst.mockResolvedValue({ id: "link-1", acceptedAt: new Date("2026-09-01") });
+
+    expect((await accept()).status).toBe(204);
+    expect(prismaMock.coachPlayer.update).not.toHaveBeenCalled();
+  });
+
+  it("answers 404 when that coach never asked to follow the player", async () => {
+    prismaMock.coachPlayer.findFirst.mockResolvedValue(null);
+
+    const response = await accept();
+
+    expect(response.status).toBe(404);
+    expect(response.body.code).toBe("COACH_NOT_LINKED");
   });
 });
 
@@ -263,49 +311,7 @@ describe("POST /api/users/me/data-requests", () => {
     expect(response.status).toBe(401);
   });
 
-  it("ACCESS: returns the user's own data", async () => {
-    prismaMock.user.findUnique.mockResolvedValue({
-      id: "user-1",
-      name: "Ana Torres",
-      email: "ana@example.com",
-      status: "ACTIVE",
-      createdAt: new Date("2026-01-01T00:00:00Z"),
-      role: { id: "role-1", name: "PLAYER" },
-      player: null,
-    });
-
-    const response = await request(createApp())
-      .post("/api/users/me/data-requests")
-      .set("Authorization", `Bearer ${tokenFor("PLAYER", "user-1")}`)
-      .send({ type: "ACCESS" });
-
-    expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({ type: "ACCESS", status: "RESOLVED" });
-    expect(response.body.user.email).toBe("ana@example.com");
-  });
-
-  it("SUPPRESSION: blocks the account instead of deleting it when a tournament is in progress", async () => {
-    prismaMock.player.findUnique.mockResolvedValue({ id: "player-1", userId: "user-1" });
-    prismaMock.enrollment.findFirst.mockResolvedValue({ id: "enrollment-1" });
-    prismaMock.user.update.mockResolvedValue({
-      id: "user-1",
-      name: "Ana Torres",
-      email: "ana@example.com",
-      status: "INACTIVE",
-      createdAt: new Date("2026-01-01T00:00:00Z"),
-      role: { id: "role-1", name: "PLAYER" },
-      player: null,
-    });
-
-    const response = await request(createApp())
-      .post("/api/users/me/data-requests")
-      .set("Authorization", `Bearer ${tokenFor("PLAYER", "user-1")}`)
-      .send({ type: "SUPPRESSION" });
-
-    expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({ type: "SUPPRESSION", status: "BLOCKED" });
-    expect(prismaMock.user.update.mock.calls[0][0].data).toEqual({ status: "INACTIVE" });
-  });
+  // What each right does against the database is covered by dataRights.int.test.ts.
 
   it("responds 400 with an unknown request type", async () => {
     const response = await request(createApp())
@@ -323,13 +329,15 @@ describe("PATCH /api/users/:id/role", () => {
   });
 
   it("responds 401 without a token", async () => {
-    const response = await request(createApp()).patch("/api/users/user-2/role").send({ role: "ARBITER" });
+    const response = await request(createApp())
+      .patch("/api/users/f9e9d597-89df-5229-90ca-2ba5b24400fa/role")
+      .send({ role: "ARBITER" });
     expect(response.status).toBe(401);
   });
 
   it("responds 403 when whoever requests the change isn't ADMINISTRATOR", async () => {
     const response = await request(createApp())
-      .patch("/api/users/user-2/role")
+      .patch("/api/users/f9e9d597-89df-5229-90ca-2ba5b24400fa/role")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`)
       .send({ role: "ARBITER" });
 
@@ -339,9 +347,13 @@ describe("PATCH /api/users/:id/role", () => {
 
   it("allows an ADMINISTRATOR to change another user's role", async () => {
     prismaMock.role.findUnique.mockResolvedValue({ id: "role-arbiter", name: "ARBITER" });
-    prismaMock.user.findUnique.mockResolvedValue({ id: "user-2", name: "Carlos", role: { name: "PLAYER" } });
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "f9e9d597-89df-5229-90ca-2ba5b24400fa",
+      name: "Carlos",
+      role: { name: "PLAYER" },
+    });
     prismaMock.user.update.mockResolvedValue({
-      id: "user-2",
+      id: "f9e9d597-89df-5229-90ca-2ba5b24400fa",
       name: "Carlos",
       email: "carlos@example.com",
       status: "ACTIVE",
@@ -350,26 +362,30 @@ describe("PATCH /api/users/:id/role", () => {
     });
 
     const response = await request(createApp())
-      .patch("/api/users/user-2/role")
-      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "admin-user")}`)
+      .patch("/api/users/f9e9d597-89df-5229-90ca-2ba5b24400fa/role")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "631c2eda-db46-5d29-9750-5c5b1a9b1b9a")}`)
       .send({ role: "ARBITER" });
 
     expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({ id: "user-2", role: "ARBITER" });
+    expect(response.body).toMatchObject({ id: "f9e9d597-89df-5229-90ca-2ba5b24400fa", role: "ARBITER" });
     expect(prismaMock.user.update).toHaveBeenCalledWith({
-      where: { id: "user-2" },
-      data: { roleId: "role-arbiter" },
+      where: { id: "f9e9d597-89df-5229-90ca-2ba5b24400fa" },
+      data: { roleId: "role-arbiter", tokenVersion: { increment: 1 } },
       include: { role: true, player: { include: { club: true } } },
     });
     expect(prismaMock.auditLog.create).toHaveBeenCalledWith({
-      data: { userId: "admin-user", action: "ROLE_CHANGED", detail: "Carlos (PLAYER -> ARBITER)" },
+      data: {
+        userId: "631c2eda-db46-5d29-9750-5c5b1a9b1b9a",
+        action: "ROLE_CHANGED",
+        detail: "{{user:f9e9d597-89df-5229-90ca-2ba5b24400fa}} (PLAYER -> ARBITER)",
+      },
       select: { id: true },
     });
   });
 
   it("responds 400 when the sent role isn't one of the valid ones", async () => {
     const response = await request(createApp())
-      .patch("/api/users/user-2/role")
+      .patch("/api/users/f9e9d597-89df-5229-90ca-2ba5b24400fa/role")
       .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR")}`)
       .send({ role: "SUPERUSUARIO" });
 
@@ -382,7 +398,7 @@ describe("PATCH /api/users/:id/role", () => {
     prismaMock.user.findUnique.mockResolvedValue(null);
 
     const response = await request(createApp())
-      .patch("/api/users/no-existe/role")
+      .patch("/api/users/f9c9e62c-e606-5941-bade-a8a568b072fa/role")
       .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR")}`)
       .send({ role: "ARBITER" });
 
@@ -437,9 +453,9 @@ describe("PATCH /api/users/:id/status", () => {
   });
 
   it("allows an ADMINISTRATOR to deactivate another user and records the audit trail", async () => {
-    prismaMock.user.findUnique.mockResolvedValue({ id: "user-2", name: "Carlos" });
+    prismaMock.user.findUnique.mockResolvedValue({ id: "f9e9d597-89df-5229-90ca-2ba5b24400fa", name: "Carlos" });
     prismaMock.user.update.mockResolvedValue({
-      id: "user-2",
+      id: "f9e9d597-89df-5229-90ca-2ba5b24400fa",
       name: "Carlos",
       email: "carlos@example.com",
       status: "INACTIVE",
@@ -448,22 +464,26 @@ describe("PATCH /api/users/:id/status", () => {
     });
 
     const response = await request(createApp())
-      .patch("/api/users/user-2/status")
-      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "admin-user")}`)
+      .patch("/api/users/f9e9d597-89df-5229-90ca-2ba5b24400fa/status")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "631c2eda-db46-5d29-9750-5c5b1a9b1b9a")}`)
       .send({ status: "INACTIVE" });
 
     expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({ id: "user-2", status: "INACTIVE" });
+    expect(response.body).toMatchObject({ id: "f9e9d597-89df-5229-90ca-2ba5b24400fa", status: "INACTIVE" });
     expect(prismaMock.auditLog.create).toHaveBeenCalledWith({
-      data: { userId: "admin-user", action: "ACCOUNT_STATUS_CHANGED", detail: "Carlos -> INACTIVE" },
+      data: {
+        userId: "631c2eda-db46-5d29-9750-5c5b1a9b1b9a",
+        action: "ACCOUNT_STATUS_CHANGED",
+        detail: "{{user:f9e9d597-89df-5229-90ca-2ba5b24400fa}} -> INACTIVE",
+      },
       select: { id: true },
     });
   });
 
   it("responds 409 when the admin targets their own account", async () => {
     const response = await request(createApp())
-      .patch("/api/users/admin-user/status")
-      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "admin-user")}`)
+      .patch("/api/users/631c2eda-db46-5d29-9750-5c5b1a9b1b9a/status")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "631c2eda-db46-5d29-9750-5c5b1a9b1b9a")}`)
       .send({ status: "INACTIVE" });
 
     expect(response.status).toBe(409);
@@ -474,8 +494,8 @@ describe("PATCH /api/users/:id/status", () => {
     prismaMock.user.findUnique.mockResolvedValue(null);
 
     const response = await request(createApp())
-      .patch("/api/users/no-existe/status")
-      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "admin-user")}`)
+      .patch("/api/users/f9c9e62c-e606-5941-bade-a8a568b072fa/status")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "631c2eda-db46-5d29-9750-5c5b1a9b1b9a")}`)
       .send({ status: "ACTIVE" });
 
     expect(response.status).toBe(404);
@@ -483,8 +503,8 @@ describe("PATCH /api/users/:id/status", () => {
 
   it("responds 400 with an invalid status", async () => {
     const response = await request(createApp())
-      .patch("/api/users/user-2/status")
-      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "admin-user")}`)
+      .patch("/api/users/f9e9d597-89df-5229-90ca-2ba5b24400fa/status")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR", "631c2eda-db46-5d29-9750-5c5b1a9b1b9a")}`)
       .send({ status: "SUSPENDED" });
 
     expect(response.status).toBe(400);
@@ -492,7 +512,7 @@ describe("PATCH /api/users/:id/status", () => {
 
   it("responds 403 for a role without permission (ORGANIZER)", async () => {
     const response = await request(createApp())
-      .patch("/api/users/user-2/status")
+      .patch("/api/users/f9e9d597-89df-5229-90ca-2ba5b24400fa/status")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`)
       .send({ status: "INACTIVE" });
 
@@ -500,7 +520,9 @@ describe("PATCH /api/users/:id/status", () => {
   });
 
   it("responds 401 without a token", async () => {
-    const response = await request(createApp()).patch("/api/users/user-2/status").send({ status: "INACTIVE" });
+    const response = await request(createApp())
+      .patch("/api/users/f9e9d597-89df-5229-90ca-2ba5b24400fa/status")
+      .send({ status: "INACTIVE" });
     expect(response.status).toBe(401);
   });
 });

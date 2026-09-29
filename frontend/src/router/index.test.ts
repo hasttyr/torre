@@ -1,16 +1,16 @@
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Pages' first data requests, started by their routes (see lib/pageData.ts
-// and lib/dashboardQueries.ts).
-vi.mock("../lib/pageData", () => ({
-  loadTournamentRoom: vi.fn(() => new Promise(() => {})),
-  loadTournamentAdmin: vi.fn(() => new Promise(() => {})),
+// Pages' first data requests, started by their routes (see queries/tournaments.ts
+// and queries/dashboard.ts).
+vi.mock("../queries/tournaments", () => ({
+  prefetchTournamentRoom: vi.fn(),
+  prefetchTournamentAdmin: vi.fn(),
 }));
-vi.mock("../lib/dashboardQueries", () => ({ prefetchPanel: vi.fn() }));
+vi.mock("../queries/dashboard", () => ({ prefetchPanel: vi.fn() }));
 
-import { prefetchPanel } from "../lib/dashboardQueries";
-import { loadTournamentAdmin, loadTournamentRoom } from "../lib/pageData";
+import { prefetchPanel } from "../queries/dashboard";
+import { prefetchTournamentAdmin, prefetchTournamentRoom } from "../queries/tournaments";
 import { useAuthStore } from "../stores/auth";
 import { router } from "./index";
 
@@ -32,7 +32,6 @@ describe("router guard for /cuenta", () => {
   it("lets the request through when there is an active session", async () => {
     const auth = useAuthStore();
     auth.$patch({
-      token: "token",
       user: {
         id: "usuario-1",
         name: "Ana",
@@ -58,7 +57,7 @@ describe("router role guards", () => {
   });
 
   function signIn(role: string): void {
-    useAuthStore().$patch({ token: "token", user: { id: "u-1", name: "Ana", role } as never });
+    useAuthStore().$patch({ user: { id: "u-1", name: "Ana", role } as never });
   }
 
   it("sends a role away from a section it can't open", async () => {
@@ -80,10 +79,10 @@ describe("router role guards", () => {
   it("opens a tournament's room to any signed-in role (HU18)", async () => {
     signIn("COACH");
 
-    await router.push("/torneos/t-1/sala");
+    await router.push("/torneos/3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b/sala");
 
-    expect(router.currentRoute.value.path).toBe("/torneos/t-1/sala");
-    expect(router.currentRoute.value.params.id).toBe("t-1");
+    expect(router.currentRoute.value.path).toBe("/torneos/3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b/sala");
+    expect(router.currentRoute.value.params.id).toBe("3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b");
   });
 });
 
@@ -97,20 +96,20 @@ describe("router data prefetch", () => {
   });
 
   function signIn(role: string): void {
-    useAuthStore().$patch({ token: "token", user: { id: "u-1", name: "Ana", role } as never });
+    useAuthStore().$patch({ user: { id: "u-1", name: "Ana", role } as never });
   }
 
   it("starts each heavy page's data while its code is still downloading", async () => {
     signIn("ADMINISTRATOR");
 
     await router.push("/panel");
-    await router.push("/torneos/t-7/sala");
-    await router.push("/torneos/t-8");
+    await router.push("/torneos/7c9e6679-7425-40de-944b-e07fc1f90ae7/sala");
+    await router.push("/torneos/8d0f7780-8536-41ef-a55c-f18fd2fa1bf8");
     await vi.dynamicImportSettled();
 
     expect(prefetchPanel).toHaveBeenCalledOnce();
-    expect(loadTournamentRoom).toHaveBeenCalledWith("t-7");
-    expect(loadTournamentAdmin).toHaveBeenCalledWith("t-8");
+    expect(prefetchTournamentRoom).toHaveBeenCalledWith("7c9e6679-7425-40de-944b-e07fc1f90ae7");
+    expect(prefetchTournamentAdmin).toHaveBeenCalledWith("8d0f7780-8536-41ef-a55c-f18fd2fa1bf8");
   });
 
   it("asks for nothing when the guard sends the visitor to log in", async () => {
@@ -131,5 +130,26 @@ describe("router data prefetch", () => {
     await vi.dynamicImportSettled();
 
     expect(router.currentRoute.value.path).toBe("/panel");
+  });
+});
+
+describe("routes that don't exist", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    setActivePinia(createPinia());
+  });
+
+  it("shows the not-found page for a URL no route matches, instead of an empty screen", () => {
+    expect(router.resolve("/esto-no-existe").name).toBe("not-found");
+  });
+
+  it("doesn't take anything but a tournament id as a tournament, so it never reaches the API", () => {
+    expect(router.resolve("/torneos/not-a-uuid/sala").name).toBe("not-found");
+    expect(router.resolve("/torneos/..%2Fusers%3F/sala").name).toBe("not-found");
+    expect(router.resolve("/torneos/3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b/sala").name).toBe("tournament-room");
+  });
+
+  it("still tells the new-tournament page apart from a tournament", () => {
+    expect(router.resolve("/torneos/nuevo").name).toBe("tournaments-new");
   });
 });

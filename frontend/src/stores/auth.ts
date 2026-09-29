@@ -1,91 +1,83 @@
 import { defineStore } from "pinia";
 
 import type { RegisteredUser, UpdateProfilePayload } from "../services/auth";
-import { setAuthToken } from "../services/session";
+import { setSignedIn } from "../services/session";
+
+// Who's signed in, for the interface (header, route guards, pages). The
+// session itself is an HttpOnly cookie the API sets on sign-in: script can't
+// read it, so nothing kept here would let an XSS act as the user.
 
 // The auth endpoints (and axios with them) load on first use: the store is
-// part of the app shell, and reading the saved session needs no HTTP client.
+// part of the app shell, and reading the saved user needs no HTTP client.
 const authApi = () => import("../services/auth");
 
-const STORAGE_KEY_TOKEN = "torre.token";
 const STORAGE_KEY_USER = "torre.usuario";
+// Where an earlier version kept the session token, readable by any script.
+const LEGACY_STORAGE_KEY_TOKEN = "torre.token";
 
 interface AuthState {
-  token: string | null;
   user: RegisteredUser | null;
 }
 
-/** Reads the persisted session (token + user) from localStorage, if any. */
-function readStorage(): AuthState {
+/** The signed-in user, as saved on this device, if any. */
+function readStorage(): RegisteredUser | null {
   try {
-    const token = localStorage.getItem(STORAGE_KEY_TOKEN);
+    localStorage.removeItem(LEGACY_STORAGE_KEY_TOKEN);
     const rawUser = localStorage.getItem(STORAGE_KEY_USER);
-    return {
-      token,
-      user: rawUser ? (JSON.parse(rawUser) as RegisteredUser) : null,
-    };
+    return rawUser ? (JSON.parse(rawUser) as RegisteredUser) : null;
   } catch {
     // localStorage may not be available (private browsing, etc.).
-    return { token: null, user: null };
+    return null;
   }
 }
 
-/** Persists (or clears) the session in localStorage. */
-function writeStorage(token: string | null, user: RegisteredUser | null): void {
+/** Saves (or forgets) the signed-in user on this device. */
+function writeStorage(user: RegisteredUser | null): void {
   try {
-    if (token && user) {
-      localStorage.setItem(STORAGE_KEY_TOKEN, token);
-      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(STORAGE_KEY_TOKEN);
-      localStorage.removeItem(STORAGE_KEY_USER);
-    }
+    if (user) localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+    else localStorage.removeItem(STORAGE_KEY_USER);
   } catch {
-    // No persistence available; the session keeps working in memory only.
+    // No persistence available: the interface keeps working in memory only.
   }
 }
 
 export const useAuthStore = defineStore("auth", {
   state: (): AuthState => {
-    const initial = readStorage();
-    if (initial.token) {
-      setAuthToken(initial.token);
-    }
-    return initial;
+    const user = readStorage();
+    setSignedIn(user !== null);
+    return { user };
   },
   getters: {
-    isAuthenticated: (state) => Boolean(state.token),
+    isAuthenticated: (state) => state.user !== null,
   },
   actions: {
-    /** Logs in with email and password and persists the resulting session. */
+    /** Signs in with email and password: the server starts the session cookie. */
     async login(email: string, password: string): Promise<void> {
       const { loginUser } = await authApi();
-      const { token, user } = await loginUser({ email, password });
-      this.token = token;
+      const { user } = await loginUser({ email, password });
       this.user = user;
-      setAuthToken(token);
-      writeStorage(token, user);
+      setSignedIn(true);
+      writeStorage(user);
     },
 
-    /** Logs the current user out, both on the backend (best-effort) and locally. */
+    /** Signs out on the server (which revokes the session and clears the cookie), then here. */
     async logout(): Promise<void> {
       try {
-        if (this.token) {
+        if (this.isAuthenticated) {
           const { logoutUser } = await authApi();
           await logoutUser();
         }
       } catch {
-        // Stateless JWT: if the call fails, we still clear the local session.
+        // Signing out here must not depend on the server answering.
       }
       this.clearSession();
     },
 
     /** Forgets the session on this device only (e.g. the server already rejected it). */
     clearSession(): void {
-      this.token = null;
       this.user = null;
-      setAuthToken(null);
-      writeStorage(null, null);
+      setSignedIn(false);
+      writeStorage(null);
     },
 
     /** Re-fetches the current user's profile from the backend. */
@@ -93,7 +85,7 @@ export const useAuthStore = defineStore("auth", {
       const { fetchMe } = await authApi();
       const user = await fetchMe();
       this.user = user;
-      writeStorage(this.token, user);
+      writeStorage(user);
     },
 
     /** Updates the current user's own profile. */
@@ -101,7 +93,7 @@ export const useAuthStore = defineStore("auth", {
       const { updateProfile } = await authApi();
       const user = await updateProfile(payload);
       this.user = user;
-      writeStorage(this.token, user);
+      writeStorage(user);
     },
   },
 });

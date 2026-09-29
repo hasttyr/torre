@@ -1,19 +1,10 @@
+import type { AuditLogDto, AuditLogPage as AuditLogPageDto } from "@contracts";
+
+import type { Serialized } from "../lib/serialized";
 import { api } from "./api";
 
-export interface AuditLogEntry {
-  id: string;
-  userId: string;
-  userName: string;
-  action: string;
-  detail: string | null;
-  createdAt: string;
-}
-
-export interface AuditLogPage {
-  entries: AuditLogEntry[];
-  // Pass it back for the next (older) page; null on the last one.
-  nextCursor: string | null;
-}
+export type AuditLogEntry = Serialized<AuditLogDto>;
+export type AuditLogPage = Serialized<AuditLogPageDto>;
 
 /**
  * One page of the audit log (HU31/RN-11), most recent first.

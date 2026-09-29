@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../generated/prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { emitToTournament } from "../sockets/broadcast";
@@ -13,8 +13,12 @@ vi.mock("./rounds.service", () => ({ closeRoundIfComplete: vi.fn() }));
 function buildPrismaMock() {
   const prisma = {
     match: { findUnique: vi.fn(), update: vi.fn() },
+    // Loaded by the tournament lock; the rules read the match's own copy.
+    tournament: { findUnique: vi.fn().mockResolvedValue({ id: "t-1" }) },
     result: { create: vi.fn(), update: vi.fn() },
     auditLog: { create: vi.fn().mockResolvedValue({ id: "log-1" }) },
+    // The tournament's row lock (lockTournament): nothing to read back.
+    $queryRaw: vi.fn(),
     $transaction: vi.fn(),
   };
   prisma.$transaction.mockImplementation((work: (tx: unknown) => unknown) => work(prisma));
@@ -34,8 +38,8 @@ function match(overrides: Record<string, unknown> = {}, tournamentOverrides: Rec
     whiteId: "p1",
     blackId: "p2",
     result: null,
-    white: { user: { name: "Ana" } },
-    black: { user: { name: "Luis" } },
+    white: { userId: "u-ana" },
+    black: { userId: "u-luis" },
     round: {
       number: 3,
       status: "RECORDING_RESULTS",
@@ -83,7 +87,7 @@ describe("recordResult (HU10)", () => {
   it.each([
     ["the game already has a result", match({ result: { value: "1-0" } })],
     ["the round is still a draft", match({ round: { ...match().round, status: "GENERATED" } })],
-    ["it's a bye", match({ blackId: null })],
+    ["it's a bye", match({ blackId: null, black: null })],
     ["the tournament is finished (HU17)", match({}, { status: "FINISHED" })],
   ])("refuses when %s", async (_label, loaded) => {
     prisma.match.findUnique.mockResolvedValue(loaded);
@@ -91,12 +95,7 @@ describe("recordResult (HU10)", () => {
     await expect(recordResult(asClient(prisma), "m-1", "1-0", ARBITER)).rejects.toMatchObject({ status: 409 });
   });
 
-  it("reports a concurrent recording of the same board as a conflict", async () => {
-    prisma.match.findUnique.mockResolvedValue(match());
-    prisma.result.create.mockRejectedValue({ code: "P2002" });
-
-    await expect(recordResult(asClient(prisma), "m-1", "1-0", ARBITER)).rejects.toMatchObject({ status: 409 });
-  });
+  // Two arbiters recording the same board at once: tournaments.int.test.ts (real database).
 });
 
 describe("correctResult (HU11)", () => {
@@ -117,17 +116,18 @@ describe("correctResult (HU11)", () => {
     expect(prisma.auditLog.create.mock.calls[0][0].data).toEqual({
       userId: "org-1",
       action: "RESULT_CORRECTED",
-      detail: '"Copa", ronda 3, mesa 2 (Ana – Luis): 1-0 → 0-1 — Planilla mal leída',
+      // People by id: the log names them when read (see auditLog.service.ts).
+      detail: '"Copa", ronda 3, mesa 2 ({{user:u-ana}} – {{user:u-luis}}): 1-0 → 0-1 — Planilla mal leída',
     });
   });
 
   it("refuses when there's no result yet or the value doesn't change", async () => {
-    prisma.match.findUnique.mockResolvedValueOnce(match());
+    prisma.match.findUnique.mockResolvedValue(match());
     await expect(correctResult(asClient(prisma), "m-1", "0-1", undefined, ARBITER)).rejects.toMatchObject({
       status: 409,
     });
 
-    prisma.match.findUnique.mockResolvedValueOnce(match({ result: { value: "0-1" } }));
+    prisma.match.findUnique.mockResolvedValue(match({ result: { value: "0-1" } }));
     await expect(correctResult(asClient(prisma), "m-1", "0-1", undefined, ARBITER)).rejects.toMatchObject({
       status: 409,
     });

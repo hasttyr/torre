@@ -25,8 +25,17 @@
 
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  /* Text on an accent or error background (buttons, badges): light or dark
+     per theme, whichever reads at WCAG AA on it (style.test.ts checks). */
+  --color-on-accent: var(--on-accent);
   --color-success: var(--success);
   --color-error: var(--error);
+  --color-on-error: var(--on-error);
+
+  /* The pieces' colors (a white or black swatch next to a player): the
+     same in both themes. */
+  --color-piece-white: #ffffff;
+  --color-piece-black: #1f1f1f;
 
   /* Dashboard charts. Win/draw/loss is a diverging scale (blue <-> red with
      a neutral gray midpoint), validated for color-vision deficiencies in
@@ -38,7 +47,7 @@
   --color-chart-loss: var(--chart-loss);
   --color-chart-grid: var(--chart-grid);
 
-  --font-display: "Fraunces", "Georgia", serif;
+  --font-display: "Fraunces Variable", "Georgia", serif;
   --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
 
   --radius-sm: 8px;
@@ -55,6 +64,8 @@
   --color-tile-ink-text: var(--tile-ink-text);
   --color-tile-ink-muted: var(--tile-ink-muted);
   --color-tile-ink-accent: #c9a227;
+  --color-tile-ink-accent-hover: #ddb84a;
+  --color-tile-ink-on-accent: #17130a;
 
   /* The only drop shadow on the landing: under an illustration resting on
      its tile, to give it weight. Never on cards, buttons or text. */
@@ -94,13 +105,15 @@
 
   --text: #f2ede4;
   --text-muted: #9aa0ab;
-  --text-faint: #6b7280;
+  --text-faint: #878f9c;
 
   --accent: #c9a227;
   --accent-hover: #ddb84a;
+  --on-accent: #17130a;
 
   --success: #3fb27f;
-  --error: #e5484d;
+  --error: #eb5a5f;
+  --on-error: #17130a;
 
   --chart-1: #3987e5;
   --chart-win: #3987e5;
@@ -129,13 +142,15 @@
 
   --text: #211e18;
   --text-muted: #5c5648;
-  --text-faint: #8a8371;
+  --text-faint: #736c5b;
 
-  --accent: #96731b;
-  --accent-hover: #7d5f16;
+  --accent: #80620f;
+  --accent-hover: #6b510c;
+  --on-accent: #ffffff;
 
   --success: #1f8a5f;
   --error: #c1272d;
+  --on-error: #ffffff;
 
   --chart-1: #2a78d6;
   --chart-win: #2a78d6;
@@ -239,7 +254,7 @@
   }
 
   .btn-primary {
-    @apply bg-accent text-[#17130a] hover:-translate-y-px hover:bg-accent-hover hover:shadow-md;
+    @apply bg-accent text-on-accent hover:-translate-y-px hover:bg-accent-hover hover:shadow-md;
   }
 
   .btn-ghost {
@@ -247,7 +262,7 @@
   }
 
   .btn-danger {
-    @apply bg-error text-white hover:-translate-y-px hover:bg-error/85 hover:shadow-md;
+    @apply bg-error text-on-error hover:-translate-y-px hover:shadow-md;
   }
 
   .btn-block {

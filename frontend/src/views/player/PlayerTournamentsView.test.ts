@@ -1,4 +1,4 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
@@ -6,7 +6,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import { i18n } from "../../i18n";
 import PlayerTournamentsView from "./PlayerTournamentsView.vue";
 
-vi.mock("../../services/tournaments", () => ({
+vi.mock("../../services/tournaments", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../services/tournaments")>()),
   createTournament: vi.fn(),
   getTournament: vi.fn(),
   configureTournament: vi.fn(),
@@ -57,7 +58,7 @@ async function mountView() {
   await router.isReady();
 
   const wrapper = mount(PlayerTournamentsView, { global: { plugins: [router, i18n] } });
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await flushPromises();
   await wrapper.vm.$nextTick();
   return { wrapper };
 }

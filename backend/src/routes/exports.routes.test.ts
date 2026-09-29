@@ -1,8 +1,8 @@
-import jwt from "jsonwebtoken";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../app";
+import { signSessionToken } from "../services/sessionToken";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
@@ -24,10 +24,16 @@ const { prismaMock } = vi.hoisted(() => ({
 vi.mock("../config/prisma", () => ({ prisma: prismaMock }));
 
 function tokenFor(role: string, id = "user-1"): string {
-  return jwt.sign({ sub: id, role }, "test-secret", { expiresIn: "1h" });
+  return signSessionToken({ id: id, role });
 }
 
-const TOURNAMENT = { id: "t-1", name: "Copa Otoño", status: "IN_PROGRESS", organizerId: "org-1", roundsCount: 5 };
+const TOURNAMENT = {
+  id: "8eedb80f-c149-5eb9-a514-93f2fb9eeca0",
+  name: "Copa Otoño",
+  status: "IN_PROGRESS",
+  organizerId: "org-1",
+  roundsCount: 5,
+};
 
 describe("PDF export routes (HU30)", () => {
   beforeEach(() => {
@@ -51,7 +57,7 @@ describe("PDF export routes (HU30)", () => {
 
   it("serves the standings as a downloadable PDF to an arbiter", async () => {
     const response = await request(createApp())
-      .get("/api/tournaments/t-1/standings.pdf")
+      .get("/api/tournaments/8eedb80f-c149-5eb9-a514-93f2fb9eeca0/standings.pdf")
       .set("Authorization", `Bearer ${tokenFor("ARBITER")}`)
       .buffer(true)
       .parse((res, done) => {
@@ -69,7 +75,7 @@ describe("PDF export routes (HU30)", () => {
   it("refuses players and coaches (role gate)", async () => {
     for (const role of ["PLAYER", "COACH"]) {
       const response = await request(createApp())
-        .get("/api/tournaments/t-1/standings.pdf")
+        .get("/api/tournaments/8eedb80f-c149-5eb9-a514-93f2fb9eeca0/standings.pdf")
         .set("Authorization", `Bearer ${tokenFor(role)}`);
       expect(response.status).toBe(403);
     }
@@ -77,7 +83,7 @@ describe("PDF export routes (HU30)", () => {
 
   it("refuses the organizer of another tournament", async () => {
     const response = await request(createApp())
-      .get("/api/tournaments/t-1/standings.pdf")
+      .get("/api/tournaments/8eedb80f-c149-5eb9-a514-93f2fb9eeca0/standings.pdf")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "org-2")}`);
 
     expect(response.status).toBe(403);
@@ -85,7 +91,7 @@ describe("PDF export routes (HU30)", () => {
 
   it("doesn't export a draft round's pairings", async () => {
     prismaMock.round.findUnique.mockResolvedValue({
-      id: "r-2",
+      id: "8a72ea86-e571-5811-ad69-735b423fb932",
       number: 2,
       status: "GENERATED",
       matches: [],
@@ -93,7 +99,7 @@ describe("PDF export routes (HU30)", () => {
     });
 
     const response = await request(createApp())
-      .get("/api/rounds/r-2/pairings.pdf")
+      .get("/api/rounds/8a72ea86-e571-5811-ad69-735b423fb932/pairings.pdf")
       .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "org-1")}`);
 
     expect(response.status).toBe(409);
@@ -109,7 +115,7 @@ describe("GET /api/tournaments/:id/stats (HU16)", () => {
     prismaMock.enrollment.count.mockResolvedValueOnce(2).mockResolvedValueOnce(0);
 
     const response = await request(createApp())
-      .get("/api/tournaments/t-1/stats")
+      .get("/api/tournaments/8eedb80f-c149-5eb9-a514-93f2fb9eeca0/stats")
       .set("Authorization", `Bearer ${tokenFor("PLAYER")}`);
 
     expect(response.status).toBe(200);

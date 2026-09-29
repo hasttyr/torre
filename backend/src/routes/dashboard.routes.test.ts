@@ -1,8 +1,8 @@
-import jwt from "jsonwebtoken";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../app";
+import { signSessionToken } from "../services/sessionToken";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
@@ -23,7 +23,7 @@ const { prismaMock } = vi.hoisted(() => ({
 vi.mock("../config/prisma", () => ({ prisma: prismaMock }));
 
 function tokenFor(role: string): string {
-  return jwt.sign({ sub: "user-1", role }, "test-secret", { expiresIn: "1h" });
+  return signSessionToken({ id: "user-1", role });
 }
 
 describe("dashboard routes", () => {

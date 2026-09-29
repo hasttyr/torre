@@ -21,6 +21,7 @@ vi.mock("../services/auth", async (importOriginal) => {
 });
 
 import { fetchMe, listMyCoaches, updateProfile } from "../services/auth";
+import type { PlayerProfile, RegisteredUser } from "../services/auth";
 
 const fetchMeMock = vi.mocked(fetchMe);
 const updateProfileMock = vi.mocked(updateProfile);
@@ -28,7 +29,7 @@ const listMyCoachesMock = vi.mocked(listMyCoaches);
 
 const DATA_CONSENT = { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" };
 
-const USER = {
+const USER: RegisteredUser = {
   id: "user-1",
   name: "Ana Torres",
   email: "ana@example.com",
@@ -38,7 +39,18 @@ const USER = {
   dataConsent: DATA_CONSENT,
 };
 
-const PLAYER = {
+const PLAYER_PROFILE: PlayerProfile = {
+  universityCode: "U1",
+  program: "Sistemas",
+  semester: 5,
+  birthDate: null,
+  age: null,
+  gender: null,
+  disability: null,
+  club: null,
+};
+
+const PLAYER: RegisteredUser = {
   id: "user-2",
   name: "Luis Gómez",
   email: "luis@example.com",
@@ -46,16 +58,7 @@ const PLAYER = {
   role: "PLAYER",
   createdAt: "2026-01-01T00:00:00.000Z",
   dataConsent: DATA_CONSENT,
-  player: {
-    universityCode: "U1",
-    program: "Sistemas",
-    semester: 5,
-    birthDate: null,
-    age: null,
-    gender: null,
-    disability: null,
-    club: null,
-  },
+  player: PLAYER_PROFILE,
 };
 
 async function mountAccountView() {
@@ -102,7 +105,7 @@ describe("AccountView — leaving with unsaved changes", () => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
     listMyCoachesMock.mockResolvedValue([]);
-    useAuthStore().$patch({ token: "token", user: PLAYER });
+    useAuthStore().$patch({ user: PLAYER });
     fetchMeMock.mockResolvedValue(PLAYER);
   });
 
@@ -129,7 +132,7 @@ describe("AccountView — leaving with unsaved changes", () => {
   });
 
   it("doesn't ask once the edit is saved", async () => {
-    const saved = { ...PLAYER, player: { ...PLAYER.player, program: "Medicina" } };
+    const saved = { ...PLAYER, player: { ...PLAYER_PROFILE, program: "Medicina" } };
     updateProfileMock.mockResolvedValue(saved);
     const { wrapper, router } = await mountRouted();
 
@@ -152,11 +155,11 @@ describe("AccountView", () => {
 
   it("shows the user data saved in the store while refreshing the profile", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", user: USER });
+    auth.$patch({ user: USER });
     fetchMeMock.mockResolvedValue(USER);
 
     const wrapper = await mountAccountView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect((wrapper.get("#name").element as HTMLInputElement).value).toBe("Ana Torres");
     expect(wrapper.text()).toContain("ana@example.com");
@@ -165,11 +168,11 @@ describe("AccountView", () => {
 
   it("shows a notice when refreshing the profile fails, without losing the already loaded data", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", user: USER });
+    auth.$patch({ user: USER });
     fetchMeMock.mockRejectedValue(new Error("Network Error"));
 
     const wrapper = await mountAccountView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("No se pudo actualizar tu perfil");
@@ -178,22 +181,22 @@ describe("AccountView", () => {
 
   it("does not show player fields for a user without that profile", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", user: USER });
+    auth.$patch({ user: USER });
     fetchMeMock.mockResolvedValue(USER);
 
     const wrapper = await mountAccountView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(wrapper.find("#universityCode").exists()).toBe(false);
   });
 
   it("preloads player fields when the user has that profile", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", user: PLAYER });
+    auth.$patch({ user: PLAYER });
     fetchMeMock.mockResolvedValue(PLAYER);
 
     const wrapper = await mountAccountView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect((wrapper.get("#universityCode").element as HTMLInputElement).value).toBe("U1");
     expect((wrapper.get("#program").element as HTMLInputElement).value).toBe("Sistemas");
@@ -205,18 +208,18 @@ describe("AccountView", () => {
     const playerWithData = {
       ...PLAYER,
       player: {
-        ...PLAYER.player,
+        ...PLAYER_PROFILE,
         birthDate: "2005-06-15T00:00:00.000Z",
         age: 21,
         gender: "FEMALE" as const,
         disability: "VISUAL" as const,
       },
     };
-    auth.$patch({ token: "token", user: playerWithData });
+    auth.$patch({ user: playerWithData });
     fetchMeMock.mockResolvedValue(playerWithData);
 
     const wrapper = await mountAccountView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect((wrapper.get("#birthDate").element as HTMLInputElement).value).toBe("15/06/2005");
     expect((wrapper.get("#gender").element as HTMLSelectElement).value).toBe("FEMALE");
@@ -226,11 +229,11 @@ describe("AccountView", () => {
 
   it("only offers gender and disability from the closed catalog (no free-text input)", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", user: PLAYER });
+    auth.$patch({ user: PLAYER });
     fetchMeMock.mockResolvedValue(PLAYER);
 
     const wrapper = await mountAccountView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(wrapper.get("#gender").element.tagName).toBe("SELECT");
     expect(wrapper.get("#disability").element.tagName).toBe("SELECT");
@@ -239,19 +242,19 @@ describe("AccountView", () => {
 
   it("sends fechaNacimiento/genero/discapacidad when saving (HU20)", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", user: PLAYER });
+    auth.$patch({ user: PLAYER });
     fetchMeMock.mockResolvedValue(PLAYER);
     updateProfileMock.mockResolvedValue(PLAYER);
 
     const wrapper = await mountAccountView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     await wrapper.get("#birthDate").setValue("15/06/2005");
     await wrapper.get("#birthDate").trigger("blur");
     await wrapper.get("#gender").setValue("FEMALE");
     await wrapper.get("#disability").setValue("VISUAL");
     await wrapper.get("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(updateProfileMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -269,17 +272,17 @@ describe("AccountView", () => {
     vi.setSystemTime(new Date("2026-09-26T01:30:00.000Z")); // 25 Sep, 20:30 in Bogotá
     try {
       const auth = useAuthStore();
-      auth.$patch({ token: "token", user: PLAYER });
+      auth.$patch({ user: PLAYER });
       fetchMeMock.mockResolvedValue(PLAYER);
       updateProfileMock.mockResolvedValue(PLAYER);
 
       const wrapper = await mountAccountView();
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await flushPromises();
 
       await wrapper.get("#birthDate").setValue("26/09/2026");
       await wrapper.get("#birthDate").trigger("blur");
       await wrapper.get("form").trigger("submit.prevent");
-      await new Promise((resolve) => setTimeout(resolve, 0));
+      await flushPromises();
 
       expect(updateProfileMock).not.toHaveBeenCalledWith(expect.objectContaining({ birthDate: "2026-09-26" }));
     } finally {
@@ -290,11 +293,11 @@ describe("AccountView", () => {
 
   it("ties profile errors to their field and takes the user to the first one", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", user: PLAYER });
+    auth.$patch({ user: PLAYER });
     fetchMeMock.mockResolvedValue(PLAYER);
 
     const wrapper = await mountAccountView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     await wrapper.get("#name").setValue("A");
     await wrapper.get("#program").setValue("");
@@ -310,16 +313,16 @@ describe("AccountView", () => {
 
   it("saves profile changes and shows a success message (HU20)", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", user: USER });
+    auth.$patch({ user: USER });
     fetchMeMock.mockResolvedValue(USER);
     updateProfileMock.mockResolvedValue({ ...USER, name: "Ana T." });
 
     const wrapper = await mountAccountView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     await wrapper.get("#name").setValue("Ana T.");
     await wrapper.get("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(updateProfileMock).toHaveBeenCalledWith({ name: "Ana T." });
@@ -330,14 +333,16 @@ describe("AccountView", () => {
     const auth = useAuthStore();
     const playerWithClub = {
       ...PLAYER,
-      player: { ...PLAYER.player, club: { id: "club-1", name: "Club Ajedrez Central" } },
+      player: { ...PLAYER_PROFILE, club: { id: "club-1", name: "Club Ajedrez Central" } },
     };
-    auth.$patch({ token: "token", user: playerWithClub });
+    auth.$patch({ user: playerWithClub });
     fetchMeMock.mockResolvedValue(playerWithClub);
-    listMyCoachesMock.mockResolvedValue([{ id: "coach-1", name: "Marta Ríos", email: "marta@example.com" }]);
+    listMyCoachesMock.mockResolvedValue([
+      { id: "coach-1", name: "Marta Ríos", email: "marta@example.com", acceptedAt: "2026-09-01T00:00:00.000Z" },
+    ]);
 
     const wrapper = await mountAccountView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("Club Ajedrez Central");
@@ -346,12 +351,12 @@ describe("AccountView", () => {
 
   it("shows an empty-state message when the player has no club or coaches", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", user: PLAYER });
+    auth.$patch({ user: PLAYER });
     fetchMeMock.mockResolvedValue(PLAYER);
     listMyCoachesMock.mockResolvedValue([]);
 
     const wrapper = await mountAccountView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("Sin club asignado");
@@ -360,7 +365,7 @@ describe("AccountView", () => {
 
   it("shows the backend error when saving the profile fails", async () => {
     const auth = useAuthStore();
-    auth.$patch({ token: "token", user: USER });
+    auth.$patch({ user: USER });
     fetchMeMock.mockResolvedValue(USER);
     updateProfileMock.mockRejectedValue({
       isAxiosError: true,
@@ -368,10 +373,10 @@ describe("AccountView", () => {
     });
 
     const wrapper = await mountAccountView();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     await wrapper.get("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("El nombre debe tener al menos 2 caracteres");

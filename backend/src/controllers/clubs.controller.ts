@@ -11,6 +11,7 @@ import {
   updateClub,
 } from "../services/clubs.service";
 import { assignPlayerSchema, createClubSchema, updateClubSchema } from "../validators/clubs.schemas";
+import { idParam } from "../validators/params";
 import { parseOrThrow } from "../validators/parse";
 
 /** POST /clubs — creates a new club (HU23). */
@@ -31,19 +32,19 @@ export async function list(_req: Request, res: Response): Promise<void> {
 export async function update(req: Request, res: Response): Promise<void> {
   const input = parseOrThrow(updateClubSchema, req.body);
 
-  const club = await updateClub(prisma, String(req.params.id), input);
+  const club = await updateClub(prisma, idParam(req, "id"), input);
   res.status(200).json(club);
 }
 
 /** DELETE /clubs/:id — deletes a club (must be empty). */
 export async function remove(req: Request, res: Response): Promise<void> {
-  await deleteClub(prisma, String(req.params.id));
+  await deleteClub(prisma, idParam(req, "id"));
   res.status(204).send();
 }
 
 /** GET /clubs/:id/players — lists the players belonging to a club. */
 export async function listPlayers(req: Request, res: Response): Promise<void> {
-  const players = await listClubPlayers(prisma, String(req.params.id));
+  const players = await listClubPlayers(prisma, idParam(req, "id"));
   res.status(200).json(players);
 }
 
@@ -51,12 +52,12 @@ export async function listPlayers(req: Request, res: Response): Promise<void> {
 export async function assignPlayer(req: Request, res: Response): Promise<void> {
   const input = parseOrThrow(assignPlayerSchema, req.body);
 
-  const player = await assignPlayerToClub(prisma, String(req.params.id), input);
+  const player = await assignPlayerToClub(prisma, idParam(req, "id"), input);
   res.status(201).json(player);
 }
 
 /** DELETE /clubs/:id/players/:playerId — removes a player from the club (HU23). */
 export async function removePlayer(req: Request, res: Response): Promise<void> {
-  await removePlayerFromClub(prisma, String(req.params.id), String(req.params.playerId));
+  await removePlayerFromClub(prisma, idParam(req, "id"), idParam(req, "playerId"));
   res.status(204).send();
 }

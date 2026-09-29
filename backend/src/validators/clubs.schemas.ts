@@ -1,15 +1,17 @@
 import { z } from "zod";
 
+import { idSchema, nameSchema } from "./fields";
+
 export const createClubSchema = z.object({
-  name: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres"),
+  name: nameSchema,
 });
 
 export const updateClubSchema = z.object({
-  name: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres"),
+  name: nameSchema,
 });
 
 export const assignPlayerSchema = z.object({
-  playerId: z.string().min(1, "El jugador es requerido"),
+  playerId: idSchema,
 });
 
 export type CreateClubSchemaInput = z.infer<typeof createClubSchema>;

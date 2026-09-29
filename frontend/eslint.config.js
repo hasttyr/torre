@@ -8,9 +8,9 @@ export default tseslint.config(
   },
   ...tseslint.configs.recommended,
   // "essential" (not "recommended"): reglas de Vue que previenen bugs
-  // reales (keys duplicadas, side-effects en computed, etc.), sin las
-  // reglas de estilo tipo Prettier que trae "recommended" — este proyecto
-  // no tiene Prettier todavía, así que esas solo generarían ruido.
+  // reales (keys duplicadas, side-effects en computed, etc.), sin las reglas
+  // de formato que trae "recommended": el formato es de Prettier, y las dos
+  // se contradirían.
   ...pluginVue.configs["flat/essential"],
   {
     files: ["**/*.vue"],

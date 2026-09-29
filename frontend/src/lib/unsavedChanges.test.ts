@@ -9,6 +9,14 @@ import { clickConfirmDialogButton, mountConfirmDialogHost } from "../test-suppor
 import { hasChanges, useUnsavedChangesGuard } from "./unsavedChanges";
 
 describe("hasChanges", () => {
+  it("compares list fields by their items, in order", () => {
+    const saved = { tiebreaks: ["BUCHHOLZ", "SONNEBORN_BERGER"] };
+
+    expect(hasChanges({ tiebreaks: ["BUCHHOLZ", "SONNEBORN_BERGER"] }, saved)).toBe(false);
+    expect(hasChanges({ tiebreaks: ["SONNEBORN_BERGER", "BUCHHOLZ"] }, saved)).toBe(true);
+    expect(hasChanges({ tiebreaks: ["BUCHHOLZ"] }, saved)).toBe(true);
+  });
+
   it("compares every saved field against the form's current value", () => {
     const saved = { name: "Copa", rounds: "5" };
 

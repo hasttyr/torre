@@ -1,11 +1,11 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../generated/prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { emitToTournament } from "../sockets/broadcast";
 import { discardRound, generateRound, listRounds, publishRound, swapPlayers } from "./rounds.service";
 import { recalculateStandings } from "./standings.service";
 
-vi.mock("../sockets/broadcast", () => ({ emitToTournament: vi.fn() }));
+vi.mock("../sockets/broadcast", () => ({ emitToTournament: vi.fn(), emitToTournamentManagers: vi.fn() }));
 vi.mock("./standings.service", () => ({ recalculateStandings: vi.fn() }));
 
 const ORGANIZER = { id: "org-1", role: "ORGANIZER" };
@@ -31,6 +31,8 @@ function buildPrismaMock() {
     },
     result: { deleteMany: vi.fn() },
     auditLog: { create: vi.fn().mockResolvedValue({ id: "log-1" }) },
+    // The tournament's row lock (lockTournament): nothing to read back.
+    $queryRaw: vi.fn(),
     $transaction: vi.fn(),
   };
   prisma.$transaction.mockImplementation((work: unknown) =>
@@ -51,6 +53,15 @@ const tournament = (overrides: Record<string, unknown> = {}) => ({
   byePoints: 1,
   ...overrides,
 });
+
+/** The round the service will find, and its tournament (read again through the tournament lock). */
+function givenRound(
+  prisma: PrismaMock,
+  round: { tournament: ReturnType<typeof tournament> } & Record<string, unknown>,
+) {
+  prisma.round.findUnique.mockResolvedValue({ tournamentId: round.tournament.id, ...round });
+  prisma.tournament.findUnique.mockResolvedValue(round.tournament);
+}
 
 const enrollments = (count: number) =>
   Array.from({ length: count }, (_, index) => ({ playerId: `p${index + 1}`, pairingNumber: null }));
@@ -146,16 +157,16 @@ describe("swapPlayers", () => {
       board: 1,
       whiteId: "p1",
       blackId: "p2",
-      white: { id: "p1", user: { name: "Ana" } },
-      black: { id: "p2", user: { name: "Luis" } },
+      white: { id: "p1", userId: "u-ana", user: { name: "Ana" } },
+      black: { id: "p2", userId: "u-luis", user: { name: "Luis" } },
     },
     {
       id: "m-2",
       board: 2,
       whiteId: "p3",
       blackId: "p4",
-      white: { id: "p3", user: { name: "Eva" } },
-      black: { id: "p4", user: { name: "Juan" } },
+      white: { id: "p3", userId: "u-eva", user: { name: "Eva" } },
+      black: { id: "p4", userId: "u-juan", user: { name: "Juan" } },
     },
   ];
 
@@ -171,7 +182,7 @@ describe("swapPlayers", () => {
   });
 
   it("only adjusts a round before it's published (HU29)", async () => {
-    prisma.round.findUnique.mockResolvedValue({ id: "r-1", status: "RECORDING_RESULTS", tournament: tournament() });
+    givenRound(prisma, { id: "r-1", status: "RECORDING_RESULTS", tournament: tournament() });
 
     await expect(
       swapPlayers(asClient(prisma), "r-1", { playerAId: "p1", playerBId: "p3", reason: "Pedido" }, ORGANIZER),
@@ -179,7 +190,7 @@ describe("swapPlayers", () => {
   });
 
   it("swaps two players across boards and audits who did it and why (RN-09)", async () => {
-    prisma.round.findUnique.mockResolvedValue({
+    givenRound(prisma, {
       id: "r-1",
       number: 1,
       status: "GENERATED",
@@ -194,12 +205,12 @@ describe("swapPlayers", () => {
     expect(prisma.auditLog.create.mock.calls[0][0].data).toMatchObject({
       userId: "org-1",
       action: "PAIRING_ADJUSTED",
-      detail: expect.stringContaining("Luis ↔ Eva — Hermanos"),
+      detail: expect.stringContaining("{{user:u-luis}} ↔ {{user:u-eva}} — Hermanos"),
     });
   });
 
   it("flips colors when both players share a board, with a single update", async () => {
-    prisma.round.findUnique.mockResolvedValue({
+    givenRound(prisma, {
       id: "r-1",
       number: 1,
       status: "GENERATED",
@@ -218,7 +229,7 @@ describe("publishRound", () => {
   it("publishes a draft, starts the tournament on round 1, recalculates and broadcasts (HU09)", async () => {
     vi.clearAllMocks();
     const prisma = buildPrismaMock();
-    prisma.round.findUnique.mockResolvedValue({
+    givenRound(prisma, {
       id: "r-1",
       number: 1,
       status: "GENERATED",
@@ -242,7 +253,7 @@ describe("publishRound", () => {
 
   it("refuses to publish twice", async () => {
     const prisma = buildPrismaMock();
-    prisma.round.findUnique.mockResolvedValue({ id: "r-1", status: "RECORDING_RESULTS", tournament: tournament() });
+    givenRound(prisma, { id: "r-1", status: "RECORDING_RESULTS", tournament: tournament() });
 
     await expect(publishRound(asClient(prisma), "r-1", ORGANIZER)).rejects.toMatchObject({ status: 409 });
   });
@@ -267,21 +278,11 @@ describe("round cycle edge cases", () => {
     vi.clearAllMocks();
   });
 
-  it("reports a concurrent generation of the same round as a conflict, not a server error", async () => {
-    const prisma = buildPrismaMock();
-    prisma.tournament.findUnique.mockResolvedValue(tournament({ status: "IN_PROGRESS" }));
-    prisma.round.findFirst.mockResolvedValue({ number: 1, status: "STANDINGS_UPDATED" });
-    prisma.enrollment.findMany.mockResolvedValue(
-      enrollments(4).map((enrollment, index) => ({ ...enrollment, pairingNumber: index + 1 })),
-    );
-    prisma.round.create.mockRejectedValue({ code: "P2002" });
-
-    await expect(generateRound(asClient(prisma), "t-1", ORGANIZER)).rejects.toMatchObject({ status: 409 });
-  });
+  // Two managers generating the same round at once: tournaments.int.test.ts (real database).
 
   it("refuses to publish a draft that seats a player withdrawn after it was generated (RN-07)", async () => {
     const prisma = buildPrismaMock();
-    prisma.round.findUnique.mockResolvedValue({
+    givenRound(prisma, {
       id: "r-1",
       number: 2,
       status: "GENERATED",
@@ -305,7 +306,7 @@ describe("round cycle edge cases", () => {
 
   it("calls out in the audit trail a swap that repeats an earlier game (RN-02 exception)", async () => {
     const prisma = buildPrismaMock();
-    prisma.round.findUnique.mockResolvedValue({
+    givenRound(prisma, {
       id: "r-2",
       number: 2,
       status: "GENERATED",
@@ -319,15 +320,15 @@ describe("round cycle edge cases", () => {
           id: "m-1",
           whiteId: "p1",
           blackId: "p2",
-          white: { id: "p1", user: { name: "Ana" } },
-          black: { id: "p2", user: { name: "Luis" } },
+          white: { id: "p1", userId: "u-ana", user: { name: "Ana" } },
+          black: { id: "p2", userId: "u-luis", user: { name: "Luis" } },
         },
         {
           id: "m-2",
           whiteId: "p3",
           blackId: "p4",
-          white: { id: "p3", user: { name: "Eva" } },
-          black: { id: "p4", user: { name: "Juan" } },
+          white: { id: "p3", userId: "u-eva", user: { name: "Eva" } },
+          black: { id: "p4", userId: "u-juan", user: { name: "Juan" } },
         },
       ],
     });
@@ -343,7 +344,7 @@ describe("round cycle edge cases", () => {
 
   it("doesn't leave an audit entry behind when the adjustment itself fails", async () => {
     const prisma = buildPrismaMock();
-    prisma.round.findUnique.mockResolvedValue({
+    givenRound(prisma, {
       id: "r-1",
       number: 1,
       status: "GENERATED",
@@ -357,8 +358,8 @@ describe("round cycle edge cases", () => {
           id: "m-1",
           whiteId: "p1",
           blackId: "p2",
-          white: { id: "p1", user: { name: "Ana" } },
-          black: { id: "p2", user: { name: "Luis" } },
+          white: { id: "p1", userId: "u-ana", user: { name: "Ana" } },
+          black: { id: "p2", userId: "u-luis", user: { name: "Luis" } },
         },
       ],
     });
@@ -375,7 +376,7 @@ describe("discardRound", () => {
   it("deletes a draft with its matches and bye, children first", async () => {
     vi.clearAllMocks();
     const prisma = buildPrismaMock();
-    prisma.round.findUnique.mockResolvedValue({ id: "r-1", status: "GENERATED", tournament: tournament() });
+    givenRound(prisma, { id: "r-1", status: "GENERATED", tournament: tournament() });
 
     await discardRound(asClient(prisma), "r-1", ORGANIZER);
 
@@ -386,7 +387,7 @@ describe("discardRound", () => {
 
   it("never discards a published round: its results are official", async () => {
     const prisma = buildPrismaMock();
-    prisma.round.findUnique.mockResolvedValue({ id: "r-1", status: "RECORDING_RESULTS", tournament: tournament() });
+    givenRound(prisma, { id: "r-1", status: "RECORDING_RESULTS", tournament: tournament() });
 
     await expect(discardRound(asClient(prisma), "r-1", ORGANIZER)).rejects.toMatchObject({ status: 409 });
     expect(prisma.round.delete).not.toHaveBeenCalled();

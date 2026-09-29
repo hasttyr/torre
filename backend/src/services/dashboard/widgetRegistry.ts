@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../generated/prisma/client";
 
 import type { AuthUser } from "../../types/express";
 import type { WidgetKey } from "./widgetCatalog";

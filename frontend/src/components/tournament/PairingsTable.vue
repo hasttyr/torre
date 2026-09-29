@@ -48,7 +48,7 @@ function isWinner(match: Match, side: "white" | "black"): boolean {
             </span>
             <span class="sr-only">({{ t("rounds.white") }})</span>
             <span
-              class="h-3 w-3 shrink-0 rounded-sm border border-border bg-white"
+              class="h-3 w-3 shrink-0 rounded-sm border border-border bg-piece-white"
               :title="t('rounds.white')"
               aria-hidden="true"
             />
@@ -61,7 +61,7 @@ function isWinner(match: Match, side: "white" | "black"): boolean {
           </span>
           <span class="flex min-w-0 items-center gap-2">
             <span
-              class="h-3 w-3 shrink-0 rounded-sm border border-border bg-[#1f1f1f]"
+              class="h-3 w-3 shrink-0 rounded-sm border border-border bg-piece-black"
               :title="t('rounds.black')"
               aria-hidden="true"
             />

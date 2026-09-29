@@ -21,6 +21,10 @@ function readSavedLocale(): Locale | null {
 // pick gets applied, so a slow load can't override a later choice.
 let latestPick = 0;
 
+// How long a failed switch stays announced.
+const FAILURE_NOTICE_MS = 5000;
+let failureNotice: ReturnType<typeof setTimeout> | undefined;
+
 /** Loads the language's messages and applies it to the document and the i18n instance. */
 async function applyLocale(locale: Locale): Promise<boolean> {
   const pick = ++latestPick;
@@ -32,7 +36,11 @@ async function applyLocale(locale: Locale): Promise<boolean> {
 }
 
 export const useLocaleStore = defineStore("locale", {
-  state: (): { locale: Locale } => ({ locale: readSavedLocale() ?? "es" }),
+  state: (): { locale: Locale; switchFailed: boolean } => ({
+    locale: readSavedLocale() ?? "es",
+    // The last switch couldn't load its messages: the toggles say so for a moment.
+    switchFailed: false,
+  }),
   actions: {
     /** Applies the saved (or default) language. main.ts awaits it before mounting, so every page starts in it. */
     async init(): Promise<void> {
@@ -50,9 +58,20 @@ export const useLocaleStore = defineStore("locale", {
       }
     },
 
-    /** Toggles between Spanish and English. */
-    toggle(): Promise<void> {
-      return this.setLocale(this.locale === "es" ? "en" : "es");
+    /**
+     * Toggles between Spanish and English. If the other language's messages
+     * can't be downloaded (offline, a deploy replaced them), the page keeps
+     * its language and `switchFailed` says why the click did nothing.
+     */
+    async toggle(): Promise<void> {
+      clearTimeout(failureNotice);
+      try {
+        await this.setLocale(this.locale === "es" ? "en" : "es");
+        this.switchFailed = false;
+      } catch {
+        this.switchFailed = true;
+        failureNotice = setTimeout(() => (this.switchFailed = false), FAILURE_NOTICE_MS);
+      }
     },
   },
 });

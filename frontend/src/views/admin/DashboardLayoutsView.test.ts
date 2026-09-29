@@ -1,3 +1,4 @@
+import { useQueryCache } from "@pinia/colada";
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -55,7 +56,8 @@ describe("DashboardLayoutsView", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
-    getLayoutsMock.mockResolvedValue({
+    // Like the server: every read is a new object.
+    getLayoutsMock.mockImplementation(async () => ({
       catalog: [
         { key: "PLAYER_SUMMARY", subject: "player" },
         { key: "TOP_PLAYERS", subject: "none" },
@@ -67,7 +69,7 @@ describe("DashboardLayoutsView", () => {
         { role: "ARBITER", widgets: ["RECENT_RESULTS"] },
         { role: "ORGANIZER", widgets: [] },
       ],
-    });
+    }));
   });
 
   it("shows the selected role's widgets and only the missing ones in the catalog", async () => {
@@ -189,6 +191,18 @@ describe("DashboardLayoutsView", () => {
     const linked = await mountView("/panel/configuracion?rol=ARBITER");
     expect(tab(linked, "Árbitro").attributes("aria-selected")).toBe("true");
     expect(panelOrder(linked)).toEqual(["RECENT_RESULTS"]);
+  });
+
+  it("keeps a role's unsaved changes when the layouts are read again in the background", async () => {
+    const wrapper = await mountView();
+    await wrapper.get("[data-available='RECENT_RESULTS'] button").trigger("click");
+    expect(panelOrder(wrapper)).toEqual(["PLAYER_SUMMARY", "TOP_PLAYERS", "RECENT_RESULTS"]);
+
+    await useQueryCache().invalidateQueries({ key: ["dashboard-layouts"] });
+    await flushPromises();
+
+    expect(getLayoutsMock).toHaveBeenCalledTimes(2);
+    expect(panelOrder(wrapper)).toEqual(["PLAYER_SUMMARY", "TOP_PLAYERS", "RECENT_RESULTS"]);
   });
 
   it("marks a role with unsaved changes in its tab's text, which screen readers read", async () => {

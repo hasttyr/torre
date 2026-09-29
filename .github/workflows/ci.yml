@@ -1,0 +1,119 @@
+# Every push and pull request runs each project's gates. Specs for what
+# each step guards live in backend/README.md and frontend/README.md.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: torre
+          POSTGRES_PASSWORD: torre
+          POSTGRES_DB: torre_ci_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # The integration suite migrates and empties this database (its name must end in _test).
+      TEST_DATABASE_URL: postgresql://torre:torre@localhost:5432/torre_ci_test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run lint
+      - run: npx tsc --noEmit
+      - run: npm run format:check
+      # Unit and integration suites together, with the coverage thresholds of vitest.config.mts.
+      - run: npm run test:coverage
+      - name: Build, and check the build ships no tests
+        run: |
+          npm run build
+          test -z "$(find dist -name '*.test.js')"
+      - run: npm audit --audit-level=high
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      # The API contract (@contracts) is read from backend/src/contracts in the checkout.
+      - run: npm run lint
+      - run: npm run format:check
+      # vue-tsc (types) and the production bundle.
+      - run: npm run build
+      # With the coverage thresholds of vitest.config.ts.
+      - run: npm run test:coverage
+      - run: npm audit --audit-level=high
+
+  # The browser suite (frontend/e2e): the production build under its real
+  # headers (CSP), against the real API on a database of its own.
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: torre
+          POSTGRES_PASSWORD: torre
+          POSTGRES_DB: torre_ci_e2e_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Migrated, emptied and seeded before the run (its name must end in _test).
+      E2E_DATABASE_URL: postgresql://torre:torre@localhost:5432/torre_ci_e2e_test
+      JWT_SECRET: e2e-only-secret
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - run: npm ci && npx prisma generate
+        working-directory: backend
+      - run: npm ci && npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npm run test:e2e
+        working-directory: frontend
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: frontend/playwright-report

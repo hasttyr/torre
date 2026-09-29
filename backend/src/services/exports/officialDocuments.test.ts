@@ -11,7 +11,7 @@ const STANDINGS: StandingsDto = {
   tournamentId: "t-1",
   pending: false,
   roundsCompleted: 5,
-  tiebreaks: ["Buchholz", "Sonneborn-Berger"],
+  tiebreaks: ["BUCHHOLZ", "SONNEBORN_BERGER"],
   rows: [
     {
       rank: 1,

@@ -1,0 +1,7 @@
+# Playwright (npm run test:e2e): results and the HTML report
+test-results/
+playwright-report/
+
+# Production build values: public, and meant to be committed (the root .gitignore
+# ignores every other .env.*).
+!.env.production

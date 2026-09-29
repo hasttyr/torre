@@ -1,4 +1,4 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
@@ -19,6 +19,7 @@ vi.mock("../../services/adminUsers", async (importOriginal) => {
 });
 
 import { listUsers, updateUserRole, updateUserStatus } from "../../services/adminUsers";
+import type { AdminUser } from "../../services/adminUsers";
 
 const listUsersMock = vi.mocked(listUsers);
 const updateUserRoleMock = vi.mocked(updateUserRole);
@@ -26,7 +27,7 @@ const updateUserStatusMock = vi.mocked(updateUserStatus);
 
 const DATA_CONSENT = { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" };
 
-const ADMIN = {
+const ADMIN: AdminUser = {
   id: "admin-1",
   name: "Admin Demo",
   email: "admin@test.com",
@@ -36,7 +37,7 @@ const ADMIN = {
   dataConsent: DATA_CONSENT,
 };
 
-const ORGANIZER = {
+const ORGANIZER: AdminUser = {
   id: "user-2",
   name: "Carlos Ruiz",
   email: "carlos@example.com",
@@ -55,10 +56,10 @@ async function mountView() {
   await router.isReady();
 
   const auth = useAuthStore();
-  auth.$patch({ token: "token", user: ADMIN });
+  auth.$patch({ user: ADMIN });
 
   const wrapper = mount(UsersView, { global: { plugins: [router, i18n] } });
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await flushPromises();
   await wrapper.vm.$nextTick();
   return { wrapper };
 }
@@ -93,7 +94,7 @@ describe("UsersView", () => {
     expect(updateUserRoleMock).not.toHaveBeenCalled();
 
     await clickConfirmDialogButton("Cambiar rol");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(updateUserRoleMock).toHaveBeenCalledWith("user-2", "ARBITER");
   });
@@ -108,7 +109,7 @@ describe("UsersView", () => {
     await organizerSelect.setValue("ARBITER");
     await wrapper.vm.$nextTick();
     await clickConfirmDialogButton("Cancelar");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(updateUserRoleMock).not.toHaveBeenCalled();
     expect((organizerSelect.element as HTMLSelectElement).value).toBe("ORGANIZER");
@@ -137,7 +138,7 @@ describe("UsersView", () => {
     await deactivateBtn.trigger("click");
     await wrapper.vm.$nextTick();
     await clickConfirmDialogButton("Desactivar");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
     await wrapper.vm.$nextTick();
 

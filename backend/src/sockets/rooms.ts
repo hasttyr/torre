@@ -10,3 +10,8 @@
 export function tournamentRoom(tournamentId: string): string {
   return `tournament:${tournamentId}`;
 }
+
+/** The room of a tournament's managers (organizer, administrators): where draft-round events go. */
+export function tournamentManagersRoom(tournamentId: string): string {
+  return `tournament:${tournamentId}:managers`;
+}

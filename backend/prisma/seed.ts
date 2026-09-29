@@ -1,14 +1,9 @@
-import { PrismaClient, type TournamentStatus } from "@prisma/client";
-
 import { DATA_POLICY_VERSION } from "../src/config/dataPolicy";
+import { prisma } from "../src/config/prisma";
+import type { TournamentStatus } from "../src/generated/prisma/client";
 import { hashPassword } from "../src/services/password";
+import { ensureDashboardLayouts, ensureRoles } from "../src/services/referenceData";
 import { refreshAllStandings, seedCompetitionHistory } from "./seeds/competitionHistory";
-import { seedDashboardLayouts } from "./seeds/dashboardLayouts";
-
-const prisma = new PrismaClient();
-
-// Role catalog (RF03). See docs/media/image1.png / image7.png.
-const ROLES = ["ORGANIZER", "ARBITER", "PLAYER", "COACH", "ADMINISTRATOR"];
 
 // Same password everywhere on purpose (easy to remember while testing);
 // never used outside a local dev database. Every upsert below uses
@@ -353,16 +348,6 @@ async function upsertUser(
   });
 }
 
-/** Upserts the role catalog and returns each role's id by name. */
-async function seedRoles(): Promise<Map<string, string>> {
-  const roleIdByName = new Map<string, string>();
-  for (const name of ROLES) {
-    const role = await prisma.role.upsert({ where: { name }, update: {}, create: { name } });
-    roleIdByName.set(name, role.id);
-  }
-  return roleIdByName;
-}
-
 interface SeededDirectory {
   playerIdByEmail: Map<string, string>;
   coachIdByEmail: Map<string, string>;
@@ -374,7 +359,7 @@ async function seedAccounts(roleIdByName: Map<string, string>, passwordHash: str
   function roleId(name: string): string {
     const id = roleIdByName.get(name);
     if (!id) {
-      throw new Error(`Role "${name}" wasn't seeded above — check ROLES is in sync.`);
+      throw new Error(`Role "${name}" isn't in the catalog (ROLES in src/services/referenceData.ts).`);
     }
     return id;
   }
@@ -425,7 +410,7 @@ async function seedClubs(playerIdByEmail: Map<string, string>): Promise<void> {
   }
 }
 
-/** Links each coach to their declared players (HU24). */
+/** Links each coach to their declared players (HU24), as links those players have already accepted. */
 async function seedCoachLinks(
   playerIdByEmail: Map<string, string>,
   coachIdByEmail: Map<string, string>,
@@ -439,7 +424,7 @@ async function seedCoachLinks(
       await prisma.coachPlayer.upsert({
         where: { coachId_playerId: { coachId, playerId } },
         update: {},
-        create: { coachId, playerId },
+        create: { coachId, playerId, acceptedAt: new Date() },
       });
     }
   }
@@ -531,7 +516,15 @@ function printSummary(directory: SeededDirectory): void {
 }
 
 async function main() {
-  const roleIdByName = await seedRoles();
+  // Every demo account, the administrator included, shares a password
+  // written in this repository: one run against production would open it up.
+  if (process.env.NODE_ENV === "production" && process.env.SEED_ALLOW_PROD !== "1") {
+    throw new Error(
+      "Refusing to seed demo accounts with NODE_ENV=production. Set SEED_ALLOW_PROD=1 only if this database is disposable.",
+    );
+  }
+
+  const roleIdByName = await ensureRoles(prisma);
   const passwordHash = await hashPassword(TEST_PASSWORD);
   const directory = await seedAccounts(roleIdByName, passwordHash);
 
@@ -540,7 +533,7 @@ async function main() {
   const tournaments = await seedTournaments(directory.playerIdByEmail, directory.organizerId);
   const played = await seedHistories(tournaments, directory.playerIdByEmail);
   const refreshed = await refreshAllStandings(prisma);
-  const layouts = await seedDashboardLayouts(prisma, roleIdByName);
+  const layouts = await ensureDashboardLayouts(prisma, roleIdByName);
 
   printSummary(directory);
   console.log(

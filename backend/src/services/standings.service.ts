@@ -1,8 +1,9 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "../generated/prisma/client";
 
 import type { AuthUser } from "../types/express";
 import { computeStandings, rankStandings, type RecordedGame } from "./standings.calculator";
 import { assertCanViewTournament, loadTournament } from "./tournamentAccess";
+import type { StandingRowDto, StandingsDto } from "../contracts/responses";
 
 type Db = Prisma.TransactionClient;
 
@@ -55,27 +56,6 @@ export async function recalculateStandings(db: Db, tournamentId: string): Promis
   });
 }
 
-export interface StandingRowDto {
-  rank: number;
-  playerId: string;
-  name: string;
-  score: number;
-  buchholz: number;
-  buchholzCut1: number;
-  sonnebornBerger: number;
-  withdrawn: boolean;
-}
-
-export interface StandingsDto {
-  tournamentId: string;
-  // HU12: true while the latest published round still has games without a
-  // result — the table is provisional until they're all in.
-  pending: boolean;
-  roundsCompleted: number;
-  tiebreaks: string[];
-  rows: StandingRowDto[];
-}
-
 /** HU14/HU18: the tournament's current official standings. */
 export async function getStandings(
   prisma: PrismaClient,
@@ -117,3 +97,5 @@ export async function getStandings(
     })),
   };
 }
+
+export type { StandingRowDto, StandingsDto };

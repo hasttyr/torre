@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { createColumnHelper } from "@tanstack/vue-table";
-import { h, onMounted, ref } from "vue";
+import { useQuery, useQueryCache } from "@pinia/colada";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
@@ -8,35 +8,24 @@ import DataTable from "../../components/ui/DataTable.vue";
 import LoadError from "../../components/ui/LoadError.vue";
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
-import {
-  ALL_ROLES,
-  listUsers,
-  updateUserRole,
-  updateUserStatus,
-  type AdminUser,
-  type AnyRole,
-} from "../../services/adminUsers";
+import { replaceUser, usersQuery } from "../../queries/admin";
+import { useQueryStatus } from "../../queries/status";
+import { ALL_ROLES, updateUserRole, updateUserStatus, type AdminUser, type AnyRole } from "../../services/adminUsers";
 import { useAuthStore } from "../../stores/auth";
+import FadeSlide from "../../components/ui/FadeSlide.vue";
+import FormBanner from "../../components/ui/FormBanner.vue";
+import { dataTableColumns } from "../../components/ui/dataTableFeatures";
 
 const auth = useAuthStore();
 const confirm = useConfirm();
 const { t } = useI18n();
 
-const users = ref<AdminUser[]>([]);
-const loading = ref(true);
-const loadError = ref<string | null>(null);
+const cache = useQueryCache();
+const usersEntry = useQuery(usersQuery);
+const users = computed(() => usersEntry.data.value ?? []);
+const { loading, loadError, retry } = useQueryStatus(usersEntry, "adminUsers.loadError");
 const actionError = ref<string | null>(null);
 const savingId = ref<string | null>(null);
-
-onMounted(async () => {
-  try {
-    users.value = await listUsers();
-  } catch (error) {
-    loadError.value = extractErrorMessage(error, t("adminUsers.loadError"));
-  } finally {
-    loading.value = false;
-  }
-});
 
 /** Whether the given row's controls should be disabled (in-flight save, or the admin's own row). */
 function isRowLocked(user: AdminUser): boolean {
@@ -67,10 +56,9 @@ async function onRoleChange(user: AdminUser, select: HTMLSelectElement): Promise
   savingId.value = user.id;
   try {
     const updated = await updateUserRole(user.id, role);
-    const index = users.value.findIndex((candidate) => candidate.id === user.id);
-    if (index !== -1) users.value[index] = updated;
+    replaceUser(cache, updated);
   } catch (error) {
-    actionError.value = extractErrorMessage(error, t("adminUsers.genericServerError"));
+    actionError.value = extractErrorMessage(error, t("common.genericServerError"));
   } finally {
     savingId.value = null;
   }
@@ -93,56 +81,27 @@ async function onToggleStatus(user: AdminUser): Promise<void> {
   savingId.value = user.id;
   try {
     const updated = await updateUserStatus(user.id, nextStatus);
-    const index = users.value.findIndex((candidate) => candidate.id === user.id);
-    if (index !== -1) users.value[index] = updated;
+    replaceUser(cache, updated);
   } catch (error) {
-    actionError.value = extractErrorMessage(error, t("adminUsers.genericServerError"));
+    actionError.value = extractErrorMessage(error, t("common.genericServerError"));
   } finally {
     savingId.value = null;
   }
 }
 
-const columnHelper = createColumnHelper<AdminUser>();
+const columnHelper = dataTableColumns<AdminUser>();
 
 const columns = [
   columnHelper.accessor("name", { header: () => t("adminUsers.tableName") }),
   columnHelper.accessor("email", { header: () => t("adminUsers.tableEmail") }),
-  columnHelper.accessor("role", {
-    header: () => t("adminUsers.tableRole"),
-    enableSorting: false,
-    cell: ({ row }) =>
-      h(
-        "select",
-        {
-          class: "select-compact",
-          "aria-label": t("adminUsers.roleOf", { name: row.original.name }),
-          value: row.original.role,
-          disabled: isRowLocked(row.original),
-          onChange: (event: Event) => onRoleChange(row.original, event.target as HTMLSelectElement),
-        },
-        ALL_ROLES.map((role) => h("option", { value: role }, t(`roles.${role}`))),
-      ),
-  }),
+  // Rendered by the template (#cell-role): a select to change it.
+  columnHelper.accessor("role", { header: () => t("adminUsers.tableRole"), enableSorting: false }),
   columnHelper.accessor("status", {
     header: () => t("adminUsers.tableStatus"),
     cell: ({ getValue }) => t(`adminUsers.status.${getValue()}`),
   }),
-  columnHelper.display({
-    id: "actions",
-    header: "",
-    enableSorting: false,
-    cell: ({ row }) =>
-      h(
-        "button",
-        {
-          type: "button",
-          class: "btn btn-ghost",
-          disabled: isRowLocked(row.original),
-          onClick: () => onToggleStatus(row.original),
-        },
-        row.original.status === "ACTIVE" ? t("adminUsers.deactivate") : t("adminUsers.activate"),
-      ),
-  }),
+  // Rendered by the template (#cell-actions).
+  columnHelper.display({ id: "actions", header: "", enableSorting: false }),
 ];
 </script>
 
@@ -157,17 +116,12 @@ const columns = [
       </div>
 
       <p v-if="loading">{{ t("adminUsers.loading") }}</p>
-      <LoadError v-else-if="loadError" :message="loadError" />
+      <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <section v-else class="card">
-        <Transition
-          enter-active-class="transition duration-180 ease-out"
-          enter-from-class="opacity-0 -translate-y-1.5"
-          leave-active-class="transition duration-180 ease-in"
-          leave-to-class="opacity-0 -translate-y-1.5"
-        >
-          <p v-if="actionError" role="alert" class="banner banner--error mb-4">{{ actionError }}</p>
-        </Transition>
+        <FadeSlide>
+          <FormBanner v-if="actionError" kind="error" class="mb-4">{{ actionError }}</FormBanner>
+        </FadeSlide>
 
         <DataTable
           :columns="columns"
@@ -175,7 +129,24 @@ const columns = [
           :search-placeholder="t('adminUsers.searchPlaceholder')"
           :empty-message="t('adminUsers.empty')"
           sync-url
-        />
+        >
+          <template #cell-role="{ row }">
+            <select
+              class="select-compact"
+              :aria-label="t('adminUsers.roleOf', { name: row.name })"
+              :value="row.role"
+              :disabled="isRowLocked(row)"
+              @change="onRoleChange(row, $event.target as HTMLSelectElement)"
+            >
+              <option v-for="role in ALL_ROLES" :key="role" :value="role">{{ t(`roles.${role}`) }}</option>
+            </select>
+          </template>
+          <template #cell-actions="{ row }">
+            <button type="button" class="btn btn-ghost" :disabled="isRowLocked(row)" @click="onToggleStatus(row)">
+              {{ row.status === "ACTIVE" ? t("adminUsers.deactivate") : t("adminUsers.activate") }}
+            </button>
+          </template>
+        </DataTable>
       </section>
     </main>
   </div>

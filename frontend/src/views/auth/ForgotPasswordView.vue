@@ -6,6 +6,8 @@ import AuthLayout from "../../components/layout/AuthLayout.vue";
 import { extractErrorMessage } from "../../lib/errors";
 import { errorAttrs, errorId, focusFirstInvalid } from "../../lib/formErrors";
 import { requestPasswordReset } from "../../services/auth";
+import FadeSlide from "../../components/ui/FadeSlide.vue";
+import FormBanner from "../../components/ui/FormBanner.vue";
 
 const { t } = useI18n();
 
@@ -38,7 +40,7 @@ async function onSubmit(): Promise<void> {
     await requestPasswordReset(email.value.trim());
     submitted.value = true;
   } catch (error) {
-    errorMessage.value = extractErrorMessage(error, t("auth.serverError"));
+    errorMessage.value = extractErrorMessage(error, t("common.genericServerError"));
   } finally {
     submitting.value = false;
   }
@@ -48,17 +50,12 @@ async function onSubmit(): Promise<void> {
 <template>
   <AuthLayout :title="t('forgotPassword.title')" :subtitle="t('forgotPassword.subtitle')">
     <template #banners>
-      <Transition
-        enter-active-class="transition duration-180 ease-out"
-        enter-from-class="opacity-0 -translate-y-1.5"
-        leave-active-class="transition duration-180 ease-in"
-        leave-to-class="opacity-0 -translate-y-1.5"
-      >
-        <p v-if="errorMessage" role="alert" class="banner banner--error">{{ errorMessage }}</p>
-      </Transition>
+      <FadeSlide>
+        <FormBanner v-if="errorMessage" kind="error">{{ errorMessage }}</FormBanner>
+      </FadeSlide>
     </template>
 
-    <p v-if="submitted" role="status" class="banner banner--success">{{ t("forgotPassword.successMessage") }}</p>
+    <FormBanner v-if="submitted" kind="success">{{ t("forgotPassword.successMessage") }}</FormBanner>
 
     <form v-else ref="formEl" novalidate @submit.prevent="onSubmit">
       <div class="field" :class="{ 'has-error': errors.email }">

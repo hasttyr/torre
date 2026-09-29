@@ -1,28 +1,18 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { useQuery } from "@pinia/colada";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import TournamentCard from "../../components/tournament/TournamentCard.vue";
 import LoadError from "../../components/ui/LoadError.vue";
-import { formatDate } from "../../lib/format";
-import { useLocaleStore } from "../../stores/locale";
-import { useTournamentsStore } from "../../stores/tournaments";
+import { useQueryStatus } from "../../queries/status";
+import { myTournamentsQuery } from "../../queries/tournaments";
 
-const tournaments = useTournamentsStore();
-const locale = useLocaleStore();
 const { t } = useI18n();
-const loading = ref(true);
-const loadError = ref<string | null>(null);
-
-onMounted(async () => {
-  try {
-    await tournaments.loadMyTournaments();
-  } catch {
-    loadError.value = t("dashboard.loadError");
-  } finally {
-    loading.value = false;
-  }
-});
+const query = useQuery(myTournamentsQuery);
+const mine = computed(() => query.data.value ?? []);
+const { loading, loadError, retry } = useQueryStatus(query, "dashboard.loadError");
 </script>
 
 <template>
@@ -36,30 +26,18 @@ onMounted(async () => {
       </header>
 
       <p v-if="loading">{{ t("dashboard.loading") }}</p>
-      <LoadError v-else-if="loadError" :message="loadError" />
+      <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <p
-        v-else-if="tournaments.mine.length === 0"
+        v-else-if="mine.length === 0"
         class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
       >
         {{ t("dashboard.empty") }}
       </p>
 
       <ul v-else class="m-0 flex list-none flex-col gap-3 p-0">
-        <li v-for="tournament in tournaments.mine" :key="tournament.id">
-          <RouterLink
-            :to="`/torneos/${tournament.id}`"
-            class="tournament-card flex flex-col items-start gap-2 rounded-2xl border border-border-soft bg-surface p-5 text-inherit no-underline transition-colors hover:border-accent/40 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-          >
-            <div>
-              <h2 class="text-base">{{ tournament.name }}</h2>
-              <p class="mt-0.5 text-sm">
-                {{ formatDate(tournament.startDate, locale.locale) }} —
-                {{ formatDate(tournament.endDate, locale.locale) }}
-              </p>
-            </div>
-            <span class="pill">{{ t(`estados.${tournament.status}`) }}</span>
-          </RouterLink>
+        <li v-for="tournament in mine" :key="tournament.id">
+          <TournamentCard :tournament="tournament" :to="`/torneos/${tournament.id}`" :heading-level="2" />
         </li>
       </ul>
     </main>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { useQuery, useQueryCache } from "@pinia/colada";
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "reka-ui";
-import { computed, onMounted, ref } from "vue";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
@@ -12,15 +13,26 @@ import StandingsTable from "../../components/tournament/StandingsTable.vue";
 import TournamentStats from "../../components/tournament/TournamentStats.vue";
 import { saveFile } from "../../lib/download";
 import { extractErrorMessage } from "../../lib/errors";
-import { loadTournamentRoom } from "../../lib/pageData";
-import { DATA_KEYS, takeData } from "../../lib/routeData";
 import { canExportDocuments, canManageTournament, canRecordResults } from "../../lib/tournamentAccess";
 import { useQueryParam } from "../../lib/useQueryParam";
 import { useTournamentLive } from "../../lib/useTournamentLive";
-import { downloadPairingsPdf, downloadStandingsPdf, type GameResult } from "../../services/rounds";
+import { useQueryStatus } from "../../queries/status";
+import {
+  invalidateTournament,
+  roundsQuery,
+  standingsQuery,
+  statsQuery,
+  tournamentQuery,
+} from "../../queries/tournaments";
+import {
+  correctResult,
+  downloadPairingsPdf,
+  downloadStandingsPdf,
+  recordResult,
+  type GameResult,
+} from "../../services/rounds";
 import { useAuthStore } from "../../stores/auth";
-import { useRoundsStore } from "../../stores/rounds";
-import { useTournamentsStore } from "../../stores/tournaments";
+import FormBanner from "../../components/ui/FormBanner.vue";
 
 // HU18: the tournament room. Everyone sees the published pairings, results
 // and standings, updated live (HU09/HU14); arbiters and the tournament's
@@ -28,18 +40,27 @@ import { useTournamentsStore } from "../../stores/tournaments";
 const route = useRoute();
 const tournamentId = String(route.params.id);
 const auth = useAuthStore();
-const tournaments = useTournamentsStore();
-const rounds = useRoundsStore();
+const cache = useQueryCache();
 const { t } = useI18n();
 
-const loading = ref(true);
-const loadError = ref<string | null>(null);
+// Usually already on their way: the route prefetches them (router/index.ts).
+const tournamentEntry = useQuery(tournamentQuery(tournamentId));
+const roundsEntry = useQuery(roundsQuery(tournamentId));
+const standingsEntry = useQuery(standingsQuery(tournamentId));
+const statsEntry = useQuery(statsQuery(tournamentId));
+const { loading, loadError, retry } = useQueryStatus(
+  [tournamentEntry, roundsEntry, standingsEntry, statsEntry],
+  "tournamentRoom.loadError",
+);
+const standings = computed(() => standingsEntry.data.value ?? null);
+const stats = computed(() => statsEntry.data.value ?? null);
+
 const actionError = ref<string | null>(null);
 const busyMatch = ref<string | null>(null);
 
 // Only published rounds belong in the room, even for its managers: drafts
 // are reviewed in the admin panel.
-const published = computed(() => rounds.rounds.filter((round) => round.status !== "GENERATED"));
+const published = computed(() => (roundsEntry.data.value ?? []).filter((round) => round.status !== "GENERATED"));
 
 // An older round picked on purpose lives in the URL (?ronda=2), so a link
 // opens it. Without the param the room shows the newest round, and keeps
@@ -52,38 +73,25 @@ const selectedRound = computed(
 function selectRound(number: string | number): void {
   roundParam.value = Number(number) === published.value.at(-1)?.number ? "" : String(number);
 }
-const tournament = computed(() => tournaments.current);
+const tournament = computed(() => tournamentEntry.data.value ?? null);
 const canRecord = computed(() => (tournament.value ? canRecordResults(tournament.value, auth.user) : false));
 const canManage = computed(() => (tournament.value ? canManageTournament(tournament.value, auth.user) : false));
 const canExport = computed(() => (tournament.value ? canExportDocuments(tournament.value, auth.user) : false));
 const exporting = ref(false);
 
-async function refresh(): Promise<void> {
-  await Promise.all([rounds.refresh(), tournaments.refreshCurrent(tournamentId)]);
-}
-
-const { connected } = useTournamentLive(tournamentId, () => {
-  refresh().catch(() => undefined);
-});
-
-onMounted(async () => {
-  try {
-    // Usually already on its way: the route started it (lib/routeData.ts).
-    await takeData(DATA_KEYS.room(tournamentId), () => loadTournamentRoom(tournamentId));
-  } catch (error) {
-    loadError.value = extractErrorMessage(error, t("tournamentRoom.loadError"));
-  } finally {
-    loading.value = false;
-  }
-});
+// A result recorded here, or anywhere: the room reads everything again. A
+// refresh that fails leaves the last data up; the next event tries again.
+const refresh = () => invalidateTournament(cache, tournamentId).catch(() => undefined);
+const { connected } = useTournamentLive(tournamentId, refresh);
 
 async function withMatch(matchId: string, action: () => Promise<void>): Promise<void> {
   actionError.value = null;
   busyMatch.value = matchId;
   try {
     await action();
+    await refresh();
   } catch (error) {
-    actionError.value = extractErrorMessage(error, t("tournamentAdmin.genericServerError"));
+    actionError.value = extractErrorMessage(error, t("common.genericServerError"));
   } finally {
     busyMatch.value = null;
   }
@@ -106,9 +114,9 @@ const onExportStandings = () => exportPdf(() => downloadStandingsPdf(tournamentI
 const onExportRound = (roundId: string, number: number) =>
   exportPdf(() => downloadPairingsPdf(roundId), t("tournamentRoom.roundFile", { number }));
 
-const onRecord = (matchId: string, value: GameResult) => withMatch(matchId, () => rounds.record(matchId, value));
+const onRecord = (matchId: string, value: GameResult) => withMatch(matchId, () => recordResult(matchId, value));
 const onCorrect = (matchId: string, value: GameResult, reason: string) =>
-  withMatch(matchId, () => rounds.correct(matchId, value, reason || undefined));
+  withMatch(matchId, () => correctResult(matchId, value, reason || undefined));
 </script>
 
 <template>
@@ -117,7 +125,7 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
 
     <main class="container flex flex-col gap-6 py-10 sm:py-12">
       <p v-if="loading">{{ t("tournamentRoom.loading") }}</p>
-      <LoadError v-else-if="loadError" :message="loadError" />
+      <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <template v-else-if="tournament">
         <header class="flex flex-wrap items-end justify-between gap-4">
@@ -135,7 +143,7 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
               {{ t(`estados.${tournament.status}`) }} ·
               {{
                 t("tournamentRoom.roundsPlayed", {
-                  played: rounds.standings?.roundsCompleted ?? 0,
+                  played: standings?.roundsCompleted ?? 0,
                   total: tournament.roundsCount ?? "—",
                 })
               }}
@@ -146,7 +154,7 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
               <button
                 type="button"
                 class="btn btn-ghost px-4 py-2 text-sm"
-                :disabled="exporting || !rounds.standings?.rows.length"
+                :disabled="exporting || !standings?.rows.length"
                 @click="onExportStandings"
               >
                 {{ t("tournamentRoom.exportStandings") }}
@@ -167,7 +175,7 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
           </div>
         </header>
 
-        <p v-if="actionError" role="alert" class="banner banner--error">{{ actionError }}</p>
+        <FormBanner v-if="actionError" kind="error">{{ actionError }}</FormBanner>
 
         <div class="grid gap-5 lg:grid-cols-[1.25fr_1fr]">
           <!-- reka-ui Tabs: arrow keys move between rounds, and screen readers
@@ -193,7 +201,7 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
                   class="min-w-9 rounded-lg px-2.5 py-1 text-sm font-semibold tabular-nums transition-colors"
                   :class="
                     round.number === selectedRound?.number
-                      ? 'bg-accent text-[#17130a]'
+                      ? 'bg-accent text-on-accent'
                       : 'text-text-muted hover:bg-accent/10'
                   "
                 >
@@ -221,13 +229,13 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
           <div class="flex flex-col gap-5">
             <section class="card flex flex-col gap-4" :aria-label="t('tournamentRoom.standings')">
               <h2 class="text-lg">{{ t("tournamentRoom.standings") }}</h2>
-              <StandingsTable v-if="rounds.standings" :standings="rounds.standings" />
+              <StandingsTable v-if="standings" :standings="standings" />
             </section>
 
             <!-- HU16 -->
-            <section v-if="rounds.stats" class="card flex flex-col gap-4" :aria-label="t('tournamentRoom.stats')">
+            <section v-if="stats" class="card flex flex-col gap-4" :aria-label="t('tournamentRoom.stats')">
               <h2 class="text-lg">{{ t("tournamentRoom.stats") }}</h2>
-              <TournamentStats :stats="rounds.stats" />
+              <TournamentStats :stats="stats" />
             </section>
           </div>
         </div>

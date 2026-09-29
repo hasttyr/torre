@@ -9,7 +9,7 @@ import WidgetSkeleton from "../../components/dashboard/WidgetSkeleton.vue";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LazyMount from "../../components/ui/LazyMount.vue";
 import LoadError from "../../components/ui/LoadError.vue";
-import { currentUserId, panelQuery, prefetchWidget } from "../../lib/dashboardQueries";
+import { currentUserId, panelQuery, prefetchWidget } from "../../queries/dashboard";
 import { extractErrorMessage } from "../../lib/errors";
 import { providePlayerSelection } from "../../lib/playerSelection";
 import type { WidgetSummary } from "../../services/dashboard";
@@ -21,7 +21,7 @@ import { useAuthStore } from "../../stores/auth";
 const auth = useAuthStore();
 const { t } = useI18n();
 
-// Usually already on its way: the route started it (lib/dashboardQueries.ts).
+// Usually already on its way: the route started it (queries/dashboard.ts).
 const panel = useQuery(() => panelQuery(currentUserId()));
 const loading = computed(() => panel.status.value === "pending");
 const loadError = computed(() =>

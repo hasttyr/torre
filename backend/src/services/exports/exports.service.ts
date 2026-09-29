@@ -1,7 +1,7 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../generated/prisma/client";
 
 import { env } from "../../config/env";
-import { HttpError } from "../../middlewares/errorHandler";
+import { HttpError } from "../../errors/apiErrors";
 import type { AuthUser } from "../../types/express";
 import { ROUND_INCLUDE, toRoundDto } from "../round.mapper";
 import { getStandings } from "../standings.service";
@@ -49,11 +49,11 @@ export async function exportPairingsPdf(prisma: PrismaClient, roundId: string, a
     include: { ...ROUND_INCLUDE, tournament: true },
   });
   if (!round) {
-    throw new HttpError(404, "Ronda no encontrada");
+    throw new HttpError("ROUND_NOT_FOUND");
   }
   assertCanExport(round.tournament, actor);
   if (round.status === "GENERATED") {
-    throw new HttpError(409, "Solo se exportan rondas publicadas");
+    throw new HttpError("ROUND_NOT_EXPORTABLE");
   }
 
   const content = await renderOfficialPdf(

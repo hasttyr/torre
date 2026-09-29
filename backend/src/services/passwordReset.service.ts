@@ -1,9 +1,13 @@
 import crypto from "node:crypto";
 
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../generated/prisma/client";
 
-import { HttpError } from "../middlewares/errorHandler";
+import { env } from "../config/env";
+import { logger } from "../config/logger";
+import { HttpError } from "../errors/apiErrors";
 import { hashPassword } from "./password";
+import type { ResetLinkSender } from "./resetLinkSender";
+import { REVOKE_SESSIONS } from "./sessionToken";
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hora (RF11/HU19).
 
@@ -12,17 +16,25 @@ function hashToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+/** The frontend page (see frontend/src/router) where the token is exchanged for a new password. */
+function resetLink(token: string): string {
+  return `${env.appUrl.replace(/\/$/, "")}/restablecer-password?token=${token}`;
+}
+
 /**
  * Requests a password reset for the given email (HU19).
  *
  * @remarks
  * Always resolves the same way whether or not the email is registered (CA:
- * "a non-registered email doesn't reveal whether an account exists"). No
- * SMTP provider is wired up in this project's architecture yet, so the
- * one-time link is logged instead of emailed — exactly where a provider
- * call would go once one exists.
+ * "a non-registered email doesn't reveal whether an account exists"). That's
+ * also why the link is sent without waiting for it: neither the provider's
+ * latency nor its failure may show up in the answer.
  */
-export async function requestPasswordReset(prisma: PrismaClient, email: string): Promise<void> {
+export async function requestPasswordReset(
+  prisma: PrismaClient,
+  email: string,
+  sender: ResetLinkSender,
+): Promise<void> {
   const normalizedEmail = email.trim().toLowerCase();
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
@@ -41,8 +53,10 @@ export async function requestPasswordReset(prisma: PrismaClient, email: string):
     },
   });
 
-  // Placeholder for an email provider call (see model comment in schema.prisma).
-  console.log(`[password-reset] Enlace de restablecimiento para ${normalizedEmail}: token=${token}`);
+  sender.send(user.email, resetLink(token)).catch((error: unknown) => {
+    // The error names the provider's problem; the token stays out of the logs.
+    logger.error({ err: error, userId: user.id }, "could not send a password-reset link");
+  });
 }
 
 /**
@@ -54,13 +68,14 @@ export async function confirmPasswordReset(prisma: PrismaClient, token: string, 
   const request = await prisma.passwordResetRequest.findUnique({ where: { tokenHash: hashToken(token) } });
 
   if (!request || request.usedAt || request.expiresAt < new Date()) {
-    throw new HttpError(400, "El enlace de restablecimiento no es válido o ya expiró");
+    throw new HttpError("RESET_LINK_INVALID");
   }
 
   const passwordHash = await hashPassword(newPassword);
 
   await prisma.$transaction([
-    prisma.user.update({ where: { id: request.userId }, data: { passwordHash } }),
+    // A new password also ends every session opened with the old one.
+    prisma.user.update({ where: { id: request.userId }, data: { passwordHash, ...REVOKE_SESSIONS } }),
     prisma.passwordResetRequest.update({ where: { id: request.id }, data: { usedAt: new Date() } }),
   ]);
 }

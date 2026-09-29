@@ -5,6 +5,13 @@ import { nextTick } from "vue";
 // reader reads the problem along with the field, and a failed submit can
 // take the user straight to the first one.
 
+/** Clears every field's message, in place: the form keeps the same (reactive) errors object. */
+export function resetErrors(errors: Record<string, string>): void {
+  for (const key of Object.keys(errors)) {
+    delete errors[key];
+  }
+}
+
 /** Id of a field's inline error element. */
 export function errorId(field: string): string {
   return `${field}-error`;

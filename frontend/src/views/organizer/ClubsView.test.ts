@@ -1,4 +1,5 @@
-import { mount } from "@vue/test-utils";
+import { useQueryCache } from "@pinia/colada";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
@@ -64,7 +65,7 @@ async function mountView(url = "/clubes") {
   await router.isReady();
 
   const wrapper = mount(ClubsView, { global: { plugins: [router, i18n] } });
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await flushPromises();
   await wrapper.vm.$nextTick();
   return { wrapper };
 }
@@ -94,29 +95,86 @@ describe("ClubsView", () => {
     expect(wrapper.text()).toContain("Club Ajedrez Central");
 
     await selectClubByName(wrapper, CLUB.name);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(listClubPlayersMock).toHaveBeenCalledWith("club-1");
     expect(wrapper.text()).toContain("Luis Gómez");
   });
 
-  it("keeps the selected club in the URL, and opens the club a shared link points to", async () => {
+  it("says the roster is loading instead of claiming the club is empty", async () => {
+    listClubsMock.mockResolvedValue([CLUB]);
+    listClubPlayersMock.mockReturnValue(new Promise(() => {}));
+
+    const { wrapper } = await mountView();
+    await selectClubByName(wrapper, CLUB.name);
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Cargando jugadores…");
+    expect(wrapper.text()).not.toContain("Este club todavía no tiene jugadores");
+  });
+
+  it("keeps the selected club in the URL", async () => {
     listClubsMock.mockResolvedValue([CLUB]);
     listClubPlayersMock.mockResolvedValue([ROSTER_PLAYER]);
 
     const { wrapper } = await mountView();
     await selectClubByName(wrapper, CLUB.name);
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(wrapper.vm.$router.currentRoute.value.query).toEqual({ club: "club-1" });
+    await flushPromises();
 
-    listClubPlayersMock.mockClear();
-    const linked = await mountView("/clubes?club=club-1");
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    await linked.wrapper.vm.$nextTick();
+    expect(wrapper.vm.$router.currentRoute.value.query).toEqual({ club: "club-1" });
+  });
+
+  it("opens the club a shared link points to", async () => {
+    listClubsMock.mockResolvedValue([CLUB]);
+    listClubPlayersMock.mockResolvedValue([ROSTER_PLAYER]);
+
+    const { wrapper } = await mountView("/clubes?club=club-1");
+    await flushPromises();
+
     expect(listClubPlayersMock).toHaveBeenCalledWith("club-1");
-    expect(linked.wrapper.text()).toContain("Luis Gómez");
-    expect(linked.wrapper.get("li button[aria-pressed='true']").text()).toBe(CLUB.name);
+    expect(wrapper.text()).toContain("Luis Gómez");
+    expect(wrapper.get("li button[aria-pressed='true']").text()).toBe(CLUB.name);
+  });
+
+  it("shows the selected club's players even when an earlier club's roster answers last (F-B2)", async () => {
+    const OTHER = { ...CLUB, id: "club-2", name: "Club Norte" };
+    let answerFirst: (players: (typeof ROSTER_PLAYER)[]) => void = () => undefined;
+    listClubsMock.mockResolvedValue([CLUB, OTHER]);
+    listClubPlayersMock.mockImplementation((clubId) =>
+      clubId === "club-1"
+        ? new Promise((resolve) => (answerFirst = resolve))
+        : Promise.resolve([{ ...ROSTER_PLAYER, playerId: "player-9", name: "Eva Ruiz" }]),
+    );
+
+    const { wrapper } = await mountView();
+    await selectClubByName(wrapper, CLUB.name);
+    await selectClubByName(wrapper, OTHER.name);
+    await flushPromises();
+    answerFirst([ROSTER_PLAYER]);
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Eva Ruiz");
+    expect(wrapper.text()).not.toContain("Luis Gómez");
+  });
+
+  it("keeps a new name being typed when the list of clubs is read again in the background", async () => {
+    listClubsMock.mockImplementation(async () => [{ ...CLUB }]);
+    listClubPlayersMock.mockResolvedValue([]);
+    const { wrapper } = await mountView();
+    await selectClubByName(wrapper, CLUB.name);
+    await flushPromises();
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "Renombrar")!
+      .trigger("click");
+    await wrapper.get("#renameClubName").setValue("Club Ajedrez del Sur");
+
+    await useQueryCache().invalidateQueries({ key: ["clubs"] });
+    await flushPromises();
+
+    expect(listClubsMock).toHaveBeenCalledTimes(2);
+    expect((wrapper.get("#renameClubName").element as HTMLInputElement).value).toBe("Club Ajedrez del Sur");
   });
 
   it("creates a new club and selects it", async () => {
@@ -128,7 +186,7 @@ describe("ClubsView", () => {
 
     await wrapper.get("#newClubName").setValue("Club Ajedrez Central");
     await wrapper.find("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(createClubMock).toHaveBeenCalledWith("Club Ajedrez Central");
@@ -151,7 +209,6 @@ describe("ClubsView", () => {
       {
         id: "player-1",
         name: "Luis Gómez",
-        email: "luis@example.com",
         universityCode: "U123",
         program: "Sistemas",
         semester: 5,
@@ -160,7 +217,7 @@ describe("ClubsView", () => {
 
     const { wrapper } = await mountView();
     await selectClubByName(wrapper, CLUB.name);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     await wrapper.get("#clubPlayerQuery").setValue("Luis");
@@ -184,7 +241,7 @@ describe("ClubsView", () => {
 
     const { wrapper } = await mountView();
     await selectClubByName(wrapper, CLUB.name);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     const removeBtn = wrapper.findAll("button").find((btn) => btn.text() === "Quitar")!;
@@ -193,7 +250,7 @@ describe("ClubsView", () => {
     expect(document.body.textContent).toContain("¿Quitar a Luis Gómez del club «Club Ajedrez Central»?");
 
     await clickConfirmDialogButton(answer);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(removePlayerFromClubMock).toHaveBeenCalledTimes(removed ? 1 : 0);
     if (removed) expect(removePlayerFromClubMock).toHaveBeenCalledWith("club-1", "player-1");
@@ -207,14 +264,14 @@ describe("ClubsView", () => {
 
     const { wrapper } = await mountView();
     await selectClubByName(wrapper, CLUB.name);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     const deleteBtn = wrapper.findAll("button").find((btn) => btn.text() === "Eliminar club")!;
     await deleteBtn.trigger("click");
     await wrapper.vm.$nextTick();
     await clickConfirmDialogButton("Eliminar club");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(deleteClubMock).toHaveBeenCalledWith("club-1");
@@ -232,14 +289,14 @@ describe("ClubsView", () => {
 
     const { wrapper } = await mountView();
     await selectClubByName(wrapper, CLUB.name);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     const deleteBtn = wrapper.findAll("button").find((btn) => btn.text() === "Eliminar club")!;
     await deleteBtn.trigger("click");
     await wrapper.vm.$nextTick();
     await clickConfirmDialogButton("Eliminar club");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("No se puede eliminar un club con jugadores asignados");

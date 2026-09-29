@@ -1,23 +1,23 @@
+import type {
+  DataRequestType as ApiDataRequestType,
+  DataRightResult as DataRightResultDto,
+  PersonalDataExport as PersonalDataExportDto,
+} from "@contracts";
+
+import type { Serialized } from "../lib/serialized";
 import { api } from "./api";
-import type { RegisteredUser } from "./auth";
 
-// HU22/Ley 1581 de 2012: derechos ARCO ejercidos por el titular. RECTIFICATION
-// no está expuesta acá porque ya tiene su propio flujo dedicado (HU20, "Editar
-// perfil"); estos dos son los que no tienen otra UI todavía.
-// Mirrors dataRequestSchema in backend/src/validators/users.schemas.ts: these
-// are protocol values, not display text (they must match exactly).
-export type DataRequestType = "ACCESS" | "SUPPRESSION";
+// HU22, Ley 1581: the two rights the privacy panel exercises. RECTIFICATION has
+// its own flow ("Editar perfil", HU20).
+export type DataRequestType = Extract<ApiDataRequestType, "ACCESS" | "SUPPRESSION">;
+export type DataRightResult = Serialized<DataRightResultDto>;
+/** Everything the system holds about the person (Ley 1581 art. 8). */
+export type PersonalDataExport = Serialized<PersonalDataExportDto>;
+export type DataAccessResult = DataRightResult & { data: PersonalDataExport };
 
-export interface DataRightResult {
-  type: DataRequestType;
-  status: "RESOLVED" | "BLOCKED";
-  message: string;
-  user: RegisteredUser;
-}
-
-/** Exercises the "access" right: returns the titular's own data (HU22). */
-export async function requestDataAccess(): Promise<DataRightResult> {
-  const { data } = await api.post<DataRightResult>("/users/me/data-requests", { type: "ACCESS" });
+/** Exercises the "access" right: returns everything held about the titular (HU22). */
+export async function requestDataAccess(): Promise<DataAccessResult> {
+  const { data } = await api.post<DataAccessResult>("/users/me/data-requests", { type: "ACCESS" });
   return data;
 }
 

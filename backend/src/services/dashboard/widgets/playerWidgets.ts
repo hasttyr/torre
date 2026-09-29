@@ -1,17 +1,16 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../../generated/prisma/client";
 
 import { pointsFor } from "../../standings.calculator";
-import {
-  emptyTally,
-  OFFICIAL_GAME,
-  scoreRateOf,
-  tallyGames,
-  totalsOf,
-  type PlayerTotals,
-  type ResultTally,
-  type TalliedGame,
-} from "../playerStats";
+import { emptyTally, OFFICIAL_GAME, scoreRateOf, tallyGames, totalsOf, type TalliedGame } from "../playerStats";
 import { loadRankedTournaments, standingOf } from "../rankings";
+import type {
+  ColorResultsDto,
+  GameLogEntryDto,
+  PerformancePointDto,
+  PlayerSummaryDto,
+  ResultsByColorDto,
+  TournamentHistoryEntryDto,
+} from "../../../contracts/responses";
 
 // Widgets about ONE player (the dashboard's selected subject). Callers have
 // already checked the viewer may see this player (see dashboard.service.ts).
@@ -41,12 +40,6 @@ async function loadPlayerGames(prisma: PrismaClient, playerId: string): Promise<
   }));
 }
 
-export interface PlayerSummaryDto extends PlayerTotals {
-  tournamentsPlayed: number;
-  titles: number;
-  bestFinish: number | null;
-}
-
 /** PLAYER_SUMMARY: headline numbers across the player's whole career. */
 export async function loadPlayerSummary(prisma: PrismaClient, playerId: string): Promise<PlayerSummaryDto> {
   const [games, ranked] = await Promise.all([
@@ -64,17 +57,6 @@ export async function loadPlayerSummary(prisma: PrismaClient, playerId: string):
     titles: finishes.filter((rank) => rank === 1).length,
     bestFinish: finishes.length > 0 ? Math.min(...finishes) : null,
   };
-}
-
-export interface PerformancePointDto {
-  tournamentId: string;
-  name: string;
-  startDate: Date;
-  scoreRate: number;
-  points: number;
-  games: number;
-  rank: number;
-  participants: number;
 }
 
 /** PLAYER_PERFORMANCE_TREND: score rate per tournament, oldest first. */
@@ -108,15 +90,6 @@ export async function loadPlayerPerformanceTrend(
   });
 }
 
-export interface ColorResultsDto extends ResultTally {
-  scoreRate: number | null;
-}
-
-export interface ResultsByColorDto {
-  white: ColorResultsDto;
-  black: ColorResultsDto;
-}
-
 /** PLAYER_RESULTS_BY_COLOR: wins/draws/losses (and score rate) playing white vs black. */
 export async function loadPlayerResultsByColor(prisma: PrismaClient, playerId: string): Promise<ResultsByColorDto> {
   const tally = tallyGames(await loadPlayerGames(prisma, playerId)).get(playerId) ?? emptyTally();
@@ -124,20 +97,6 @@ export async function loadPlayerResultsByColor(prisma: PrismaClient, playerId: s
     white: { ...tally.white, scoreRate: scoreRateOf(tally.white) },
     black: { ...tally.black, scoreRate: scoreRateOf(tally.black) },
   };
-}
-
-export interface TournamentHistoryEntryDto {
-  tournamentId: string;
-  name: string;
-  startDate: Date;
-  endDate: Date;
-  status: string;
-  withdrawn: boolean;
-  // null while the tournament has no standings yet (not started).
-  rank: number | null;
-  participants: number | null;
-  points: number | null;
-  buchholz: number | null;
 }
 
 /** PLAYER_TOURNAMENT_HISTORY: every tournament the player enrolled in, newest first. */
@@ -173,18 +132,6 @@ export async function loadPlayerTournamentHistory(
   });
 }
 
-export interface GameLogEntryDto {
-  matchId: string;
-  tournamentId: string;
-  tournamentName: string;
-  round: number;
-  // null for a bye (no opponent, no color).
-  color: "WHITE" | "BLACK" | null;
-  opponent: string | null;
-  outcome: "WIN" | "DRAW" | "LOSS" | "BYE";
-  recordedAt: Date;
-}
-
 /** PLAYER_GAME_LOG (HU15): every official game the player played, newest first. */
 export async function loadPlayerGameLog(prisma: PrismaClient, playerId: string): Promise<GameLogEntryDto[]> {
   const matches = await prisma.match.findMany({
@@ -215,3 +162,12 @@ export async function loadPlayerGameLog(prisma: PrismaClient, playerId: string):
     };
   });
 }
+
+export type {
+  ColorResultsDto,
+  GameLogEntryDto,
+  PerformancePointDto,
+  PlayerSummaryDto,
+  ResultsByColorDto,
+  TournamentHistoryEntryDto,
+};

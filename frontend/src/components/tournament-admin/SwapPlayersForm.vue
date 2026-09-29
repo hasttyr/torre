@@ -2,13 +2,14 @@
 import { computed, reactive, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 
-import { errorAttrs, errorId, focusFirstInvalid } from "../../lib/formErrors";
+import { errorAttrs, errorId, focusFirstInvalid, resetErrors } from "../../lib/formErrors";
 import type { Round, SwapPayload } from "../../services/rounds";
 
 // HU29: swaps two players' seats in a draft round (same board = colors
 // flipped). The reason is mandatory (RN-09) and goes to the audit log.
-const props = defineProps<{ round: Round; busy: boolean }>();
-const emit = defineEmits<{ swap: [payload: SwapPayload] }>();
+// `submit` answers whether the swap went through: the form only clears then,
+// so a refused swap (409, 400) keeps what the organizer chose and wrote.
+const props = defineProps<{ round: Round; busy: boolean; submit: (payload: SwapPayload) => Promise<boolean> }>();
 
 const { t } = useI18n();
 const form = reactive({ playerAId: "", playerBId: "", reason: "" });
@@ -25,9 +26,7 @@ const players = computed(() =>
 
 /** Checks both players and the reason, leaving a message next to each field that needs one. */
 function validate(): boolean {
-  for (const key of Object.keys(errors)) {
-    delete errors[key];
-  }
+  resetErrors(errors);
 
   if (!form.playerAId) {
     errors.swapPlayerA = t("roundManager.choosePlayer");
@@ -49,8 +48,12 @@ async function onSubmit(): Promise<void> {
     await focusFirstInvalid(formEl.value);
     return;
   }
-  emit("swap", { playerAId: form.playerAId, playerBId: form.playerBId, reason: form.reason.trim() });
-  Object.assign(form, { playerAId: "", playerBId: "", reason: "" });
+  const swapped = await props.submit({
+    playerAId: form.playerAId,
+    playerBId: form.playerBId,
+    reason: form.reason.trim(),
+  });
+  if (swapped) Object.assign(form, { playerAId: "", playerBId: "", reason: "" });
 }
 </script>
 

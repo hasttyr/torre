@@ -161,7 +161,7 @@ describe("TournamentLiveView", () => {
       tournamentId: "t-1",
       pending: true,
       roundsCompleted: 0,
-      tiebreaks: ["Buchholz"],
+      tiebreaks: ["BUCHHOLZ"],
       rows: [
         {
           rank: 1,

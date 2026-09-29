@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient, Standing, Tournament } from "@prisma/client";
+import type { Prisma, PrismaClient, Standing, Tournament } from "../../generated/prisma/client";
 
 import type { StandingValues } from "../standings.calculator";
 

@@ -1,13 +1,16 @@
-import type { PrismaClient } from "@prisma/client";
-import jwt from "jsonwebtoken";
+import { randomBytes } from "node:crypto";
+
+import type { PrismaClient } from "../generated/prisma/client";
 
 import { DATA_POLICY_VERSION } from "../config/dataPolicy";
-import { env } from "../config/env";
-import { HttpError } from "../middlewares/errorHandler";
+import { HttpError } from "../errors/apiErrors";
+import type { AuthUser } from "../types/express";
 import type { RegisterSchemaInput } from "../validators/auth.schemas";
-import { comparePassword, hashPassword } from "./password";
+import { comparePassword, hashPassword, needsRehash } from "./password";
 import { isUniqueConstraintError } from "./prismaErrors";
+import { REVOKE_SESSIONS, signSessionToken, signSocketTicket } from "./sessionToken";
 import { toUserDto, type UserDto } from "./user.mapper";
+import type { AuthResult, SocketTicketDto } from "../contracts/responses";
 
 // Derived from the validator instead of re-declared by hand, so the roles a
 // person can self-register with (PLAYER, COACH) can't drift from what the
@@ -20,20 +23,13 @@ export interface LoginUserInput {
   password: string;
 }
 
-export interface AuthResult {
-  token: string;
-  user: UserDto;
-}
+// Made on first use (hashing on import would slow every boot and test run).
+let throwawayHash: Promise<string> | undefined;
 
-/** Signs a JWT carrying the user's id and role name. */
-function signToken(user: { id: string; role: { name: string } }): string {
-  // The role travels embedded in the token, and requireAuth checks on every
-  // request that it still matches the account (and that the account is
-  // still active): a role change or a block invalidates the token right
-  // away, and the user just logs in again.
-  return jwt.sign({ sub: user.id, role: user.role.name }, env.jwtSecret, {
-    expiresIn: env.jwtExpiresIn,
-  } as jwt.SignOptions);
+/** A hash of a random password, in the current scheme: what an unknown email's attempt is checked against. */
+function unknownUserHash(): Promise<string> {
+  throwawayHash ??= hashPassword(randomBytes(32).toString("hex"));
+  return throwawayHash;
 }
 
 /**
@@ -50,12 +46,12 @@ export async function registerUser(prisma: PrismaClient, input: RegisterUserInpu
 
   const role = await prisma.role.findUnique({ where: { name: input.role } });
   if (!role) {
-    throw new HttpError(400, `El rol "${input.role}" no existe. Verificá que el seed de roles se haya ejecutado.`);
+    throw new HttpError("ROLE_NOT_FOUND", { role: input.role });
   }
 
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
-    throw new HttpError(409, "Ya existe una cuenta registrada con ese correo");
+    throw new HttpError("EMAIL_TAKEN");
   }
 
   const passwordHash = await hashPassword(input.password);
@@ -90,7 +86,7 @@ export async function registerUser(prisma: PrismaClient, input: RegisterUserInpu
     // Covers the race between the findUnique above and the create: of two
     // concurrent registrations with the same email, only one can win.
     if (isUniqueConstraintError(error)) {
-      throw new HttpError(409, "Ya existe una cuenta registrada con ese correo");
+      throw new HttpError("EMAIL_TAKEN");
     }
     throw error;
   }
@@ -104,25 +100,47 @@ export async function registerUser(prisma: PrismaClient, input: RegisterUserInpu
  * @returns A session token and the authenticated user's data.
  * @throws {HttpError} 401 for invalid credentials, 403 if the account is inactive.
  */
-export async function loginUser(prisma: PrismaClient, input: LoginUserInput): Promise<AuthResult> {
+/** A successful sign-in: the session token (for the cookie) and the user. */
+export interface SignedIn extends AuthResult {
+  token: string;
+}
+
+export async function loginUser(prisma: PrismaClient, input: LoginUserInput): Promise<SignedIn> {
   const email = input.email.trim().toLowerCase();
 
   const user = await prisma.user.findUnique({ where: { email }, include: { role: true } });
 
   // Same generic message whether the email doesn't exist or the password is
-  // wrong: don't reveal whether an account exists (RF02).
-  if (!user) {
-    throw new HttpError(401, "Credenciales inválidas");
-  }
-
-  const isPasswordValid = await comparePassword(input.password, user.passwordHash);
-  if (!isPasswordValid) {
-    throw new HttpError(401, "Credenciales inválidas");
+  // wrong: don't reveal whether an account exists (RF02). An unknown email
+  // is checked against a throwaway hash, so both cases also take as long.
+  const isPasswordValid = await comparePassword(input.password, user?.passwordHash ?? (await unknownUserHash()));
+  if (!user || !isPasswordValid) {
+    throw new HttpError("INVALID_CREDENTIALS");
   }
 
   if (user.status !== "ACTIVE") {
-    throw new HttpError(403, "La cuenta está inactiva");
+    throw new HttpError("ACCOUNT_INACTIVE");
   }
 
-  return { token: signToken(user), user: toUserDto(user) };
+  if (needsRehash(user.passwordHash)) {
+    await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(input.password) } });
+  }
+
+  return { token: signSessionToken({ id: user.id, role: user.role.name }, user.tokenVersion), user: toUserDto(user) };
 }
+
+/** Ends every session the actor has open, on any device (sign-out). */
+export async function revokeSessions(prisma: PrismaClient, actor: AuthUser): Promise<void> {
+  await prisma.user.update({ where: { id: actor.id }, data: REVOKE_SESSIONS });
+}
+
+/** A one-minute ticket to open a real-time connection as `actor`, under their current session. */
+export async function issueSocketTicket(prisma: PrismaClient, actor: AuthUser): Promise<SocketTicketDto> {
+  const { tokenVersion } = await prisma.user.findUniqueOrThrow({
+    where: { id: actor.id },
+    select: { tokenVersion: true },
+  });
+  return { ticket: signSocketTicket(actor, tokenVersion) };
+}
+
+export type { AuthResult };

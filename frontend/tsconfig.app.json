@@ -4,6 +4,8 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "types": ["vite/client"],
     "allowArbitraryExtensions": true,
+    // The API contract, from the backend (see vite.config.ts).
+    "paths": { "@contracts": ["../backend/src/contracts/index.ts"] },
 
     /* Linting */
     "noUnusedLocals": true,

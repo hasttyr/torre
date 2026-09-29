@@ -1,46 +1,42 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { useInfiniteQuery } from "@pinia/colada";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LoadError from "../../components/ui/LoadError.vue";
 import { extractErrorMessage } from "../../lib/errors";
-import { listAuditLogs, type AuditLogEntry } from "../../services/auditLogs";
+import { formatFullDateTime } from "../../lib/format";
+import { auditLogQuery } from "../../queries/admin";
 import { useLocaleStore } from "../../stores/locale";
+import FormBanner from "../../components/ui/FormBanner.vue";
 
 const locale = useLocaleStore();
 const { t, te } = useI18n();
 
-const logs = ref<AuditLogEntry[]>([]);
-const loading = ref(true);
-const loadError = ref<string | null>(null);
-
 // The log only grows: the newest page first, older ones on demand.
-const nextCursor = ref<string | null>(null);
+const log = useInfiniteQuery(auditLogQuery);
+const logs = computed(() => log.data.value?.pages.flatMap((page) => page.entries) ?? []);
+const loading = computed(() => log.status.value === "pending");
+// Only for the first page: a failed older page keeps what's shown (loadMoreError).
+const loadError = computed(() =>
+  log.status.value === "error" && logs.value.length === 0
+    ? extractErrorMessage(log.error.value, t("auditLog.loadError"))
+    : null,
+);
+const retry = () => log.refetch();
+const hasOlderEntries = computed(() => log.hasNextPage.value);
+
 const loadingMore = ref(false);
 const loadMoreError = ref<string | null>(null);
 
-onMounted(async () => {
-  try {
-    const page = await listAuditLogs();
-    logs.value = page.entries;
-    nextCursor.value = page.nextCursor;
-  } catch (error) {
-    loadError.value = extractErrorMessage(error, t("auditLog.loadError"));
-  } finally {
-    loading.value = false;
-  }
-});
-
 /** Appends the next older page; on failure keeps what's shown, so the same page can be retried. */
 async function loadMore(): Promise<void> {
-  if (!nextCursor.value) return;
+  if (!hasOlderEntries.value) return;
   loadingMore.value = true;
   loadMoreError.value = null;
   try {
-    const page = await listAuditLogs(nextCursor.value);
-    logs.value = [...logs.value, ...page.entries];
-    nextCursor.value = page.nextCursor;
+    await log.loadNextPage({ throwOnError: true });
   } catch (error) {
     loadMoreError.value = extractErrorMessage(error, t("auditLog.loadError"));
   } finally {
@@ -52,17 +48,6 @@ async function loadMore(): Promise<void> {
 function actionLabel(action: string): string {
   const key = `auditLog.actions.${action}`;
   return te(key) ? t(key) : action;
-}
-
-/** Formats an ISO date string using the active locale, including the time. */
-function formatDate(date: string): string {
-  return new Date(date).toLocaleString(locale.locale, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 </script>
 
@@ -77,7 +62,7 @@ function formatDate(date: string): string {
       </div>
 
       <p v-if="loading">{{ t("auditLog.loading") }}</p>
-      <LoadError v-else-if="loadError" :message="loadError" />
+      <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <p
         v-else-if="logs.length === 0"
@@ -94,7 +79,7 @@ function formatDate(date: string): string {
         >
           <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="pill">{{ actionLabel(log.action) }}</span>
-            <span class="text-sm text-text-muted">{{ formatDate(log.createdAt) }}</span>
+            <span class="text-sm text-text-muted">{{ formatFullDateTime(log.createdAt, locale.locale) }}</span>
           </div>
           <p class="text-sm">
             <strong>{{ log.userName }}</strong>
@@ -103,8 +88,8 @@ function formatDate(date: string): string {
         </li>
       </ul>
 
-      <template v-if="nextCursor">
-        <p v-if="loadMoreError" role="alert" class="banner banner--error">{{ loadMoreError }}</p>
+      <template v-if="hasOlderEntries">
+        <FormBanner v-if="loadMoreError" kind="error">{{ loadMoreError }}</FormBanner>
         <button type="button" class="btn btn-ghost self-center" :disabled="loadingMore" @click="loadMore">
           {{ loadingMore ? t("auditLog.loadingMore") : t("auditLog.loadMore") }}
         </button>

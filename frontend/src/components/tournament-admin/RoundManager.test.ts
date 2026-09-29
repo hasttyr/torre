@@ -6,7 +6,6 @@ import { createRouter, createWebHistory } from "vue-router";
 import { i18n } from "../../i18n";
 import type { Round, Standings } from "../../services/rounds";
 import type { Tournament } from "../../services/tournaments";
-import { useTournamentsStore } from "../../stores/tournaments";
 import { clickConfirmDialogButton, mountConfirmDialogHost } from "../../test-support/confirmDialog";
 import RoundManager from "./RoundManager.vue";
 
@@ -35,6 +34,22 @@ import {
   swapPlayers,
 } from "../../services/rounds";
 import { finishTournament, getTournament } from "../../services/tournaments";
+
+// The live channel: the test plays the server, firing the events a room gets.
+const { socketHandlers } = vi.hoisted(() => ({ socketHandlers: new Map<string, () => void>() }));
+vi.mock("../../services/socket", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../services/socket")>()),
+  getSocket: vi.fn(async () => ({
+    connected: true,
+    on: vi.fn((event: string, handler: () => void) => socketHandlers.set(event, handler)),
+    off: vi.fn(),
+    connect: vi.fn(),
+  })),
+  joinTournamentRoom: vi.fn(),
+  leaveTournamentRoom: vi.fn(),
+}));
+
+import { joinTournamentRoom } from "../../services/socket";
 
 const TOURNAMENT: Tournament = {
   id: "t-1",
@@ -74,7 +89,6 @@ function round(number: number, status: Round["status"], results: (string | null)
 }
 
 async function mountManager(tournament: Tournament = TOURNAMENT) {
-  useTournamentsStore().current = tournament;
   vi.mocked(getTournament).mockResolvedValue(tournament);
   const router = createRouter({
     history: createWebHistory(),
@@ -108,6 +122,21 @@ describe("RoundManager", () => {
     });
     document.body.innerHTML = "";
     vi.mocked(getStandings).mockResolvedValue(STANDINGS);
+  });
+
+  it("follows the tournament live: a result an arbiter records shows up without reloading", async () => {
+    vi.mocked(listRounds)
+      .mockResolvedValueOnce([round(1, "RECORDING_RESULTS", [null])])
+      .mockResolvedValue([round(1, "STANDINGS_UPDATED", ["1-0"])]);
+    const wrapper = await mountManager({ ...TOURNAMENT, status: "IN_PROGRESS" });
+    expect(wrapper.text()).toContain("falta registrar 1 resultado");
+    expect(joinTournamentRoom).toHaveBeenCalledWith(expect.anything(), "t-1");
+
+    socketHandlers.get("match.result.recorded")!();
+    await vi.waitFor(() => expect(listRounds).toHaveBeenCalledTimes(2));
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("falta registrar");
   });
 
   it("offers to generate round 1 once registration is closed", async () => {

@@ -2,6 +2,8 @@
 // every recorded result (HU12) and by the seeder, and unit-tested without a
 // database.
 
+import { DEFAULT_TIEBREAKS, TIEBREAKS, type Tiebreak } from "../contracts/catalogs";
+
 /** A recorded game as stored in `results.value` (RN-03 catalog). `blackId` is null for a bye. */
 export interface RecordedGame {
   whiteId: string | null;
@@ -17,9 +19,8 @@ export interface StandingValues {
   sonnebornBerger: number;
 }
 
-// HU13's order. ARO is listed because the documentation lists it, but it's
-// skipped when ranking: it needs ratings, which are out of scope.
-export const DEFAULT_TIEBREAKS = ["Buchholz", "Buchholz Cortado 1", "Sonneborn-Berger", "ARO", "Resultado particular"];
+// HU13's catalog and suggested order live in the API contract.
+export { DEFAULT_TIEBREAKS, TIEBREAKS, type Tiebreak };
 
 /**
  * Points each side earns for a result value.
@@ -107,43 +108,32 @@ function directEncounter(games: RecordedGame[]): Comparator {
     (scoredAgainst.get(`${b.playerId}>${a.playerId}`) ?? 0) - (scoredAgainst.get(`${a.playerId}>${b.playerId}`) ?? 0);
 }
 
-// Tiebreak names are free text (see tournaments.schemas.ts): matched
-// loosely so "Buchholz Cortado 1", "buchholz-cut-1" etc. all resolve.
-function tiebreakComparators(games: RecordedGame[]): Record<string, Comparator> {
-  const direct = directEncounter(games);
+// Every criterion the calculator can compute (ARO can't: see TIEBREAKS).
+function tiebreakComparators(games: RecordedGame[]): Partial<Record<Tiebreak, Comparator>> {
   return {
-    buchholz: byDescending("buchholz"),
-    buchholzcortado1: byDescending("buchholzCut1"),
-    buchholzcut1: byDescending("buchholzCut1"),
-    sonnebornberger: byDescending("sonnebornBerger"),
-    resultadoparticular: direct,
-    directencounter: direct,
+    BUCHHOLZ: byDescending("buchholz"),
+    BUCHHOLZ_CUT1: byDescending("buchholzCut1"),
+    SONNEBORN_BERGER: byDescending("sonnebornBerger"),
+    DIRECT_ENCOUNTER: directEncounter(games),
   };
-}
-
-function normalize(name: string): string {
-  return name
-    .normalize("NFD")
-    .replace(/[^a-zA-Z0-9]/g, "")
-    .toLowerCase();
 }
 
 /**
  * Sorts standings best-first: score, then each tiebreak in the tournament's
- * configured order (names it can't compute, e.g. ARO, are skipped). Falls
+ * configured order (criteria it can't compute, i.e. ARO, are skipped). Falls
  * back to {@link DEFAULT_TIEBREAKS} when the tournament has none configured.
  *
  * @param games - The tournament's recorded games; only needed by the
- * direct-encounter tiebreak ("Resultado particular").
+ * direct-encounter tiebreak (DIRECT_ENCOUNTER, "resultado particular").
  */
 export function rankStandings<T extends StandingValues>(
   rows: T[],
-  tiebreakNames: string[],
+  tiebreaks: readonly Tiebreak[],
   games: RecordedGame[] = [],
 ): T[] {
-  const names = tiebreakNames.length > 0 ? tiebreakNames : DEFAULT_TIEBREAKS;
+  const order = tiebreaks.length > 0 ? tiebreaks : DEFAULT_TIEBREAKS;
   const available = tiebreakComparators(games);
-  const comparators = names.map((name) => available[normalize(name)]).filter(Boolean);
+  const comparators = order.flatMap((tiebreak) => available[tiebreak] ?? []);
 
   return rows.slice().sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;

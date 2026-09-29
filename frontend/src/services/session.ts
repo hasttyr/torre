@@ -1,24 +1,24 @@
-// The session's bearer token and what to do when the server rejects it.
-// Kept apart from the HTTP client (api.ts, which pulls in axios) so the app
-// shell — auth store, session-expiry handling — can use them without
-// downloading axios on the landing and login pages: api.ts reads them on
-// every request once some page actually calls the API.
+// Whether this tab has a session, and what to do when the server ends it.
+// The session itself is an HttpOnly cookie the API sets: script can't read
+// it (an XSS can't steal it), so the app only keeps this flag. Kept apart
+// from the HTTP client (api.ts, which pulls in axios) so the app shell can
+// use it without downloading axios on the landing and login pages.
 
-let token: string | null = null;
+let signedIn = false;
 let unauthorizedHandler: (() => void) | null = null;
 
-/** Sets or clears the token sent as `Authorization: Bearer …` on every request. */
-export function setAuthToken(value: string | null): void {
-  token = value;
+/** Records whether this tab has a session (set on sign-in, cleared on sign-out). */
+export function setSignedIn(value: boolean): void {
+  signedIn = value;
 }
 
-export function getAuthToken(): string | null {
-  return token;
+export function isSignedIn(): boolean {
+  return signedIn;
 }
 
 /**
- * Registers what to do when the server rejects the session (401 on a request
- * that carried a token): the token expired, the account was blocked or its
+ * Registers what to do when the server rejects the session (a 401 while
+ * signed in): it expired, it was revoked, the account was blocked or its
  * role changed (backend/src/middlewares/auth.ts). Registered once, by
  * lib/sessionExpiry.ts.
  */

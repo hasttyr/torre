@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { TabsContent, TabsList, TabsRoot, TabsTrigger } from "reka-ui";
-import { computed, nextTick, onMounted, reactive, ref, useTemplateRef } from "vue";
+import { useQuery, useQueryCache } from "@pinia/colada";
+import { computed, nextTick, reactive, ref, useTemplateRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { isRenderableWidget } from "../../components/dashboard/widgetRegistry";
@@ -9,21 +10,22 @@ import LoadError from "../../components/ui/LoadError.vue";
 import { extractErrorMessage } from "../../lib/errors";
 import { useUnsavedChangesGuard } from "../../lib/unsavedChanges";
 import { useQueryParam } from "../../lib/useQueryParam";
-import {
-  CONFIGURABLE_ROLES,
-  getDashboardLayouts,
-  updateRoleLayout,
-  type ConfigurableRole,
-  type WidgetKey,
-  type WidgetSummary,
-} from "../../services/dashboard";
+import { dashboardLayoutsQuery, replaceRoleLayout } from "../../queries/admin";
+import { useQueryStatus } from "../../queries/status";
+import { CONFIGURABLE_ROLES, updateRoleLayout, type ConfigurableRole, type WidgetKey } from "../../services/dashboard";
+import FormBanner from "../../components/ui/FormBanner.vue";
 
 // Lets the administrator compose each role's dashboard: which widgets it
 // shows and in what order. Every role keeps its own draft while switching
 // tabs; nothing reaches the server until "Save" for that role.
 const { t } = useI18n();
 
-const catalog = ref<WidgetSummary[]>([]);
+const cache = useQueryCache();
+const layoutsEntry = useQuery(dashboardLayoutsQuery);
+const { loading, loadError, retry } = useQueryStatus(layoutsEntry, "dashboardLayouts.loadError");
+const catalog = computed(() =>
+  (layoutsEntry.data.value?.catalog ?? []).filter((widget) => isRenderableWidget(widget.key)),
+);
 // Filled per role once the layouts load; until then every lookup falls back to [].
 const saved = reactive<Partial<Record<ConfigurableRole, WidgetKey[]>>>({});
 const drafts = reactive<Partial<Record<ConfigurableRole, WidgetKey[]>>>({});
@@ -35,26 +37,9 @@ const activeRole = computed(
   (): ConfigurableRole => CONFIGURABLE_ROLES.find((role) => role === roleParam.value) ?? "PLAYER",
 );
 
-const loading = ref(true);
-const loadError = ref<string | null>(null);
 const saving = ref(false);
 const saveError = ref<string | null>(null);
 const savedMessage = ref<string | null>(null);
-
-onMounted(async () => {
-  try {
-    const result = await getDashboardLayouts();
-    catalog.value = result.catalog.filter((widget) => isRenderableWidget(widget.key));
-    for (const layout of result.layouts) {
-      saved[layout.role] = [...layout.widgets];
-      drafts[layout.role] = [...layout.widgets];
-    }
-  } catch (error) {
-    loadError.value = extractErrorMessage(error, t("dashboardLayouts.loadError"));
-  } finally {
-    loading.value = false;
-  }
-});
 
 const subjectOf = computed(() => new Map(catalog.value.map((widget) => [widget.key, widget.subject])));
 
@@ -68,6 +53,20 @@ function isDirty(role: ConfigurableRole): boolean {
 }
 
 const anyDirty = computed(() => CONFIGURABLE_ROLES.some(isDirty));
+
+// The layouts as the server has them, whenever they arrive: the first time,
+// and when read again in the background. A role being edited keeps its draft.
+watch(
+  () => layoutsEntry.data.value,
+  (result) => {
+    for (const layout of result?.layouts ?? []) {
+      const editing = isDirty(layout.role);
+      saved[layout.role] = [...layout.widgets];
+      if (!editing) drafts[layout.role] = [...layout.widgets];
+    }
+  },
+  { immediate: true },
+);
 
 function selectRole(role: ConfigurableRole): void {
   roleParam.value = role;
@@ -133,6 +132,7 @@ async function save(): Promise<void> {
     const result = await updateRoleLayout(role, draft.value);
     saved[role] = [...result.widgets];
     drafts[role] = [...result.widgets];
+    replaceRoleLayout(cache, result);
     savedMessage.value = t("dashboardLayouts.saved", { role: t(`roles.${role}`) });
   } catch (error) {
     saveError.value = extractErrorMessage(error, t("dashboardLayouts.saveError"));
@@ -158,7 +158,7 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
       </header>
 
       <p v-if="loading">{{ t("dashboardLayouts.loading") }}</p>
-      <LoadError v-else-if="loadError" :message="loadError" />
+      <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <!-- reka-ui Tabs: arrow keys move between roles, and screen readers
            read each role's layout as the panel of its tab. -->
@@ -177,7 +177,7 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
             :key="role"
             :value="role"
             class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
-            :class="activeRole === role ? 'bg-accent text-[#17130a]' : 'text-text-muted hover:bg-accent/10'"
+            :class="activeRole === role ? 'bg-accent text-on-accent' : 'text-text-muted hover:bg-accent/10'"
           >
             {{ t(`roles.${role}`) }}
             <span class="text-xs opacity-75 tabular-nums">{{ drafts[role]?.length ?? 0 }}</span>
@@ -302,7 +302,7 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
           </section>
         </TabsContent>
 
-        <p v-if="savedMessage" role="status" class="banner banner--success">{{ savedMessage }}</p>
+        <FormBanner v-if="savedMessage" kind="success">{{ savedMessage }}</FormBanner>
       </TabsRoot>
     </main>
 

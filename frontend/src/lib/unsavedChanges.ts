@@ -1,12 +1,20 @@
-import { useEventListener } from "@vueuse/core";
+import { onScopeDispose } from "vue";
 import { useI18n } from "vue-i18n";
 import { onBeforeRouteLeave } from "vue-router";
 
 import { useConfirm } from "./confirm";
 
+/** Whether two field values are the same: lists (an ordered choice) item by item. */
+function sameValue(a: unknown, b: unknown): boolean {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((item, index) => item === b[index]);
+  }
+  return a === b;
+}
+
 /** Whether any field of a form differs from the values it was saved (or started) with. */
 export function hasChanges<T extends object>(current: T, saved: T): boolean {
-  return (Object.keys(saved) as (keyof T)[]).some((key) => current[key] !== saved[key]);
+  return (Object.keys(saved) as (keyof T)[]).some((key) => !sameValue(current[key], saved[key]));
 }
 
 /**
@@ -31,11 +39,13 @@ export function useUnsavedChangesGuard(isDirty: () => boolean, messageKey = "uns
     });
   });
 
-  // Removed again when the page's component goes away.
-  useEventListener(window, "beforeunload", (event) => {
+  function warnBeforeUnload(event: BeforeUnloadEvent): void {
     if (!isDirty()) return;
     event.preventDefault();
     // Older Safari/Chrome only show the prompt when returnValue is set too.
     event.returnValue = "";
-  });
+  }
+  window.addEventListener("beforeunload", warnBeforeUnload);
+  // Removed again when the page's component goes away.
+  onScopeDispose(() => window.removeEventListener("beforeunload", warnBeforeUnload));
 }

@@ -81,7 +81,6 @@ describe("LoginView", () => {
 
   it("logs in and navigates to their dashboard with valid credentials", async () => {
     loginUserMock.mockResolvedValue({
-      token: "token-123",
       user: {
         id: "usuario-1",
         name: "Ana Torres",
@@ -98,7 +97,7 @@ describe("LoginView", () => {
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
     await wrapper.find("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(loginUserMock).toHaveBeenCalledWith({ email: "ana@example.com", password: "password123" });
     expect(router.currentRoute.value.path).toBe("/panel");
@@ -106,7 +105,6 @@ describe("LoginView", () => {
 
   it("logs in and lands a PLAYER on the same dashboard route (widgets are role-driven)", async () => {
     loginUserMock.mockResolvedValue({
-      token: "token-123",
       user: {
         id: "usuario-2",
         name: "Luis Gómez",
@@ -123,14 +121,13 @@ describe("LoginView", () => {
     await wrapper.find('input[type="email"]').setValue("luis@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
     await wrapper.find("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(router.currentRoute.value.path).toBe("/panel");
   });
 
   it("honors a redirect query param over the role's default dashboard", async () => {
     loginUserMock.mockResolvedValue({
-      token: "token-123",
       user: {
         id: "usuario-1",
         name: "Ana Torres",
@@ -148,7 +145,7 @@ describe("LoginView", () => {
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
     await wrapper.find("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(router.currentRoute.value.path).toBe("/cuenta");
   });
@@ -164,7 +161,7 @@ describe("LoginView", () => {
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
     await wrapper.find('input[type="password"]').setValue("incorrecta");
     await wrapper.find("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("Credenciales inválidas");
@@ -179,7 +176,7 @@ describe("LoginView", () => {
     await wrapper.find('input[type="email"]').setValue("ana@example.com");
     await wrapper.find('input[type="password"]').setValue("password123");
     await wrapper.find("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("No se pudo conectar con el servidor");
@@ -199,6 +196,14 @@ describe("LoginView after the server ended a session", () => {
     await router.push({ path: "/login-under-test", query: { expired: "1", redirect: "/panel" } });
 
     expect(wrapper.text()).toContain("Tu sesión terminó");
+  });
+
+  it("confirms a new account exists when its automatic sign-in didn't go through", async () => {
+    const { wrapper, router } = await mountLoginView();
+
+    await router.push({ path: "/login-under-test", query: { registered: "1" } });
+
+    expect(wrapper.get("[role='status']").text()).toBe("Tu cuenta ya está creada. Inicia sesión para entrar.");
   });
 });
 

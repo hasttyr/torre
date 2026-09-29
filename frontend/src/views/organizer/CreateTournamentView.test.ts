@@ -7,7 +7,8 @@ import { i18n } from "../../i18n";
 import { clickConfirmDialogButton, mountConfirmDialogHost } from "../../test-support/confirmDialog";
 import CreateTournamentView from "./CreateTournamentView.vue";
 
-vi.mock("../../services/tournaments", () => ({
+vi.mock("../../services/tournaments", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../services/tournaments")>()),
   createTournament: vi.fn(),
   getTournament: vi.fn(),
   configureTournament: vi.fn(),
@@ -161,7 +162,7 @@ describe("CreateTournamentView", () => {
     await setDateField(wrapper, "startDate", "2026-10-01");
     await setDateField(wrapper, "endDate", "2026-10-03");
     await wrapper.find("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(createTournamentMock).toHaveBeenCalledWith({
       name: "Copa Universitaria",

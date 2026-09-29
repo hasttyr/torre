@@ -1,7 +1,7 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../generated/prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { HttpError } from "../middlewares/errorHandler";
+import type { HttpError } from "../errors/apiErrors";
 import { calculateAge } from "./user.mapper";
 import { getUserById, updateOwnProfile } from "./users.service";
 
@@ -111,7 +111,7 @@ describe("updateOwnProfile", () => {
       player: null,
     });
 
-    await updateOwnProfile(prisma as unknown as PrismaClient, "user-1", { name: "Ana T." });
+    await updateOwnProfile(prisma as unknown as PrismaClient, { name: "Ana T." }, { id: "user-1", role: "PLAYER" });
 
     expect(prisma.user.update.mock.calls[0][0].data).toEqual({ name: "Ana T." });
   });
@@ -131,7 +131,11 @@ describe("updateOwnProfile", () => {
       player: { universityCode: "U1", program: "Ingeniería", semester: 6 },
     });
 
-    await updateOwnProfile(prisma as unknown as PrismaClient, "user-1", { program: "Ingeniería", semester: 6 });
+    await updateOwnProfile(
+      prisma as unknown as PrismaClient,
+      { program: "Ingeniería", semester: 6 },
+      { id: "user-1", role: "PLAYER" },
+    );
 
     expect(prisma.user.update.mock.calls[0][0].data.player.update).toEqual({
       program: "Ingeniería",
@@ -143,7 +147,7 @@ describe("updateOwnProfile", () => {
     prisma.user.findUnique.mockResolvedValue({ id: "user-1", player: null });
 
     await expect(
-      updateOwnProfile(prisma as unknown as PrismaClient, "user-1", { program: "Ingeniería" }),
+      updateOwnProfile(prisma as unknown as PrismaClient, { program: "Ingeniería" }, { id: "user-1", role: "PLAYER" }),
     ).rejects.toMatchObject({ status: 400 } satisfies Partial<HttpError>);
     expect(prisma.user.update).not.toHaveBeenCalled();
   });
@@ -151,9 +155,9 @@ describe("updateOwnProfile", () => {
   it("responds 404 when the user doesn't exist", async () => {
     prisma.user.findUnique.mockResolvedValue(null);
 
-    await expect(updateOwnProfile(prisma as unknown as PrismaClient, "no-existe", { name: "X" })).rejects.toMatchObject(
-      { status: 404 } satisfies Partial<HttpError>,
-    );
+    await expect(
+      updateOwnProfile(prisma as unknown as PrismaClient, { name: "X" }, { id: "no-existe", role: "PLAYER" }),
+    ).rejects.toMatchObject({ status: 404 } satisfies Partial<HttpError>);
   });
 
   it("updates birthDate, gender and disability", async () => {
@@ -178,11 +182,15 @@ describe("updateOwnProfile", () => {
       },
     });
 
-    await updateOwnProfile(prisma as unknown as PrismaClient, "user-1", {
-      birthDate: new Date("2005-06-15"),
-      gender: "MALE",
-      disability: "NONE",
-    });
+    await updateOwnProfile(
+      prisma as unknown as PrismaClient,
+      {
+        birthDate: new Date("2005-06-15"),
+        gender: "MALE",
+        disability: "NONE",
+      },
+      { id: "user-1", role: "PLAYER" },
+    );
 
     expect(prisma.user.update.mock.calls[0][0].data.player.update).toEqual({
       birthDate: new Date("2005-06-15"),
@@ -213,7 +221,11 @@ describe("updateOwnProfile", () => {
       },
     });
 
-    await updateOwnProfile(prisma as unknown as PrismaClient, "user-1", { gender: null, disability: null });
+    await updateOwnProfile(
+      prisma as unknown as PrismaClient,
+      { gender: null, disability: null },
+      { id: "user-1", role: "PLAYER" },
+    );
 
     expect(prisma.user.update.mock.calls[0][0].data.player.update).toEqual({ gender: null, disability: null });
   });

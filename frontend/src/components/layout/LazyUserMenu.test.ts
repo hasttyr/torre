@@ -15,7 +15,6 @@ enableAutoUnmount(afterEach);
 
 async function mountLazyMenu() {
   useAuthStore().$patch({
-    token: "token",
     user: { id: "u-1", name: "Ana Torres", email: "ana@example.com", role: "PLAYER" } as never,
   });
   const router = createRouter({

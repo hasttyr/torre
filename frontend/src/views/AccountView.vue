@@ -9,10 +9,12 @@ import DateField from "../components/ui/DateField.vue";
 import LoadError from "../components/ui/LoadError.vue";
 import { toIsoDate } from "../lib/dates";
 import { extractErrorMessage } from "../lib/errors";
-import { errorAttrs, errorId, focusFirstInvalid } from "../lib/formErrors";
+import { errorAttrs, errorId, focusFirstInvalid, resetErrors } from "../lib/formErrors";
 import { hasChanges, useUnsavedChangesGuard } from "../lib/unsavedChanges";
 import { DISABILITIES, GENDERS, type Disability, type Gender, type RegisteredUser } from "../services/auth";
 import { useAuthStore } from "../stores/auth";
+import FadeSlide from "../components/ui/FadeSlide.vue";
+import FormBanner from "../components/ui/FormBanner.vue";
 
 const auth = useAuthStore();
 const { t } = useI18n();
@@ -88,9 +90,7 @@ const serverError = ref<string | null>(null);
  * @returns `true` if the form has no validation errors.
  */
 function validate(): boolean {
-  for (const key of Object.keys(errors)) {
-    delete errors[key];
-  }
+  resetErrors(errors);
 
   if (form.name.trim().length < 2) {
     errors.name = t("account.nameMinLength");
@@ -141,7 +141,7 @@ async function onSubmit(): Promise<void> {
     });
     successMessage.value = t("account.successMessage");
   } catch (error) {
-    serverError.value = extractErrorMessage(error, t("account.genericServerError"));
+    serverError.value = extractErrorMessage(error, t("common.genericServerError"));
   } finally {
     submitting.value = false;
   }
@@ -180,22 +180,12 @@ async function onSubmit(): Promise<void> {
         <h2 class="mb-1 text-lg">{{ t("account.editProfileTitle") }}</h2>
         <p class="mb-4 text-sm">{{ t("account.editProfileHint") }}</p>
 
-        <Transition
-          enter-active-class="transition duration-180 ease-out"
-          enter-from-class="opacity-0 -translate-y-1.5"
-          leave-active-class="transition duration-180 ease-in"
-          leave-to-class="opacity-0 -translate-y-1.5"
-        >
-          <p v-if="successMessage" role="status" class="banner banner--success mb-4">{{ successMessage }}</p>
-        </Transition>
-        <Transition
-          enter-active-class="transition duration-180 ease-out"
-          enter-from-class="opacity-0 -translate-y-1.5"
-          leave-active-class="transition duration-180 ease-in"
-          leave-to-class="opacity-0 -translate-y-1.5"
-        >
-          <p v-if="serverError" role="alert" class="banner banner--error mb-4">{{ serverError }}</p>
-        </Transition>
+        <FadeSlide>
+          <FormBanner v-if="successMessage" kind="success" class="mb-4">{{ successMessage }}</FormBanner>
+        </FadeSlide>
+        <FadeSlide>
+          <FormBanner v-if="serverError" kind="error" class="mb-4">{{ serverError }}</FormBanner>
+        </FadeSlide>
 
         <form ref="formEl" novalidate class="flex flex-col gap-4" @submit.prevent="onSubmit">
           <div class="field" :class="{ 'has-error': errors.name }">

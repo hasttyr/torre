@@ -1,5 +1,5 @@
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { i18n } from "../../i18n";
 import type { Round } from "../../services/rounds";
@@ -26,23 +26,32 @@ const ROUND: Round = {
 enableAutoUnmount(afterEach);
 
 // attachTo: a failed submit moves focus, which jsdom only tracks for attached nodes.
-const mountForm = () =>
+const mountForm = (submit = vi.fn(async () => true)) =>
   mount(SwapPlayersForm, {
-    props: { round: ROUND, busy: false },
+    props: { round: ROUND, busy: false, submit },
     global: { plugins: [i18n] },
     attachTo: document.body,
   });
 
+async function fillAndSubmit(wrapper: ReturnType<typeof mountForm>) {
+  await wrapper.get("#swapPlayerA").setValue("p1");
+  await wrapper.get("#swapPlayerB").setValue("p2");
+  await wrapper.get("#swapReason").setValue("Mismo club");
+  await wrapper.get("form").trigger("submit.prevent");
+  await flushPromises();
+}
+
 describe("SwapPlayersForm (HU29)", () => {
   it("explains what's missing next to each field instead of silently disabling the button", async () => {
-    const wrapper = mountForm();
+    const submit = vi.fn(async () => true);
+    const wrapper = mountForm(submit);
     expect(wrapper.get("button[type='submit']").attributes("disabled")).toBeUndefined();
 
     await wrapper.get("#swapReason").setValue("no");
     await wrapper.get("form").trigger("submit.prevent");
     await flushPromises();
 
-    expect(wrapper.emitted("swap")).toBeUndefined();
+    expect(submit).not.toHaveBeenCalled();
     expect(wrapper.get("#swapPlayerA").attributes("aria-invalid")).toBe("true");
     expect(wrapper.get("#swapPlayerB").attributes("aria-invalid")).toBe("true");
     expect(wrapper.get(`#${wrapper.get("#swapReason").attributes("aria-describedby")}`).text()).toContain(
@@ -52,15 +61,23 @@ describe("SwapPlayersForm (HU29)", () => {
   });
 
   it("sends the swap once both players and a reason are given, then clears the form", async () => {
-    const wrapper = mountForm();
+    const submit = vi.fn(async () => true);
+    const wrapper = mountForm(submit);
 
-    await wrapper.get("#swapPlayerA").setValue("p1");
-    await wrapper.get("#swapPlayerB").setValue("p2");
-    await wrapper.get("#swapReason").setValue("Mismo club");
-    await wrapper.get("form").trigger("submit.prevent");
+    await fillAndSubmit(wrapper);
 
-    expect(wrapper.emitted("swap")).toEqual([[{ playerAId: "p1", playerBId: "p2", reason: "Mismo club" }]]);
+    expect(submit).toHaveBeenCalledWith({ playerAId: "p1", playerBId: "p2", reason: "Mismo club" });
     expect((wrapper.get("#swapReason").element as HTMLInputElement).value).toBe("");
     expect(wrapper.get("#swapReason").attributes()).toMatchObject({ name: "swapReason", autocomplete: "off" });
+  });
+
+  it("keeps both players and the reason when the server refuses the swap, so nothing has to be typed again", async () => {
+    const wrapper = mountForm(vi.fn(async () => false));
+
+    await fillAndSubmit(wrapper);
+
+    expect((wrapper.get("#swapPlayerA").element as HTMLSelectElement).value).toBe("p1");
+    expect((wrapper.get("#swapPlayerB").element as HTMLSelectElement).value).toBe("p2");
+    expect((wrapper.get("#swapReason").element as HTMLInputElement).value).toBe("Mismo club");
   });
 });

@@ -35,7 +35,7 @@ async function mountView() {
   await router.isReady();
 
   const wrapper = mount(AuditLogView, { global: { plugins: [router, i18n] } });
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await flushPromises();
   await wrapper.vm.$nextTick();
   return { wrapper };
 }

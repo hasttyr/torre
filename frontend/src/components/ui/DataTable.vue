@@ -1,13 +1,10 @@
-<script setup lang="ts" generic="TData">
+<script setup lang="ts" generic="TData extends RowData">
 import {
   FlexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useVueTable,
+  useTable,
   type ColumnDef,
   type PaginationState,
+  type RowData,
   type SortDirection,
   type SortingState,
 } from "@tanstack/vue-table";
@@ -15,12 +12,13 @@ import { computed, ref, useId, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { useQueryParam } from "../../lib/useQueryParam";
+import { dataTableFeatures, type DataTableFeatures } from "./dataTableFeatures";
 
 // Headless by design (TanStack Table owns sorting/filtering/pagination
 // *state*, never markup or styling): every <th>/<td> below is styled with
-// this project's own Tailwind primitives, the same as every other table
-// built by hand (see PlayerEnrollmentPanel.vue), so a DataTable and a plain
-// <table> read identically from the outside.
+// this project's own Tailwind primitives, the same as the tables built by
+// hand (standings, pairings), so a DataTable and a plain <table> read
+// identically from the outside.
 const props = withDefaults(
   defineProps<{
     // TanStack's own ColumnDef is invariant enough in its value type that a
@@ -28,7 +26,7 @@ const props = withDefaults(
     // number, ...) as `ColumnDef<TData, unknown>[]` — this `any` is the
     // documented escape hatch for exactly that, not a shortcut.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    columns: ColumnDef<TData, any>[];
+    columns: ColumnDef<DataTableFeatures, TData, any>[];
     data: TData[];
     searchPlaceholder?: string;
     emptyMessage?: string;
@@ -43,6 +41,11 @@ const props = withDefaults(
   }>(),
   { pageSize: 10, searchable: true, syncUrl: false },
 );
+
+// A page renders a column's cells itself with a `#cell-<column id>` slot
+// (a control, a badge…), given the row and the cell's value; any other
+// column renders as its definition says.
+defineSlots<{ [slot: `cell-${string}`]: (props: { row: TData; value: unknown }) => unknown }>();
 
 const { t } = useI18n();
 
@@ -86,13 +89,10 @@ if (props.syncUrl) {
 // to compare against.
 const tableData = computed(() => [...props.data]);
 
-const table = useVueTable({
-  get data() {
-    return tableData.value;
-  },
-  get columns() {
-    return props.columns;
-  },
+const table = useTable<DataTableFeatures, TData>({
+  features: dataTableFeatures,
+  data: tableData,
+  columns: computed(() => props.columns),
   state: {
     get sorting() {
       return sorting.value;
@@ -113,10 +113,6 @@ const table = useVueTable({
   onPaginationChange: (updater) => {
     pagination.value = typeof updater === "function" ? updater(pagination.value) : updater;
   },
-  getCoreRowModel: getCoreRowModel(),
-  getSortedRowModel: getSortedRowModel(),
-  getFilteredRowModel: getFilteredRowModel(),
-  getPaginationRowModel: getPaginationRowModel(),
 });
 
 const ARIA_SORT: Record<SortDirection, "ascending" | "descending"> = { asc: "ascending", desc: "descending" };
@@ -127,7 +123,7 @@ function ariaSort(isSorted: false | SortDirection, canSort: boolean): "ascending
   return isSorted ? ARIA_SORT[isSorted] : "none";
 }
 
-const pageIndex = computed(() => table.getState().pagination.pageIndex);
+const pageIndex = computed(() => pagination.value.pageIndex);
 const pageCount = computed(() => table.getPageCount());
 
 const filterStatus = computed(() => {
@@ -170,23 +166,25 @@ const filterStatus = computed(() => {
                 class="inline-flex items-center gap-1 font-semibold hover:text-accent"
                 @click="header.column.getToggleSortingHandler()?.($event)"
               >
-                <FlexRender :render="header.column.columnDef.header" :props="header.getContext()" />
+                <FlexRender :header="header" />
                 <span aria-hidden="true">{{
                   { asc: "▲", desc: "▼" }[header.column.getIsSorted() as string] ?? ""
                 }}</span>
               </button>
-              <FlexRender v-else :render="header.column.columnDef.header" :props="header.getContext()" />
+              <FlexRender v-else :header="header" />
             </th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="row in table.getRowModel().rows" :key="row.id">
             <td
-              v-for="cell in row.getVisibleCells()"
+              v-for="cell in row.getAllCells()"
               :key="cell.id"
               class="border-b border-border-soft px-2.5 py-2 text-sm"
             >
-              <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+              <slot :name="`cell-${cell.column.id}`" :row="cell.row.original" :value="cell.getValue()">
+                <FlexRender :cell="cell" />
+              </slot>
             </td>
           </tr>
         </tbody>

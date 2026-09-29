@@ -32,7 +32,7 @@ const shown = computed(() => (props.modelValue ? formatNumericDate(fromIsoDate(p
     <input
       :id="id"
       :name="id"
-      class="dp__input w-full"
+      class="dp--input w-full"
       readonly
       autocomplete="off"
       :value="shown"

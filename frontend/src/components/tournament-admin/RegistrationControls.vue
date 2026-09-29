@@ -1,14 +1,20 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { useQuery, useQueryCache } from "@pinia/colada";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
-import { useTournamentsStore } from "../../stores/tournaments";
+import { showTournament, tournamentQuery } from "../../queries/tournaments";
+import { closeRegistration, openRegistration } from "../../services/tournaments";
+import FadeSlide from "../ui/FadeSlide.vue";
+import FormBanner from "../ui/FormBanner.vue";
 
 const props = defineProps<{ tournamentId: string }>();
 
-const tournaments = useTournamentsStore();
+const cache = useQueryCache();
+const tournament = useQuery(() => tournamentQuery(props.tournamentId));
+const status = computed(() => tournament.data.value?.status);
 const confirm = useConfirm();
 const { t } = useI18n();
 
@@ -22,9 +28,9 @@ async function onOpen(): Promise<void> {
   error.value = null;
   submitting.value = true;
   try {
-    await tournaments.openRegistration(props.tournamentId);
+    showTournament(cache, await openRegistration(props.tournamentId));
   } catch (submitError) {
-    error.value = extractErrorMessage(submitError, t("tournamentAdmin.genericServerError"));
+    error.value = extractErrorMessage(submitError, t("common.genericServerError"));
   } finally {
     submitting.value = false;
   }
@@ -45,9 +51,9 @@ async function onClose(): Promise<void> {
   error.value = null;
   submitting.value = true;
   try {
-    await tournaments.closeRegistration(props.tournamentId);
+    showTournament(cache, await closeRegistration(props.tournamentId));
   } catch (submitError) {
-    error.value = extractErrorMessage(submitError, t("tournamentAdmin.genericServerError"));
+    error.value = extractErrorMessage(submitError, t("common.genericServerError"));
   } finally {
     submitting.value = false;
   }
@@ -59,31 +65,21 @@ async function onClose(): Promise<void> {
     <h2 class="mb-1 text-lg">{{ t("tournamentAdmin.registrationTitle") }}</h2>
     <p class="mb-4 text-sm">
       {{ t("tournamentAdmin.registrationSubtitle") }}
-      <strong class="text-text">{{ t(`estados.${tournaments.current?.status}`) }}</strong>
+      <strong class="text-text">{{ t(`estados.${status}`) }}</strong>
     </p>
 
-    <Transition
-      enter-active-class="transition duration-180 ease-out"
-      enter-from-class="opacity-0 -translate-y-1.5"
-      leave-active-class="transition duration-180 ease-in"
-      leave-to-class="opacity-0 -translate-y-1.5"
-    >
-      <p v-if="error" role="alert" class="banner banner--error mb-4">{{ error }}</p>
-    </Transition>
+    <FadeSlide>
+      <FormBanner v-if="error" kind="error" class="mb-4">{{ error }}</FormBanner>
+    </FadeSlide>
 
     <div class="flex flex-wrap gap-3">
-      <button
-        type="button"
-        class="btn btn-primary"
-        :disabled="submitting || tournaments.current?.status !== 'CREATED'"
-        @click="onOpen"
-      >
+      <button type="button" class="btn btn-primary" :disabled="submitting || status !== 'CREATED'" @click="onOpen">
         {{ t("tournamentAdmin.openRegistration") }}
       </button>
       <button
         type="button"
         class="btn btn-ghost"
-        :disabled="submitting || tournaments.current?.status !== 'REGISTRATION_OPEN'"
+        :disabled="submitting || status !== 'REGISTRATION_OPEN'"
         @click="onClose"
       >
         {{ t("tournamentAdmin.closeRegistration") }}

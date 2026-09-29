@@ -1,46 +1,51 @@
 <script setup lang="ts">
-import { createColumnHelper } from "@tanstack/vue-table";
-import { computed, h, ref } from "vue";
+import { useQuery, useQueryCache } from "@pinia/colada";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
-import { usePlayerSearch } from "../../lib/usePlayerSearch";
 import type { PlayerSearchResult } from "../../services/players";
-import { type EnrolledPlayer } from "../../services/tournaments";
-import { useTournamentsStore } from "../../stores/tournaments";
+import {
+  addEnrolledPlayer,
+  enrolledPlayersQuery,
+  removeEnrolledPlayer,
+  tournamentQuery,
+} from "../../queries/tournaments";
+import { enrollPlayer, withdrawPlayer, type EnrolledPlayer } from "../../services/tournaments";
 import DataTable from "../ui/DataTable.vue";
+import FadeSlide from "../ui/FadeSlide.vue";
+import FormBanner from "../ui/FormBanner.vue";
+import PlayerSearchPicker from "../ui/PlayerSearchPicker.vue";
+import { dataTableColumns } from "../ui/dataTableFeatures";
 
 const props = defineProps<{ tournamentId: string }>();
 
-const tournaments = useTournamentsStore();
+const cache = useQueryCache();
+const tournament = useQuery(() => tournamentQuery(props.tournamentId));
+const roster = useQuery(() => enrolledPlayersQuery(props.tournamentId));
+const enrolledPlayers = computed(() => roster.data.value ?? []);
 const confirm = useConfirm();
 const { t } = useI18n();
 
 // --- HU07: enroll player ---
 
-const {
-  query: playerQuery,
-  results: searchResults,
-  pending: searching,
-  status: searchStatus,
-  reset: resetSearch,
-} = usePlayerSearch();
 const submitting = ref(false);
 const error = ref<string | null>(null);
 
-const registrationOpen = computed(() => tournaments.current?.status === "REGISTRATION_OPEN");
-const enrolledIds = computed(() => new Set(tournaments.enrolledPlayers.map((p) => p.playerId)));
+const registrationOpen = computed(() => tournament.data.value?.status === "REGISTRATION_OPEN");
+const enrolledIds = computed(() => new Set(enrolledPlayers.value.map((p) => p.playerId)));
 
-/** Enrolls a chosen player from the search results into the tournament. */
-async function onEnroll(player: PlayerSearchResult): Promise<void> {
+/** Enrolls a chosen player from the search results into the tournament; answers whether it worked. */
+async function onEnroll(player: PlayerSearchResult): Promise<boolean> {
   error.value = null;
   submitting.value = true;
   try {
-    await tournaments.enrollPlayer(props.tournamentId, player.id);
-    resetSearch();
+    addEnrolledPlayer(cache, props.tournamentId, await enrollPlayer(props.tournamentId, player.id));
+    return true;
   } catch (submitError) {
-    error.value = extractErrorMessage(submitError, t("tournamentAdmin.genericServerError"));
+    error.value = extractErrorMessage(submitError, t("common.genericServerError"));
+    return false;
   } finally {
     submitting.value = false;
   }
@@ -65,37 +70,24 @@ async function onWithdraw(player: { playerId: string; name: string }): Promise<v
   error.value = null;
   withdrawing.value = player.playerId;
   try {
-    await tournaments.withdrawPlayer(props.tournamentId, player.playerId);
+    await withdrawPlayer(props.tournamentId, player.playerId);
+    removeEnrolledPlayer(cache, props.tournamentId, player.playerId);
   } catch (submitError) {
-    error.value = extractErrorMessage(submitError, t("tournamentAdmin.genericServerError"));
+    error.value = extractErrorMessage(submitError, t("common.genericServerError"));
   } finally {
     withdrawing.value = null;
   }
 }
 
-const columnHelper = createColumnHelper<EnrolledPlayer>();
+const columnHelper = dataTableColumns<EnrolledPlayer>();
 
 const columns = [
   columnHelper.accessor("name", { header: () => t("tournamentAdmin.tableName") }),
   columnHelper.accessor("universityCode", { header: () => t("tournamentAdmin.tableCode") }),
   columnHelper.accessor("program", { header: () => t("tournamentAdmin.tableProgram") }),
   columnHelper.accessor("semester", { header: () => t("tournamentAdmin.tableSemester") }),
-  columnHelper.display({
-    id: "actions",
-    header: "",
-    enableSorting: false,
-    cell: ({ row }) =>
-      h(
-        "button",
-        {
-          type: "button",
-          class: "btn btn-ghost",
-          disabled: withdrawing.value === row.original.playerId,
-          onClick: () => onWithdraw(row.original),
-        },
-        t("tournamentAdmin.withdraw"),
-      ),
-  }),
+  // Rendered by the template (#cell-actions).
+  columnHelper.display({ id: "actions", header: "", enableSorting: false }),
 ];
 </script>
 
@@ -104,57 +96,21 @@ const columns = [
     <h2 class="mb-1 text-lg">{{ t("tournamentAdmin.playersTitle") }}</h2>
     <p class="mb-4 text-sm">{{ t("tournamentAdmin.playersSubtitle") }}</p>
 
-    <Transition
-      enter-active-class="transition duration-180 ease-out"
-      enter-from-class="opacity-0 -translate-y-1.5"
-      leave-active-class="transition duration-180 ease-in"
-      leave-to-class="opacity-0 -translate-y-1.5"
-    >
-      <p v-if="error" role="alert" class="banner banner--error mb-4">{{ error }}</p>
-    </Transition>
+    <FadeSlide>
+      <FormBanner v-if="error" kind="error" class="mb-4">{{ error }}</FormBanner>
+    </FadeSlide>
 
-    <div class="field relative">
-      <label for="playerQuery">{{ t("tournamentAdmin.searchLabel") }}</label>
-      <input
-        id="playerQuery"
-        v-model="playerQuery"
-        type="search"
-        name="playerQuery"
-        autocomplete="off"
-        spellcheck="false"
-        :placeholder="t('tournamentAdmin.searchPlaceholder')"
-        :disabled="!registrationOpen"
-      />
-      <p class="sr-only" role="status">{{ searchStatus }}</p>
-
-      <ul
-        v-if="playerQuery.trim() && registrationOpen"
-        class="mt-2 list-none overflow-hidden rounded-lg border border-border-soft p-0"
-      >
-        <li v-if="searching" class="px-3.5 py-2.5 text-sm text-text-muted">{{ t("tournamentAdmin.searching") }}</li>
-        <template v-else-if="searchResults.length > 0">
-          <li
-            v-for="player in searchResults"
-            :key="player.id"
-            class="flex items-center justify-between gap-3 border-b border-border-soft px-3.5 py-2.5 last:border-b-0"
-          >
-            <div class="flex flex-col gap-0.5">
-              <strong class="text-text">{{ player.name }}</strong>
-              <span class="text-sm text-text-muted">{{ player.universityCode }} · {{ player.program }}</span>
-            </div>
-            <button
-              type="button"
-              class="btn btn-ghost"
-              :disabled="submitting || enrolledIds.has(player.id)"
-              @click="onEnroll(player)"
-            >
-              {{ enrolledIds.has(player.id) ? t("tournamentAdmin.alreadyEnrolled") : t("tournamentAdmin.enroll") }}
-            </button>
-          </li>
-        </template>
-        <li v-else class="px-3.5 py-2.5 text-sm text-text-muted">{{ t("tournamentAdmin.noResults") }}</li>
-      </ul>
-    </div>
+    <PlayerSearchPicker
+      id="playerQuery"
+      :label="t('tournamentAdmin.searchLabel')"
+      :placeholder="t('tournamentAdmin.searchPlaceholder')"
+      :action-label="t('tournamentAdmin.enroll')"
+      :added-label="t('tournamentAdmin.alreadyEnrolled')"
+      :is-added="(player) => enrolledIds.has(player.id)"
+      :busy="submitting"
+      :pick="onEnroll"
+      :disabled="!registrationOpen"
+    />
     <p v-if="!registrationOpen" class="mb-4 text-sm text-text-muted">
       {{ t("tournamentAdmin.registrationClosedHint") }}
     </p>
@@ -162,10 +118,16 @@ const columns = [
     <DataTable
       class="mt-4"
       :columns="columns"
-      :data="tournaments.enrolledPlayers"
+      :data="enrolledPlayers"
       :search-placeholder="t('tournamentAdmin.tableSearchPlaceholder')"
       :empty-message="t('tournamentAdmin.noPlayers')"
       sync-url
-    />
+    >
+      <template #cell-actions="{ row }">
+        <button type="button" class="btn btn-ghost" :disabled="withdrawing === row.playerId" @click="onWithdraw(row)">
+          {{ t("tournamentAdmin.withdraw") }}
+        </button>
+      </template>
+    </DataTable>
   </section>
 </template>

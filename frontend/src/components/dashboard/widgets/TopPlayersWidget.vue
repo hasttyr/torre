@@ -29,7 +29,7 @@ const maxPoints = computed(() => Math.max(1, ...(data.value ?? []).map((player) 
       <li v-for="(player, index) in data" :key="player.playerId" class="grid grid-cols-[2rem_1fr] items-start gap-3">
         <span
           class="inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold tabular-nums"
-          :class="index === 0 ? 'bg-accent text-[#17130a]' : 'bg-surface-2 text-text-muted'"
+          :class="index === 0 ? 'bg-accent text-on-accent' : 'bg-surface-2 text-text-muted'"
         >
           {{ index + 1 }}
         </span>

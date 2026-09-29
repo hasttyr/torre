@@ -41,13 +41,13 @@ const props = withDefaults(
    along with the rest of the app because it reads the same CSS variables
    (--surface, --accent, etc.), not fixed values.
 
-   Two-class selector (higher specificity than main.css's ".dp__theme_light"/
-   ".dp__theme_dark", which declare their own defaults directly on the same
-   dp__main element): without this, a custom property declared directly on
+   Two-class selector (higher specificity than main.css's ".dp--theme-light"/
+   ".dp--theme-dark", which declare their own defaults directly on the same
+   dp--main element): without this, a custom property declared directly on
    the element wins even if :root redefines it, because there :root is only
    an inherited value. */
-.dp__main.dp__theme_light,
-.dp__main.dp__theme_dark {
+.dp--main.dp--theme-light,
+.dp--main.dp--theme-dark {
   --dp-font-family: var(--font-sans);
   --dp-border-radius: 8px;
   --dp-cell-border-radius: 8px;
@@ -58,7 +58,7 @@ const props = withDefaults(
   --dp-hover-text-color: var(--text);
   --dp-hover-icon-color: var(--text);
   --dp-primary-color: var(--accent);
-  --dp-primary-text-color: #17130a;
+  --dp-primary-text-color: var(--on-accent);
   --dp-secondary-color: var(--text-muted);
   --dp-border-color: var(--border);
   --dp-menu-border-color: var(--border-soft);
@@ -73,7 +73,7 @@ const props = withDefaults(
   --dp-highlight-color: color-mix(in oklab, var(--accent) 20%, transparent);
 }
 
-.dp__input {
+.dp--input {
   font: inherit;
   color: var(--text);
   background: var(--surface-2);
@@ -82,17 +82,16 @@ const props = withDefaults(
   padding: 0.7rem 0.85rem 0.7rem 2.4rem;
 }
 
-.dp__input:hover {
+.dp--input:hover {
   border-color: color-mix(in oklab, var(--accent) 40%, var(--border));
 }
 
-.dp__input_focus {
+.dp--input-focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 15%, transparent);
 }
 
-.dp__theme_light,
-.dp__theme_dark {
-  --dp-box-shadow: var(--shadow-md);
+.dp--menu {
+  box-shadow: var(--shadow-md);
 }
 </style>

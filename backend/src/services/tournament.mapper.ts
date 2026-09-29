@@ -1,21 +1,5 @@
-import type { TiebreakCriterion, Tournament } from "@prisma/client";
-
-export interface TournamentDto {
-  id: string;
-  name: string;
-  startDate: Date;
-  endDate: Date;
-  status: string;
-  format: string;
-  roundsCount: number | null;
-  timeControl: string | null;
-  restrictedProgram: string | null;
-  minimumSemester: number | null;
-  byePoints: number;
-  organizerId: string;
-  tiebreakCriteria: { name: string; order: number }[];
-  createdAt: Date;
-}
+import type { TiebreakCriterion, Tournament } from "../generated/prisma/client";
+import type { TournamentDto } from "../contracts/responses";
 
 /** Maps a Prisma tournament (with its tiebreak criteria) to the public {@link TournamentDto} shape. */
 export function toTournamentDto(tournament: Tournament & { tiebreakCriteria?: TiebreakCriterion[] }): TournamentDto {
@@ -39,3 +23,5 @@ export function toTournamentDto(tournament: Tournament & { tiebreakCriteria?: Ti
     createdAt: tournament.createdAt,
   };
 }
+
+export type { TournamentDto };

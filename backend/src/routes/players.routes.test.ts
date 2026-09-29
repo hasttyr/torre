@@ -1,8 +1,8 @@
-import jwt from "jsonwebtoken";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../app";
+import { signSessionToken } from "../services/sessionToken";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
@@ -19,7 +19,7 @@ const { prismaMock } = vi.hoisted(() => ({
 vi.mock("../config/prisma", () => ({ prisma: prismaMock }));
 
 function tokenFor(role: string): string {
-  return jwt.sign({ sub: "user-1", role }, "test-secret", { expiresIn: "1h" });
+  return signSessionToken({ id: "user-1", role });
 }
 
 describe("GET /api/players", () => {
@@ -47,12 +47,20 @@ describe("GET /api/players", () => {
       {
         id: "player-1",
         name: "Luis Gómez",
-        email: "luis@example.com",
         universityCode: "U123",
         program: "Sistemas",
         semester: 5,
       },
     ]);
+  });
+
+  it("responds 400 to a search term over 100 characters", async () => {
+    const response = await request(createApp())
+      .get(`/api/players?q=${"a".repeat(101)}`)
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER")}`);
+
+    expect(response.status).toBe(400);
+    expect(prismaMock.player.findMany).not.toHaveBeenCalled();
   });
 
   it("responds 401 without a token", async () => {

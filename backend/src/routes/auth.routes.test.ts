@@ -1,9 +1,9 @@
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../app";
+import { signSessionToken } from "../services/sessionToken";
 
 // vi.mock se hoistea por encima de TODO el archivo (incluidas las
 // declaraciones const), así que el mock en sí debe crearse dentro de
@@ -165,7 +165,7 @@ describe("POST /api/auth/register", () => {
     });
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ error: "Error interno del servidor" });
+    expect(response.body).toEqual({ error: "Error interno del servidor", code: "INTERNAL_ERROR" });
 
     consoleErrorSpy.mockRestore();
   });
@@ -176,7 +176,7 @@ describe("POST /api/auth/login", () => {
     vi.clearAllMocks();
   });
 
-  it("authenticates with valid credentials and returns token + user", async () => {
+  it("authenticates with valid credentials: the user in the body, the session in an HttpOnly cookie", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
     prismaMock.user.findUnique.mockResolvedValue({
       id: "user-1",
@@ -194,7 +194,8 @@ describe("POST /api/auth/login", () => {
 
     expect(response.status).toBe(200);
     expect(response.body.user).toMatchObject({ id: "user-1", email: "ana@example.com", role: "ORGANIZER" });
-    expect(typeof response.body.token).toBe("string");
+    expect(response.body.token).toBeUndefined();
+    expect(String(response.headers["set-cookie"])).toMatch(/^torre_session=[^;]+;.*HttpOnly/);
     expect(response.body.user.passwordHash).toBeUndefined();
   });
 
@@ -344,7 +345,7 @@ describe("POST /api/auth/password/reset", () => {
 
 describe("POST /api/auth/logout", () => {
   it("responds 204 with a valid token", async () => {
-    const token = jwt.sign({ sub: "user-1", role: "ORGANIZER" }, "test-secret", { expiresIn: "1h" });
+    const token = signSessionToken({ id: "user-1", role: "ORGANIZER" });
 
     const response = await request(createApp()).post("/api/auth/logout").set("Authorization", `Bearer ${token}`);
 

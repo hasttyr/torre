@@ -1,33 +1,26 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../../generated/prisma/client";
 
 import type { AuthUser } from "../../../types/express";
-import { emptyTally, OFFICIAL_GAME, tallyGames, totalsOf, type PlayerTotals } from "../playerStats";
+import { emptyTally, OFFICIAL_GAME, tallyGames, totalsOf } from "../playerStats";
 import { loadRankedTournaments } from "../rankings";
-import { playerWhere, resolvePlayerScope } from "../scopes";
+import { gamesPlayedBy, playerWhere, resolvePlayerScope } from "../scopes";
+import type { PlayerOverviewRowDto, TopPlayerDto, UsersByRoleDto } from "../../../contracts/responses";
 
 // Widgets about a LIST of people: the players the viewer may see, the
 // all-time leaderboard, and the user base itself.
 
-export interface PlayerOverviewRowDto extends PlayerTotals {
-  playerId: string;
-  name: string;
-  program: string;
-  tournaments: number;
-}
-
 /** PLAYERS_OVERVIEW: per-player stats for every player in the viewer's scope (a coach's roster, or everyone). */
 export async function loadPlayersOverview(prisma: PrismaClient, viewer: AuthUser): Promise<PlayerOverviewRowDto[]> {
   const scope = await resolvePlayerScope(prisma, viewer);
-  const where = playerWhere(scope);
 
   const [players, matches] = await Promise.all([
     prisma.player.findMany({
-      where,
+      where: playerWhere(scope),
       include: { user: { select: { name: true } }, _count: { select: { enrollments: true } } },
       orderBy: { user: { name: "asc" } },
     }),
     prisma.match.findMany({
-      where: { ...OFFICIAL_GAME, OR: [{ white: where }, { black: where }] },
+      where: { ...OFFICIAL_GAME, ...gamesPlayedBy(scope) },
       select: {
         whiteId: true,
         blackId: true,
@@ -53,15 +46,6 @@ export async function loadPlayersOverview(prisma: PrismaClient, viewer: AuthUser
     tournaments: player._count.enrollments,
     ...totalsOf(tallies.get(player.id) ?? emptyTally()),
   }));
-}
-
-export interface TopPlayerDto {
-  playerId: string;
-  name: string;
-  tournaments: number;
-  titles: number;
-  podiums: number;
-  points: number;
 }
 
 const TOP_PLAYERS_LIMIT = 10;
@@ -94,12 +78,6 @@ export async function loadTopPlayers(prisma: PrismaClient): Promise<TopPlayerDto
     .slice(0, TOP_PLAYERS_LIMIT);
 }
 
-export interface UsersByRoleDto {
-  role: string;
-  active: number;
-  inactive: number;
-}
-
 /** USERS_BY_ROLE: how many active/inactive accounts each role has. */
 export async function loadUsersByRole(prisma: PrismaClient): Promise<UsersByRoleDto[]> {
   const [roles, groups] = await Promise.all([
@@ -113,3 +91,5 @@ export async function loadUsersByRole(prisma: PrismaClient): Promise<UsersByRole
     return { role: role.name, active: countFor("ACTIVE"), inactive: countFor("INACTIVE") };
   });
 }
+
+export type { PlayerOverviewRowDto, TopPlayerDto, UsersByRoleDto };

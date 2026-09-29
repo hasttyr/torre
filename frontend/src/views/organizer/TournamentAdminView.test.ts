@@ -1,4 +1,5 @@
-import { mount } from "@vue/test-utils";
+import { useQueryCache } from "@pinia/colada";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
@@ -7,7 +8,8 @@ import { i18n } from "../../i18n";
 import { clickConfirmDialogButton, mountConfirmDialogHost } from "../../test-support/confirmDialog";
 import TournamentAdminView from "./TournamentAdminView.vue";
 
-vi.mock("../../services/tournaments", () => ({
+vi.mock("../../services/tournaments", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../services/tournaments")>()),
   createTournament: vi.fn(),
   getTournament: vi.fn(),
   configureTournament: vi.fn(),
@@ -68,7 +70,7 @@ async function mountView() {
   await router.isReady();
 
   const wrapper = mount(TournamentAdminView, { global: { plugins: [router, i18n] } });
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await flushPromises();
   await wrapper.vm.$nextTick();
   return { wrapper, router };
 }
@@ -110,7 +112,7 @@ describe("TournamentAdminView", () => {
 
     const openBtn = wrapper.findAll("button").find((btn) => btn.text() === "Abrir inscripciones")!;
     await openBtn.trigger("click");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(openRegistrationMock).toHaveBeenCalledWith("tournament-1");
@@ -132,7 +134,6 @@ describe("TournamentAdminView", () => {
       {
         id: "j1",
         name: "Luis Gómez",
-        email: "luis@example.com",
         universityCode: "U1",
         program: "Sistemas",
         semester: 5,
@@ -155,7 +156,6 @@ describe("TournamentAdminView", () => {
       {
         id: "j1",
         name: "Luis Gómez",
-        email: "luis@example.com",
         universityCode: "U1",
         program: "Sistemas",
         semester: 5,
@@ -178,7 +178,7 @@ describe("TournamentAdminView", () => {
 
     const enrollBtn = wrapper.findAll("button").find((btn) => btn.text() === "Inscribir")!;
     await enrollBtn.trigger("click");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(enrollPlayerMock).toHaveBeenCalledWith("tournament-1", "j1");
@@ -207,10 +207,10 @@ describe("TournamentAdminView", () => {
     await withdrawBtn.trigger("click");
     await wrapper.vm.$nextTick();
     await clickConfirmDialogButton("Retirar");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
-    expect(withdrawPlayerMock).toHaveBeenCalledWith("tournament-1", "j1", undefined);
+    expect(withdrawPlayerMock).toHaveBeenCalledWith("tournament-1", "j1");
     expect(wrapper.text()).not.toContain("Luis Gómez");
   });
 
@@ -233,7 +233,7 @@ describe("TournamentAdminView", () => {
     await withdrawBtn.trigger("click");
     await wrapper.vm.$nextTick();
     await clickConfirmDialogButton("Cancelar");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(withdrawPlayerMock).not.toHaveBeenCalled();
   });
@@ -252,7 +252,7 @@ describe("TournamentAdminView", () => {
 
     const { wrapper } = await mountView();
 
-    for (const id of ["roundsCount", "timeControl", "tiebreaks", "restrictedProgram", "minimumSemester"]) {
+    for (const id of ["roundsCount", "timeControl", "restrictedProgram", "minimumSemester"]) {
       expect(wrapper.get(`#${id}`).attributes()).toMatchObject({ name: id, autocomplete: "off" });
     }
   });
@@ -270,17 +270,54 @@ describe("TournamentAdminView", () => {
     });
     await router.push("/torneos/tournament-1");
     const wrapper = mount({ template: "<RouterView />" }, { global: { plugins: [router, i18n] } });
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     await wrapper.get("#roundsCount").setValue("7");
     const navigation = router.push("/panel");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     expect(document.body.textContent).toContain("Tienes cambios sin guardar");
     await clickConfirmDialogButton("Cancelar");
     await navigation;
 
     expect(router.currentRoute.value.path).toBe("/torneos/tournament-1");
+  });
+
+  it("saves the tiebreak order as the catalog's criteria, starting from HU13's suggestion", async () => {
+    getTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
+    configureTournamentMock.mockResolvedValue(CREATED_TOURNAMENT);
+
+    const { wrapper } = await mountView();
+    await wrapper.get("button[aria-label='Quitar ARO']").trigger("click");
+    await wrapper.get("button[aria-label='Subir Resultado particular']").trigger("click");
+    await wrapper.get(".config-form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(configureTournamentMock).toHaveBeenCalledWith(
+      "tournament-1",
+      expect.objectContaining({
+        tiebreakCriteria: [
+          { name: "BUCHHOLZ", order: 1 },
+          { name: "BUCHHOLZ_CUT1", order: 2 },
+          { name: "DIRECT_ENCOUNTER", order: 3 },
+          { name: "SONNEBORN_BERGER", order: 4 },
+        ],
+      }),
+    );
+  });
+
+  it("keeps what the organizer is typing when the tournament is read again in the background", async () => {
+    // Like the server: every read is a new object.
+    getTournamentMock.mockImplementation(async () => ({ ...CREATED_TOURNAMENT }));
+    const { wrapper } = await mountView();
+    await wrapper.get("#timeControl").setValue("90+30");
+
+    // What returning to the tab, or a real-time event, does.
+    await useQueryCache().invalidateQueries({ key: ["tournament", "tournament-1"] });
+    await flushPromises();
+
+    expect(getTournamentMock).toHaveBeenCalledTimes(2);
+    expect((wrapper.get("#timeControl").element as HTMLInputElement).value).toBe("90+30");
   });
 
   it("saves the tournament configuration (HU05)", async () => {
@@ -292,7 +329,7 @@ describe("TournamentAdminView", () => {
     await wrapper.get("#roundsCount").setValue("7");
     await wrapper.get("#timeControl").setValue("90+30");
     await wrapper.get(".config-form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(configureTournamentMock).toHaveBeenCalledWith(
@@ -316,7 +353,7 @@ describe("TournamentAdminView", () => {
     expect(closeRegistrationMock).not.toHaveBeenCalled();
 
     await clickConfirmDialogButton("Cerrar inscripciones");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(closeRegistrationMock).toHaveBeenCalledWith("tournament-1");
   });
@@ -330,7 +367,7 @@ describe("TournamentAdminView", () => {
     await closeBtn.trigger("click");
     await wrapper.vm.$nextTick();
     await clickConfirmDialogButton("Cancelar");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(closeRegistrationMock).not.toHaveBeenCalled();
   });

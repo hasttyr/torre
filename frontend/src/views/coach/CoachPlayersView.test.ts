@@ -1,4 +1,4 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
@@ -31,7 +31,10 @@ const LINKED_PLAYER = {
   program: "Sistemas",
   semester: 5,
   linkedAt: "2026-09-17T00:00:00.000Z",
+  acceptedAt: "2026-09-18T00:00:00.000Z",
 };
+// Asked to follow, not accepted yet (HU24).
+const PENDING_PLAYER = { ...LINKED_PLAYER, playerId: "player-2", name: "Eva Ruiz", acceptedAt: null };
 
 const COACH_TOURNAMENT = {
   id: "tournament-1",
@@ -60,7 +63,7 @@ async function mountView() {
   await router.isReady();
 
   const wrapper = mount(CoachPlayersView, { global: { plugins: [router, i18n] } });
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await flushPromises();
   await wrapper.vm.$nextTick();
   return { wrapper };
 }
@@ -107,10 +110,39 @@ describe("CoachPlayersView", () => {
     expect(document.body.textContent).toContain("¿Desvincularte de Luis Gómez?");
 
     await clickConfirmDialogButton(answer);
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(unlinkPlayerMock).toHaveBeenCalledTimes(unlinked ? 1 : 0);
     if (unlinked) expect(unlinkPlayerMock).toHaveBeenCalledWith("player-1");
+  });
+
+  it("marks a player who hasn't accepted the request yet", async () => {
+    listLinkedPlayersMock.mockResolvedValue([LINKED_PLAYER, PENDING_PLAYER]);
+    listCoachTournamentsMock.mockResolvedValue([]);
+
+    const { wrapper } = await mountView();
+    const rows = wrapper.findAll("[data-linked-player]");
+
+    expect(rows[0].text()).not.toContain("Esperando que acepte");
+    expect(rows[1].text()).toContain("Eva Ruiz");
+    expect(rows[1].text()).toContain("Esperando que acepte");
+  });
+
+  it("cancels a pending request right away: nothing was shared yet", async () => {
+    listLinkedPlayersMock.mockResolvedValue([PENDING_PLAYER]);
+    listCoachTournamentsMock.mockResolvedValue([]);
+    unlinkPlayerMock.mockResolvedValue(undefined);
+    mountConfirmDialogHost();
+
+    const { wrapper } = await mountView();
+    await wrapper
+      .findAll("button")
+      .find((btn) => btn.text() === "Cancelar solicitud")!
+      .trigger("click");
+    await flushPromises();
+
+    expect(document.body.textContent).not.toContain("¿Desvincularte");
+    expect(unlinkPlayerMock).toHaveBeenCalledWith("player-2");
   });
 
   it("shows an error when loading fails", async () => {

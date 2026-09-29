@@ -10,9 +10,9 @@ import {
 } from "reka-ui";
 import { computed, onMounted, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
 
 import { initialsOf } from "../../lib/initials";
+import { signOut } from "../../lib/signOut";
 import { useAuthStore } from "../../stores/auth";
 import { useLocaleStore } from "../../stores/locale";
 import { useThemeStore } from "../../stores/theme";
@@ -27,7 +27,6 @@ const props = defineProps<{ openOnMount?: boolean; focusOnMount?: boolean }>();
 const auth = useAuthStore();
 const theme = useThemeStore();
 const locale = useLocaleStore();
-const router = useRouter();
 const { t } = useI18n();
 
 const open = ref(props.openOnMount);
@@ -49,18 +48,13 @@ function toggleInPlace(event: Event, toggle: () => void): void {
   event.preventDefault();
   toggle();
 }
-
-async function onLogout(): Promise<void> {
-  await auth.logout();
-  router.push("/");
-}
 </script>
 
 <template>
   <DropdownMenuRoot v-model:open="open">
     <DropdownMenuTrigger
       ref="trigger"
-      class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-[#17130a] transition-opacity hover:opacity-90"
+      class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-on-accent transition-opacity hover:opacity-90"
       :aria-label="t('userMenu.menuAria', { name: auth.user?.name ?? '' })"
     >
       {{ initials }}
@@ -118,6 +112,9 @@ async function onLogout(): Promise<void> {
               {{ locale.locale.toUpperCase() }}
             </span>
           </DropdownMenuItem>
+          <p v-if="locale.switchFailed" role="alert" class="m-0 px-3 pb-2 text-xs text-error">
+            {{ t("locale.switchFailed") }}
+          </p>
         </div>
 
         <DropdownMenuSeparator class="h-px bg-border-soft" />
@@ -126,7 +123,7 @@ async function onLogout(): Promise<void> {
           <DropdownMenuItem as-child :class="ITEM_CLASS">
             <RouterLink to="/cuenta" class="text-text">{{ t("userMenu.myProfile") }}</RouterLink>
           </DropdownMenuItem>
-          <DropdownMenuItem :class="[ITEM_CLASS, 'text-error']" @select="onLogout">
+          <DropdownMenuItem :class="[ITEM_CLASS, 'text-error']" @select="signOut">
             {{ t("userMenu.logout") }}
           </DropdownMenuItem>
         </div>

@@ -2,8 +2,9 @@ import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { requireAuth, requireRole } from "./auth";
-import { HttpError } from "./errorHandler";
+import { actorOf, requireAuth, requireRole } from "./auth";
+import type { HttpError } from "../errors/apiErrors";
+import { signSessionToken } from "../services/sessionToken";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: { user: { findFirst: vi.fn() } },
@@ -18,8 +19,8 @@ function buildReq(headers: Record<string, string> = {}): Request {
   } as unknown as Request;
 }
 
-function signValidToken(overrides: Partial<{ sub: string; role: string }> = {}): string {
-  return jwt.sign({ sub: "user-1", role: "ORGANIZER", ...overrides }, "test-secret", { expiresIn: "1h" });
+function signValidToken(): string {
+  return signSessionToken({ id: "user-1", role: "ORGANIZER" });
 }
 
 /** Runs requireAuth and resolves with whatever it passed to next(). */
@@ -43,7 +44,7 @@ describe("requireAuth", () => {
     expect(error).toBeUndefined();
     expect(req.user).toEqual({ id: "user-1", role: "ORGANIZER" });
     expect(prismaMock.user.findFirst).toHaveBeenCalledWith({
-      where: { id: "user-1", status: "ACTIVE", role: { name: "ORGANIZER" } },
+      where: { id: "user-1", status: "ACTIVE", role: { name: "ORGANIZER" }, tokenVersion: 0 },
       select: { id: true },
     });
   });
@@ -57,6 +58,15 @@ describe("requireAuth", () => {
 
   it("rejects with 401 when the token is signed with a different secret", async () => {
     const token = jwt.sign({ sub: "user-1", role: "ORGANIZER" }, "otro-secreto", { expiresIn: "1h" });
+
+    expect(await runRequireAuth(buildReq({ authorization: `Bearer ${token}` }))).toMatchObject({ status: 401 });
+  });
+
+  it("rejects with 401 a token signed with another algorithm, even with the right secret", async () => {
+    const token = jwt.sign({ sub: "user-1", role: "ORGANIZER" }, "test-secret", {
+      algorithm: "HS512",
+      expiresIn: "1h",
+    });
 
     expect(await runRequireAuth(buildReq({ authorization: `Bearer ${token}` }))).toMatchObject({ status: 401 });
   });
@@ -114,5 +124,19 @@ describe("requireRole", () => {
     requireRole("ADMINISTRATOR")(req, {} as Response, next as NextFunction);
 
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 401 } satisfies Partial<HttpError>));
+  });
+});
+
+describe("actorOf", () => {
+  it("returns who the request is authenticated as", () => {
+    const req = { user: { id: "user-1", role: "COACH" } } as unknown as Request;
+
+    expect(actorOf(req)).toEqual({ id: "user-1", role: "COACH" });
+  });
+
+  it("answers 401 for a route that forgot requireAuth, instead of crashing with a 500", () => {
+    expect(() => actorOf({ user: undefined } as unknown as Request)).toThrow(
+      expect.objectContaining({ status: 401 }) as Error,
+    );
   });
 });

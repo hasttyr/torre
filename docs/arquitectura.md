@@ -37,6 +37,7 @@ Los servicios reciben el cliente de Prisma como parámetro (inversión de depend
 - **La clasificación se reconstruye completa** en cada cambio de resultado, dentro de la misma transacción, y guarda el puesto oficial (`standings.rank`). Nunca se parchea de forma incremental: una corrección (HU11) no puede dejar números viejos.
 - **Auditoría atómica (RN-11).** Toda acción crítica escribe su entrada de bitácora con el mismo cliente transaccional que la acción, así que se confirman juntas o no se confirma ninguna.
 - **La sesión se verifica en cada petición.** `requireAuth` valida la firma del JWT y además confirma en la BD que la cuenta sigue activa y conserva el rol que dice el token. Un bloqueo, una supresión de datos (HU22) o un cambio de rol surten efecto en la siguiente petición.
+- **La sesión es una cookie que ningún script lee.** El JWT viaja en una cookie `HttpOnly` y `SameSite=Lax` que pone el login, así que un XSS no puede llevárselo. Un cambio que llega con la cookie desde otro origen se rechaza (`CROSS_SITE_REQUEST`, defensa contra CSRF). En producción, Vercel reescribe `/api` hacia Render para que la cookie sea del mismo sitio que la app. El socket va directo a Render y se identifica con un ticket de un minuto firmado para otra audiencia, que no sirve como sesión. Detalles en [`despliegue.md`](despliegue.md).
 - **Extensión sin modificación (abierto/cerrado).** Un widget nuevo del panel se agrega con su clave en el catálogo, su cargador en `widgetRegistry.ts` y su componente en el frontend. No se tocan rutas ni controladores.
 - **Difusión después de confirmar.** Los eventos de Socket.IO se emiten fuera de las transacciones, así que ningún cliente se entera de un cambio que luego se revierte.
 
@@ -46,7 +47,8 @@ Los servicios reciben el cliente de Prisma como parámetro (inversión de depend
 |---|---|
 | `views/` | Pantallas por ruta, agrupadas por rol. Componen componentes; no llaman a axios directamente |
 | `components/` | Piezas reutilizables: `ui/` genéricas, `layout/` encabezado y menús, `charts/` gráficos, `dashboard/` widgets, `tournament/` sala y mesas, `tournament-admin/` gestión, `account/` perfil y privacidad, `home/` portada |
-| `stores/` (Pinia) | Estado compartido entre pantallas (sesión, torneo actual, rondas, tema, idioma, diálogo de confirmación) |
+| `queries/` (Pinia Colada) | Datos del servidor en caché: la clave y la petición de cada lectura, y cómo la actualiza cada cambio |
+| `stores/` (Pinia) | Estado del cliente: sesión, tema, idioma, diálogo de confirmación |
 | `services/` | Un módulo por recurso de la API. Es la única capa que conoce URLs y formatos |
 | `lib/` | Composables y utilidades sin estado global: formato y fechas, acceso por rol, datos de widgets, tiempo real, expiración de sesión, carga anticipada, estado en la URL |
 | `i18n/` | Textos en español (van en el arranque) e inglés (se descarga al elegirlo) |
@@ -54,9 +56,9 @@ Los servicios reciben el cliente de Prisma como parámetro (inversión de depend
 Decisiones:
 
 - **Arranque mínimo.** Solo la portada y el login van en el paquete inicial. Al arrancar se cargan la app (83 KB, 24 KB gzip), Vue con sus plugins en un solo archivo (192 KB, 71 KB gzip) y el CSS (62 KB, 12 KB gzip). Todo lo demás llega cuando hace falta: cada página, el cliente de Socket.IO (solo en las vistas en vivo), el selector de fechas, el menú de usuario, el diálogo de confirmación y el inglés.
-- **Datos en paralelo con el código.** Las páginas pesadas (panel, sala del torneo, gestión del torneo) inician sus peticiones en el `beforeEnter` de su ruta, antes de que se descargue su código, y la página toma la petición en vuelo al montarse. El panel lo hace con la caché de Pinia Colada (`lib/dashboardQueries.ts`), con una entrada por usuario para que en un computador compartido nadie vea el panel del anterior; la sala y la gestión, con `lib/routeData.ts` y `lib/pageData.ts`, hasta su migración. Los widgets del panel cargan código y datos juntos al acercarse a la pantalla, y el código de una página se precarga cuando el usuario pasa por su enlace.
+- **Datos en paralelo con el código.** Las páginas pesadas (panel, sala del torneo, gestión del torneo) inician sus peticiones en el `beforeEnter` de su ruta, antes de que se descargue su código, y la página toma la petición en vuelo al montarse. Lo hacen con la caché de Pinia Colada (`queries/`), la misma de la que leen las páginas: cada dato tiene su clave (todo lo de un torneo bajo `["tournament", id]`), así que las respuestas tardías de otra página no pisan la actual, y las peticiones repetidas se comparten. El panel lleva además el usuario en la clave, para que en un computador compartido nadie vea el del anterior. Los widgets del panel cargan código y datos juntos al acercarse a la pantalla, y el código de una página se precarga cuando el usuario pasa por su enlace.
 - **Despliegues sin pestañas rotas.** Los archivos compilados llevan un hash en el nombre y se cachean un año; `index.html` nunca. Una pestaña abierta antes de un despliegue que ya no encuentra un archivo pasa a navegar con recargas completas, que traen la versión nueva (`lib/staleChunks.ts`).
-- **Sesión expirada o invalidada.** `services/api.ts` detecta un 401 en una petición que llevaba token y avisa a `lib/sessionExpiry.ts`, que limpia la sesión local y lleva al login con un mensaje y la ruta de regreso. El gancho evita el ciclo de imports entre `api.ts` y el store.
+- **Sesión expirada o invalidada.** `services/api.ts` detecta un 401 mientras hay sesión abierta y avisa a `lib/sessionExpiry.ts`, que limpia la sesión local y lleva al login con un mensaje y la ruta de regreso. El gancho evita el ciclo de imports entre `api.ts` y el store.
 - **Tiempo real con coalescencia.** `lib/useTournamentLive.ts` entra a la sala del torneo, vuelve a entrar tras cada reconexión, escucha todo el catálogo de eventos y agrupa ráfagas en un solo refresco. El store de rondas descarta respuestas tardías de un torneo que el usuario ya dejó.
 - **Estado en la URL.** La pestaña, la ronda, el jugador o el club seleccionados viven en la query (`lib/useQueryParam.ts`): sobreviven a una recarga y un enlace copiado abre la página igual.
 - **Fechas de calendario.** Las fechas de torneo se guardan como medianoche UTC y se muestran en UTC (`lib/format.ts`); lo que el usuario escribe en un campo de fecha es un día de su calendario local (`lib/dates.ts`). Así ninguna fecha se corre un día en Colombia.
@@ -66,7 +68,7 @@ Decisiones:
 
 ## Contratos entre frontend y backend
 
-Son dos proyectos npm sin paquete compartido, así que algunos catálogos están duplicados a propósito: widgets, roles, eventos de tiempo real, resultados, géneros, discapacidades y tipos de solicitud de datos. `frontend/src/contracts.test.ts` lee el código del backend y falla si alguna copia se desalinea. Además, `services/http.test.ts` fija la URL, el método y el cuerpo exactos de cada llamada a la API.
+Son dos proyectos npm, pero comparten el contrato de la API: [`backend/src/contracts/`](../backend/src/contracts/) define los catálogos, los códigos de error y los tipos de cada respuesta, y el frontend compila contra esos mismos archivos con el alias `@contracts` (sus servicios convierten cada tipo a su forma JSON con `Serialized<T>`: las fechas llegan como texto). Un campo renombrado, quitado o con un valor nuevo no compila del lado que no lo sigue. La carpeta no depende de nada fuera de ella, para que los dos proyectos la puedan compilar, y el backend comprueba que los enums de la base y los esquemas de validación acepten exactamente los valores del contrato. Del lado del frontend quedan dos pruebas: `contracts.test.ts`, que cada valor que la interfaz muestra tenga texto en los dos idiomas, y `services/http.test.ts`, que fija la URL, el método y el cuerpo exactos de cada llamada a la API.
 
 ## Revisión de arquitectura (septiembre de 2026)
 
@@ -99,11 +101,8 @@ Son dos proyectos npm sin paquete compartido, así que algunos catálogos están
 
 ### Recomendaciones no aplicadas
 
-- **Integración continua**: un flujo de GitHub Actions que corra lint, tipos, tests y cobertura en cada push.
-- **Pruebas de extremo a extremo en navegador** (por ejemplo Playwright) para los flujos críticos. Hoy existen como scripts contra la API real, no en el repositorio.
 - **Emparejamiento imposible**: si ninguna combinación evita repetir un enfrentamiento, la generación se rechaza. Una mejora sería generar el borrador marcando la repetición, para que el organizador la autorice con un ajuste manual (RN-02).
 - **Paginación del listado de usuarios** si el sistema escala más allá de una universidad. La bitácora ya se pagina.
-- **Autenticación en Socket.IO**: hoy cualquiera puede entrar a la sala de un torneo. Es aceptable porque los eventos solo avisan "algo cambió" y los datos se piden por REST con permisos, pero conviene cerrarlo si los eventos llegan a llevar datos.
 
 ## Estrategia de pruebas
 
@@ -112,13 +111,16 @@ Son dos proyectos npm sin paquete compartido, así que algunos catálogos están
 | Dominio puro | Emparejamiento, desempates, agregaciones y documentos, sin BD | `services/pairing/*.test.ts`, `standings.calculator.test.ts`, etc. |
 | Servicios | Reglas, permisos, estados y atomicidad, con Prisma simulado | `services/**/*.test.ts` |
 | HTTP | Códigos de estado, compuertas de rol, validación y cabeceras | `routes/*.test.ts` |
+| Integración | Lo que solo la base puede probar: restricciones, transacciones, bloqueos y carreras, supresión de datos, Socket.IO de punta a punta | `backend/src/**/*.int.test.ts` (PostgreSQL real) |
 | Componentes y vistas | Interacción, estados vacíos y de error, accesibilidad básica | `frontend/src/**/*.test.ts` |
-| Contratos | Catálogos duplicados y llamadas a la API | `contracts.test.ts`, `services/http.test.ts` |
-| Despliegue | Reglas de caché y reescritura de `vercel.json` | `deployment.test.ts` |
+| Vistas por HTTP | Páginas a través del cliente HTTP real contra una API simulada (MSW): la API en el propio origen sin token a la vista, la sesión que vence, forma real de los errores | `frontend/src/views/overHttp.test.ts` |
+| Navegador (E2E) | Flujos entre roles con Playwright: el build de producción con su CSP, la API real y una base propia sembrada; la cookie de sesión invisible para los scripts y revocada al salir | `frontend/e2e/*.spec.ts` |
+| Contratos | Contrato compartido (lo verifica el compilador), enums de la base, textos de cada catálogo y llamadas a la API | `backend/src/contracts/contracts.test.ts`, `contracts.test.ts`, `services/http.test.ts` |
+| Despliegue | Reglas de caché, la reescritura de `/api` hacia el backend y la CSP de `vercel.json` | `deployment.test.ts` |
 
 ```bash
 npm test               # en backend/ y en frontend/
 npm run test:coverage  # informe de cobertura en coverage/
 ```
 
-Cobertura actual: backend 95 % de líneas y 88 % de ramas (341 tests); frontend 91 % de líneas y 84 % de ramas (437 tests).
+Cobertura actual: backend 97 % de líneas y 90 % de ramas (545 tests: 472 unitarios y 73 de integración contra PostgreSQL); frontend 95 % de líneas y 88 % de ramas (571 tests, más 9 de navegador con Playwright).

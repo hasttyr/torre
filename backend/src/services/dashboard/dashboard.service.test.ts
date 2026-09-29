@@ -1,7 +1,7 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../generated/prisma/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { HttpError } from "../../middlewares/errorHandler";
+import { HttpError } from "../../errors/apiErrors";
 import { getDashboard, getWidgetData, listDashboardLayouts, updateRoleLayout } from "./dashboard.service";
 import { WIDGET_KEYS } from "./widgetCatalog";
 
@@ -144,7 +144,10 @@ describe("dashboard layouts", () => {
   it("replaces a role's layout keeping the given order, and audits it", async () => {
     prisma.role.findUnique.mockResolvedValue({ id: "role-coach" });
 
-    const result = await updateRoleLayout(asClient(prisma), "COACH", ["TOP_PLAYERS", "PLAYER_SUMMARY"], "admin-1");
+    const result = await updateRoleLayout(asClient(prisma), "COACH", ["TOP_PLAYERS", "PLAYER_SUMMARY"], {
+      id: "admin-1",
+      role: "ADMINISTRATOR",
+    });
 
     expect(result).toEqual({ role: "COACH", widgets: ["TOP_PLAYERS", "PLAYER_SUMMARY"] });
     expect(prisma.tx.roleWidget.createMany).toHaveBeenCalledWith({
@@ -164,6 +167,8 @@ describe("dashboard layouts", () => {
   it("responds 404 when the role row doesn't exist", async () => {
     prisma.role.findUnique.mockResolvedValue(null);
 
-    await expect(updateRoleLayout(asClient(prisma), "COACH", [], "admin-1")).rejects.toMatchObject({ status: 404 });
+    await expect(
+      updateRoleLayout(asClient(prisma), "COACH", [], { id: "admin-1", role: "ADMINISTRATOR" }),
+    ).rejects.toMatchObject({ status: 404 });
   });
 });

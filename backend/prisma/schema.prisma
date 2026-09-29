@@ -9,23 +9,23 @@
 // these English identifiers one-to-one, listed in each model's comment
 // where the mapping isn't obvious from the name alone.
 //
-// Deliberate scope: only the entities from Specific Objective 3 (User,
+// The model grew with the roadmap: Specific Objective 3's entities (User,
 // Role, Player, Tournament, Round, Match, Result, TiebreakCriterion,
-// Standing, Enrollment). Club, Federation, CoachPlayer link, AuditLog and
-// manual pairing adjustment belong to later increments (S10-S13 of the
-// roadmap) and get added to the schema when that week is coded, not before.
-//
-// Enrollment was pulled forward to S6 (instead of waiting for S10-S13 like
-// the rest of this original comment suggested) because HU06/HU07 depend on
-// it directly to enforce RN-01 (no duplicate enrollment per tournament).
+// Standing) came first, then Enrollment (HU06/HU07, RN-01), Club and
+// CoachPlayer (HU23/HU24), AuditLog (RN-11), the data-subject requests
+// (HU19/HU22) and the dashboard layouts (RoleWidget).
 
+// The client is generated into src/ (git-ignored: run `npm run prisma:generate`)
+// and compiled with the app, as CommonJS like the rest of the backend.
 generator client {
-  provider = "prisma-client-js"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
+// The connection string lives in prisma.config.ts (CLI) and config/prisma.ts (app).
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // The source diagrams type "estado" as a generic string; refined to an enum
@@ -61,7 +61,7 @@ enum MatchStatus {
 }
 
 model Role {
-  id   String @id @default(uuid())
+  id   String @id @default(uuid()) @db.Uuid
   name String @unique
 
   users   User[]
@@ -78,8 +78,8 @@ model Role {
 // and adding one shouldn't also require a migration. ADMINISTRATOR has no
 // rows here: it always sees the whole catalog.
 model RoleWidget {
-  id        String @id @default(uuid())
-  roleId    String @map("role_id")
+  id        String @id @default(uuid()) @db.Uuid
+  roleId    String @map("role_id") @db.Uuid
   widgetKey String @map("widget_key")
   position  Int
 
@@ -93,14 +93,21 @@ model RoleWidget {
 }
 
 model User {
-  id           String     @id @default(uuid())
+  id           String     @id @default(uuid()) @db.Uuid
   name         String
   email        String     @unique
   passwordHash String     @map("password_hash")
   status       UserStatus @default(ACTIVE)
-  roleId       String     @map("role_id")
+  roleId       String     @map("role_id") @db.Uuid
   createdAt    DateTime   @default(now()) @map("created_at")
   updatedAt    DateTime   @updatedAt @map("updated_at")
+  // Every session token carries the version it was issued under; bumping
+  // it (password reset, sign-out, role or status change) ends them all at
+  // once. See services/sessionToken.ts.
+  tokenVersion Int        @default(0) @map("token_version")
+  // HU22: when the data subject's suppression took effect. A suppressed
+  // account is anonymized for good: it can't be reactivated.
+  suppressedAt DateTime?  @map("suppressed_at")
 
   // HU21/RN-10: registration isn't completed without this explicit
   // acceptance, and the date/version are stored (CA HU21, P23).
@@ -143,8 +150,8 @@ enum Disability {
 }
 
 model Player {
-  id             String      @id @default(uuid())
-  userId         String      @unique @map("user_id")
+  id             String      @id @default(uuid()) @db.Uuid
+  userId         String      @unique @map("user_id") @db.Uuid
   universityCode String      @map("university_code")
   program        String
   semester       Int
@@ -157,7 +164,7 @@ model Player {
   disability     Disability?
   // HU23: a player belongs to at most one club at a time. Optional because
   // club membership isn't part of registration (HU01).
-  clubId         String?     @map("club_id")
+  clubId         String?     @map("club_id") @db.Uuid
 
   user           User          @relation(fields: [userId], references: [id])
   club           Club?         @relation(fields: [clubId], references: [id])
@@ -176,7 +183,7 @@ model Player {
 // HU23: a club is just a named group a player can belong to — no
 // standalone admin beyond create/rename and enrolling/removing players.
 model Club {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @db.Uuid
   name      String   @unique
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -187,12 +194,17 @@ model Club {
 
 // HU24: a coach follows a player's progress by linking to them directly (no
 // tournament/club scoping — that's out of the documented scope for this HU).
-// Either side can unlink; re-linking after that is just a new row.
+// The coach asks; the link only gives access once the player accepts it
+// (Ley 1581: consent). Either side can unlink or decline; re-linking after
+// that is just a new row.
 model CoachPlayer {
-  id        String   @id @default(uuid())
-  coachId   String   @map("coach_id")
-  playerId  String   @map("player_id")
-  createdAt DateTime @default(now()) @map("created_at")
+  id         String    @id @default(uuid()) @db.Uuid
+  coachId    String    @map("coach_id") @db.Uuid
+  playerId   String    @map("player_id") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at")
+  // When the player accepted. null = still a request: the coach sees none
+  // of the player's progress.
+  acceptedAt DateTime? @map("accepted_at")
 
   coach  User   @relation("CoachLinks", fields: [coachId], references: [id])
   player Player @relation(fields: [playerId], references: [id])
@@ -207,7 +219,7 @@ model CoachPlayer {
 }
 
 model Tournament {
-  id                String           @id @default(uuid())
+  id                String           @id @default(uuid()) @db.Uuid
   name              String
   startDate         DateTime         @map("start_date")
   endDate           DateTime         @map("end_date")
@@ -229,7 +241,7 @@ model Tournament {
   // (CHECK in the migration); like the tiebreak order (RN-05), it's locked
   // once round 1 exists.
   byePoints         Decimal          @default(1) @map("bye_points") @db.Decimal(2, 1)
-  organizerId       String           @map("organizer_id")
+  organizerId       String           @map("organizer_id") @db.Uuid
   createdAt         DateTime         @default(now()) @map("created_at")
 
   organizer        User                @relation("TournamentOrganizer", fields: [organizerId], references: [id])
@@ -244,8 +256,8 @@ model Tournament {
 }
 
 model Round {
-  id           String      @id @default(uuid())
-  tournamentId String      @map("tournament_id")
+  id           String      @id @default(uuid()) @db.Uuid
+  tournamentId String      @map("tournament_id") @db.Uuid
   number       Int
   status       RoundStatus @default(GENERATED)
   createdAt    DateTime    @default(now()) @map("created_at")
@@ -263,11 +275,11 @@ model Round {
 // A bye is a match with blackId (or whiteId) null, with no "type" field of
 // its own (docs/media/image7.png doesn't distinguish a match type).
 model Match {
-  id        String      @id @default(uuid())
-  roundId   String      @map("round_id")
+  id        String      @id @default(uuid()) @db.Uuid
+  roundId   String      @map("round_id") @db.Uuid
   board     Int
-  whiteId   String?     @map("white_id")
-  blackId   String?     @map("black_id")
+  whiteId   String?     @map("white_id") @db.Uuid
+  blackId   String?     @map("black_id") @db.Uuid
   status    MatchStatus @default(SCHEDULED)
   createdAt DateTime    @default(now()) @map("created_at")
 
@@ -298,8 +310,8 @@ model Match {
 // (RN-03) is enforced with a CHECK, added by hand in the migration because
 // Prisma doesn't express CHECK constraints declaratively.
 model Result {
-  id         String   @id @default(uuid())
-  matchId    String   @unique @map("match_id")
+  id         String   @id @default(uuid()) @db.Uuid
+  matchId    String   @unique @map("match_id") @db.Uuid
   value      String
   recordedAt DateTime @default(now()) @map("recorded_at")
 
@@ -308,22 +320,34 @@ model Result {
   @@map("results")
 }
 
+// HU13's closed catalog: TIEBREAKS in the API contract (src/contracts/catalogs.ts),
+// which src/contracts/contracts.test.ts checks against this enum.
+// Each client labels the codes in its own language.
+enum Tiebreak {
+  BUCHHOLZ
+  BUCHHOLZ_CUT1
+  SONNEBORN_BERGER
+  DIRECT_ENCOUNTER
+  ARO
+}
+
 model TiebreakCriterion {
-  id           String @id @default(uuid())
-  tournamentId String @map("tournament_id")
-  name         String
+  id           String   @id @default(uuid()) @db.Uuid
+  tournamentId String   @map("tournament_id") @db.Uuid
+  name         Tiebreak
   order        Int
 
   tournament Tournament @relation(fields: [tournamentId], references: [id])
 
   @@unique([tournamentId, order])
+  @@unique([tournamentId, name])
   @@map("tiebreak_criteria")
 }
 
 model Standing {
-  id              String  @id @default(uuid())
-  tournamentId    String  @map("tournament_id")
-  playerId        String  @map("player_id")
+  id              String  @id @default(uuid()) @db.Uuid
+  tournamentId    String  @map("tournament_id") @db.Uuid
+  playerId        String  @map("player_id") @db.Uuid
   score           Decimal @default(0) @db.Decimal(5, 2)
   buchholz        Decimal @default(0) @db.Decimal(6, 2)
   buchholzCut1    Decimal @default(0) @map("buchholz_cut1") @db.Decimal(6, 2)
@@ -351,9 +375,9 @@ model Standing {
 // to Standing), but it's needed before a Standing exists: it's where RN-01
 // is enforced (a player can't enroll twice in the same tournament).
 model Enrollment {
-  id            String    @id @default(uuid())
-  tournamentId  String    @map("tournament_id")
-  playerId      String    @map("player_id")
+  id            String    @id @default(uuid()) @db.Uuid
+  tournamentId  String    @map("tournament_id") @db.Uuid
+  playerId      String    @map("player_id") @db.Uuid
   createdAt     DateTime  @default(now()) @map("created_at")
   // HU27: a withdrawn player keeps their enrollment row (history, past
   // matches) but is excluded from the active roster and from future
@@ -376,13 +400,11 @@ model Enrollment {
 }
 
 // HU19/RF11: the raw token is never persisted, only its hash — a database
-// dump alone isn't enough to reset an account. No email infrastructure
-// exists in this project's documented architecture yet, so the send is
-// simulated (see services/passwordReset.service.ts); the model is already
-// ready to plug in a real provider with no schema changes.
+// dump alone isn't enough to reset an account. The link itself goes out by
+// email (see services/resetLinkSender.ts).
 model PasswordResetRequest {
-  id        String    @id @default(uuid())
-  userId    String    @map("user_id")
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
   tokenHash String    @unique @map("token_hash")
   expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
@@ -390,6 +412,8 @@ model PasswordResetRequest {
 
   user User @relation(fields: [userId], references: [id])
 
+  // Per-user lookups (a data-subject's full export, suppression).
+  @@index([userId])
   @@map("password_reset_requests")
 }
 
@@ -412,12 +436,12 @@ enum DataRequestStatus {
 // HU31/RN-11: trazabilidad de acciones administrativas críticas (cambio de
 // rol, corrección de resultado, ajuste manual de emparejamiento, retiro de
 // jugador). `action` is a short machine-readable code (e.g.
-// "ROLE_CHANGED", "PLAYER_WITHDRAWN"), not a closed enum: the set of
-// critical actions grows as later HUs (result correction, pairing
-// adjustment) land, and a new one shouldn't require a migration.
+// "ROLE_CHANGED", "PLAYER_WITHDRAWN"), not a database enum, so adding one
+// needs no migration; the closed catalog lives in code (AUDIT_ACTIONS in
+// services/auditLog.service.ts), where a typo doesn't compile.
 model AuditLog {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
   action    String
   detail    String?
   createdAt DateTime @default(now()) @map("created_at")
@@ -426,12 +450,14 @@ model AuditLog {
 
   // The log is read newest first, one page at a time (see auditLog.service.ts).
   @@index([createdAt(sort: Desc), id(sort: Desc)])
+  // Per-user lookups (a data-subject's full export, suppression).
+  @@index([userId])
   @@map("audit_logs")
 }
 
 model DataRequest {
-  id        String            @id @default(uuid())
-  userId    String            @map("user_id")
+  id        String            @id @default(uuid()) @db.Uuid
+  userId    String            @map("user_id") @db.Uuid
   type      DataRequestType
   status    DataRequestStatus
   detail    String?
@@ -439,5 +465,19 @@ model DataRequest {
 
   user User @relation(fields: [userId], references: [id])
 
+  @@index([userId])
   @@map("data_requests")
+}
+
+// Counters of the sign-in, sign-up and password-reset rate limits, shared by
+// every API instance and kept across restarts (middlewares/rateLimitStore.ts).
+// key = the limiter's prefix + the client's key (address, or address and email).
+model RateLimitCounter {
+  key     String   @id
+  hits    Int
+  resetAt DateTime @map("reset_at") @db.Timestamptz(3)
+
+  // Clearing out the counters whose window is over.
+  @@index([resetAt])
+  @@map("rate_limit_counters")
 }

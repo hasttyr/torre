@@ -1,4 +1,3 @@
-import { createColumnHelper } from "@tanstack/vue-table";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 import { reactive } from "vue";
@@ -6,6 +5,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
 import DataTable from "./DataTable.vue";
+import { dataTableColumns } from "./dataTableFeatures";
 
 interface Row {
   id: string;
@@ -13,7 +13,7 @@ interface Row {
   age: number;
 }
 
-const columnHelper = createColumnHelper<Row>();
+const columnHelper = dataTableColumns<Row>();
 const columns = [
   columnHelper.accessor("name", { header: () => "Name" }),
   columnHelper.accessor("age", { header: () => "Age" }),
@@ -41,6 +41,19 @@ describe("DataTable", () => {
     expect(wrapper.text()).toContain("Player 0");
     expect(wrapper.text()).toContain("Player 2");
     expect(wrapper.findAll("tbody tr")).toHaveLength(3);
+  });
+
+  it("renders a column's cells from the page's own template when it gives one, with the row", () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const wrapper = mount(DataTable as any, {
+      props: { columns, data: makeRows(1) },
+      slots: { "cell-age": `<template #cell-age="{ row, value }"><b>{{ row.name }} tiene {{ value }}</b></template>` },
+      global: { plugins: [i18n] },
+    });
+
+    expect(wrapper.get("tbody b").text()).toBe("Player 0 tiene 20");
+    // Other columns still render as their definition says.
+    expect(wrapper.get("tbody td").text()).toBe("Player 0");
   });
 
   it("shows the empty-state message when there's no data", () => {

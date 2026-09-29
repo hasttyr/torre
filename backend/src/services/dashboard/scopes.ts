@@ -1,6 +1,7 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "../../generated/prisma/client";
 
 import type { AuthUser } from "../../types/express";
+import { ACCEPTED_LINK } from "../coaches.service";
 
 // Data-visibility policies for dashboard widgets: *whose* data a viewer may
 // see, independent of *which* widgets their role has (that's the layout,
@@ -19,9 +20,12 @@ const PLAYER_SCOPES: Record<string, PlayerScopeResolver> = {
     const player = await prisma.player.findUnique({ where: { userId: viewer.id }, select: { id: true } });
     return { kind: "only", playerIds: player ? [player.id] : [] };
   },
-  // A coach sees the players they follow (HU24), nobody else.
+  // A coach sees the players who accepted them (HU24), nobody else.
   COACH: async (prisma, viewer) => {
-    const links = await prisma.coachPlayer.findMany({ where: { coachId: viewer.id }, select: { playerId: true } });
+    const links = await prisma.coachPlayer.findMany({
+      where: { coachId: viewer.id, ...ACCEPTED_LINK },
+      select: { playerId: true },
+    });
     return { kind: "only", playerIds: links.map((link) => link.playerId) };
   },
   // Same roles that can already search the whole player directory
@@ -45,6 +49,14 @@ export function isPlayerInScope(scope: PlayerScope, playerId: string): boolean {
 /** Prisma filter restricting a player query to `scope`. */
 export function playerWhere(scope: PlayerScope): Prisma.PlayerWhereInput {
   return scope.kind === "all" ? {} : { id: { in: scope.playerIds } };
+}
+
+/** Prisma filter restricting a match query to the games `scope`'s players played, with either color. */
+export function gamesPlayedBy(scope: PlayerScope): Prisma.MatchWhereInput {
+  // By id, not through the player relations: Prisma 7 drops an empty
+  // relation filter ({ white: {} }) inside an OR, and matched no game at all.
+  if (scope.kind === "all") return {};
+  return { OR: [{ whiteId: { in: scope.playerIds } }, { blackId: { in: scope.playerIds } }] };
 }
 
 /**

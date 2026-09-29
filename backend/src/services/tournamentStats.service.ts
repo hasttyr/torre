@@ -1,35 +1,11 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../generated/prisma/client";
 
 import type { AuthUser } from "../types/express";
 import { assertCanViewTournament, loadTournament } from "./tournamentAccess";
+import type { BoardResults, RoundStatsDto, TournamentStatsDto } from "../contracts/responses";
 
 // HU16: aggregate statistics of one tournament, computed from its official
 // (published) games only, like the standings (RN-04).
-
-export interface BoardResults {
-  whiteWins: number;
-  draws: number;
-  blackWins: number;
-}
-
-export interface RoundStatsDto extends BoardResults {
-  round: number;
-  // Games of the round still waiting for a result.
-  pending: number;
-}
-
-export interface TournamentStatsDto extends BoardResults {
-  tournamentId: string;
-  activePlayers: number;
-  withdrawnPlayers: number;
-  gamesPlayed: number;
-  byes: number;
-  // Share of played games with a winner (0-1), null before the first game.
-  decisiveRate: number | null;
-  // White's points per game (0-1): the first-move advantage, as seen here.
-  whiteScoreRate: number | null;
-  rounds: RoundStatsDto[];
-}
 
 export interface BoardGame {
   round: number;
@@ -121,3 +97,5 @@ export async function getTournamentStats(
     ),
   };
 }
+
+export type { BoardResults, RoundStatsDto, TournamentStatsDto };

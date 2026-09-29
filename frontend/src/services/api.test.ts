@@ -1,8 +1,9 @@
 import { AxiosError, type AxiosAdapter, type InternalAxiosRequestConfig } from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { api } from "./api";
-import { onUnauthorized, setAuthToken } from "./session";
+import { api, path } from "./api";
+import { getTournament } from "./tournaments";
+import { onUnauthorized, setSignedIn } from "./session";
 
 /** Makes every request fail with the given HTTP status, without any network. */
 function respondWith(status: number): AxiosAdapter {
@@ -31,19 +32,34 @@ describe("api session handling", () => {
 
   afterEach(() => {
     api.defaults.adapter = originalAdapter;
-    setAuthToken(null);
+    setSignedIn(false);
     onUnauthorized(null);
   });
 
-  it("reports a 401 on a request that carried a token (the session is no longer valid)", async () => {
-    setAuthToken("stale-token");
+  it("talks to the API on the app's own site (/api), where the session cookie is first-party", () => {
+    expect(api.defaults.baseURL).toBe("/api");
+  });
+
+  it("stays on /api even if a build still sets the API's own address (where the cookie wouldn't be sent)", async () => {
+    vi.stubEnv("VITE_API_URL", "https://torre-be.onrender.com/api");
+    vi.resetModules();
+    try {
+      const fresh = await import("./api");
+      expect(fresh.api.defaults.baseURL).toBe("/api");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("reports a 401 while signed in (the session is no longer valid)", async () => {
+    setSignedIn(true);
     api.defaults.adapter = respondWith(401);
 
     await expect(api.get("/users/me")).rejects.toBeInstanceOf(AxiosError);
     expect(handler).toHaveBeenCalledTimes(1);
   });
 
-  it("ignores a 401 without a token: a wrong password is an answer, not an expired session", async () => {
+  it("ignores a 401 while signed out: a wrong password is an answer, not an expired session", async () => {
     api.defaults.adapter = respondWith(401);
 
     await expect(api.post("/auth/login", {})).rejects.toBeInstanceOf(AxiosError);
@@ -51,23 +67,43 @@ describe("api session handling", () => {
   });
 
   it("ignores other errors, like a 403 on an action the role can't take", async () => {
-    setAuthToken("valid-token");
+    setSignedIn(true);
     api.defaults.adapter = respondWith(403);
 
     await expect(api.get("/users")).rejects.toBeInstanceOf(AxiosError);
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it("sends the session's bearer token on every request, and none once it's cleared", async () => {
+  it("sends no token: the session travels in its HttpOnly cookie, out of script's reach", async () => {
     const sent: InternalAxiosRequestConfig[] = [];
     api.defaults.adapter = recordRequests(sent);
+    setSignedIn(true);
 
-    setAuthToken("abc");
     await api.get("/users/me");
-    setAuthToken(null);
-    await api.get("/tournaments/live");
 
-    expect(sent[0].headers.Authorization).toBe("Bearer abc");
-    expect(sent[1].headers.Authorization).toBeUndefined();
+    expect(sent[0].headers.Authorization).toBeUndefined();
+  });
+});
+
+describe("path", () => {
+  it("encodes every value put into an API path, so an id can't change which endpoint is called", () => {
+    expect(path`/tournaments/${"../users?role=ADMIN"}/rounds`).toBe("/tournaments/..%2Fusers%3Frole%3DADMIN/rounds");
+  });
+
+  it("leaves ordinary ids as they are", () => {
+    expect(path`/rounds/${"3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b"}/swap`).toBe(
+      "/rounds/3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b/swap",
+    );
+  });
+
+  it("is what the services build their requests with", async () => {
+    const sent: InternalAxiosRequestConfig[] = [];
+    const originalAdapter = api.defaults.adapter;
+    api.defaults.adapter = recordRequests(sent);
+
+    await getTournament("../users?x=1");
+
+    api.defaults.adapter = originalAdapter;
+    expect(sent[0]?.url).toBe("/tournaments/..%2Fusers%3Fx%3D1");
   });
 });

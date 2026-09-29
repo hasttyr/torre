@@ -61,7 +61,7 @@ describe("dashboard widgets", () => {
     setActivePinia(pinia);
     vi.clearAllMocks();
     // Widgets only ever render inside an authenticated panel; their query is
-    // disabled without a signed-in user (dashboardQueries.ts).
+    // disabled without a signed-in user (queries/dashboard.ts).
     useAuthStore().user = { id: "user-1" } as ReturnType<typeof useAuthStore>["user"];
   });
 

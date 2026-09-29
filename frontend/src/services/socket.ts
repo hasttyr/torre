@@ -1,17 +1,9 @@
+import { SOCKET_EVENTS } from "@contracts";
 import type { Socket } from "socket.io-client";
 
-// Catalog of real-time events (see README.md > Architecture).
-// Deliberately duplicated in backend/src/sockets/events.ts (there is no
-// shared package between the two npm projects): if you add, rename or
-// remove an event here, replicate the change there too.
-export const SOCKET_EVENTS = {
-  PAIRING_PUBLISHED: "pairing.published",
-  MATCH_RESULT_RECORDED: "match.result.recorded",
-  STANDINGS_UPDATED: "standings.updated",
-  PLAYER_WITHDRAWN: "player.withdrawn",
-  PAIRING_ADJUSTED: "pairing.adjusted",
-  TOURNAMENT_FINISHED: "tournament.finished",
-} as const;
+import { isSignedIn } from "./session";
+
+export { SOCKET_EVENTS };
 
 let client: Promise<Socket> | undefined;
 
@@ -19,10 +11,36 @@ let client: Promise<Socket> | undefined;
  * The Socket.IO client, created (not connected) on first use. The library
  * is its own chunk: only the live views need it, and they fetch it while
  * their data loads instead of before they can even start rendering.
+ *
+ * @remarks
+ * Each connection attempt, while signed in, sends a fresh one-minute ticket
+ * (the socket may go straight to the API, where the session cookie isn't
+ * sent). Published tournaments need none, but the server only lets a
+ * tournament's managers follow it while it's a draft, and tells them about
+ * draft rounds (backend/src/sockets/index.ts). Without a ticket the
+ * connection is anonymous.
  */
+/**
+ * What a connection sends as it opens: a fresh ticket while signed in, else
+ * nothing (an anonymous connection, which is also what a failed ticket
+ * request leaves).
+ */
+export function introduceConnection(send: (auth: { ticket?: string }) => void): void {
+  if (!isSignedIn()) return send({});
+  import("./auth")
+    .then(({ requestSocketTicket }) => requestSocketTicket())
+    .then(
+      (ticket) => send({ ticket }),
+      () => send({}),
+    );
+}
+
 export function getSocket(): Promise<Socket> {
   client ??= import("socket.io-client").then(({ io }) =>
-    io(import.meta.env.VITE_SOCKET_URL ?? "http://localhost:4000", { autoConnect: false }),
+    io(import.meta.env.VITE_SOCKET_URL ?? "http://localhost:4000", {
+      autoConnect: false,
+      auth: introduceConnection,
+    }),
   );
   return client;
 }

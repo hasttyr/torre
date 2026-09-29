@@ -1,39 +1,18 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../generated/prisma/client";
 
-import { HttpError } from "../../middlewares/errorHandler";
+import { HttpError } from "../../errors/apiErrors";
 import type { AuthUser } from "../../types/express";
 import { recordAuditLog } from "../auditLog.service";
 import { isPlayerInScope, playerWhere, resolvePlayerScope } from "./scopes";
 import { CONFIGURABLE_ROLES, isWidgetKey, WIDGET_KEYS, type ConfigurableRole, type WidgetKey } from "./widgetCatalog";
 import { WIDGET_REGISTRY } from "./widgetRegistry";
-
-export interface WidgetSummaryDto {
-  key: WidgetKey;
-  // "player": the widget shows one player the viewer picks on the dashboard.
-  subject: "player" | "none";
-}
-
-export interface SubjectPlayerDto {
-  id: string;
-  name: string;
-}
-
-export interface DashboardDto {
-  widgets: WidgetSummaryDto[];
-  // The players the viewer can pick as subject. Empty when none of their
-  // widgets needs one (no point querying the directory).
-  players: SubjectPlayerDto[];
-}
-
-export interface RoleLayoutDto {
-  role: ConfigurableRole;
-  widgets: WidgetKey[];
-}
-
-export interface DashboardLayoutsDto {
-  catalog: WidgetSummaryDto[];
-  layouts: RoleLayoutDto[];
-}
+import type {
+  DashboardDto,
+  DashboardLayoutsDto,
+  RoleLayoutDto,
+  SubjectPlayerDto,
+  WidgetSummaryDto,
+} from "../../contracts/responses";
 
 function summarize(key: WidgetKey): WidgetSummaryDto {
   return { key, subject: WIDGET_REGISTRY[key].subject };
@@ -90,7 +69,7 @@ export async function getWidgetData(
 ): Promise<unknown> {
   const enabled = await widgetsForRole(prisma, viewer.role);
   if (!enabled.includes(key)) {
-    throw new HttpError(403, "Este control no está habilitado para tu rol");
+    throw new HttpError("WIDGET_NOT_ENABLED");
   }
 
   const definition = WIDGET_REGISTRY[key];
@@ -99,11 +78,11 @@ export async function getWidgetData(
   }
 
   if (!playerId) {
-    throw new HttpError(400, "Este control necesita un jugador (playerId)");
+    throw new HttpError("WIDGET_NEEDS_PLAYER");
   }
   const scope = await resolvePlayerScope(prisma, viewer);
   if (!isPlayerInScope(scope, playerId)) {
-    throw new HttpError(403, "No tenés acceso a los datos de este jugador");
+    throw new HttpError("PLAYER_OUT_OF_SCOPE");
   }
   return definition.load(prisma, playerId);
 }
@@ -125,11 +104,11 @@ export async function updateRoleLayout(
   prisma: PrismaClient,
   role: ConfigurableRole,
   widgets: WidgetKey[],
-  actingAdminId: string,
+  actor: AuthUser,
 ): Promise<RoleLayoutDto> {
   const roleRow = await prisma.role.findUnique({ where: { name: role } });
   if (!roleRow) {
-    throw new HttpError(404, `El rol "${role}" no existe`);
+    throw new HttpError("ROLE_NOT_FOUND", { role });
   }
 
   // Delete + recreate in one transaction: positions are unique per role,
@@ -143,7 +122,7 @@ export async function updateRoleLayout(
     });
     await recordAuditLog(
       tx,
-      actingAdminId,
+      actor.id,
       "DASHBOARD_LAYOUT_CHANGED",
       `${role}: ${widgets.length > 0 ? widgets.join(", ") : "—"}`,
     );
@@ -151,3 +130,5 @@ export async function updateRoleLayout(
 
   return { role, widgets };
 }
+
+export type { DashboardDto, DashboardLayoutsDto, RoleLayoutDto, SubjectPlayerDto, WidgetSummaryDto };

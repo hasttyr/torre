@@ -1,8 +1,8 @@
-import jwt from "jsonwebtoken";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../app";
+import { signSessionToken } from "../services/sessionToken";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
@@ -21,11 +21,11 @@ const { prismaMock } = vi.hoisted(() => ({
 vi.mock("../config/prisma", () => ({ prisma: prismaMock }));
 
 function tokenFor(role: string, id = "coach-1"): string {
-  return jwt.sign({ sub: id, role }, "test-secret", { expiresIn: "1h" });
+  return signSessionToken({ id: id, role });
 }
 
 const playerBase = {
-  id: "player-1",
+  id: "1713759c-231e-5eef-93fa-5846543beb8b",
   universityCode: "U123",
   program: "Sistemas",
   semester: 5,
@@ -44,11 +44,14 @@ describe("POST /api/coaches/players", () => {
     const response = await request(createApp())
       .post("/api/coaches/players")
       .set("Authorization", `Bearer ${tokenFor("COACH")}`)
-      .send({ playerId: "player-1" });
+      .send({ playerId: "1713759c-231e-5eef-93fa-5846543beb8b" });
 
     expect(response.status).toBe(201);
-    expect(response.body.playerId).toBe("player-1");
-    expect(prismaMock.coachPlayer.create.mock.calls[0][0].data).toEqual({ coachId: "coach-1", playerId: "player-1" });
+    expect(response.body.playerId).toBe("1713759c-231e-5eef-93fa-5846543beb8b");
+    expect(prismaMock.coachPlayer.create.mock.calls[0][0].data).toEqual({
+      coachId: "coach-1",
+      playerId: "1713759c-231e-5eef-93fa-5846543beb8b",
+    });
   });
 
   it("responds 404 when the player doesn't exist", async () => {
@@ -57,7 +60,7 @@ describe("POST /api/coaches/players", () => {
     const response = await request(createApp())
       .post("/api/coaches/players")
       .set("Authorization", `Bearer ${tokenFor("COACH")}`)
-      .send({ playerId: "missing-player" });
+      .send({ playerId: "bb4a7ecc-5071-597f-b681-6d4aa458c6da" });
 
     expect(response.status).toBe(404);
   });
@@ -69,7 +72,7 @@ describe("POST /api/coaches/players", () => {
     const response = await request(createApp())
       .post("/api/coaches/players")
       .set("Authorization", `Bearer ${tokenFor("COACH")}`)
-      .send({ playerId: "player-1" });
+      .send({ playerId: "1713759c-231e-5eef-93fa-5846543beb8b" });
 
     expect(response.status).toBe(409);
   });
@@ -78,13 +81,15 @@ describe("POST /api/coaches/players", () => {
     const response = await request(createApp())
       .post("/api/coaches/players")
       .set("Authorization", `Bearer ${tokenFor("PLAYER")}`)
-      .send({ playerId: "player-1" });
+      .send({ playerId: "1713759c-231e-5eef-93fa-5846543beb8b" });
 
     expect(response.status).toBe(403);
   });
 
   it("responds 401 without a token", async () => {
-    const response = await request(createApp()).post("/api/coaches/players").send({ playerId: "player-1" });
+    const response = await request(createApp())
+      .post("/api/coaches/players")
+      .send({ playerId: "1713759c-231e-5eef-93fa-5846543beb8b" });
     expect(response.status).toBe(401);
   });
 });
@@ -103,7 +108,7 @@ describe("GET /api/coaches/players", () => {
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveLength(1);
-    expect(response.body[0].playerId).toBe("player-1");
+    expect(response.body[0].playerId).toBe("1713759c-231e-5eef-93fa-5846543beb8b");
   });
 });
 
@@ -117,7 +122,7 @@ describe("DELETE /api/coaches/players/:playerId", () => {
     prismaMock.coachPlayer.delete.mockResolvedValue({ id: "link-1" });
 
     const response = await request(createApp())
-      .delete("/api/coaches/players/player-1")
+      .delete("/api/coaches/players/1713759c-231e-5eef-93fa-5846543beb8b")
       .set("Authorization", `Bearer ${tokenFor("COACH")}`);
 
     expect(response.status).toBe(204);
@@ -127,7 +132,7 @@ describe("DELETE /api/coaches/players/:playerId", () => {
     prismaMock.coachPlayer.findUnique.mockResolvedValue(null);
 
     const response = await request(createApp())
-      .delete("/api/coaches/players/player-1")
+      .delete("/api/coaches/players/1713759c-231e-5eef-93fa-5846543beb8b")
       .set("Authorization", `Bearer ${tokenFor("COACH")}`);
 
     expect(response.status).toBe(404);
@@ -156,9 +161,15 @@ describe("GET /api/coaches/tournaments", () => {
   };
 
   it("groups the coach's players enrolled in the same tournament", async () => {
-    prismaMock.coachPlayer.findMany.mockResolvedValue([{ playerId: "player-1" }, { playerId: "player-2" }]);
+    prismaMock.coachPlayer.findMany.mockResolvedValue([
+      { playerId: "1713759c-231e-5eef-93fa-5846543beb8b" },
+      { playerId: "player-2" },
+    ]);
     prismaMock.enrollment.findMany.mockResolvedValue([
-      { tournament: tournamentBase, player: { id: "player-1", user: { name: "Luis Gómez" } } },
+      {
+        tournament: tournamentBase,
+        player: { id: "1713759c-231e-5eef-93fa-5846543beb8b", user: { name: "Luis Gómez" } },
+      },
       { tournament: tournamentBase, player: { id: "player-2", user: { name: "Ana Torres" } } },
     ]);
 
@@ -170,7 +181,7 @@ describe("GET /api/coaches/tournaments", () => {
     expect(response.body).toHaveLength(1);
     expect(response.body[0].id).toBe("tournament-1");
     expect(response.body[0].myPlayers).toEqual([
-      { playerId: "player-1", name: "Luis Gómez" },
+      { playerId: "1713759c-231e-5eef-93fa-5846543beb8b", name: "Luis Gómez" },
       { playerId: "player-2", name: "Ana Torres" },
     ]);
   });

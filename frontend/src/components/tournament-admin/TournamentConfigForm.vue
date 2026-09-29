@@ -1,21 +1,24 @@
 <script setup lang="ts">
+import { useQuery, useQueryCache } from "@pinia/colada";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { extractErrorMessage } from "../../lib/errors";
 import { hasChanges, useUnsavedChangesGuard } from "../../lib/unsavedChanges";
-import type { Tournament } from "../../services/tournaments";
-import { useTournamentsStore } from "../../stores/tournaments";
+import { showTournament, tournamentQuery } from "../../queries/tournaments";
+import { configureTournament, DEFAULT_TIEBREAKS, type Tiebreak, type Tournament } from "../../services/tournaments";
+import TiebreakOrderPicker from "./TiebreakOrderPicker.vue";
+import FadeSlide from "../ui/FadeSlide.vue";
+import FormBanner from "../ui/FormBanner.vue";
 
 const props = defineProps<{ tournamentId: string }>();
 
-const tournaments = useTournamentsStore();
+const cache = useQueryCache();
+const tournamentEntry = useQuery(() => tournamentQuery(props.tournamentId));
+const current = computed(() => tournamentEntry.data.value ?? null);
 const { t } = useI18n();
 
 // --- HU05: configure tournament (rounds, time control, tiebreaks) ---
-
-// HU13's order. ARO can't be computed (no ratings in scope) and is skipped when ranking.
-const DEFAULT_TIEBREAKS = "Buchholz, Buchholz Cortado 1, Sonneborn-Berger, ARO, Resultado particular";
 
 /**
  * The tournament's saved configuration, in the form's shape: an organizer
@@ -27,9 +30,7 @@ function configFormOf(tournament: Tournament) {
     roundsCount: tournament.roundsCount != null ? String(tournament.roundsCount) : "",
     timeControl: tournament.timeControl ?? "",
     tiebreaks:
-      tournament.tiebreakCriteria.length > 0
-        ? tournament.tiebreakCriteria.map((c) => c.name).join(", ")
-        : DEFAULT_TIEBREAKS,
+      tournament.tiebreakCriteria.length > 0 ? tournament.tiebreakCriteria.map((c) => c.name) : [...DEFAULT_TIEBREAKS],
     byePoints: String(tournament.byePoints ?? 1),
     restrictedProgram: tournament.restrictedProgram ?? "",
     minimumSemester: tournament.minimumSemester != null ? String(tournament.minimumSemester) : "",
@@ -39,7 +40,7 @@ function configFormOf(tournament: Tournament) {
 const configForm = reactive({
   roundsCount: "",
   timeControl: "",
-  tiebreaks: DEFAULT_TIEBREAKS,
+  tiebreaks: [...DEFAULT_TIEBREAKS] as Tiebreak[],
   byePoints: "1",
   restrictedProgram: "",
   minimumSemester: "",
@@ -48,20 +49,32 @@ const submitting = ref(false);
 const error = ref<string | null>(null);
 const success = ref<string | null>(null);
 
-/** Fills the configuration form from the loaded tournament. */
-function populateForm(): void {
-  if (tournaments.current) Object.assign(configForm, configFormOf(tournaments.current));
+// The tournament the form was last filled from.
+let filledFrom: Tournament | null = null;
+
+/** Fills the configuration form from `tournament`. */
+function fillForm(tournament: Tournament): void {
+  filledFrom = tournament;
+  Object.assign(configForm, configFormOf(tournament));
 }
 
-watch(() => tournaments.current, populateForm, { immediate: true });
+// The tournament is read again in the background (returning to the tab, a
+// real-time event): an untouched form follows it, but what the organizer is
+// typing is never overwritten.
+watch(
+  current,
+  (tournament) => {
+    if (tournament && (!filledFrom || !hasChanges(configForm, configFormOf(filledFrom)))) fillForm(tournament);
+  },
+  { immediate: true },
+);
 
-// Saving replaces tournaments.current, which repopulates the form: it's clean again.
-useUnsavedChangesGuard(() => tournaments.current !== null && hasChanges(configForm, configFormOf(tournaments.current)));
+useUnsavedChangesGuard(() => current.value !== null && hasChanges(configForm, configFormOf(current.value)));
 
 // RN-05: the tiebreak order can only be changed while the tournament is in
 // its preliminary state (before round 1). The backend is what actually
 // decides; this only avoids a submit that is already known to fail.
-const canEditTiebreaks = computed(() => tournaments.current?.status === "CREATED");
+const canEditTiebreaks = computed(() => current.value?.status === "CREATED");
 
 /** Validates and submits the tournament configuration form. */
 async function onSubmit(): Promise<void> {
@@ -69,13 +82,9 @@ async function onSubmit(): Promise<void> {
   success.value = null;
   submitting.value = true;
   try {
-    const tiebreakCriteria = configForm.tiebreaks
-      .split(",")
-      .map((name) => name.trim())
-      .filter(Boolean)
-      .map((name, index) => ({ name, order: index + 1 }));
+    const tiebreakCriteria = configForm.tiebreaks.map((name, index) => ({ name, order: index + 1 }));
 
-    await tournaments.configure(props.tournamentId, {
+    const saved = await configureTournament(props.tournamentId, {
       roundsCount: configForm.roundsCount ? Number(configForm.roundsCount) : undefined,
       timeControl: configForm.timeControl.trim() || undefined,
       tiebreakCriteria: canEditTiebreaks.value ? tiebreakCriteria : undefined,
@@ -84,9 +93,11 @@ async function onSubmit(): Promise<void> {
       restrictedProgram: configForm.restrictedProgram.trim() || null,
       minimumSemester: configForm.minimumSemester ? Number(configForm.minimumSemester) : null,
     });
+    showTournament(cache, saved);
+    fillForm(saved);
     success.value = t("tournamentAdmin.configSuccess");
   } catch (submitError) {
-    error.value = extractErrorMessage(submitError, t("tournamentAdmin.genericServerError"));
+    error.value = extractErrorMessage(submitError, t("common.genericServerError"));
   } finally {
     submitting.value = false;
   }
@@ -98,22 +109,12 @@ async function onSubmit(): Promise<void> {
     <h2 class="mb-1 text-lg">{{ t("tournamentAdmin.configTitle") }}</h2>
     <p class="mb-4 text-sm">{{ t("tournamentAdmin.configSubtitle") }}</p>
 
-    <Transition
-      enter-active-class="transition duration-180 ease-out"
-      enter-from-class="opacity-0 -translate-y-1.5"
-      leave-active-class="transition duration-180 ease-in"
-      leave-to-class="opacity-0 -translate-y-1.5"
-    >
-      <p v-if="error" role="alert" class="banner banner--error mb-4">{{ error }}</p>
-    </Transition>
-    <Transition
-      enter-active-class="transition duration-180 ease-out"
-      enter-from-class="opacity-0 -translate-y-1.5"
-      leave-active-class="transition duration-180 ease-in"
-      leave-to-class="opacity-0 -translate-y-1.5"
-    >
-      <p v-if="success" role="status" class="banner banner--success mb-4">{{ success }}</p>
-    </Transition>
+    <FadeSlide>
+      <FormBanner v-if="error" kind="error" class="mb-4">{{ error }}</FormBanner>
+    </FadeSlide>
+    <FadeSlide>
+      <FormBanner v-if="success" kind="success" class="mb-4">{{ success }}</FormBanner>
+    </FadeSlide>
 
     <form novalidate class="config-form flex flex-col gap-4" @submit.prevent="onSubmit">
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -152,16 +153,8 @@ async function onSubmit(): Promise<void> {
         </select>
       </div>
 
-      <div class="field">
-        <label for="tiebreaks">{{ t("tournamentAdmin.tiebreaksLabel") }}</label>
-        <input
-          id="tiebreaks"
-          v-model="configForm.tiebreaks"
-          type="text"
-          name="tiebreaks"
-          autocomplete="off"
-          :disabled="!canEditTiebreaks"
-        />
+      <div>
+        <TiebreakOrderPicker v-model="configForm.tiebreaks" :disabled="!canEditTiebreaks" />
         <span v-if="!canEditTiebreaks" class="text-sm text-text-muted">
           {{ t("tournamentAdmin.tiebreaksLockedHint") }}
         </span>

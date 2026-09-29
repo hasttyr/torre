@@ -26,6 +26,3 @@ router.use("/audit-logs", auditLogsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/rounds", roundsRouter);
 router.use("/matches", matchesRouter);
-
-// As future increments land, the rest of the domain routers (exports,
-// ...) get mounted here.

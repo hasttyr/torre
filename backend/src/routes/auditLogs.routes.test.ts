@@ -1,8 +1,8 @@
-import jwt from "jsonwebtoken";
 import request from "supertest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../app";
+import { signSessionToken } from "../services/sessionToken";
 
 const { prismaMock } = vi.hoisted(() => ({
   prismaMock: {
@@ -11,6 +11,7 @@ const { prismaMock } = vi.hoisted(() => ({
       findFirst: vi.fn(async ({ where }: { where: { id: string } }): Promise<{ id: string } | null> => ({
         id: where.id,
       })),
+      findMany: vi.fn(),
     },
     auditLog: { findMany: vi.fn() },
   },
@@ -19,7 +20,7 @@ const { prismaMock } = vi.hoisted(() => ({
 vi.mock("../config/prisma", () => ({ prisma: prismaMock }));
 
 function tokenFor(role: string, id = "user-1"): string {
-  return jwt.sign({ sub: id, role }, "test-secret", { expiresIn: "1h" });
+  return signSessionToken({ id, role });
 }
 
 describe("GET /api/audit-logs", () => {
@@ -57,6 +58,30 @@ describe("GET /api/audit-logs", () => {
       ],
       nextCursor: null,
     });
+  });
+
+  it("names the people an entry mentions, and leaves anything that only looks like a mention alone", async () => {
+    const luis = "3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b";
+    const lookalike = "{{user:------------------------------------}}";
+    prismaMock.auditLog.findMany.mockResolvedValue([
+      {
+        id: "log-1",
+        userId: "admin-1",
+        action: "ROLE_CHANGED",
+        detail: `{{user:${luis}}} -> ARBITER ${lookalike}`,
+        createdAt: new Date("2026-09-19"),
+        user: { name: "Admin Demo" },
+      },
+    ]);
+    prismaMock.user.findMany.mockResolvedValue([{ id: luis, name: "Luis Gómez" }]);
+
+    const response = await request(createApp())
+      .get("/api/audit-logs")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR")}`);
+
+    expect(response.body.entries[0].detail).toBe(`Luis Gómez -> ARBITER ${lookalike}`);
+    // Only real ids reach the database, whose uuid columns would reject anything else.
+    expect(prismaMock.user.findMany.mock.calls[0][0].where).toEqual({ id: { in: [luis] } });
   });
 
   describe("one page at a time", () => {

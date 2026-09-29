@@ -1,25 +1,29 @@
 import axios, { type AxiosError } from "axios";
 
-import { getAuthToken, notifyUnauthorized } from "./session";
+import { isSignedIn, notifyUnauthorized } from "./session";
 
-export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:4000/api",
-});
-
-// The token lives in session.ts (no axios there, so the app shell can set it
-// without loading this module): it's read fresh on every request.
-api.interceptors.request.use((config) => {
-  const token = getAuthToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+// Always the API on the app's own site: /api, which the dev server, `vite
+// preview` and Vercel (vercel.json) proxy to the backend. That makes the
+// session cookie first-party, so browsers send it (they block third-party
+// ones). Not configurable: the backend's own address would lose the cookie.
+export const api = axios.create({ baseURL: "/api" });
 
 api.interceptors.response.use(undefined, (error: AxiosError) => {
-  // A 401 without a token (e.g. wrong password on login) is just an answer,
+  // A 401 while signed out (a wrong password on login) is just an answer,
   // not an expired session.
-  const hadSession = Boolean(error.config?.headers?.Authorization);
-  if (error.response?.status === 401 && hadSession) {
+  if (error.response?.status === 401 && isSignedIn()) {
     notifyUnauthorized();
   }
   return Promise.reject(error);
 });
+
+/**
+ * Builds an API path, encoding every value put into it: an id with "/", "?"
+ * or "#" (say, from a crafted URL) stays one path segment instead of
+ * pointing the request at another endpoint (client-side path traversal).
+ *
+ * @example path`/tournaments/${id}/rounds`
+ */
+export function path(segments: TemplateStringsArray, ...values: (string | number)[]): string {
+  return String.raw({ raw: segments }, ...values.map((value) => encodeURIComponent(value)));
+}

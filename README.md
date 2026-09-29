@@ -45,13 +45,13 @@ Fuera de alcance (decisión definitiva de producto, no trabajo pendiente): cálc
 
 ## Stack tecnológico
 
-| Capa | Tecnología |
-|---|---|
-| Frontend | Vue 3 + TypeScript, Vite, Pinia, Pinia Colada (caché de datos del servidor), vue-router, vue-i18n, Tailwind CSS 4, reka-ui |
-| Backend | Node.js + Express 5 + TypeScript, validación con zod, PDF con pdfkit |
-| Tiempo real | Socket.IO 4 |
-| Persistencia | PostgreSQL con Prisma 6 (esquema y migraciones) |
-| Pruebas | Vitest (backend y frontend), Supertest, Vue Test Utils |
+| Capa         | Tecnología                                                                                                                 |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Frontend     | Vue 3 + TypeScript, Vite, Pinia, Pinia Colada (caché de datos del servidor), vue-router, vue-i18n, Tailwind CSS 4, reka-ui |
+| Backend      | Node.js + Express 5 + TypeScript, validación con zod, PDF con pdfkit                                                       |
+| Tiempo real  | Socket.IO 4                                                                                                                |
+| Persistencia | PostgreSQL con Prisma 7 (esquema y migraciones)                                                                            |
+| Pruebas      | Vitest (backend y frontend), Supertest, Vue Test Utils                                                                     |
 
 ## Arquitectura
 
@@ -91,14 +91,16 @@ torre/
 │       ├── controllers/      # Validan la entrada y responden
 │       ├── validators/       # Esquemas zod de cada petición
 │       ├── services/         # Casos de uso: pairing/, dashboard/, exports/…
-│       ├── sockets/          # Salas por torneo y catálogo de eventos
+│       ├── sockets/          # Salas por torneo y difusión de eventos
+│       ├── contracts/        # Contrato de la API (catálogos, errores, respuestas), compartido con el frontend
 │       ├── middlewares/      # Autenticación, errores, envoltura async
 │       └── config/           # Variables de entorno, cliente Prisma, política de datos
 ├── frontend/                 # SPA Vue 3 + TypeScript (Vite) → frontend/README.md
 │   └── src/
 │       ├── views/            # Pantallas por ruta, agrupadas por rol
 │       ├── components/       # ui/, charts/, dashboard/, tournament/, home/…
-│       ├── stores/           # Estado compartido (Pinia)
+│       ├── queries/          # Datos del servidor en caché (Pinia Colada)
+│       ├── stores/           # Estado del cliente (Pinia)
 │       ├── services/         # Un módulo por recurso de la API y el cliente Socket.IO
 │       ├── lib/              # Composables y utilidades
 │       ├── i18n/             # Español (por defecto) e inglés
@@ -127,6 +129,7 @@ cd torre
 cd backend
 npm install
 cp .env.example .env        # completar DATABASE_URL y JWT_SECRET
+npm run prisma:generate     # genera el cliente de Prisma en src/generated/ (no se versiona)
 npm run prisma:migrate      # crea la base de datos y aplica las migraciones
 npm run prisma:seed         # opcional: cuentas por rol y torneos de ejemplo
 npm run dev                 # http://localhost:4000 (GET /api/health)
@@ -138,7 +141,7 @@ cp .env.example .env        # los valores por defecto apuntan al backend local
 npm run dev                 # http://localhost:5173
 ```
 
-No hay proveedor de correo configurado: al pedir la recuperación de contraseña, el backend escribe el enlace de un solo uso en su consola.
+En desarrollo no hace falta proveedor de correo: al pedir la recuperación de contraseña, el backend escribe el enlace de un solo uso en su consola. En producción se configura `SMTP_URL` (ver [`backend/README.md`](./backend/README.md#variables-de-entorno)).
 
 ## Datos de prueba
 
@@ -149,15 +152,15 @@ cd backend
 npm run prisma:seed
 ```
 
-| Rol | Correo | Contraseña |
-|---|---|---|
-| Administrador | admin@test.com | Test1234 |
-| Organizador | organizer@test.com | Test1234 |
-| Árbitro | arbiter@test.com | Test1234 |
-| Entrenador | coach@test.com | Test1234 |
-| Jugador | player@test.com | Test1234 |
+| Rol           | Correo             | Contraseña |
+| ------------- | ------------------ | ---------- |
+| Administrador | admin@test.com     | Test1234   |
+| Organizador   | organizer@test.com | Test1234   |
+| Árbitro       | arbiter@test.com   | Test1234   |
+| Entrenador    | coach@test.com     | Test1234   |
+| Jugador       | player@test.com    | Test1234   |
 
-Además de las cuentas, el seed crea 12 jugadores, clubes, vínculos entrenador–jugador y un historial de competencia real para que los paneles tengan datos: cinco torneos finalizados y uno en curso, con rondas, partidas, resultados y clasificación (puntaje, Buchholz, Buchholz Cortado 1, Sonneborn-Berger) calculada con el mismo `standings.calculator.ts` que usa la app. También asigna a cada rol su panel por defecto (`prisma/seeds/dashboardLayouts.ts`).
+Además de las cuentas, el seed crea 12 jugadores, clubes, vínculos entrenador–jugador y un historial de competencia real para que los paneles tengan datos: cinco torneos finalizados y uno en curso, con rondas, partidas, resultados y clasificación (puntaje, Buchholz, Buchholz Cortado 1, Sonneborn-Berger) calculada con el mismo `standings.calculator.ts` que usa la app. También asigna a cada rol su panel por defecto (`backend/src/services/referenceData.ts`, compartido con `npm run bootstrap`).
 
 El seed es idempotente (`upsert` con `update: {}`): correrlo de nuevo no sobrescribe contraseñas ni datos que hayas modificado a mano mientras pruebas, solo crea lo que falte. Un torneo que ya tiene rondas no se vuelve a jugar, y un rol que ya tiene panel no se reinicia. Son cuentas de solo desarrollo local — no ejecutar contra una base de producción.
 
@@ -194,9 +197,11 @@ npm test               # pruebas (Vitest)
 npm run test:coverage  # informe de cobertura en coverage/
 npm run lint           # ESLint
 npm run build          # compila; en frontend incluye el chequeo de tipos (vue-tsc)
+npm run test:integration  # backend: contra PostgreSQL real
+npm run test:e2e       # frontend: flujos en navegador (Playwright), con la API real
 ```
 
-Además de las pruebas unitarias, de servicios, de rutas y de componentes, `frontend/src/contracts.test.ts` compara los catálogos que frontend y backend duplican (widgets, roles, eventos, resultados…) y falla si se desalinean. La estrategia completa está en [`docs/arquitectura.md`](./docs/arquitectura.md#estrategia-de-pruebas).
+Además de las pruebas unitarias, de servicios, de rutas y de componentes, frontend y backend compilan contra el mismo contrato de la API (`backend/src/contracts/`): un campo renombrado o un valor de catálogo que un lado no conoce no compila. La estrategia completa está en [`docs/arquitectura.md`](./docs/arquitectura.md#estrategia-de-pruebas).
 
 ## Roadmap
 
@@ -214,6 +219,7 @@ Esta estructura se genera y actualiza con los scripts de [`tools/github-roadmap/
 
 - [`backend/README.md`](./backend/README.md) y [`frontend/README.md`](./frontend/README.md): cómo correr, probar y extender cada proyecto.
 - [`docs/arquitectura.md`](./docs/arquitectura.md): arquitectura interna, decisiones de diseño y la revisión de septiembre de 2026.
+- [`docs/despliegue.md`](./docs/despliegue.md): despliegue en Vercel (frontend) y Render (backend), variables de cada uno y cómo verificarlo.
 - [`docs/diagrama-componentes.md`](./docs/diagrama-componentes.md): relación entre el diagrama de componentes y las carpetas del código.
 - [`docs/DOCUMENTACION.md`](./docs/DOCUMENTACION.md): documento completo de sustentación (planteamiento del problema, marco referencial, requisitos, casos de uso, modelo de datos, plan de pruebas y trazabilidad).
 

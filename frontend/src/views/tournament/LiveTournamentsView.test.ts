@@ -6,7 +6,10 @@ import { createRouter, createWebHistory } from "vue-router";
 import { i18n } from "../../i18n";
 import LiveTournamentsView from "./LiveTournamentsView.vue";
 
-vi.mock("../../services/tournaments", () => ({ listLiveTournaments: vi.fn() }));
+vi.mock("../../services/tournaments", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../services/tournaments")>()),
+  listLiveTournaments: vi.fn(),
+}));
 
 import { listLiveTournaments } from "../../services/tournaments";
 
@@ -53,14 +56,24 @@ describe("LiveTournamentsView (HU18)", () => {
     expect(wrapper.find("a[href='/torneos/t-1/sala']").exists()).toBe(true);
   });
 
-  it("shows an empty state, and the server's error when loading fails", async () => {
+  it("shows an empty state when nothing is in play", async () => {
     vi.mocked(listLiveTournaments).mockResolvedValueOnce([]);
-    expect((await mountView()).text()).toContain("No hay torneos en curso");
 
+    expect((await mountView()).text()).toContain("No hay torneos en curso");
+  });
+
+  it("shows the server's error when loading fails, and loads again on retry", async () => {
     vi.mocked(listLiveTournaments).mockRejectedValueOnce({
       isAxiosError: true,
       response: { data: { error: "Caído" } },
     });
-    expect((await mountView()).text()).toContain("Caído");
+    const wrapper = await mountView();
+    expect(wrapper.text()).toContain("Caído");
+
+    vi.mocked(listLiveTournaments).mockResolvedValueOnce([TOURNAMENT]);
+    await wrapper.get("[role='alert'] button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Liga Universitaria");
   });
 });

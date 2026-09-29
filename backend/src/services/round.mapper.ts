@@ -1,42 +1,20 @@
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "../generated/prisma/client";
+import type { StoredResult } from "../contracts/catalogs";
+import type { MatchDto, RoundDto, SeatDto } from "../contracts/responses";
 
 // Everything a round's DTO needs, loaded in one query.
 export const ROUND_INCLUDE = {
   matches: {
     orderBy: { board: "asc" },
     include: {
-      white: { select: { id: true, user: { select: { name: true } } } },
-      black: { select: { id: true, user: { select: { name: true } } } },
+      white: { select: { id: true, userId: true, user: { select: { name: true } } } },
+      black: { select: { id: true, userId: true, user: { select: { name: true } } } },
       result: { select: { value: true } },
     },
   },
 } satisfies Prisma.RoundInclude;
 
 export type RoundWithMatches = Prisma.RoundGetPayload<{ include: typeof ROUND_INCLUDE }>;
-
-export interface SeatDto {
-  playerId: string;
-  name: string;
-}
-
-export interface MatchDto {
-  id: string;
-  board: number;
-  status: string;
-  white: SeatDto | null;
-  black: SeatDto | null;
-  // RN-03 catalog value, or null while the game hasn't been recorded.
-  result: string | null;
-  isBye: boolean;
-}
-
-export interface RoundDto {
-  id: string;
-  number: number;
-  status: string;
-  createdAt: Date;
-  matches: MatchDto[];
-}
 
 function toSeat(player: { id: string; user: { name: string } } | null): SeatDto | null {
   return player ? { playerId: player.id, name: player.user.name } : null;
@@ -55,8 +33,11 @@ export function toRoundDto(round: RoundWithMatches): RoundDto {
       status: match.status,
       white: toSeat(match.white),
       black: toSeat(match.black),
-      result: match.result?.value ?? null,
+      // results.value is text, but its CHECK constraint (RN-03) only lets these values in.
+      result: (match.result?.value ?? null) as StoredResult | null,
       isBye: !match.whiteId || !match.blackId,
     })),
   };
 }
+
+export type { MatchDto, RoundDto, SeatDto };

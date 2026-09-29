@@ -1,79 +1,72 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { useQuery, useQueryCache } from "@pinia/colada";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LoadError from "../../components/ui/LoadError.vue";
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
-import { formatDate } from "../../lib/format";
 import { hasTournamentRoom } from "../../lib/tournamentAccess";
-import { usePlayerSearch } from "../../lib/usePlayerSearch";
+import { addLinkedPlayer, coachTournamentsQuery, linkedPlayersQuery, removeLinkedPlayer } from "../../queries/coaches";
+import { useQueryStatus } from "../../queries/status";
+import { linkPlayer, unlinkPlayer } from "../../services/coaches";
 import type { PlayerSearchResult } from "../../services/players";
-import { useCoachesStore } from "../../stores/coaches";
-import { useLocaleStore } from "../../stores/locale";
+import FadeSlide from "../../components/ui/FadeSlide.vue";
+import FormBanner from "../../components/ui/FormBanner.vue";
+import PlayerSearchPicker from "../../components/ui/PlayerSearchPicker.vue";
+import TournamentCard from "../../components/tournament/TournamentCard.vue";
 
-const coaches = useCoachesStore();
-const locale = useLocaleStore();
+const cache = useQueryCache();
 const confirm = useConfirm();
 const { t } = useI18n();
 
-const loading = ref(true);
-const loadError = ref<string | null>(null);
+const playersEntry = useQuery(linkedPlayersQuery);
+const tournamentsEntry = useQuery(coachTournamentsQuery);
+const linkedPlayers = computed(() => playersEntry.data.value ?? []);
+const tournaments = computed(() => tournamentsEntry.data.value ?? []);
+const { loading, loadError, retry } = useQueryStatus([playersEntry, tournamentsEntry], "coachPlayers.loadError");
 
-onMounted(async () => {
-  try {
-    await Promise.all([coaches.loadLinkedPlayers(), coaches.loadTournaments()]);
-  } catch {
-    loadError.value = t("coachPlayers.loadError");
-  } finally {
-    loading.value = false;
-  }
-});
-
-const {
-  query: playerQuery,
-  results: searchResults,
-  pending: searching,
-  status: searchStatus,
-  reset: resetSearch,
-} = usePlayerSearch();
 const linking = ref(false);
 const actionError = ref<string | null>(null);
 
-const linkedIds = computed(() => new Set(coaches.linkedPlayers.map((p) => p.playerId)));
+const linkedIds = computed(() => new Set(linkedPlayers.value.map((p) => p.playerId)));
 
-/** Links a chosen player from the search results (HU24). */
-async function onLink(player: PlayerSearchResult): Promise<void> {
+/** Links a chosen player from the search results (HU24); answers whether it worked. */
+async function onLink(player: PlayerSearchResult): Promise<boolean> {
   actionError.value = null;
   linking.value = true;
   try {
-    await coaches.linkPlayer(player.id);
-    resetSearch();
+    addLinkedPlayer(cache, await linkPlayer(player.id));
+    return true;
   } catch (error) {
-    actionError.value = extractErrorMessage(error, t("coachPlayers.genericServerError"));
+    actionError.value = extractErrorMessage(error, t("common.genericServerError"));
+    return false;
   } finally {
     linking.value = false;
   }
 }
 
-/** Unlinks a player from the current coach, after confirmation. */
-async function onUnlink(player: { playerId: string; name: string }): Promise<void> {
-  const confirmed = await confirm({
-    title: t("coachPlayers.unlink"),
-    message: t("coachPlayers.unlinkConfirm", { name: player.name }),
-    confirmLabel: t("coachPlayers.unlink"),
-    danger: true,
-  });
+/** Stops following a player: straight away for a pending request (nothing was shared yet), else after confirming. */
+async function onUnlink(player: { playerId: string; name: string; acceptedAt: string | null }): Promise<void> {
+  const confirmed =
+    player.acceptedAt === null ||
+    (await confirm({
+      title: t("coachPlayers.unlink"),
+      message: t("coachPlayers.unlinkConfirm", { name: player.name }),
+      confirmLabel: t("coachPlayers.unlink"),
+      danger: true,
+    }));
   if (!confirmed) {
     return;
   }
 
   actionError.value = null;
   try {
-    await coaches.unlinkPlayer(player.playerId);
+    await unlinkPlayer(player.playerId);
+    removeLinkedPlayer(cache, player.playerId);
   } catch (error) {
-    actionError.value = extractErrorMessage(error, t("coachPlayers.genericServerError"));
+    actionError.value = extractErrorMessage(error, t("common.genericServerError"));
   }
 }
 </script>
@@ -89,69 +82,40 @@ async function onUnlink(player: { playerId: string; name: string }): Promise<voi
       </div>
 
       <p v-if="loading">{{ t("coachPlayers.loading") }}</p>
-      <LoadError v-else-if="loadError" :message="loadError" />
+      <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <section v-else class="card">
-        <Transition
-          enter-active-class="transition duration-180 ease-out"
-          enter-from-class="opacity-0 -translate-y-1.5"
-          leave-active-class="transition duration-180 ease-in"
-          leave-to-class="opacity-0 -translate-y-1.5"
-        >
-          <p v-if="actionError" role="alert" class="banner banner--error mb-4">{{ actionError }}</p>
-        </Transition>
+        <FadeSlide>
+          <FormBanner v-if="actionError" kind="error" class="mb-4">{{ actionError }}</FormBanner>
+        </FadeSlide>
 
-        <div class="field relative">
-          <label for="coachPlayerQuery">{{ t("coachPlayers.searchLabel") }}</label>
-          <input
-            id="coachPlayerQuery"
-            v-model="playerQuery"
-            type="search"
-            name="coachPlayerQuery"
-            autocomplete="off"
-            spellcheck="false"
-            :placeholder="t('coachPlayers.searchPlaceholder')"
-          />
-          <p class="sr-only" role="status">{{ searchStatus }}</p>
+        <PlayerSearchPicker
+          id="coachPlayerQuery"
+          :label="t('coachPlayers.searchLabel')"
+          :placeholder="t('coachPlayers.searchPlaceholder')"
+          :action-label="t('coachPlayers.link')"
+          :added-label="t('coachPlayers.alreadyLinked')"
+          :is-added="(player) => linkedIds.has(player.id)"
+          :busy="linking"
+          :pick="onLink"
+        />
 
-          <ul v-if="playerQuery.trim()" class="mt-2 list-none overflow-hidden rounded-lg border border-border-soft p-0">
-            <li v-if="searching" class="px-3.5 py-2.5 text-sm text-text-muted">{{ t("coachPlayers.searching") }}</li>
-            <template v-else-if="searchResults.length > 0">
-              <li
-                v-for="player in searchResults"
-                :key="player.id"
-                class="flex items-center justify-between gap-3 border-b border-border-soft px-3.5 py-2.5 last:border-b-0"
-              >
-                <div class="flex flex-col gap-0.5">
-                  <strong class="text-text">{{ player.name }}</strong>
-                  <span class="text-sm text-text-muted">{{ player.universityCode }} · {{ player.program }}</span>
-                </div>
-                <button
-                  type="button"
-                  class="btn btn-ghost"
-                  :disabled="linking || linkedIds.has(player.id)"
-                  @click="onLink(player)"
-                >
-                  {{ linkedIds.has(player.id) ? t("coachPlayers.alreadyLinked") : t("coachPlayers.link") }}
-                </button>
-              </li>
-            </template>
-            <li v-else class="px-3.5 py-2.5 text-sm text-text-muted">{{ t("coachPlayers.noResults") }}</li>
-          </ul>
-        </div>
-
-        <div v-if="coaches.linkedPlayers.length > 0" class="mt-4 flex flex-col gap-2">
+        <div v-if="linkedPlayers.length > 0" class="mt-4 flex flex-col gap-2">
           <div
-            v-for="player in coaches.linkedPlayers"
+            v-for="player in linkedPlayers"
             :key="player.playerId"
+            data-linked-player
             class="flex items-center justify-between gap-3 rounded-lg border border-border-soft px-3.5 py-2.5"
           >
             <div class="flex flex-col gap-0.5">
               <strong class="text-sm text-text">{{ player.name }}</strong>
               <span class="text-sm text-text-muted">{{ player.universityCode }} · {{ player.program }}</span>
+              <span v-if="player.acceptedAt === null" class="text-xs font-semibold text-text-faint">
+                {{ t("coachPlayers.pending") }}
+              </span>
             </div>
             <button type="button" class="btn btn-ghost" @click="onUnlink(player)">
-              {{ t("coachPlayers.unlink") }}
+              {{ player.acceptedAt === null ? t("coachPlayers.cancelRequest") : t("coachPlayers.unlink") }}
             </button>
           </div>
         </div>
@@ -163,37 +127,27 @@ async function onUnlink(player: { playerId: string; name: string }): Promise<voi
         <p class="mb-4 text-sm">{{ t("coachPlayers.tournamentsSubtitle") }}</p>
 
         <p
-          v-if="coaches.tournaments.length === 0"
+          v-if="tournaments.length === 0"
           class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
         >
           {{ t("coachPlayers.tournamentsEmpty") }}
         </p>
 
         <ul v-else class="m-0 flex list-none flex-col gap-3 p-0">
-          <li
-            v-for="tournament in coaches.tournaments"
-            :key="tournament.id"
-            class="flex flex-col gap-2 rounded-2xl border border-border-soft bg-surface p-5"
-          >
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <h3 class="text-base">{{ tournament.name }}</h3>
-              <span class="pill">{{ t(`estados.${tournament.status}`) }}</span>
-            </div>
-            <p class="text-sm text-text-muted">
-              {{ formatDate(tournament.startDate, locale.locale) }} —
-              {{ formatDate(tournament.endDate, locale.locale) }}
-            </p>
-            <p class="text-sm">
-              {{ t("coachPlayers.myPlayersLabel") }}:
-              {{ tournament.myPlayers.map((player) => player.name).join(", ") }}
-            </p>
-            <RouterLink
-              v-if="hasTournamentRoom(tournament)"
-              :to="`/torneos/${tournament.id}/sala`"
-              class="self-start text-sm font-semibold text-accent"
-            >
-              {{ t("tournamentRoom.follow") }}
-            </RouterLink>
+          <li v-for="tournament in tournaments" :key="tournament.id">
+            <TournamentCard :tournament="tournament">
+              <p class="text-sm">
+                {{ t("coachPlayers.myPlayersLabel") }}:
+                {{ tournament.myPlayers.map((player) => player.name).join(", ") }}
+              </p>
+              <RouterLink
+                v-if="hasTournamentRoom(tournament)"
+                :to="`/torneos/${tournament.id}/sala`"
+                class="self-start text-sm font-semibold text-accent"
+              >
+                {{ t("tournamentRoom.follow") }}
+              </RouterLink>
+            </TournamentCard>
           </li>
         </ul>
       </section>

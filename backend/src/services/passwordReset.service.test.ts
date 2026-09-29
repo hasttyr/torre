@@ -1,8 +1,12 @@
-import type { PrismaClient } from "@prisma/client";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createHash } from "node:crypto";
 
-import { HttpError } from "../middlewares/errorHandler";
+import type { PrismaClient } from "../generated/prisma/client";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { logger } from "../config/logger";
+import type { HttpError } from "../errors/apiErrors";
 import { confirmPasswordReset, requestPasswordReset } from "./passwordReset.service";
+import type { ResetLinkSender } from "./resetLinkSender";
 
 function buildPrismaMock() {
   return {
@@ -14,46 +18,80 @@ function buildPrismaMock() {
 
 describe("requestPasswordReset", () => {
   let prisma: ReturnType<typeof buildPrismaMock>;
+  let sender: { send: ReturnType<typeof vi.fn<ResetLinkSender["send"]>> };
 
   beforeEach(() => {
     prisma = buildPrismaMock();
+    sender = { send: vi.fn<ResetLinkSender["send"]>().mockResolvedValue(undefined) };
   });
 
-  it("creates a reset request for a registered, active user", async () => {
-    prisma.user.findUnique.mockResolvedValue({ id: "user-1", status: "ACTIVE" });
-    const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-    await requestPasswordReset(prisma as unknown as PrismaClient, "ana@example.com");
+  const request = (email: string) => requestPasswordReset(prisma as unknown as PrismaClient, email, sender);
+
+  it("stores only the token's hash and sends its owner a link with the token itself", async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: "user-1", email: "ana@example.com", status: "ACTIVE" });
+
+    await request("ana@example.com");
 
     expect(prisma.passwordResetRequest.create).toHaveBeenCalledTimes(1);
-    const createArgs = prisma.passwordResetRequest.create.mock.calls[0][0];
-    expect(createArgs.data.userId).toBe("user-1");
-    expect(createArgs.data.tokenHash).toHaveLength(64); // sha256 hex digest
-    expect(createArgs.data.expiresAt.getTime()).toBeGreaterThan(Date.now());
+    const { data } = prisma.passwordResetRequest.create.mock.calls[0][0];
+    expect(data.userId).toBe("user-1");
+    expect(data.expiresAt.getTime()).toBeGreaterThan(Date.now());
 
-    consoleLogSpy.mockRestore();
+    expect(sender.send).toHaveBeenCalledTimes(1);
+    const [email, link] = sender.send.mock.calls[0]!;
+    expect(email).toBe("ana@example.com");
+    const token = new URL(link).searchParams.get("token")!;
+    expect(link).toBe(`http://localhost:5173/restablecer-password?token=${token}`);
+    expect(createHash("sha256").update(token).digest("hex")).toBe(data.tokenHash);
+  });
+
+  it("never writes the token to the server logs", async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: "user-1", email: "ana@example.com", status: "ACTIVE" });
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    await request("ana@example.com");
+
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it("answers the same when the mail provider fails, logging the failure without the token", async () => {
+    prisma.user.findUnique.mockResolvedValue({ id: "user-1", email: "ana@example.com", status: "ACTIVE" });
+    sender.send.mockRejectedValue(new Error("SMTP 421 service not available"));
+    const log = vi.spyOn(logger, "error");
+
+    await expect(request("ana@example.com")).resolves.toBeUndefined();
+    await vi.waitFor(() => expect(log).toHaveBeenCalled());
+
+    const token = new URL(sender.send.mock.calls[0]![1]).searchParams.get("token")!;
+    expect(JSON.stringify(log.mock.calls)).not.toContain(token);
   });
 
   it("does nothing for an email that doesn't exist (no reveal of account existence)", async () => {
     prisma.user.findUnique.mockResolvedValue(null);
 
-    await requestPasswordReset(prisma as unknown as PrismaClient, "no-existe@example.com");
+    await request("no-existe@example.com");
 
     expect(prisma.passwordResetRequest.create).not.toHaveBeenCalled();
+    expect(sender.send).not.toHaveBeenCalled();
   });
 
   it("does nothing for an inactive account", async () => {
-    prisma.user.findUnique.mockResolvedValue({ id: "user-1", status: "INACTIVE" });
+    prisma.user.findUnique.mockResolvedValue({ id: "user-1", email: "ana@example.com", status: "INACTIVE" });
 
-    await requestPasswordReset(prisma as unknown as PrismaClient, "ana@example.com");
+    await request("ana@example.com");
 
     expect(prisma.passwordResetRequest.create).not.toHaveBeenCalled();
+    expect(sender.send).not.toHaveBeenCalled();
   });
 
   it("normalizes the email before looking it up", async () => {
     prisma.user.findUnique.mockResolvedValue(null);
 
-    await requestPasswordReset(prisma as unknown as PrismaClient, "  Ana@Example.COM  ");
+    await request("  Ana@Example.COM  ");
 
     expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { email: "ana@example.com" } });
   });

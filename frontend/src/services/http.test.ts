@@ -36,6 +36,7 @@ const CASES: [string, () => Promise<unknown>, Verb, string, unknown?][] = [
   ["auth.logoutUser", () => auth.logoutUser(), "post", "/auth/logout"],
   ["auth.fetchMe", () => auth.fetchMe(), "get", "/users/me"],
   ["auth.listMyCoaches", () => auth.listMyCoaches(), "get", "/users/me/coaches"],
+  ["auth.removeMyCoach", () => auth.removeMyCoach("coach-1"), "delete", "/users/me/coaches/coach-1"],
   ["auth.updateProfile", () => auth.updateProfile({ name: "Ana" }), "put", "/users/me", { name: "Ana" }],
   [
     "auth.requestPasswordReset",

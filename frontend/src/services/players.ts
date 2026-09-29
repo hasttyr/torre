@@ -1,13 +1,9 @@
+import type { PlayerSearchResultDto } from "@contracts";
+
+import type { Serialized } from "../lib/serialized";
 import { api } from "./api";
 
-export interface PlayerSearchResult {
-  id: string;
-  name: string;
-  email: string;
-  universityCode: string;
-  program: string;
-  semester: number;
-}
+export type PlayerSearchResult = Serialized<PlayerSearchResultDto>;
 
 /** Searches players by name, email or university code. */
 export async function searchPlayers(query: string): Promise<PlayerSearchResult[]> {

@@ -1,12 +1,9 @@
-import { api } from "./api";
+import { ROLES as ALL_ROLES, type Role as AnyRole } from "@contracts";
+
+import { api, path } from "./api";
 import type { RegisteredUser } from "./auth";
 
-// Every role in the system catalog (RF03): unlike SELF_ASSIGNABLE_ROLES in
-// auth.ts, an administrator assigning a role from here already went through
-// requireRole("ADMINISTRATOR") on the backend, so ADMINISTRATOR itself is a
-// valid target.
-export const ALL_ROLES = ["PLAYER", "COACH", "ARBITER", "ORGANIZER", "ADMINISTRATOR"] as const;
-export type AnyRole = (typeof ALL_ROLES)[number];
+export { ALL_ROLES, type AnyRole };
 
 export type AdminUser = RegisteredUser;
 
@@ -18,12 +15,12 @@ export async function listUsers(): Promise<AdminUser[]> {
 
 /** Changes a user's role (admin-only, HU03). */
 export async function updateUserRole(id: string, role: AnyRole): Promise<AdminUser> {
-  const { data } = await api.patch<AdminUser>(`/users/${id}/role`, { role });
+  const { data } = await api.patch<AdminUser>(path`/users/${id}/role`, { role });
   return data;
 }
 
 /** Activates or deactivates a user account (admin-only). */
 export async function updateUserStatus(id: string, status: "ACTIVE" | "INACTIVE"): Promise<AdminUser> {
-  const { data } = await api.patch<AdminUser>(`/users/${id}/status`, { status });
+  const { data } = await api.patch<AdminUser>(path`/users/${id}/status`, { status });
   return data;
 }

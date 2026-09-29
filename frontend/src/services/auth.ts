@@ -1,15 +1,30 @@
-import { api } from "./api";
+import {
+  DISABILITIES,
+  GENDERS,
+  SELF_ASSIGNABLE_ROLES,
+  type AuthResult as AuthResultDto,
+  type SocketTicketDto,
+  type DataConsentDto,
+  type Disability,
+  type Gender,
+  type MyCoachDto,
+  type PlayerClubDto,
+  type PlayerProfileDto,
+  type SelfAssignableRole,
+  type UserDto,
+} from "@contracts";
 
-// Deliberately duplicated in backend/src/validators/auth.schemas.ts (there
-// is no shared package between the two npm projects): if the registration
-// contract changes there, replicate the change here.
-//
-// ORGANIZER, ARBITER and ADMINISTRATOR are deliberately excluded: they hold
-// authority over other people's data or over the system itself, so those
-// accounts must be provisioned by an administrator, not self-service.
-export const SELF_ASSIGNABLE_ROLES = ["PLAYER", "COACH"] as const;
+import type { Serialized } from "../lib/serialized";
+import { api, path } from "./api";
 
-export type SelfAssignableRole = (typeof SELF_ASSIGNABLE_ROLES)[number];
+export { DISABILITIES, GENDERS, SELF_ASSIGNABLE_ROLES, type Disability, type Gender, type SelfAssignableRole };
+export type PlayerClub = Serialized<PlayerClubDto>;
+export type PlayerProfile = Serialized<PlayerProfileDto>;
+export type DataConsent = Serialized<DataConsentDto>;
+export type RegisteredUser = Serialized<UserDto>;
+export type AuthResult = Serialized<AuthResultDto>;
+type SocketTicket = Serialized<SocketTicketDto>;
+export type MyCoach = Serialized<MyCoachDto>;
 
 interface RegisterBasePayload {
   name: string;
@@ -31,59 +46,6 @@ interface RegisterOtherRolePayload extends RegisterBasePayload {
 }
 
 export type RegisterPayload = RegisterPlayerPayload | RegisterOtherRolePayload;
-
-// Deliberately duplicated in backend/src/validators/users.schemas.ts
-// (GENEROS/DISCAPACIDADES) — closed catalogs, not free text.
-export const GENDERS = ["MALE", "FEMALE", "NON_BINARY", "PREFER_NOT_TO_SAY"] as const;
-export type Gender = (typeof GENDERS)[number];
-
-export const DISABILITIES = [
-  "NONE",
-  "PHYSICAL_MOTOR",
-  "VISUAL",
-  "HEARING",
-  "COGNITIVE",
-  "PSYCHOSOCIAL",
-  "MULTIPLE",
-  "OTHER",
-] as const;
-export type Disability = (typeof DISABILITIES)[number];
-
-export interface PlayerClub {
-  id: string;
-  name: string;
-}
-
-export interface PlayerProfile {
-  universityCode: string;
-  program: string;
-  semester: number;
-  birthDate: string | null;
-  age: number | null;
-  gender: Gender | null;
-  disability: Disability | null;
-  // HU23: null when the player isn't currently in a club.
-  club: PlayerClub | null;
-}
-
-// HU22 ("conocer"): cuándo y bajo qué versión de la política el titular
-// aceptó el tratamiento de sus datos (RN-10/HU21).
-export interface DataConsent {
-  accepted: boolean;
-  date: string | null;
-  version: string | null;
-}
-
-export interface RegisteredUser {
-  id: string;
-  name: string;
-  email: string;
-  status: string;
-  role: string;
-  createdAt: string;
-  dataConsent: DataConsent;
-  player?: PlayerProfile;
-}
 
 // HU20: every field is optional (only what is sent gets updated); it never
 // includes role or email on purpose, same rule as
@@ -116,31 +78,29 @@ export interface LoginPayload {
   password: string;
 }
 
-export interface AuthResult {
-  token: string;
-  user: RegisteredUser;
-}
-
 /**
- * Logs a user in with email and password.
+ * Logs a user in with email and password. The server starts the session
+ * with an HttpOnly cookie: the answer carries only the user.
  *
  * @param payload - The user's credentials.
- * @returns The session token and the authenticated user's data.
  */
 export async function loginUser(payload: LoginPayload): Promise<AuthResult> {
   const { data } = await api.post<AuthResult>("/auth/login", payload);
   return data;
 }
 
-/**
- * Logs the current user out on the backend.
- *
- * @remarks
- * Best-effort call: the backend does not invalidate anything (the JWT is
- * stateless), so a failure here must not block the local logout.
- */
+/** Ends the session on every device: the server revokes it and clears the cookie. */
 export async function logoutUser(): Promise<void> {
   await api.post("/auth/logout");
+}
+
+/**
+ * A one-minute ticket to open a real-time connection as the signed-in user:
+ * the socket may go straight to the API, where the session cookie isn't sent.
+ */
+export async function requestSocketTicket(): Promise<string> {
+  const { data } = await api.post<SocketTicket>("/auth/socket-ticket");
+  return data.ticket;
 }
 
 /**
@@ -153,16 +113,20 @@ export async function fetchMe(): Promise<RegisteredUser> {
   return data;
 }
 
-export interface MyCoach {
-  id: string;
-  name: string;
-  email: string;
-}
-
-/** Lists the coaches linked to the current user (as a player, HU24). */
+/** Lists the coaches who follow the current user (as a player, HU24), and the requests waiting for them. */
 export async function listMyCoaches(): Promise<MyCoach[]> {
   const { data } = await api.get<MyCoach[]>("/users/me/coaches");
   return data;
+}
+
+/** Accepts a coach's request: from now on they follow the current user's progress (HU24). */
+export async function acceptMyCoach(coachId: string): Promise<void> {
+  await api.post(path`/users/me/coaches/${coachId}/accept`);
+}
+
+/** Declines a coach's request, or stops a coach from following the current user's progress (HU24). */
+export async function removeMyCoach(coachId: string): Promise<void> {
+  await api.delete(path`/users/me/coaches/${coachId}`);
 }
 
 /**

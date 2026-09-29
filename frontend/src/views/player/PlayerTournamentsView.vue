@@ -1,29 +1,22 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { useQuery } from "@pinia/colada";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
+import TournamentCard from "../../components/tournament/TournamentCard.vue";
 import LoadError from "../../components/ui/LoadError.vue";
-import { formatDate } from "../../lib/format";
 import { hasTournamentRoom } from "../../lib/tournamentAccess";
-import { useLocaleStore } from "../../stores/locale";
-import { useTournamentsStore } from "../../stores/tournaments";
+import { useQueryStatus } from "../../queries/status";
+import { availableTournamentsQuery, enrolledTournamentsQuery } from "../../queries/tournaments";
 
-const tournaments = useTournamentsStore();
-const locale = useLocaleStore();
 const { t } = useI18n();
-const loading = ref(true);
-const loadError = ref<string | null>(null);
-
-onMounted(async () => {
-  try {
-    await tournaments.loadPlayerTournaments();
-  } catch {
-    loadError.value = t("playerTournaments.loadError");
-  } finally {
-    loading.value = false;
-  }
-});
+// HU25 + the player's own registrations: side by side on the same page.
+const enrolledQuery = useQuery(enrolledTournamentsQuery);
+const availableQuery = useQuery(availableTournamentsQuery);
+const enrolled = computed(() => enrolledQuery.data.value ?? []);
+const available = computed(() => availableQuery.data.value ?? []);
+const { loading, loadError, retry } = useQueryStatus([enrolledQuery, availableQuery], "playerTournaments.loadError");
 </script>
 
 <template>
@@ -35,7 +28,7 @@ onMounted(async () => {
            screen); each section is an h2 and each tournament an h3. -->
       <h1 class="sr-only">{{ t("header.tournaments") }}</h1>
       <p v-if="loading">{{ t("playerTournaments.loading") }}</p>
-      <LoadError v-else-if="loadError" :message="loadError" />
+      <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <template v-else>
         <section class="flex flex-col gap-4">
@@ -45,24 +38,15 @@ onMounted(async () => {
           </div>
 
           <p
-            v-if="tournaments.enrolled.length === 0"
+            v-if="enrolled.length === 0"
             class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
           >
             {{ t("playerTournaments.myRegistrationsEmpty") }}
           </p>
 
           <ul v-else class="m-0 flex list-none flex-col gap-3 p-0">
-            <li
-              v-for="tournament in tournaments.enrolled"
-              :key="tournament.id"
-              class="flex flex-col items-start gap-2 rounded-2xl border border-border-soft bg-surface p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-            >
-              <div>
-                <h3 class="text-base">{{ tournament.name }}</h3>
-                <p class="mt-0.5 text-sm">
-                  {{ formatDate(tournament.startDate, locale.locale) }} —
-                  {{ formatDate(tournament.endDate, locale.locale) }}
-                </p>
+            <li v-for="tournament in enrolled" :key="tournament.id">
+              <TournamentCard :tournament="tournament">
                 <RouterLink
                   v-if="hasTournamentRoom(tournament)"
                   :to="`/torneos/${tournament.id}/sala`"
@@ -70,8 +54,7 @@ onMounted(async () => {
                 >
                   {{ t("tournamentRoom.follow") }}
                 </RouterLink>
-              </div>
-              <span class="pill">{{ t(`estados.${tournament.status}`) }}</span>
+              </TournamentCard>
             </li>
           </ul>
         </section>
@@ -83,26 +66,15 @@ onMounted(async () => {
           </div>
 
           <p
-            v-if="tournaments.available.length === 0"
+            v-if="available.length === 0"
             class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
           >
             {{ t("playerTournaments.availableEmpty") }}
           </p>
 
           <ul v-else class="m-0 flex list-none flex-col gap-3 p-0">
-            <li
-              v-for="tournament in tournaments.available"
-              :key="tournament.id"
-              class="flex flex-col items-start gap-2 rounded-2xl border border-border-soft bg-surface p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-            >
-              <div>
-                <h3 class="text-base">{{ tournament.name }}</h3>
-                <p class="mt-0.5 text-sm">
-                  {{ formatDate(tournament.startDate, locale.locale) }} —
-                  {{ formatDate(tournament.endDate, locale.locale) }}
-                </p>
-              </div>
-              <span class="pill">{{ t(`estados.${tournament.status}`) }}</span>
+            <li v-for="tournament in available" :key="tournament.id">
+              <TournamentCard :tournament="tournament" />
             </li>
           </ul>
         </section>

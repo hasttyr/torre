@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useQueryCache } from "@pinia/colada";
 import { reactive, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
@@ -6,12 +7,15 @@ import { useRouter } from "vue-router";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import DateField from "../../components/ui/DateField.vue";
 import { extractErrorMessage } from "../../lib/errors";
-import { errorAttrs, errorId, focusFirstInvalid } from "../../lib/formErrors";
+import { errorAttrs, errorId, focusFirstInvalid, resetErrors } from "../../lib/formErrors";
 import { hasChanges, useUnsavedChangesGuard } from "../../lib/unsavedChanges";
-import { useTournamentsStore } from "../../stores/tournaments";
+import { showTournament } from "../../queries/tournaments";
+import { createTournament } from "../../services/tournaments";
+import FadeSlide from "../../components/ui/FadeSlide.vue";
+import FormBanner from "../../components/ui/FormBanner.vue";
 
 const router = useRouter();
-const tournaments = useTournamentsStore();
+const cache = useQueryCache();
 const { t } = useI18n();
 
 const EMPTY_FORM = { name: "", startDate: "", endDate: "", format: "swiss" };
@@ -33,9 +37,7 @@ useUnsavedChangesGuard(() => !created.value && hasChanges(form, EMPTY_FORM));
  * @returns `true` if the form has no validation errors.
  */
 function validate(): boolean {
-  for (const key of Object.keys(errors)) {
-    delete errors[key];
-  }
+  resetErrors(errors);
 
   if (form.name.trim().length < 2) {
     errors.name = t("createTournament.nameMinLength");
@@ -64,16 +66,18 @@ async function onSubmit(): Promise<void> {
 
   submitting.value = true;
   try {
-    const tournament = await tournaments.create({
+    const tournament = await createTournament({
       name: form.name.trim(),
       startDate: form.startDate,
       endDate: form.endDate,
       format: form.format.trim() || undefined,
     });
+    // Its admin page opens next: it's already in the cache.
+    showTournament(cache, tournament);
     created.value = true;
     router.push(`/torneos/${tournament.id}`);
   } catch (error) {
-    serverError.value = extractErrorMessage(error, t("auth.serverError"));
+    serverError.value = extractErrorMessage(error, t("common.genericServerError"));
   } finally {
     submitting.value = false;
   }
@@ -88,14 +92,9 @@ async function onSubmit(): Promise<void> {
       <h1 class="text-2xl sm:text-3xl">{{ t("createTournament.title") }}</h1>
       <p class="mt-1">{{ t("createTournament.subtitle") }}</p>
 
-      <Transition
-        enter-active-class="transition duration-180 ease-out"
-        enter-from-class="opacity-0 -translate-y-1.5"
-        leave-active-class="transition duration-180 ease-in"
-        leave-to-class="opacity-0 -translate-y-1.5"
-      >
-        <p v-if="serverError" role="alert" class="banner banner--error mt-4">{{ serverError }}</p>
-      </Transition>
+      <FadeSlide>
+        <FormBanner v-if="serverError" kind="error" class="mt-4">{{ serverError }}</FormBanner>
+      </FadeSlide>
 
       <form ref="formEl" novalidate class="mt-6 flex flex-col gap-4" @submit.prevent="onSubmit">
         <div class="field" :class="{ 'has-error': errors.name }">

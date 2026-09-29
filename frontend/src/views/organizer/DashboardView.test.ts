@@ -1,4 +1,4 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
@@ -6,7 +6,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import { i18n } from "../../i18n";
 import DashboardView from "./DashboardView.vue";
 
-vi.mock("../../services/tournaments", () => ({
+vi.mock("../../services/tournaments", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../services/tournaments")>()),
   createTournament: vi.fn(),
   getTournament: vi.fn(),
   configureTournament: vi.fn(),
@@ -34,7 +35,7 @@ async function mountView() {
   await router.isReady();
 
   const wrapper = mount(DashboardView, { global: { plugins: [router, i18n] } });
-  await new Promise((resolve) => setTimeout(resolve, 0));
+  await flushPromises();
   await wrapper.vm.$nextTick();
   return { wrapper, router };
 }
@@ -101,8 +102,8 @@ describe("DashboardView", () => {
 
     const { wrapper, router } = await mountView();
 
-    await wrapper.get(".tournament-card").trigger("click");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await wrapper.get("a[href='/torneos/tournament-1']").trigger("click");
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(router.currentRoute.value.path).toBe("/torneos/tournament-1");

@@ -1,18 +1,25 @@
 <script setup lang="ts">
 import { reactive, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import AuthLayout from "../../components/layout/AuthLayout.vue";
 import { extractErrorMessage } from "../../lib/errors";
-import { errorAttrs, errorId, focusFirstInvalid } from "../../lib/formErrors";
+import { errorAttrs, errorId, focusFirstInvalid, resetErrors } from "../../lib/formErrors";
 import { confirmPasswordReset } from "../../services/auth";
+import FadeSlide from "../../components/ui/FadeSlide.vue";
+import FormBanner from "../../components/ui/FormBanner.vue";
 
 const route = useRoute();
 const { t } = useI18n();
 
-// The reset link (HU19) carries the one-time token as a query param.
+// The reset link (HU19) carries the one-time token as a query param. It's
+// kept in memory only: replacing the URL takes it out of the address bar and
+// the browser history (synced ones included), where anyone using this
+// computer later could find a still-valid link. A reload then asks for a new
+// link, as for any missing token.
 const token = typeof route.query.token === "string" ? route.query.token : "";
+if (token) void useRouter().replace({ query: {} });
 
 const form = reactive({ newPassword: "", confirmPassword: "" });
 const errors = reactive<Record<string, string>>({});
@@ -23,9 +30,7 @@ const formEl = useTemplateRef<HTMLFormElement>("formEl");
 
 /** Validates the reset-password form. */
 function validate(): boolean {
-  for (const key of Object.keys(errors)) {
-    delete errors[key];
-  }
+  resetErrors(errors);
 
   if (form.newPassword.length < 8) {
     errors.newPassword = t("auth.passwordMinLength");
@@ -61,19 +66,14 @@ async function onSubmit(): Promise<void> {
 <template>
   <AuthLayout :title="t('resetPassword.title')" :subtitle="t('resetPassword.subtitle')">
     <template #banners>
-      <Transition
-        enter-active-class="transition duration-180 ease-out"
-        enter-from-class="opacity-0 -translate-y-1.5"
-        leave-active-class="transition duration-180 ease-in"
-        leave-to-class="opacity-0 -translate-y-1.5"
-      >
-        <p v-if="serverError" role="alert" class="banner banner--error">{{ serverError }}</p>
-      </Transition>
+      <FadeSlide>
+        <FormBanner v-if="serverError" kind="error">{{ serverError }}</FormBanner>
+      </FadeSlide>
     </template>
 
-    <p v-if="!token" role="alert" class="banner banner--error">{{ t("resetPassword.missingTokenError") }}</p>
+    <FormBanner v-if="!token" kind="error">{{ t("resetPassword.missingTokenError") }}</FormBanner>
 
-    <p v-else-if="submitted" role="status" class="banner banner--success">{{ t("resetPassword.successMessage") }}</p>
+    <FormBanner v-else-if="submitted" kind="success">{{ t("resetPassword.successMessage") }}</FormBanner>
 
     <form v-else ref="formEl" novalidate @submit.prevent="onSubmit">
       <div class="field" :class="{ 'has-error': errors.newPassword }">

@@ -1,6 +1,6 @@
-import { mount } from "@vue/test-utils";
+import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
@@ -14,13 +14,17 @@ vi.mock("../../services/dataRights", () => ({
   requestDataSuppression: vi.fn(),
 }));
 vi.mock("../../lib/download", () => ({ saveFile: vi.fn() }));
+vi.mock("../../lib/pageLoad", () => ({ loadPage: vi.fn() }));
+vi.mock("../../services/auth", () => ({ logoutUser: vi.fn() }));
 
 import { saveFile } from "../../lib/download";
+import { loadPage } from "../../lib/pageLoad";
 import { requestDataAccess, requestDataSuppression } from "../../services/dataRights";
+import type { RegisteredUser } from "../../services/auth";
 
 const requestDataSuppressionMock = vi.mocked(requestDataSuppression);
 
-const USER = {
+const USER: RegisteredUser = {
   id: "user-1",
   name: "Ana Torres",
   email: "ana@example.com",
@@ -39,7 +43,7 @@ async function mountPanel() {
   await router.isReady();
 
   const auth = useAuthStore();
-  auth.$patch({ token: "token", user: USER });
+  auth.$patch({ user: USER });
 
   return mount(PrivacyDataRights, { global: { plugins: [router, i18n] } });
 }
@@ -92,12 +96,59 @@ describe("PrivacyDataRights", () => {
     expect(requestDataSuppressionMock).not.toHaveBeenCalled();
 
     await clickConfirmDialogButton("Eliminar mis datos");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(requestDataSuppressionMock).toHaveBeenCalled();
     // Announced by screen readers: the confirmation appears away from focus.
     expect(wrapper.get("[role='status']").text()).toContain("Solicitud procesada");
+  });
+
+  describe("once the data is suppressed", () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    async function suppress() {
+      // Time still flows for the dialog; the notice's delay can be skipped.
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      mountConfirmDialogHost();
+      requestDataSuppressionMock.mockResolvedValue({
+        type: "SUPPRESSION",
+        status: "RESOLVED",
+        message: "Los datos personales fueron suprimidos",
+        user: USER,
+      });
+      const wrapper = await mountPanel();
+      await wrapper
+        .findAll("button")
+        .find((btn) => btn.text().includes("Eliminar mis datos"))!
+        .trigger("click");
+      await clickConfirmDialogButton("Eliminar mis datos");
+      await flushPromises();
+      return wrapper;
+    }
+
+    it("signs out for good after the notice has been on screen for a moment", async () => {
+      await suppress();
+      expect(loadPage).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(2500);
+
+      expect(useAuthStore().isAuthenticated).toBe(false);
+      expect(loadPage).toHaveBeenCalledWith("/");
+    });
+
+    it("signs out right away if the user leaves first, instead of later from another page", async () => {
+      const wrapper = await suppress();
+
+      wrapper.unmount();
+      await flushPromises();
+      expect(loadPage).toHaveBeenCalledOnce();
+
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(loadPage).toHaveBeenCalledOnce();
+    });
   });
 
   it("does not request suppression when the dialog is cancelled", async () => {
@@ -109,7 +160,7 @@ describe("PrivacyDataRights", () => {
     await wrapper.vm.$nextTick();
 
     await clickConfirmDialogButton("Cancelar");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(requestDataSuppressionMock).not.toHaveBeenCalled();
   });
@@ -121,20 +172,59 @@ describe("PrivacyDataRights — access right (HU22)", () => {
     vi.clearAllMocks();
   });
 
-  it("downloads the titular's own data as a JSON file", async () => {
-    vi.mocked(requestDataAccess).mockResolvedValue({ type: "ACCESS", status: "RESOLVED", message: "ok", user: USER });
+  const EXPORT = {
+    profile: USER,
+    coaches: [{ name: "Carlos Coach", linkedAt: "2026-02-01T00:00:00.000Z", acceptedAt: null }],
+    tournaments: [],
+    games: [],
+    dataRequests: [],
+    auditedActions: [],
+  };
 
+  async function download() {
     const wrapper = await mountPanel();
     await wrapper
       .findAll("button")
-      .find((btn) => btn.text().includes("Descargar"))!
+      .find((btn) => btn.text().includes(i18n.global.t("account.privacyDownloadButton")))!
       .trigger("click");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
+    return wrapper;
+  }
+
+  it("downloads everything held about the person as a JSON file, not just the profile", async () => {
+    vi.mocked(requestDataAccess).mockResolvedValue({
+      type: "ACCESS",
+      status: "RESOLVED",
+      message: "ok",
+      user: USER,
+      data: EXPORT,
+    });
+
+    await download();
 
     expect(requestDataAccess).toHaveBeenCalledTimes(1);
-    const [blob, filename] = vi.mocked(saveFile).mock.calls[0];
+    const [blob, filename] = vi.mocked(saveFile).mock.calls[0]!;
     expect(filename).toBe("mis-datos-torre.json");
-    expect(JSON.parse(await (blob as Blob).text())).toMatchObject({ email: "ana@example.com" });
+    expect(JSON.parse(await (blob as Blob).text())).toEqual(EXPORT);
+  });
+
+  it("names the file in the page's language", async () => {
+    vi.mocked(requestDataAccess).mockResolvedValue({
+      type: "ACCESS",
+      status: "RESOLVED",
+      message: "ok",
+      user: USER,
+      data: EXPORT,
+    });
+    const locale = useLocaleStore();
+    await locale.setLocale("en");
+    try {
+      await download();
+    } finally {
+      await locale.setLocale("es");
+    }
+
+    expect(vi.mocked(saveFile).mock.calls[0]![1]).toBe("my-torre-data.json");
   });
 
   it("shows the server's reason when the request is rejected", async () => {
@@ -148,7 +238,7 @@ describe("PrivacyDataRights — access right (HU22)", () => {
       .findAll("button")
       .find((btn) => btn.text().includes("Descargar"))!
       .trigger("click");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("Solicitud inválida");

@@ -1,6 +1,7 @@
-import type { Tournament } from "@prisma/client";
+import type { Tournament } from "../../generated/prisma/client";
 
 import type { RoundDto } from "../round.mapper";
+import type { Tiebreak } from "../standings.calculator";
 import type { StandingsDto } from "../standings.service";
 import type { OfficialDocument } from "./pdfRenderer";
 
@@ -8,6 +9,15 @@ import type { OfficialDocument } from "./pdfRenderer";
 // the screens use, so the paper at the venue never disagrees with the app.
 
 const RESULT_TEXT: Record<string, string> = { "1-0": "1 – 0", "0-1": "0 – 1", "1/2-1/2": "½ – ½", BYE: "Bye" };
+
+// The documents are printed in Spanish, the venue's language.
+const TIEBREAK_LABELS: Record<Tiebreak, string> = {
+  BUCHHOLZ: "Buchholz",
+  BUCHHOLZ_CUT1: "Buchholz Cortado 1",
+  SONNEBORN_BERGER: "Sonneborn-Berger",
+  DIRECT_ENCOUNTER: "Resultado particular",
+  ARO: "ARO",
+};
 
 // Two decimals: Sonneborn-Berger can land on quarters (0.5 × 0.5), and
 // rounding it away could make two tied players look different.
@@ -40,7 +50,9 @@ export function standingsDocument(
     subtitle: `${state} · ${standings.roundsCompleted} de ${tournament.roundsCount ?? "—"} rondas completas`,
     notes: [
       ...generatedNotes(generatedAt, timeZone),
-      ...(standings.tiebreaks.length > 0 ? [`Desempates en orden: ${standings.tiebreaks.join(" › ")}.`] : []),
+      ...(standings.tiebreaks.length > 0
+        ? [`Desempates en orden: ${standings.tiebreaks.map((tiebreak) => TIEBREAK_LABELS[tiebreak]).join(" › ")}.`]
+        : []),
     ],
     tables: [
       {

@@ -3,6 +3,7 @@ import { computed, ref, useTemplateRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
+import { navLinks } from "../../lib/navigation";
 import { prefetchRoute } from "../../lib/prefetchRoute";
 import { useAuthStore } from "../../stores/auth";
 import AppLogo from "./AppLogo.vue";
@@ -19,21 +20,10 @@ const prefetch = (to: string): void => prefetchRoute(router, to);
 const { t } = useI18n();
 const mobileOpen = ref(false);
 
-// Role-gated links, declared once for both the desktop and the mobile nav.
-// `roles` mirrors each route's meta.roles in router/index.ts; omitted = any
-// authenticated user.
-const NAV_ITEMS: { to: string; labelKey: string; roles?: string[] }[] = [
-  { to: "/panel", labelKey: "header.panel" },
-  { to: "/torneos", labelKey: "header.myTournaments", roles: ["ORGANIZER", "ADMINISTRATOR"] },
-  { to: "/clubes", labelKey: "header.clubs", roles: ["ORGANIZER", "ADMINISTRATOR"] },
-  { to: "/mis-torneos", labelKey: "header.tournaments", roles: ["PLAYER"] },
-  { to: "/mis-jugadores", labelKey: "header.myPlayers", roles: ["COACH"] },
-  { to: "/en-juego", labelKey: "header.live", roles: ["PLAYER", "COACH", "ARBITER"] },
-  { to: "/usuarios", labelKey: "header.users", roles: ["ADMINISTRATOR"] },
-  { to: "/auditoria", labelKey: "header.auditLog", roles: ["ADMINISTRATOR"] },
-];
-
-const navItems = computed(() => NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(auth.user?.role ?? "")));
+// The role's sections, for both the desktop and the mobile nav: each route
+// declares whether it's a section and who may open it (meta.nav, meta.roles
+// in router/index.ts), so adding one is a single change there.
+const navItems = computed(() => navLinks(router.getRoutes(), auth.user?.role));
 
 // Closes the mobile menu on any navigation (including browser back/forward),
 // not just clicks inside the menu itself.
@@ -150,7 +140,7 @@ function closeMobileFromKeyboard(): void {
             </RouterLink>
             <RouterLink
               to="/registro"
-              class="rounded-lg bg-accent px-3 py-2.5 text-center text-sm font-semibold text-[#17130a]"
+              class="rounded-lg bg-accent px-3 py-2.5 text-center text-sm font-semibold text-on-accent"
               @click="closeMobile"
             >
               {{ t("header.createAccount") }}

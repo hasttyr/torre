@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { createColumnHelper } from "@tanstack/vue-table";
 import { h } from "vue";
 import { useI18n } from "vue-i18n";
 
@@ -9,13 +8,14 @@ import type { TournamentHistoryEntry } from "../../../services/dashboard";
 import { useLocaleStore } from "../../../stores/locale";
 import DataTable from "../../ui/DataTable.vue";
 import WidgetCard from "../WidgetCard.vue";
+import { dataTableColumns } from "../../ui/dataTableFeatures";
 
 const { t } = useI18n();
 const locale = useLocaleStore();
 const { data, loading, error, reload, subjectName } =
   usePlayerWidgetData<TournamentHistoryEntry[]>("PLAYER_TOURNAMENT_HISTORY");
 
-const column = createColumnHelper<TournamentHistoryEntry>();
+const column = dataTableColumns<TournamentHistoryEntry>();
 
 /** A score cell: digits of equal width so a column of them lines up, or a dash when there's none. */
 const tabularNumber = (value: number | null) =>

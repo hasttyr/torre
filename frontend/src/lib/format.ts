@@ -21,6 +21,11 @@ export function formatDateTime(date: string, locale: string): string {
   return new Date(date).toLocaleString(locale, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
+/** "15 oct 2025, 10:54" style timestamp with its year, for records that outlive the year (the audit log). */
+export function formatFullDateTime(date: string, locale: string): string {
+  return new Date(date).toLocaleString(locale, { ...DAY_MONTH_YEAR, hour: "2-digit", minute: "2-digit" });
+}
+
 /** "oct 25" style short date, for chart axes. */
 export function formatShortDate(date: string, locale: string): string {
   return new Date(date).toLocaleDateString(locale, { month: "short", year: "2-digit", timeZone: "UTC" });

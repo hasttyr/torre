@@ -1,15 +1,13 @@
-import { TournamentStatus, type PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../../generated/prisma/client";
+import { TournamentStatus } from "../../../generated/prisma/enums";
 
 import type { AuthUser } from "../../../types/express";
 import { tournamentWhere } from "../scopes";
+import type { GameResult } from "../../../contracts/catalogs";
+import type { RecentResultDto, TournamentStatusCountDto, UpcomingTournamentDto } from "../../../contracts/responses";
 
 // Widgets about tournaments, always filtered by what the viewer may see
 // (see tournamentWhere in ../scopes.ts).
-
-export interface TournamentStatusCountDto {
-  status: TournamentStatus;
-  count: number;
-}
 
 /** TOURNAMENTS_BY_STATUS: how many tournaments sit in each lifecycle state. */
 export async function loadTournamentsByStatus(
@@ -27,15 +25,6 @@ export async function loadTournamentsByStatus(
     status,
     count: groups.find((group) => group.status === status)?._count._all ?? 0,
   }));
-}
-
-export interface UpcomingTournamentDto {
-  id: string;
-  name: string;
-  startDate: Date;
-  endDate: Date;
-  status: TournamentStatus;
-  enrolled: number;
 }
 
 const UPCOMING_LIMIT = 6;
@@ -65,17 +54,6 @@ export async function loadUpcomingTournaments(
   }));
 }
 
-export interface RecentResultDto {
-  id: string;
-  tournamentName: string;
-  round: number;
-  board: number;
-  white: string;
-  black: string;
-  value: string;
-  recordedAt: Date;
-}
-
 const RECENT_RESULTS_LIMIT = 8;
 
 /** RECENT_RESULTS: the latest recorded games (byes left out: nothing was played). */
@@ -102,7 +80,10 @@ export async function loadRecentResults(prisma: PrismaClient, viewer: AuthUser):
     board: match.board,
     white: match.white?.user.name ?? "—",
     black: match.black?.user.name ?? "—",
-    value,
+    // Byes are filtered out above, and the CHECK constraint (RN-03) allows nothing else.
+    value: value as GameResult,
     recordedAt,
   }));
 }
+
+export type { RecentResultDto, TournamentStatusCountDto, UpcomingTournamentDto };

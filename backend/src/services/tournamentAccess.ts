@@ -1,6 +1,6 @@
-import type { Prisma, Tournament } from "@prisma/client";
+import type { Prisma, Tournament } from "../generated/prisma/client";
 
-import { HttpError } from "../middlewares/errorHandler";
+import { HttpError } from "../errors/apiErrors";
 import type { AuthUser } from "../types/express";
 
 // The single place that answers "may this user do X on this tournament?"
@@ -18,9 +18,25 @@ type Db = Prisma.TransactionClient;
 export async function loadTournament(db: Db, tournamentId: string): Promise<Tournament> {
   const tournament = await db.tournament.findUnique({ where: { id: tournamentId } });
   if (!tournament) {
-    throw new HttpError(404, "Torneo no encontrado");
+    throw new HttpError("TOURNAMENT_NOT_FOUND");
   }
   return tournament;
+}
+
+/**
+ * Locks the tournament's row until the transaction ends, and loads it as it
+ * is now. Every change to a tournament's state or competitive record
+ * (registration, configuration, rounds, results, finishing) starts here and
+ * checks its rules after it: two changes to one tournament never interleave,
+ * so none acts on a state another has just changed (a result recorded into a
+ * tournament that just finished, two standings rebuilds losing a result).
+ * Changes to different tournaments don't wait on each other.
+ *
+ * @throws {HttpError} 404 if it doesn't exist.
+ */
+export async function lockTournament(tx: Db, tournamentId: string): Promise<Tournament> {
+  await tx.$queryRaw`SELECT id FROM tournaments WHERE id = ${tournamentId} FOR UPDATE`;
+  return loadTournament(tx, tournamentId);
 }
 
 /** Whether the user manages the tournament: its organizer, or any administrator. */
@@ -31,7 +47,7 @@ export function canManageTournament(tournament: Pick<Tournament, "organizerId">,
 /** @throws {HttpError} 403 unless the user manages the tournament. */
 export function assertCanManageTournament(tournament: Pick<Tournament, "organizerId">, user: AuthUser): void {
   if (!canManageTournament(tournament, user)) {
-    throw new HttpError(403, "No tenés permiso para administrar este torneo");
+    throw new HttpError("TOURNAMENT_FORBIDDEN");
   }
 }
 
@@ -45,7 +61,7 @@ export function assertCanManageTournament(tournament: Pick<Tournament, "organize
  */
 export function assertCanViewTournament(tournament: Tournament, user: AuthUser): void {
   if (tournament.status === "CREATED" && !canManageTournament(tournament, user)) {
-    throw new HttpError(404, "Torneo no encontrado");
+    throw new HttpError("TOURNAMENT_NOT_FOUND");
   }
 }
 
@@ -64,7 +80,7 @@ export function isTournamentOfficial(tournament: Pick<Tournament, "organizerId">
  */
 export function assertCanRecordResults(tournament: Pick<Tournament, "organizerId">, user: AuthUser): void {
   if (!isTournamentOfficial(tournament, user)) {
-    throw new HttpError(403, "Solo un árbitro o el organizador del torneo pueden registrar resultados");
+    throw new HttpError("RESULTS_FORBIDDEN");
   }
 }
 
@@ -76,7 +92,7 @@ export function assertCanRecordResults(tournament: Pick<Tournament, "organizerId
  */
 export function assertCanExport(tournament: Pick<Tournament, "organizerId">, user: AuthUser): void {
   if (!isTournamentOfficial(tournament, user)) {
-    throw new HttpError(403, "Solo un árbitro o el organizador del torneo pueden exportar sus documentos oficiales");
+    throw new HttpError("EXPORT_FORBIDDEN");
   }
 }
 
@@ -88,6 +104,6 @@ export function assertCanExport(tournament: Pick<Tournament, "organizerId">, use
  */
 export function assertNotFinished(tournament: Pick<Tournament, "status">): void {
   if (tournament.status === "FINISHED") {
-    throw new HttpError(409, "El torneo ya finalizó: no admite más cambios");
+    throw new HttpError("TOURNAMENT_FINISHED");
   }
 }

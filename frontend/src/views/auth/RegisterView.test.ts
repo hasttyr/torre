@@ -27,6 +27,7 @@ function makeRouter() {
       { path: "/", component: { template: "<div />" } },
       { path: "/cuenta", component: { template: "<div />" } },
       { path: "/panel", component: { template: "<div />" } },
+      { path: "/login", component: { template: "<div />" } },
     ],
   });
 }
@@ -164,7 +165,6 @@ describe("RegisterView", () => {
       dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
     });
     loginUserMock.mockResolvedValue({
-      token: "token-123",
       user: {
         id: "1",
         name: "Ana Torres",
@@ -187,7 +187,7 @@ describe("RegisterView", () => {
 
     await wrapper.find("form").trigger("submit.prevent");
     await wrapper.vm.$nextTick();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(registerUserMock).toHaveBeenCalledWith({
       name: "Ana Torres",
@@ -203,6 +203,50 @@ describe("RegisterView", () => {
     expect(router.currentRoute.value.path).toBe("/panel");
   });
 
+  it("shows the server's objection next to the field it's about", async () => {
+    registerUserMock.mockRejectedValue({
+      isAxiosError: true,
+      response: {
+        status: 400,
+        data: {
+          error: "No puede superar 100 caracteres",
+          code: "VALIDATION_FAILED",
+          fields: { name: "No puede superar 100 caracteres" },
+        },
+      },
+    });
+
+    const { wrapper } = await mountRegisterView();
+    await selectRol(wrapper, "COACH");
+    await fillBaseFields(wrapper);
+    await acceptDataPolicy(wrapper);
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    expect(wrapper.get("#name").attributes("aria-invalid")).toBe("true");
+    expect(wrapper.get("#name-error").text()).toBe("No puede superar 100 caracteres");
+  });
+
+  it("sends the user to sign in when the account was created but the automatic sign-in failed", async () => {
+    registerUserMock.mockResolvedValue({ id: "2", email: "carlos@example.com", role: "COACH" } as never);
+    loginUserMock.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 429, data: { error: "Demasiados intentos" } },
+    });
+
+    const { wrapper, router } = await mountRegisterView();
+    await selectRol(wrapper, "COACH");
+    await fillBaseFields(wrapper);
+    await acceptDataPolicy(wrapper);
+    await wrapper.find("form").trigger("submit.prevent");
+    await flushPromises();
+
+    // Not an error on this form: retrying would only say the account already exists.
+    expect(wrapper.find("[role='alert']").exists()).toBe(false);
+    expect(router.currentRoute.value.path).toBe("/login");
+    expect(router.currentRoute.value.query).toEqual({ registered: "1" });
+  });
+
   it("does not include player fields in the payload for COACH, and redirects to their dashboard", async () => {
     registerUserMock.mockResolvedValue({
       id: "2",
@@ -214,7 +258,6 @@ describe("RegisterView", () => {
       dataConsent: { accepted: true, date: "2026-01-01T00:00:00.000Z", version: "2026-08-01" },
     });
     loginUserMock.mockResolvedValue({
-      token: "token-123",
       user: {
         id: "2",
         name: "Carlos Ruiz",
@@ -234,7 +277,7 @@ describe("RegisterView", () => {
     await acceptDataPolicy(wrapper);
 
     await wrapper.find("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(registerUserMock).toHaveBeenCalledWith({
       name: "Carlos Ruiz",
@@ -260,7 +303,7 @@ describe("RegisterView", () => {
     await acceptDataPolicy(wrapper);
 
     await wrapper.find("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("Ya existe una cuenta registrada con ese correo");
@@ -277,7 +320,7 @@ describe("RegisterView", () => {
     await acceptDataPolicy(wrapper);
 
     await wrapper.find("form").trigger("submit.prevent");
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
     await wrapper.vm.$nextTick();
 
     expect(wrapper.text()).toContain("No se pudo conectar con el servidor");

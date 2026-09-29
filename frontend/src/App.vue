@@ -36,6 +36,11 @@ watch(
 
 <template>
   <SkipLink />
-  <RouterView />
+  <!-- Keyed by path: /torneos/A/sala → /torneos/B/sala is a new page, not A's
+       page left in place (its data, socket room and exports all belong to A).
+       The query is left out of the key, so tabs and filters keep the page. -->
+  <RouterView v-slot="{ Component, route }">
+    <component :is="Component" :key="route.path" />
+  </RouterView>
   <ConfirmDialogHost v-if="confirmHostNeeded" />
 </template>

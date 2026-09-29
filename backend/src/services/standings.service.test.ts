@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../generated/prisma/client";
 import { describe, expect, it, vi } from "vitest";
 
 import { getStandings, recalculateStandings } from "./standings.service";
@@ -22,7 +22,7 @@ describe("recalculateStandings (HU12/HU13)", () => {
     prisma.tournament.findUniqueOrThrow.mockResolvedValue({
       id: "t-1",
       byePoints: 0.5,
-      tiebreakCriteria: [{ name: "Resultado particular" }],
+      tiebreakCriteria: [{ name: "DIRECT_ENCOUNTER" }],
     });
     prisma.result.findMany.mockResolvedValue([
       { value: "0-1", match: { whiteId: "a", blackId: "b" } },
@@ -75,11 +75,11 @@ describe("getStandings (HU14)", () => {
     ]);
     prisma.round.findMany.mockResolvedValue([{ status: "STANDINGS_UPDATED" }, { status: "RECORDING_RESULTS" }]);
     prisma.enrollment.findMany.mockResolvedValue([{ playerId: "a" }]);
-    prisma.tiebreakCriterion.findMany.mockResolvedValue([{ name: "Buchholz" }]);
+    prisma.tiebreakCriterion.findMany.mockResolvedValue([{ name: "BUCHHOLZ" }]);
 
     const standings = await getStandings(asClient(prisma), "t-1", { id: "u-1", role: "PLAYER" });
 
-    expect(standings).toMatchObject({ pending: true, roundsCompleted: 1, tiebreaks: ["Buchholz"] });
+    expect(standings).toMatchObject({ pending: true, roundsCompleted: 1, tiebreaks: ["BUCHHOLZ"] });
     expect(standings.rows[0]).toMatchObject({ rank: 1, name: "Ana", score: 2, withdrawn: true });
   });
 });

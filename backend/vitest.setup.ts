@@ -1,5 +1,6 @@
-// src/config/env.ts exige estas variables al importarse; en tests no hay
-// una base de datos real ni un .env, así que se fijan valores dummy antes
-// de que cualquier archivo de test importe el resto de la app.
-process.env.DATABASE_URL ??= "postgresql://test:test@localhost:5432/test";
-process.env.JWT_SECRET ??= "test-secret";
+// src/config/env.ts exige estas variables al importarse; las pruebas
+// unitarias no usan base de datos real ni el .env de la máquina, así que se
+// fijan valores de prueba antes de que cualquier archivo importe la app. Se
+// asignan siempre (no solo si faltan): el resultado no depende del entorno.
+process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
+process.env.JWT_SECRET = "test-secret";

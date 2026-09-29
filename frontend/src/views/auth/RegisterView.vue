@@ -4,8 +4,8 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 import AuthLayout from "../../components/layout/AuthLayout.vue";
-import { extractErrorMessage } from "../../lib/errors";
-import { errorAttrs, errorId, focusFirstInvalid } from "../../lib/formErrors";
+import { extractErrorMessage, fieldErrorsOf } from "../../lib/errors";
+import { errorAttrs, errorId, focusFirstInvalid, resetErrors } from "../../lib/formErrors";
 import { HOME_PATH } from "../../lib/roleHome";
 import {
   registerUser,
@@ -14,6 +14,9 @@ import {
   type SelfAssignableRole,
 } from "../../services/auth";
 import { useAuthStore } from "../../stores/auth";
+import FadeSlide from "../../components/ui/FadeSlide.vue";
+import FormBanner from "../../components/ui/FormBanner.vue";
+import Spinner from "../../components/ui/Spinner.vue";
 
 const router = useRouter();
 const auth = useAuthStore();
@@ -68,9 +71,7 @@ const formEl = useTemplateRef<HTMLFormElement>("formEl");
  * @returns `true` if the form has no validation errors.
  */
 function validate(): boolean {
-  for (const key of Object.keys(errors)) {
-    delete errors[key];
-  }
+  resetErrors(errors);
 
   if (form.name.trim().length < 2) {
     errors.name = t("auth.nameMinLength");
@@ -136,15 +137,26 @@ async function onSubmit(): Promise<void> {
 
   submitting.value = true;
   try {
-    const { email, password } = form;
     await registerUser(buildPayload());
-    // Registration alone doesn't issue a session token; logging in right
-    // after with the same credentials is what gets the user in without a
-    // second manual step.
-    await auth.login(email.trim(), password);
-    router.push(HOME_PATH);
   } catch (error) {
-    serverError.value = extractErrorMessage(error, t("auth.serverError"));
+    serverError.value = extractErrorMessage(error, t("common.genericServerError"));
+    // The API's field paths are this form's field ids: its objections go next to each field.
+    Object.assign(errors, fieldErrorsOf(error));
+    submitting.value = false;
+    await focusFirstInvalid(formEl.value);
+    return;
+  }
+
+  // Registration alone doesn't issue a session token; logging in right after
+  // with the same credentials gets the user in without a second manual step.
+  // If that fails (a dropped connection, a rate limit), the account exists
+  // anyway: the login page says so, instead of an error here that a retry
+  // would only turn into "that email is already registered".
+  try {
+    await auth.login(form.email.trim(), form.password);
+    router.push(HOME_PATH);
+  } catch {
+    router.push({ path: "/login", query: { registered: "1" } });
   } finally {
     submitting.value = false;
   }
@@ -154,21 +166,9 @@ async function onSubmit(): Promise<void> {
 <template>
   <AuthLayout :title="t('register.title')" :subtitle="t('register.subtitle')">
     <template #banners>
-      <Transition
-        enter-active-class="transition duration-180 ease-out"
-        enter-from-class="opacity-0 -translate-y-1.5"
-        leave-active-class="transition duration-180 ease-in"
-        leave-to-class="opacity-0 -translate-y-1.5"
-      >
-        <p v-if="serverError" role="alert" class="banner banner--error">
-          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true" class="mt-0.5 shrink-0">
-            <path d="M10 2 1 17h18L10 2Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" />
-            <path d="M10 8v3.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
-            <circle cx="10" cy="14" r="0.9" fill="currentColor" />
-          </svg>
-          <span>{{ serverError }}</span>
-        </p>
-      </Transition>
+      <FadeSlide>
+        <FormBanner v-if="serverError" kind="error">{{ serverError }}</FormBanner>
+      </FadeSlide>
     </template>
 
     <form ref="formEl" novalidate @submit.prevent="onSubmit">
@@ -235,12 +235,7 @@ async function onSubmit(): Promise<void> {
         <span :id="errorId('password')" class="field-error">{{ errors.password }}</span>
       </div>
 
-      <Transition
-        enter-active-class="transition duration-180 ease-out"
-        enter-from-class="opacity-0 -translate-y-1.5"
-        leave-active-class="transition duration-180 ease-in"
-        leave-to-class="opacity-0 -translate-y-1.5"
-      >
+      <FadeSlide>
         <fieldset
           v-if="isPlayer"
           class="m-0 flex flex-col gap-4 rounded-xl border border-dashed border-border p-4 pt-4"
@@ -293,7 +288,7 @@ async function onSubmit(): Promise<void> {
             <span :id="errorId('semester')" class="field-error">{{ errors.semester }}</span>
           </div>
         </fieldset>
-      </Transition>
+      </FadeSlide>
 
       <div class="field" :class="{ 'has-error': errors.acceptDataPolicy }">
         <label class="flex cursor-pointer items-start gap-2 text-sm font-normal">
@@ -311,18 +306,7 @@ async function onSubmit(): Promise<void> {
       </div>
 
       <button type="submit" class="btn btn-primary btn-block" :disabled="submitting">
-        <svg
-          v-if="submitting"
-          class="h-4 w-4 animate-spin"
-          viewBox="0 0 24 24"
-          width="16"
-          height="16"
-          fill="none"
-          aria-hidden="true"
-        >
-          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" opacity="0.25" />
-          <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
-        </svg>
+        <Spinner v-if="submitting" />
         {{ submitting ? t("register.submitting") : t("register.submit") }}
       </button>
     </form>

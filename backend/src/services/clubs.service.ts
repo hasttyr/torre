@@ -1,18 +1,13 @@
-import type { Club, PrismaClient } from "@prisma/client";
+import type { Club, PrismaClient } from "../generated/prisma/client";
 
-import { HttpError } from "../middlewares/errorHandler";
+import { HttpError } from "../errors/apiErrors";
 import type {
   AssignPlayerSchemaInput,
   CreateClubSchemaInput,
   UpdateClubSchemaInput,
 } from "../validators/clubs.schemas";
 import { isUniqueConstraintError } from "./prismaErrors";
-
-export interface ClubDto {
-  id: string;
-  name: string;
-  createdAt: Date;
-}
+import type { ClubDto, ClubPlayerDto } from "../contracts/responses";
 
 /** Maps a Prisma club to its public DTO. */
 function toClubDto(club: Club): ClubDto {
@@ -30,7 +25,7 @@ export async function createClub(prisma: PrismaClient, data: CreateClubSchemaInp
     return toClubDto(club);
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      throw new HttpError(409, "Ya existe un club con ese nombre");
+      throw new HttpError("CLUB_NAME_TAKEN");
     }
     throw error;
   }
@@ -50,7 +45,7 @@ export async function listClubs(prisma: PrismaClient): Promise<ClubDto[]> {
 export async function updateClub(prisma: PrismaClient, id: string, data: UpdateClubSchemaInput): Promise<ClubDto> {
   const existing = await prisma.club.findUnique({ where: { id } });
   if (!existing) {
-    throw new HttpError(404, "Club no encontrado");
+    throw new HttpError("CLUB_NOT_FOUND");
   }
 
   try {
@@ -58,7 +53,7 @@ export async function updateClub(prisma: PrismaClient, id: string, data: UpdateC
     return toClubDto(club);
   } catch (error) {
     if (isUniqueConstraintError(error)) {
-      throw new HttpError(409, "Ya existe un club con ese nombre");
+      throw new HttpError("CLUB_NAME_TAKEN");
     }
     throw error;
   }
@@ -74,23 +69,15 @@ export async function updateClub(prisma: PrismaClient, id: string, data: UpdateC
 export async function deleteClub(prisma: PrismaClient, id: string): Promise<void> {
   const club = await prisma.club.findUnique({ where: { id } });
   if (!club) {
-    throw new HttpError(404, "Club no encontrado");
+    throw new HttpError("CLUB_NOT_FOUND");
   }
 
   const memberCount = await prisma.player.count({ where: { clubId: id } });
   if (memberCount > 0) {
-    throw new HttpError(409, "No se puede eliminar un club con jugadores asignados; quítalos primero");
+    throw new HttpError("CLUB_NOT_EMPTY");
   }
 
   await prisma.club.delete({ where: { id } });
-}
-
-export interface ClubPlayerDto {
-  playerId: string;
-  name: string;
-  universityCode: string;
-  program: string;
-  semester: number;
 }
 
 /**
@@ -105,12 +92,12 @@ export async function assignPlayerToClub(
 ): Promise<ClubPlayerDto> {
   const club = await prisma.club.findUnique({ where: { id: clubId } });
   if (!club) {
-    throw new HttpError(404, "Club no encontrado");
+    throw new HttpError("CLUB_NOT_FOUND");
   }
 
   const player = await prisma.player.findUnique({ where: { id: data.playerId }, include: { user: true } });
   if (!player) {
-    throw new HttpError(404, "Jugador no encontrado");
+    throw new HttpError("PLAYER_NOT_FOUND");
   }
 
   const updated = await prisma.player.update({
@@ -136,7 +123,7 @@ export async function assignPlayerToClub(
 export async function removePlayerFromClub(prisma: PrismaClient, clubId: string, playerId: string): Promise<void> {
   const player = await prisma.player.findUnique({ where: { id: playerId } });
   if (!player || player.clubId !== clubId) {
-    throw new HttpError(404, "El jugador no pertenece a este club");
+    throw new HttpError("PLAYER_NOT_IN_CLUB");
   }
 
   await prisma.player.update({ where: { id: playerId }, data: { clubId: null } });
@@ -150,7 +137,7 @@ export async function removePlayerFromClub(prisma: PrismaClient, clubId: string,
 export async function listClubPlayers(prisma: PrismaClient, clubId: string): Promise<ClubPlayerDto[]> {
   const club = await prisma.club.findUnique({ where: { id: clubId } });
   if (!club) {
-    throw new HttpError(404, "Club no encontrado");
+    throw new HttpError("CLUB_NOT_FOUND");
   }
 
   const players = await prisma.player.findMany({
@@ -167,3 +154,5 @@ export async function listClubPlayers(prisma: PrismaClient, clubId: string): Pro
     semester: player.semester,
   }));
 }
+
+export type { ClubDto, ClubPlayerDto };

@@ -1,44 +1,54 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "../generated/prisma/client";
 
-import { HttpError } from "../middlewares/errorHandler";
+import { HttpError } from "../errors/apiErrors";
 import { emitToTournament } from "../sockets/broadcast";
 import { SOCKET_EVENTS } from "../sockets/events";
 import type { AuthUser } from "../types/express";
 import type { GameResult } from "../validators/rounds.schemas";
-import { recordAuditLog } from "./auditLog.service";
-import { isUniqueConstraintError } from "./prismaErrors";
+import { mention, recordAuditLog } from "./auditLog.service";
 import { closeRoundIfComplete } from "./rounds.service";
 import { recalculateStandings } from "./standings.service";
-import { assertCanRecordResults, assertNotFinished } from "./tournamentAccess";
+import { assertCanRecordResults, assertNotFinished, lockTournament } from "./tournamentAccess";
 
 type Db = Prisma.TransactionClient;
 
 const MATCH_INCLUDE = {
   round: { include: { tournament: true } },
   result: true,
-  white: { select: { user: { select: { name: true } } } },
-  black: { select: { user: { select: { name: true } } } },
+  white: { select: { userId: true } },
+  black: { select: { userId: true } },
 } satisfies Prisma.MatchInclude;
 
 type LoadedMatch = Prisma.MatchGetPayload<{ include: typeof MATCH_INCLUDE }>;
+// A game between two players, as opposed to a bye.
+type PlayedMatch = LoadedMatch & { white: { userId: string }; black: { userId: string } };
 
 async function loadMatch(db: Db, matchId: string): Promise<LoadedMatch> {
   const match = await db.match.findUnique({ where: { id: matchId }, include: MATCH_INCLUDE });
   if (!match) {
-    throw new HttpError(404, "Partida no encontrada");
+    throw new HttpError("MATCH_NOT_FOUND");
   }
   return match;
 }
 
+/**
+ * Locks the match's tournament (see lockTournament) and loads the match as
+ * it is now: its result, its round and its tournament, fresh.
+ */
+async function lockMatch(tx: Db, matchId: string): Promise<LoadedMatch> {
+  await lockTournament(tx, (await loadMatch(tx, matchId)).round.tournamentId);
+  return loadMatch(tx, matchId);
+}
+
 /** Rules shared by recording and correcting: who (RN-06), when (HU17, HU09) and what (no bye). */
-function assertResultCanChange(match: LoadedMatch, actor: AuthUser): void {
+function assertResultCanChange(match: LoadedMatch, actor: AuthUser): asserts match is PlayedMatch {
   assertCanRecordResults(match.round.tournament, actor);
   assertNotFinished(match.round.tournament);
   if (match.round.status === "GENERATED") {
-    throw new HttpError(409, "La ronda todavía no fue publicada");
+    throw new HttpError("ROUND_NOT_PUBLISHED");
   }
-  if (!match.whiteId || !match.blackId) {
-    throw new HttpError(409, "Un bye no lleva resultado");
+  if (!match.white || !match.black) {
+    throw new HttpError("BYE_HAS_NO_RESULT");
   }
 }
 
@@ -71,25 +81,18 @@ export async function recordResult(
   value: GameResult,
   actor: AuthUser,
 ): Promise<void> {
-  const match = await loadMatch(prisma, matchId);
-  assertResultCanChange(match, actor);
-  if (match.result) {
-    throw new HttpError(409, "Esta partida ya tiene resultado; para cambiarlo usá la corrección");
-  }
-
-  try {
-    await prisma.$transaction(async (tx) => {
-      await tx.result.create({ data: { matchId, value } });
-      await tx.match.update({ where: { id: matchId }, data: { status: "FINISHED" } });
-      await afterResultChange(tx, match);
-    });
-  } catch (error) {
-    // Two arbiters submitting the same board at once: results.match_id is unique.
-    if (isUniqueConstraintError(error)) {
-      throw new HttpError(409, "Otro usuario acaba de registrar el resultado de esta partida");
+  const match = await prisma.$transaction(async (tx) => {
+    const match = await lockMatch(tx, matchId);
+    assertResultCanChange(match, actor);
+    if (match.result) {
+      throw new HttpError("RESULT_ALREADY_RECORDED");
     }
-    throw error;
-  }
+
+    await tx.result.create({ data: { matchId, value } });
+    await tx.match.update({ where: { id: matchId }, data: { status: "FINISHED" } });
+    await afterResultChange(tx, match);
+    return match;
+  });
 
   broadcast(match, value);
 }
@@ -108,25 +111,28 @@ export async function correctResult(
   reason: string | undefined,
   actor: AuthUser,
 ): Promise<void> {
-  const match = await loadMatch(prisma, matchId);
-  assertResultCanChange(match, actor);
-  if (!match.result) {
-    throw new HttpError(409, "Esta partida todavía no tiene resultado para corregir");
-  }
-  if (match.result.value === value) {
-    throw new HttpError(409, "El resultado nuevo es igual al registrado");
-  }
+  const match = await prisma.$transaction(async (tx) => {
+    const match = await lockMatch(tx, matchId);
+    assertResultCanChange(match, actor);
+    if (!match.result) {
+      throw new HttpError("NO_RESULT_TO_CORRECT");
+    }
+    if (match.result.value === value) {
+      throw new HttpError("RESULT_UNCHANGED");
+    }
 
-  const detail =
-    `"${match.round.tournament.name}", ronda ${match.round.number}, mesa ${match.board} ` +
-    `(${match.white?.user.name} – ${match.black?.user.name}): ${match.result.value} → ${value}` +
-    (reason ? ` — ${reason}` : "");
-
-  await prisma.$transaction(async (tx) => {
     await tx.result.update({ where: { matchId }, data: { value, recordedAt: new Date() } });
     await tx.match.update({ where: { id: matchId }, data: { status: "CORRECTED" } });
     await afterResultChange(tx, match);
-    await recordAuditLog(tx, actor.id, "RESULT_CORRECTED", detail);
+    await recordAuditLog(
+      tx,
+      actor.id,
+      "RESULT_CORRECTED",
+      `"${match.round.tournament.name}", ronda ${match.round.number}, mesa ${match.board} ` +
+        `(${mention(match.white.userId)} – ${mention(match.black.userId)}): ${match.result.value} → ${value}` +
+        (reason ? ` — ${reason}` : ""),
+    );
+    return match;
   });
 
   broadcast(match, value);

@@ -1,12 +1,22 @@
 import { z } from "zod";
 
+import {
+  emailSchema,
+  MAX_LENGTH,
+  nameSchema,
+  newPasswordSchema,
+  programSchema,
+  tooLong,
+  universityCodeSchema,
+} from "./fields";
+
 const baseFields = {
-  name: z.string().trim().min(2, "El nombre debe tener al menos 2 caracteres"),
-  email: z.string().trim().email("El correo no es válido"),
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  name: nameSchema,
+  email: emailSchema,
+  password: newPasswordSchema,
   // RN-10/HU21: el registro no se completa sin esta aceptación explícita.
   acceptDataPolicy: z.literal(true, {
-    message: "Debés aceptar la política de tratamiento de datos personales",
+    error: "Debes aceptar la política de tratamiento de datos personales",
   }),
 };
 
@@ -16,8 +26,8 @@ export const registerSchema = z.discriminatedUnion("role", [
   z.object({
     ...baseFields,
     role: z.literal("PLAYER"),
-    universityCode: z.string().trim().min(1, "El código universitario es requerido"),
-    program: z.string().trim().min(1, "El programa es requerido"),
+    universityCode: universityCodeSchema,
+    program: programSchema,
     semester: z.number().int().positive("El semestre debe ser un entero positivo"),
   }),
   z.object({
@@ -35,17 +45,18 @@ export const registerSchema = z.discriminatedUnion("role", [
 export type RegisterSchemaInput = z.infer<typeof registerSchema>;
 
 export const loginSchema = z.object({
-  email: z.string().trim().email("El correo no es válido"),
-  password: z.string().min(1, "La contraseña es requerida"),
+  email: emailSchema,
+  password: z.string().min(1, "La contraseña es requerida").max(MAX_LENGTH.password, tooLong(MAX_LENGTH.password)),
 });
 
 // HU19: solicitud de restablecimiento de contraseña.
 export const requestPasswordResetSchema = z.object({
-  email: z.string().trim().email("El correo no es válido"),
+  email: emailSchema,
 });
 
 // HU19: confirmación con el token de un solo uso enviado en la solicitud.
 export const confirmPasswordResetSchema = z.object({
-  token: z.string().min(1, "El token es requerido"),
-  newPassword: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
+  // 64 hex characters (32 random bytes, see passwordReset.service.ts).
+  token: z.string().min(1, "El token es requerido").max(128, tooLong(128)),
+  newPassword: newPasswordSchema,
 });

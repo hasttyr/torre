@@ -1,7 +1,9 @@
 import { z } from "zod";
 
+import { idSchema } from "./fields";
+
 export const linkPlayerSchema = z.object({
-  playerId: z.string().min(1, "El jugador es requerido"),
+  playerId: idSchema,
 });
 
 export type LinkPlayerSchemaInput = z.infer<typeof linkPlayerSchema>;

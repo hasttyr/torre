@@ -1,3 +1,4 @@
+import { flushPromises } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { beforeEach, describe, expect, it } from "vitest";
 
@@ -14,7 +15,7 @@ describe("ConfirmDialogHost", () => {
     const confirm = useConfirmStore();
 
     void confirm.ask({ title: "Retirar jugador", message: "¿Seguro?" });
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     expect(document.body.textContent).toContain("Retirar jugador");
     expect(document.body.textContent).toContain("¿Seguro?");
@@ -25,7 +26,7 @@ describe("ConfirmDialogHost", () => {
     const confirm = useConfirmStore();
 
     const pending = confirm.ask({ title: "T", message: "M", confirmLabel: "Sí, retirar" });
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     await clickConfirmDialogButton("Sí, retirar");
 
@@ -42,7 +43,7 @@ describe("ConfirmDialogHost", () => {
     const confirm = useConfirmStore();
 
     const pending = confirm.ask({ title: "T", message: "M", cancelLabel: "No" });
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     await clickConfirmDialogButton("No");
 
@@ -54,7 +55,7 @@ describe("ConfirmDialogHost", () => {
     const confirm = useConfirmStore();
 
     const pending = confirm.ask({ title: "T", message: "M" });
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await flushPromises();
 
     confirm.resolve(false);
 

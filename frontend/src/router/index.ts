@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import { DATA_KEYS, prefetchData } from "../lib/routeData";
 import { useAuthStore } from "../stores/auth";
 import LoginView from "../views/auth/LoginView.vue";
 import HomeView from "../views/HomeView.vue";
@@ -9,8 +8,24 @@ import HomeView from "../views/HomeView.vue";
 // every other view is its own chunk, fetched the first time it's visited.
 // The heavier pages also start their data in beforeEnter, which runs before
 // the page's chunk downloads, so data and code arrive in parallel.
-const pageData = () => import("../lib/pageData");
-const dashboardQueries = () => import("../lib/dashboardQueries");
+const tournamentQueries = () => import("../queries/tournaments");
+const dashboardQueries = () => import("../queries/dashboard");
+
+// A tournament's id in a URL: nothing else matches the tournament pages, so
+// a malformed or crafted id ("..%2Fusers%3F", which vue-router would decode
+// into the API path) lands on the not-found page and never reaches the API.
+const TOURNAMENT_ID = "([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})";
+
+declare module "vue-router" {
+  interface RouteMeta {
+    requiresAuth?: boolean;
+    // Who may open the route (the guard below); omitted = any signed-in user.
+    roles?: string[];
+    // A section of the header's nav (lib/navigation.ts), in `order`. Its own
+    // `roles` narrow who sees the link when that's fewer than who may open it.
+    nav?: { labelKey: string; order: number; roles?: string[] };
+  }
+}
 
 // Roles that manage tournaments (HU04-HU07). Mirrors
 // backend/src/routes/tournaments.routes.ts (requireRole("ORGANIZER", "ADMINISTRATOR")).
@@ -50,7 +65,7 @@ export const router = createRouter({
       path: "/panel",
       name: "panel",
       component: () => import("../views/dashboard/PanelView.vue"),
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, nav: { labelKey: "header.panel", order: 1 } },
       beforeEnter: () => {
         // A failed prefetch leaves it to the page, which loads (or shows the error) itself.
         dashboardQueries()
@@ -74,7 +89,7 @@ export const router = createRouter({
       path: "/torneos",
       name: "tournaments-dashboard",
       component: () => import("../views/organizer/DashboardView.vue"),
-      meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
+      meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES, nav: { labelKey: "header.myTournaments", order: 2 } },
     },
     {
       path: "/torneos/nuevo",
@@ -83,62 +98,76 @@ export const router = createRouter({
       meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
     },
     {
-      path: "/torneos/:id",
+      path: `/torneos/:id${TOURNAMENT_ID}`,
       name: "tournaments-admin",
       component: () => import("../views/organizer/TournamentAdminView.vue"),
       meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
       beforeEnter: (to) => {
         const id = String(to.params.id);
-        prefetchData(DATA_KEYS.tournamentAdmin(id), () => pageData().then((data) => data.loadTournamentAdmin(id)));
+        tournamentQueries()
+          .then((queries) => queries.prefetchTournamentAdmin(id))
+          .catch(() => undefined);
       },
     },
     {
       // HU18: any authenticated role follows a tournament here; the backend
       // hides drafts from whoever doesn't manage it.
-      path: "/torneos/:id/sala",
+      path: `/torneos/:id${TOURNAMENT_ID}/sala`,
       name: "tournament-room",
       component: () => import("../views/tournament/TournamentLiveView.vue"),
       meta: { requiresAuth: true },
       beforeEnter: (to) => {
         const id = String(to.params.id);
-        prefetchData(DATA_KEYS.room(id), () => pageData().then((data) => data.loadTournamentRoom(id)));
+        tournamentQueries()
+          .then((queries) => queries.prefetchTournamentRoom(id))
+          .catch(() => undefined);
       },
     },
     {
       path: "/en-juego",
       name: "live-tournaments",
       component: () => import("../views/tournament/LiveTournamentsView.vue"),
-      meta: { requiresAuth: true },
+      // Open to everyone, but only linked for those without "Mis torneos" to follow them from.
+      meta: {
+        requiresAuth: true,
+        nav: { labelKey: "header.live", order: 6, roles: ["PLAYER", "COACH", "ARBITER"] },
+      },
     },
     {
       path: "/mis-torneos",
       name: "tournaments-player",
       component: () => import("../views/player/PlayerTournamentsView.vue"),
-      meta: { requiresAuth: true, roles: ["PLAYER"] },
+      meta: { requiresAuth: true, roles: ["PLAYER"], nav: { labelKey: "header.tournaments", order: 4 } },
     },
     {
       path: "/clubes",
       name: "clubs",
       component: () => import("../views/organizer/ClubsView.vue"),
-      meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES },
+      meta: { requiresAuth: true, roles: TOURNAMENT_ADMIN_ROLES, nav: { labelKey: "header.clubs", order: 3 } },
     },
     {
       path: "/mis-jugadores",
       name: "coach-players",
       component: () => import("../views/coach/CoachPlayersView.vue"),
-      meta: { requiresAuth: true, roles: ["COACH"] },
+      meta: { requiresAuth: true, roles: ["COACH"], nav: { labelKey: "header.myPlayers", order: 5 } },
     },
     {
       path: "/auditoria",
       name: "audit-log",
       component: () => import("../views/admin/AuditLogView.vue"),
-      meta: { requiresAuth: true, roles: ["ADMINISTRATOR"] },
+      meta: { requiresAuth: true, roles: ["ADMINISTRATOR"], nav: { labelKey: "header.auditLog", order: 8 } },
     },
     {
       path: "/usuarios",
       name: "admin-users",
       component: () => import("../views/admin/UsersView.vue"),
-      meta: { requiresAuth: true, roles: ["ADMINISTRATOR"] },
+      meta: { requiresAuth: true, roles: ["ADMINISTRATOR"], nav: { labelKey: "header.users", order: 7 } },
+    },
+    {
+      // Anything else: a typo, an old link, a malformed id.
+      path: "/:pathMatch(.*)*",
+      name: "not-found",
+      component: () => import("../views/NotFoundView.vue"),
     },
   ],
 });
@@ -158,7 +187,7 @@ router.beforeEach((to) => {
     return { path: "/login", query: { redirect: to.fullPath } };
   }
 
-  const roles = to.meta.roles as string[] | undefined;
+  const { roles } = to.meta;
   if (roles && !roles.includes(auth.user?.role ?? "")) {
     return { path: "/" };
   }

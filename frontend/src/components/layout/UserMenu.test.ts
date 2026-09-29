@@ -13,11 +13,15 @@ vi.mock("../../services/auth", async (importOriginal) => ({
   logoutUser: vi.fn(),
 }));
 
+vi.mock("../../lib/pageLoad", () => ({ loadPage: vi.fn() }));
+
+import { loadPage } from "../../lib/pageLoad";
+import { logoutUser } from "../../services/auth";
+
 enableAutoUnmount(afterEach);
 
 async function mountMenu() {
   useAuthStore().$patch({
-    token: "token",
     user: { id: "u-1", name: "Ana Torres", email: "ana@example.com", role: "PLAYER" } as never,
   });
   const router = createRouter({
@@ -41,6 +45,20 @@ describe("UserMenu", () => {
   beforeEach(() => {
     localStorage.clear();
     setActivePinia(createPinia());
+    vi.clearAllMocks();
+  });
+
+  it("signs out for good: the server ends the session and the app starts over from the home page", async () => {
+    const { trigger } = await mountMenu();
+    await trigger.trigger("click");
+    await flushPromises();
+
+    item("Cerrar sesión")!.click();
+    await flushPromises();
+
+    expect(logoutUser).toHaveBeenCalledOnce();
+    expect(useAuthStore().isAuthenticated).toBe(false);
+    expect(loadPage).toHaveBeenCalledWith("/");
   });
 
   it("is a real menu button: announces a menu and opens one with its items", async () => {
@@ -89,19 +107,6 @@ describe("UserMenu", () => {
 
     expect(theme.theme).not.toBe(before);
     expect(menu()).not.toBeNull();
-  });
-
-  it("logs out and goes home", async () => {
-    const { trigger, router } = await mountMenu();
-    await trigger.trigger("click");
-    await flushPromises();
-
-    item("Cerrar sesión")!.click();
-    // Logging out loads the auth endpoints on demand: wait for it to land.
-    await vi.waitFor(() => expect(useAuthStore().isAuthenticated).toBe(false));
-    await flushPromises();
-    expect(router.currentRoute.value.path).toBe("/");
-    expect(menu()).toBeNull();
   });
 
   it("closes on Escape", async () => {

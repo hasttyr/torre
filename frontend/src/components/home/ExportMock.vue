@@ -26,7 +26,7 @@ const { t, locale } = useI18n();
         </li>
       </ol>
       <span
-        class="mt-auto self-end rounded-[4px] bg-tile-ink-accent px-2 py-1 text-[0.65rem] font-semibold text-[#17130a]"
+        class="mt-auto self-end rounded-[4px] bg-tile-ink-accent px-2 py-1 text-[0.65rem] font-semibold text-tile-ink-on-accent"
       >
         PDF
       </span>

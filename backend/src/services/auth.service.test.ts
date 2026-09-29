@@ -1,10 +1,18 @@
-import type { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../generated/prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { HttpError } from "../middlewares/errorHandler";
+import type { HttpError } from "../errors/apiErrors";
 import { loginUser, registerUser } from "./auth.service";
+import { comparePassword, hashPassword } from "./password";
+
+// The real hashing, observed: login must do the same password work whether
+// or not the account exists.
+vi.mock("./password", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./password")>();
+  return { ...actual, comparePassword: vi.fn(actual.comparePassword) };
+});
 
 function buildPrismaMock() {
   return {
@@ -14,6 +22,7 @@ function buildPrismaMock() {
     user: {
       findUnique: vi.fn(),
       create: vi.fn(),
+      update: vi.fn(),
     },
   };
 }
@@ -157,7 +166,7 @@ describe("registerUser", () => {
         role: "COACH",
         acceptDataPolicy: true,
       }),
-    ).rejects.toMatchObject({ status: 400 } satisfies Partial<HttpError>);
+    ).rejects.toMatchObject({ status: 404, code: "ROLE_NOT_FOUND" } satisfies Partial<HttpError>);
   });
 
   it("turns a concurrent uniqueness violation (P2002) into a 409", async () => {
@@ -244,6 +253,66 @@ describe("loginUser", () => {
     await expect(
       loginUser(prisma as unknown as PrismaClient, { email: "no-existe@example.com", password: "cualquiera" }),
     ).rejects.toMatchObject({ status: 401, message: "Credenciales inválidas" } satisfies Partial<HttpError>);
+  });
+
+  it("checks the password even for an unknown email, so the response time doesn't reveal which emails exist", async () => {
+    prisma.user.findUnique.mockResolvedValue(null);
+    vi.mocked(comparePassword).mockClear();
+
+    await expect(
+      loginUser(prisma as unknown as PrismaClient, { email: "no-existe@example.com", password: "cualquiera" }),
+    ).rejects.toMatchObject({ status: 401 });
+
+    expect(comparePassword).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(comparePassword).mock.calls[0]?.[0]).toBe("cualquiera");
+  });
+
+  it("upgrades a legacy bcrypt hash to the current scheme after a successful login", async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ana@example.com",
+      status: "ACTIVE",
+      passwordHash: await bcrypt.hash("password123", 4),
+      role: { id: "role-organizer", name: "ORGANIZER" },
+    });
+
+    await loginUser(prisma as unknown as PrismaClient, { email: "ana@example.com", password: "password123" });
+
+    expect(prisma.user.update).toHaveBeenCalledTimes(1);
+    const { where, data } = prisma.user.update.mock.calls[0]![0];
+    expect(where).toEqual({ id: "user-1" });
+    expect(data.passwordHash).toMatch(/^scrypt\$/);
+    expect(await comparePassword("password123", data.passwordHash)).toBe(true);
+  });
+
+  it("leaves a current hash untouched on login", async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ana@example.com",
+      status: "ACTIVE",
+      passwordHash: await hashPassword("password123"),
+      role: { id: "role-organizer", name: "ORGANIZER" },
+    });
+
+    await loginUser(prisma as unknown as PrismaClient, { email: "ana@example.com", password: "password123" });
+
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it("never rewrites the hash when the password is wrong", async () => {
+    prisma.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      email: "ana@example.com",
+      status: "ACTIVE",
+      passwordHash: await bcrypt.hash("password123", 4),
+      role: { id: "role-organizer", name: "ORGANIZER" },
+    });
+
+    await expect(
+      loginUser(prisma as unknown as PrismaClient, { email: "ana@example.com", password: "incorrecta" }),
+    ).rejects.toMatchObject({ status: 401 });
+
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 
   it("rejects an inactive user even when the password is correct", async () => {

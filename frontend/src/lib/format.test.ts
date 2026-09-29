@@ -1,6 +1,14 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { formatDate, formatLocalDate, formatNumber, formatPercent, formatResult, formatShortDate } from "./format";
+import {
+  formatDate,
+  formatFullDateTime,
+  formatLocalDate,
+  formatNumber,
+  formatPercent,
+  formatResult,
+  formatShortDate,
+} from "./format";
 
 // The app is used in Colombia (UTC-5). Tournament dates are stored as UTC
 // midnight, so formatting them in the browser's zone showed the previous
@@ -48,5 +56,16 @@ describe("formatNumber / formatPercent / formatResult", () => {
     expect(formatResult("1/2-1/2")).toBe("½ – ½");
     expect(formatResult("0-1")).toBe("0 – 1");
     expect(formatResult("BYE")).toBe("BYE");
+  });
+});
+
+describe("formatFullDateTime", () => {
+  it("gives day, month, year and time, for records that outlive the current year (the audit log)", () => {
+    const formatted = formatFullDateTime("2025-10-15T15:54:00", "es");
+
+    expect(formatted).toContain("15");
+    expect(formatted).toContain("oct");
+    expect(formatted).toContain("2025");
+    expect(formatted).toContain("15:54");
   });
 });
