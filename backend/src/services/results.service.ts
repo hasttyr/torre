@@ -5,7 +5,7 @@ import { emitToTournament } from "../sockets/broadcast";
 import { SOCKET_EVENTS } from "../sockets/events";
 import type { AuthUser } from "../types/express";
 import type { GameResult } from "../validators/rounds.schemas";
-import { mention, recordAuditLog } from "./auditLog.service";
+import { mention, plain, recordAuditLog } from "./auditLog.service";
 import { closeRoundIfComplete } from "./rounds.service";
 import { recalculateStandings } from "./standings.service";
 import { assertCanRecordResults, assertNotFinished, lockTournament } from "./tournamentAccess";
@@ -128,9 +128,9 @@ export async function correctResult(
       tx,
       actor.id,
       "RESULT_CORRECTED",
-      `"${match.round.tournament.name}", ronda ${match.round.number}, mesa ${match.board} ` +
+      `"${plain(match.round.tournament.name)}", ronda ${match.round.number}, mesa ${match.board} ` +
         `(${mention(match.white.userId)} – ${mention(match.black.userId)}): ${match.result.value} → ${value}` +
-        (reason ? ` — ${reason}` : ""),
+        (reason ? ` — ${plain(reason)}` : ""),
     );
     return match;
   });

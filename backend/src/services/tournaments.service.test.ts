@@ -662,6 +662,22 @@ describe("finishTournament (HU17)", () => {
     expect(prisma.auditLog.create.mock.calls[0][0].data.action).toBe("TOURNAMENT_FINISHED");
   });
 
+  it("keeps the tournament's name from naming someone in the log", async () => {
+    const someone = "{{user:3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b}}";
+    const prisma = finishMock([{ status: "STANDINGS_UPDATED" }, { status: "STANDINGS_UPDATED" }]);
+    prisma.tournament.findUnique.mockResolvedValue({
+      id: "t-1",
+      name: `Copa ${someone}`,
+      organizerId: "org-1",
+      status: "IN_PROGRESS",
+      roundsCount: 2,
+    });
+
+    await finishTournament(prisma as unknown as PrismaClient, "t-1", organizer);
+
+    expect(prisma.auditLog.create.mock.calls[0][0].data.detail).not.toContain(someone);
+  });
+
   it.each([
     ["a round still has pending results", [{ status: "STANDINGS_UPDATED" }, { status: "RECORDING_RESULTS" }]],
     ["not every configured round was played", [{ status: "STANDINGS_UPDATED" }]],

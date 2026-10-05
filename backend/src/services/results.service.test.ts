@@ -121,6 +121,17 @@ describe("correctResult (HU11)", () => {
     });
   });
 
+  it("keeps a correction's reason from naming someone else in the log", async () => {
+    prisma.match.findUnique.mockResolvedValue(match({ result: { value: "1-0" } }));
+    const someoneElse = "{{user:3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b}}";
+
+    await correctResult(asClient(prisma), "m-1", "0-1", `Lo pidió ${someoneElse}`, { id: "org-1", role: "ORGANIZER" });
+
+    const { detail } = prisma.auditLog.create.mock.calls[0][0].data;
+    expect(detail).not.toContain(someoneElse);
+    expect(detail).toContain("({{user:u-ana}} – {{user:u-luis}})");
+  });
+
   it("refuses when there's no result yet or the value doesn't change", async () => {
     prisma.match.findUnique.mockResolvedValue(match());
     await expect(correctResult(asClient(prisma), "m-1", "0-1", undefined, ARBITER)).rejects.toMatchObject({
