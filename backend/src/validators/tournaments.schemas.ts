@@ -1,14 +1,19 @@
 import { z } from "zod";
 
 import { TIEBREAKS } from "../services/standings.calculator";
-import { idSchema, nameSchema, programSchema, reasonSchema, tooLong } from "./fields";
+import { idSchema, MAX_VALUE, nameSchema, programSchema, reasonSchema, tooHigh, tooLong } from "./fields";
 
 // RN-05: the tiebreak order is defined before the first round starts, from
 // the closed catalog (a misspelled free-text criterion used to be skipped
 // without a word, silently changing the official standings).
 const tiebreakCriterionSchema = z.object({
   name: z.enum(TIEBREAKS, { error: "El desempate no es uno de los disponibles" }),
-  order: z.number().int().positive("El orden debe ser un entero positivo"),
+  // A position in the order: there are only as many as tiebreaks to place.
+  order: z
+    .number()
+    .int()
+    .positive("El orden debe ser un entero positivo")
+    .max(TIEBREAKS.length, tooHigh(TIEBREAKS.length)),
 });
 
 const allDifferent = (values: unknown[]) => new Set(values).size === values.length;
@@ -37,13 +42,24 @@ export const createTournamentSchema = z
 export type CreateTournamentSchemaInput = z.infer<typeof createTournamentSchema>;
 
 export const configureTournamentSchema = z.object({
-  roundsCount: z.number().int().positive("El número de rondas debe ser un entero positivo").optional(),
+  roundsCount: z
+    .number()
+    .int()
+    .positive("El número de rondas debe ser un entero positivo")
+    .max(MAX_VALUE.roundsCount, tooHigh(MAX_VALUE.roundsCount))
+    .optional(),
   timeControl: z.string().trim().min(1, "El ritmo es requerido").max(50, tooLong(50)).optional(),
   tiebreakCriteria: tiebreakOrderSchema.optional(),
   // Registration eligibility (see comment in schema.prisma). An explicit
   // null clears the restriction; undefined (field absent) leaves it as-is.
   restrictedProgram: programSchema.nullable().optional(),
-  minimumSemester: z.number().int().positive("El semestre mínimo debe ser un entero positivo").nullable().optional(),
+  minimumSemester: z
+    .number()
+    .int()
+    .positive("El semestre mínimo debe ser un entero positivo")
+    .max(MAX_VALUE.semester, tooHigh(MAX_VALUE.semester))
+    .nullable()
+    .optional(),
   // HU28: what a bye is worth (same catalog as the DB CHECK).
   byePoints: z
     .union([z.literal(0), z.literal(0.5), z.literal(1)], { error: "El bye solo puede valer 0, 0.5 o 1 punto" })
