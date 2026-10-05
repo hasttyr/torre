@@ -73,9 +73,24 @@ export async function confirmPasswordReset(prisma: PrismaClient, token: string, 
 
   const passwordHash = await hashPassword(newPassword);
 
-  await prisma.$transaction([
-    // A new password also ends every session opened with the old one.
-    prisma.user.update({ where: { id: request.userId }, data: { passwordHash, ...REVOKE_SESSIONS } }),
-    prisma.passwordResetRequest.update({ where: { id: request.id }, data: { usedAt: new Date() } }),
-  ]);
+  await prisma.$transaction(async (tx) => {
+    const now = new Date();
+    // Claims the link: of two confirmations racing with it, both read it
+    // unused above, but only the first one's update matches the row.
+    const { count } = await tx.passwordResetRequest.updateMany({
+      where: { id: request.id, usedAt: null, expiresAt: { gt: now } },
+      data: { usedAt: now },
+    });
+    if (count === 0) {
+      throw new HttpError("RESET_LINK_INVALID");
+    }
+    // A new password also ends every session opened with the old one...
+    await tx.user.update({ where: { id: request.userId }, data: { passwordHash, ...REVOKE_SESSIONS } });
+    // ...and every other link sent to the account (the mailbox they went to
+    // may be what's being recovered from).
+    await tx.passwordResetRequest.updateMany({
+      where: { userId: request.userId, id: { not: request.id }, usedAt: null },
+      data: { expiresAt: now },
+    });
+  });
 }

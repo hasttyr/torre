@@ -75,6 +75,35 @@ describe("revoking sessions", () => {
     await request(app).post("/api/auth/login").send({ email: user.email, password: "a-new-password" }).expect(200);
   });
 
+  it("a reset link stops working once another link for the same account has been used", async () => {
+    const user = await createUser(prisma, "PLAYER");
+    const earlier = await requestResetToken(user.email);
+    const later = await requestResetToken(user.email);
+
+    await request(app)
+      .post("/api/auth/password/reset")
+      .send({ token: later, newPassword: "a-new-password" })
+      .expect(200);
+    const stale = await request(app)
+      .post("/api/auth/password/reset")
+      .send({ token: earlier, newPassword: "x-password" });
+
+    expect(stale.status).toBe(400);
+    await request(app).post("/api/auth/login").send({ email: user.email, password: "a-new-password" }).expect(200);
+  });
+
+  it("of two confirmations racing with one link, only one changes the password", async () => {
+    const user = await createUser(prisma, "PLAYER");
+    const token = await requestResetToken(user.email);
+
+    const answers = await Promise.all([
+      request(app).post("/api/auth/password/reset").send({ token, newPassword: "first-password" }),
+      request(app).post("/api/auth/password/reset").send({ token, newPassword: "second-password" }),
+    ]);
+
+    expect(answers.map((answer) => answer.status).sort()).toEqual([200, 400]);
+  });
+
   it("signing out ends the session for good, even though the token hasn't expired", async () => {
     const user = await createUser(prisma, "COACH");
 
