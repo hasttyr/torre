@@ -51,6 +51,22 @@ describe("player search", () => {
     expect(byEmail.body).toEqual([expect.objectContaining({ name: "Laura Pérez" })]);
   });
 
+  it("doesn't let a coach sweep the directory by name or university-code fragments either", async () => {
+    const coach = await createUser(prisma, "COACH");
+    const player = await createUser(prisma, "PLAYER", { name: "Laura Pérez" });
+    await prisma.player.update({ where: { id: player.playerId! }, data: { universityCode: "20261234" } });
+
+    const byNameFragment = await request(app).get("/api/players?q=Lau").set(bearer(coach)).expect(200);
+    const byCodeFragment = await request(app).get("/api/players?q=2026").set(bearer(coach)).expect(200);
+    const byName = await request(app).get("/api/players?q=laura pérez").set(bearer(coach)).expect(200);
+    const byCode = await request(app).get("/api/players?q=20261234").set(bearer(coach)).expect(200);
+
+    expect(byNameFragment.body).toEqual([]);
+    expect(byCodeFragment.body).toEqual([]);
+    expect(byName.body).toEqual([expect.objectContaining({ name: "Laura Pérez" })]);
+    expect(byCode.body).toEqual([expect.objectContaining({ name: "Laura Pérez" })]);
+  });
+
   it("only finds active accounts, so a blocked or suppressed person can't be enrolled, linked or assigned", async () => {
     const organizer = await createUser(prisma, "ORGANIZER");
     const blocked = await createUser(prisma, "PLAYER", { name: "Laura Pérez" });

@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from "../generated/prisma/client";
+import type { PrismaClient } from "../generated/prisma/client";
 
 import type { AuthUser } from "../types/express";
 import type { PlayerSearchResultDto } from "../contracts/responses";
@@ -6,12 +6,15 @@ import type { PlayerSearchResultDto } from "../contracts/responses";
 const RESULT_LIMIT = 10;
 
 /**
- * How a search term matches an email. Whoever runs tournaments and clubs
- * looks people up by any part of it; a coach, who only follows players,
- * needs the whole address, so the directory can't be swept by domain.
+ * How a search term matches a name, email or university code. Whoever runs
+ * tournaments and clubs looks people up by any part of them; a coach, a role
+ * anyone can sign up for, needs the whole value (the name, address or code a
+ * player gave them), so the directory can't be swept by fragments.
  */
-function emailMatch(viewer: AuthUser, text: string): Prisma.StringFilter<"User"> {
-  return viewer.role === "COACH" ? { equals: text, mode: "insensitive" } : { contains: text, mode: "insensitive" };
+function textMatch(viewer: AuthUser, text: string) {
+  return viewer.role === "COACH"
+    ? ({ equals: text, mode: "insensitive" } as const)
+    : ({ contains: text, mode: "insensitive" } as const);
 }
 
 // Supports HU07 in the UI: without this, the organizer has no way to learn
@@ -37,9 +40,9 @@ export async function searchPlayers(
       // enrolled, linked to a coach or put in a club.
       user: { status: "ACTIVE" },
       OR: [
-        { user: { name: { contains: text, mode: "insensitive" } } },
-        { user: { email: emailMatch(viewer, text) } },
-        { universityCode: { contains: text, mode: "insensitive" } },
+        { user: { name: textMatch(viewer, text) } },
+        { user: { email: textMatch(viewer, text) } },
+        { universityCode: textMatch(viewer, text) },
       ],
     },
     include: { user: true },

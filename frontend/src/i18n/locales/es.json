@@ -428,7 +428,7 @@
     "subtitle": "Pide seguir a un jugador: verás su progreso cuando acepte tu solicitud.",
     "loading": "Cargando jugadores…",
     "loadError": "No se pudieron cargar tus jugadores vinculados",
-    "searchLabel": "Buscar jugador (nombre, correo o código)",
+    "searchLabel": "Buscar jugador (nombre completo, correo o código exactos)",
     "searchPlaceholder": "Luis Gómez",
     "alreadyLinked": "Ya en tu lista",
     "link": "Solicitar",
