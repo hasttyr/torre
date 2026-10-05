@@ -5,7 +5,7 @@ import { prisma } from "../config/prisma";
 import type { AuthResult } from "../contracts/responses";
 import { HttpError } from "../errors/apiErrors";
 import { actorOf } from "../middlewares/auth";
-import { clearSessionCookie, setSessionCookie } from "../middlewares/sessionCookie";
+import { clearSessionCookie, setDeviceCookie, setSessionCookie } from "../middlewares/sessionCookie";
 import { issueSocketTicket, loginUser, registerUser, revokeSessions } from "../services/auth.service";
 import { confirmPasswordReset, requestPasswordReset } from "../services/passwordReset.service";
 import {
@@ -24,12 +24,16 @@ export async function register(req: Request, res: Response): Promise<void> {
   res.status(201).json(user);
 }
 
-/** POST /auth/login — authenticates a user and starts the browser's session (an HttpOnly cookie). */
+/**
+ * POST /auth/login — authenticates a user, starts the browser's session (an
+ * HttpOnly cookie) and remembers the browser for this account (see rateLimits.ts).
+ */
 export async function login(req: Request, res: Response): Promise<void> {
   const input = parseOrThrow(loginSchema, req.body);
 
   const { token, user } = await loginUser(prisma, input);
   setSessionCookie(res, token);
+  setDeviceCookie(res, input.email);
   res.status(200).json({ user } satisfies AuthResult);
 }
 

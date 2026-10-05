@@ -3,9 +3,17 @@ import { ipKeyGenerator, rateLimit, type AugmentedRequest, type Store } from "ex
 
 import type { ApiErrorBody } from "../contracts/errors";
 import { HttpError } from "../errors/apiErrors";
+import { isDeviceTokenFor } from "../services/deviceToken";
 import { errorBody } from "./errorHandler";
+import { deviceCookieOf } from "./sessionCookie";
 
 const MINUTE_MS = 60_000;
+
+/** The account being tried: the request's email, as the API looks it up. */
+function emailOf(req: Request): string {
+  const email: unknown = req.body?.email;
+  return typeof email === "string" ? email.trim().toLowerCase() : "";
+}
 
 /**
  * Who is trying: the client's address plus the email being tried. Keying by
@@ -15,9 +23,12 @@ const MINUTE_MS = 60_000;
  * victim by failing logins for their email from a different address.
  */
 function addressAndEmail(req: Request): string {
-  const email: unknown = req.body?.email;
-  const account = typeof email === "string" ? email.trim().toLowerCase() : "";
-  return `${address(req)}|${account}`;
+  return `${address(req)}|${emailOf(req)}`;
+}
+
+/** Whether the browser asking has signed in to the account it's trying before (its device cookie). */
+function fromKnownDevice(req: Request): boolean {
+  return isDeviceTokenFor(deviceCookieOf(req), emailOf(req));
 }
 
 /** The client's address (a whole IPv6 /56 counts as one, as express-rate-limit recommends). */
@@ -39,6 +50,8 @@ interface LimitOptions {
   limit: number;
   skipSuccessfulRequests?: boolean;
   keyGenerator: (req: Request) => string;
+  /** Requests this limit doesn't apply to (neither counted nor refused). */
+  skip?: (req: Request) => boolean;
   /** Where the counts live: this instance's memory unless given. */
   store?: Store;
 }
@@ -52,6 +65,7 @@ function limit(options: LimitOptions) {
     limit: options.limit,
     skipSuccessfulRequests: options.skipSuccessfulRequests ?? false,
     keyGenerator: options.keyGenerator,
+    ...(options.skip ? { skip: options.skip } : {}),
     store: options.store,
     message: tooManyAttempts,
     standardHeaders: "draft-8",
@@ -88,8 +102,23 @@ export function createRateLimits(sharedStore?: RateLimitStoreFactory) {
       keyGenerator: addressAndEmail,
       store: shared("login"),
     }),
+    // The same guessing from addresses that keep changing. Whoever calls the
+    // API straight on Render (skipping Vercel) writes X-Forwarded-For, and so
+    // the address the limit above counts by. Here every attempt from a
+    // browser that never signed in to the account counts against the account
+    // itself, whatever address it claims; the owner's own browsers (device
+    // cookie, see services/deviceToken.ts) are spared, so a stranger hitting
+    // this limit can't lock them out.
+    loginFromUnknownDevice: limit({
+      windowMinutes: 15,
+      limit: 10,
+      skipSuccessfulRequests: true,
+      keyGenerator: emailOf,
+      skip: fromKnownDevice,
+      store: shared("login-account"),
+    }),
     // Password spraying: a few guesses at each of many accounts, which the
-    // per-account limit above never sees.
+    // per-account limits above never see.
     loginPerAddress: limit({
       windowMinutes: 15,
       limit: 100,

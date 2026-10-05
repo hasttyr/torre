@@ -4,6 +4,7 @@ import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createApp } from "../app";
+import { env } from "../config/env";
 import { hashPassword } from "../services/password";
 
 const { prismaMock } = vi.hoisted(() => ({
@@ -138,6 +139,85 @@ describe("login attempts limit", () => {
     }
 
     expect(statuses).toEqual(Array(12).fill(200));
+  });
+});
+
+// The API is also reachable straight on Render, skipping Vercel: there a
+// caller writes X-Forwarded-For itself, and with TRUST_PROXY=2 (production)
+// picks the address the per-address limits see.
+describe("logins claiming a new address on every try", () => {
+  const trustProxy = env.trustProxy;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    env.trustProxy = 2;
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      name: "Ana Torres",
+      email: "ana@example.com",
+      passwordHash: await hashPassword("password123"),
+      status: "ACTIVE",
+      role: { name: "PLAYER" },
+    });
+  });
+
+  afterEach(() => {
+    env.trustProxy = trustProxy;
+  });
+
+  /** A login for `email` that says it comes from 203.0.113.`n`, through one real proxy hop. */
+  const fromForgedAddress = (
+    client: ReturnType<typeof request> | ReturnType<typeof request.agent>,
+    n: number,
+    email = "ana@example.com",
+  ) =>
+    client
+      .post("/api/auth/login")
+      .set("X-Forwarded-For", `203.0.113.${n}, 198.51.100.7`)
+      // The agent below carries a session cookie: say it's the app's own page (CSRF check).
+      .set("Sec-Fetch-Site", "same-origin")
+      .send({ email, password: "wrong-password" });
+
+  it("can't reset the account's limit that way", async () => {
+    const app = serve(createApp());
+
+    const statuses = await repeat(10, (n) => fromForgedAddress(request(app), n));
+    const blocked = await fromForgedAddress(request(app), 10);
+
+    expect(statuses).toEqual(Array(10).fill(401));
+    expect(blocked.status).toBe(429);
+  });
+
+  it("doesn't lock the owner out of a browser they've signed in from before", async () => {
+    const app = serve(createApp());
+    const owner = request.agent(app);
+    const signIn = () =>
+      owner
+        .post("/api/auth/login")
+        .set("Sec-Fetch-Site", "same-origin")
+        .send({ email: "ana@example.com", password: "password123" });
+    await signIn().expect(200);
+
+    await repeat(11, (n) => fromForgedAddress(request(app), n));
+
+    expect((await fromForgedAddress(request(app), 99)).status).toBe(429);
+    expect((await signIn()).status).toBe(200);
+  });
+
+  it("only spares a browser for the account that signed in from it", async () => {
+    const app = serve(createApp());
+    const browser = request.agent(app);
+    await browser
+      .post("/api/auth/login")
+      .set("Sec-Fetch-Site", "same-origin")
+      .send({ email: "ana@example.com", password: "password123" })
+      .expect(200);
+
+    const statuses = await repeat(10, (n) => fromForgedAddress(browser, n, "luis@example.com"));
+    const blocked = await fromForgedAddress(browser, 10, "luis@example.com");
+
+    expect(statuses).toEqual(Array(10).fill(401));
+    expect(blocked.status).toBe(429);
   });
 });
 

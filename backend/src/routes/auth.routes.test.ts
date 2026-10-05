@@ -199,6 +199,40 @@ describe("POST /api/auth/login", () => {
     expect(response.body.user.passwordHash).toBeUndefined();
   });
 
+  // What lets the owner keep signing in while strangers hit the account's
+  // limit (see middlewares/rateLimits.ts).
+  it("remembers the browser for this account, in a cookie only the login route gets and script can't read", async () => {
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "user-1",
+      name: "Ana Torres",
+      email: "ana@example.com",
+      status: "ACTIVE",
+      passwordHash: await bcrypt.hash("password123", 10),
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      role: { id: "role-1", name: "ORGANIZER" },
+    });
+
+    const response = await request(createApp())
+      .post("/api/auth/login")
+      .send({ email: "ana@example.com", password: "password123" });
+
+    const cookies = [response.headers["set-cookie"] ?? []].flat();
+    const device = cookies.find((cookie) => cookie.startsWith("torre_device="));
+    expect(device).toMatch(/; Path=\/api\/auth\/login/);
+    expect(device).toMatch(/; HttpOnly/);
+    expect(device).toMatch(/; SameSite=Strict/);
+  });
+
+  it("remembers no browser after a failed login", async () => {
+    prismaMock.user.findUnique.mockResolvedValue(null);
+
+    const response = await request(createApp())
+      .post("/api/auth/login")
+      .send({ email: "ana@example.com", password: "incorrecta" });
+
+    expect(String(response.headers["set-cookie"] ?? "")).not.toContain("torre_device=");
+  });
+
   it("responds 401 with an incorrect password", async () => {
     const passwordHash = await bcrypt.hash("password123", 10);
     prismaMock.user.findUnique.mockResolvedValue({

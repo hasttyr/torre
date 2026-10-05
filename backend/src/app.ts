@@ -34,7 +34,7 @@ export function createApp(options: AppOptions = {}) {
 
   const limits = createRateLimits(options.rateLimitStore);
   app.use("/api", limits.api);
-  app.post("/api/auth/login", limits.loginPerAddress, limits.login);
+  app.post("/api/auth/login", limits.loginPerAddress, limits.loginFromUnknownDevice, limits.login);
   app.post("/api/auth/register", limits.register);
   app.post("/api/auth/password/forgot", limits.passwordReset);
 
