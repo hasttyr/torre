@@ -58,6 +58,31 @@ describe("input bounds", () => {
     expect(createClubSchema.safeParse({ name: "a".repeat(100) }).success).toBe(true);
   });
 
+  // Numbers too: past a sane maximum the request is refused (400) instead of
+  // overflowing its integer column on the way in (a 500).
+  it.each([
+    ["a semester", registerSchema, { ...player, semester: 21 }],
+    ["a profile semester", updateProfileSchema, { semester: 21 }],
+    ["a rounds count", configureTournamentSchema, { roundsCount: 51 }],
+    ["a minimum semester", configureTournamentSchema, { minimumSemester: 21 }],
+    ["a tiebreak position", configureTournamentSchema, { tiebreakCriteria: [{ name: "BUCHHOLZ", order: 6 }] }],
+    ["an overflowing rounds count", configureTournamentSchema, { roundsCount: 2 ** 31 }],
+  ] as [string, ZodType, Record<string, unknown>][])("refuses %s past its maximum", (_label, schema, input) => {
+    expect(schema.safeParse(input).success).toBe(false);
+  });
+
+  it("accepts numbers right at their maximum", () => {
+    expect(registerSchema.safeParse({ ...player, semester: 20 }).success).toBe(true);
+    expect(updateProfileSchema.safeParse({ semester: 20 }).success).toBe(true);
+    expect(
+      configureTournamentSchema.safeParse({
+        roundsCount: 50,
+        minimumSemester: 20,
+        tiebreakCriteria: [{ name: "BUCHHOLZ", order: 5 }],
+      }).success,
+    ).toBe(true);
+  });
+
   it.each([
     ["a club member", assignPlayerSchema],
     ["a coached player", linkPlayerSchema],

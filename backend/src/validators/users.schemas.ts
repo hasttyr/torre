@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { DISABILITIES, GENDERS, ROLES, USER_STATUSES } from "../contracts/catalogs";
-import { nameSchema, programSchema, reasonSchema, universityCodeSchema } from "./fields";
+import { nameSchema, programSchema, reasonSchema, semesterSchema, universityCodeSchema } from "./fields";
 
 // Unlike public registration (auth.schemas.ts), ADMINISTRATOR is allowed
 // here: whoever assigns it is already an authenticated administrator.
@@ -30,7 +30,7 @@ export const updateProfileSchema = z.object({
   name: nameSchema.optional(),
   universityCode: universityCodeSchema.optional(),
   program: programSchema.optional(),
-  semester: z.number().int().positive("El semestre debe ser un entero positivo").optional(),
+  semester: semesterSchema.optional(),
   // An explicit null clears the field; omitting it leaves it as-is (same
   // pattern as restrictedProgram/minimumSemester in tournaments.schemas.ts).
   birthDate: z.coerce

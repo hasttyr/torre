@@ -16,6 +16,16 @@ export const MAX_LENGTH = {
 /** The message for a text over its limit. */
 export const tooLong = (max: number): string => `No puede superar ${max} caracteres`;
 
+// Numbers get a ceiling too: well past any real semester or tournament, and
+// well inside their integer columns (a bigger one would fail in the database).
+export const MAX_VALUE = {
+  semester: 20,
+  roundsCount: 50,
+} as const;
+
+/** The message for a number over its limit. */
+export const tooHigh = (max: number): string => `No puede ser mayor que ${max}`;
+
 /** An entity id: every primary key is a UUID, in the shape PostgreSQL stores (any version). */
 export const idSchema = z.guid("El identificador no es válido");
 
@@ -43,6 +53,12 @@ export const universityCodeSchema = z
   .trim()
   .min(1, "El código universitario es requerido")
   .max(MAX_LENGTH.universityCode, tooLong(MAX_LENGTH.universityCode));
+
+export const semesterSchema = z
+  .number()
+  .int()
+  .positive("El semestre debe ser un entero positivo")
+  .max(MAX_VALUE.semester, tooHigh(MAX_VALUE.semester));
 
 export const programSchema = z
   .string()

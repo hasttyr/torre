@@ -6,6 +6,7 @@ import {
   nameSchema,
   newPasswordSchema,
   programSchema,
+  semesterSchema,
   tooLong,
   universityCodeSchema,
 } from "./fields";
@@ -28,7 +29,7 @@ export const registerSchema = z.discriminatedUnion("role", [
     role: z.literal("PLAYER"),
     universityCode: universityCodeSchema,
     program: programSchema,
-    semester: z.number().int().positive("El semestre debe ser un entero positivo"),
+    semester: semesterSchema,
   }),
   z.object({
     ...baseFields,
