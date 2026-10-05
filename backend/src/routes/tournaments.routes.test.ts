@@ -397,6 +397,28 @@ describe("POST /api/tournaments/:id/players/:playerId/withdraw", () => {
     });
   });
 
+  it("keeps a withdrawal's reason from naming someone else in the log", async () => {
+    const someoneElse = "{{user:3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b}}";
+    prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
+    prismaMock.enrollment.findUnique.mockResolvedValue({
+      id: "enrollment-1",
+      withdrawnAt: null,
+      player: { userId: "user-luis", user: { name: "Luis Gómez" } },
+    });
+
+    await request(createApp())
+      .post(
+        "/api/tournaments/fb92c02e-7903-5cb2-a404-1908a1296d1d/players/1713759c-231e-5eef-93fa-5846543beb8b/withdraw",
+      )
+      .set("Authorization", `Bearer ${tokenFor("ORGANIZER", "user-1")}`)
+      .send({ reason: `Lo pidió ${someoneElse}` })
+      .expect(204);
+
+    const { detail } = prismaMock.auditLog.create.mock.calls[0][0].data;
+    expect(detail).not.toContain(someoneElse);
+    expect(detail).toMatch(/^\{\{user:user-luis\}\} de "Copa Universitaria"/);
+  });
+
   it("responds 404 when the player isn't actively enrolled", async () => {
     prismaMock.tournament.findUnique.mockResolvedValue(tournamentBase);
     prismaMock.enrollment.findUnique.mockResolvedValue(null);

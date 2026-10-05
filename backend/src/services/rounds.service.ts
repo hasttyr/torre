@@ -5,7 +5,7 @@ import { emitToTournament, emitToTournamentManagers } from "../sockets/broadcast
 import { SOCKET_EVENTS } from "../sockets/events";
 import type { AuthUser } from "../types/express";
 import type { SwapPlayersSchemaInput } from "../validators/rounds.schemas";
-import { mention, recordAuditLog } from "./auditLog.service";
+import { mention, plain, recordAuditLog } from "./auditLog.service";
 import { candidatesFromHistory, drawPairingNumbers, type PlayedGame } from "./pairing/pairingHistory";
 import { pairRound, PairingImpossibleError } from "./pairing/swissPairing";
 import { ROUND_INCLUDE, toRoundDto, type RoundDto, type RoundWithMatches } from "./round.mapper";
@@ -291,8 +291,8 @@ export async function swapPlayers(
       tx,
       actor.id,
       "PAIRING_ADJUSTED",
-      `Ronda ${round.number} de "${round.tournament.name}": ${mention(seatA.userId)} ↔ ${mention(seatB.userId)}` +
-        `${createsRematch ? " (repite un enfrentamiento previo)" : ""} — ${data.reason}`,
+      `Ronda ${round.number} de "${plain(round.tournament.name)}": ${mention(seatA.userId)} ↔ ${mention(seatB.userId)}` +
+        `${createsRematch ? " (repite un enfrentamiento previo)" : ""} — ${plain(data.reason)}`,
     );
     return { round, updated: await tx.round.findUniqueOrThrow({ where: { id: roundId }, include: ROUND_INCLUDE }) };
   });

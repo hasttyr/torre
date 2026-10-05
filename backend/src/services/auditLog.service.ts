@@ -18,6 +18,15 @@ export function mention(userId: string): string {
   return `{{user:${userId}}}`;
 }
 
+/**
+ * Text someone typed (a reason, a tournament's name), made unable to spell a
+ * {@link mention}: otherwise "{{user:<id>}}" in it would read as that
+ * person's name in the log.
+ */
+export function plain(text: string): string {
+  return text.replaceAll("{{", "{ {");
+}
+
 /** Replaces every {@link mention} in the details with the person's current name. */
 async function nameMentions(prisma: PrismaClient, details: (string | null)[]): Promise<(string | null)[]> {
   const ids = new Set(details.flatMap((detail) => [...(detail ?? "").matchAll(MENTION)].map((match) => match[1]!)));

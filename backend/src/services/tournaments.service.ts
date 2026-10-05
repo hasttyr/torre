@@ -9,7 +9,7 @@ import type {
 import { emitToTournament } from "../sockets/broadcast";
 import { SOCKET_EVENTS } from "../sockets/events";
 import type { AuthUser } from "../types/express";
-import { mention, recordAuditLog } from "./auditLog.service";
+import { mention, plain, recordAuditLog } from "./auditLog.service";
 import { completeBlockedSuppressions } from "./dataRights.service";
 import { toTournamentDto, type TournamentDto } from "./tournament.mapper";
 import {
@@ -315,12 +315,12 @@ export async function withdrawPlayer(
 
     await tx.enrollment.update({ where: { id: enrollment.id }, data: { withdrawnAt: new Date() } });
     // RN-11: a player withdrawal is a critical administrative action.
-    const reasonSuffix = data.reason ? ` — ${data.reason}` : "";
+    const reasonSuffix = data.reason ? ` — ${plain(data.reason)}` : "";
     await recordAuditLog(
       tx,
       actor.id,
       "PLAYER_WITHDRAWN",
-      `${mention(enrollment.player.userId)} de "${tournament.name}"${reasonSuffix}`,
+      `${mention(enrollment.player.userId)} de "${plain(tournament.name)}"${reasonSuffix}`,
     );
   });
   emitToTournament(tournamentId, SOCKET_EVENTS.PLAYER_WITHDRAWN, { tournamentId, playerId });
@@ -369,7 +369,7 @@ export async function finishTournament(
       data: { status: "FINISHED" },
       include: WITH_CRITERIA,
     });
-    await recordAuditLog(tx, actor.id, "TOURNAMENT_FINISHED", `"${tournament.name}"`);
+    await recordAuditLog(tx, actor.id, "TOURNAMENT_FINISHED", `"${plain(tournament.name)}"`);
     // HU22: whoever asked to be erased while this tournament ran can be now.
     await completeBlockedSuppressions(tx, tournamentId);
     return finished;

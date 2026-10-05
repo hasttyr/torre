@@ -209,6 +209,23 @@ describe("swapPlayers", () => {
     });
   });
 
+  it("keeps the tournament's name from naming someone else in the log", async () => {
+    const someoneElse = "{{user:3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b}}";
+    givenRound(prisma, {
+      id: "r-1",
+      number: 1,
+      status: "GENERATED",
+      tournamentId: "t-1",
+      tournament: tournament({ name: `Copa ${someoneElse}` }),
+    });
+
+    await swapPlayers(asClient(prisma), "r-1", { playerAId: "p2", playerBId: "p3", reason: "Hermanos" }, ORGANIZER);
+
+    const { detail } = prisma.auditLog.create.mock.calls[0][0].data;
+    expect(detail).not.toContain(someoneElse);
+    expect(detail).toContain("{{user:u-luis}} ↔ {{user:u-eva}}");
+  });
+
   it("flips colors when both players share a board, with a single update", async () => {
     givenRound(prisma, {
       id: "r-1",
