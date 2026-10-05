@@ -2,6 +2,7 @@ import type { CookieOptions, NextFunction, Request, Response } from "express";
 
 import { env } from "../config/env";
 import { HttpError } from "../errors/apiErrors";
+import { signDeviceToken } from "../services/deviceToken";
 import { sessionExpiresAt } from "../services/sessionToken";
 
 // The browser's session: the token in a cookie that script can't read
@@ -28,15 +29,41 @@ export function clearSessionCookie(res: Response): void {
   res.clearCookie(SESSION_COOKIE, cookieOptions());
 }
 
-/** The session token the request's cookie carries, if any. */
-export function sessionCookieOf(req: Request): string | null {
+// The browser's device token (services/deviceToken.ts): it outlives the
+// session, signing out included, and only the login route ever receives it.
+export const DEVICE_COOKIE = "torre_device";
+const DEVICE_COOKIE_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
+
+/** Remembers that this browser signed in to the account behind `email`. */
+export function setDeviceCookie(res: Response, email: string): void {
+  res.cookie(DEVICE_COOKIE, signDeviceToken(email), {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: env.nodeEnv === "production",
+    path: "/api/auth/login",
+    maxAge: DEVICE_COOKIE_MAX_AGE_MS,
+  });
+}
+
+/** The value of the request's cookie called `name`, if it carries one. */
+function cookieOf(req: Request, name: string): string | null {
   for (const pair of (req.header("cookie") ?? "").split(";")) {
     const separator = pair.indexOf("=");
-    if (separator !== -1 && pair.slice(0, separator).trim() === SESSION_COOKIE) {
+    if (separator !== -1 && pair.slice(0, separator).trim() === name) {
       return decodeURIComponent(pair.slice(separator + 1).trim());
     }
   }
   return null;
+}
+
+/** The session token the request's cookie carries, if any. */
+export function sessionCookieOf(req: Request): string | null {
+  return cookieOf(req, SESSION_COOKIE);
+}
+
+/** The device token the request's cookie carries, if any. */
+export function deviceCookieOf(req: Request): string | null {
+  return cookieOf(req, DEVICE_COOKIE);
 }
 
 /** The origin a request says it comes from: its Origin header, else its Referer's. */
