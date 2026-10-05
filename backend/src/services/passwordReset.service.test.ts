@@ -9,11 +9,21 @@ import { confirmPasswordReset, requestPasswordReset } from "./passwordReset.serv
 import type { ResetLinkSender } from "./resetLinkSender";
 
 function buildPrismaMock() {
-  return {
+  const prisma = {
     user: { findUnique: vi.fn(), update: vi.fn() },
-    passwordResetRequest: { create: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
-    $transaction: vi.fn((operations: unknown[]) => Promise.all(operations)),
+    passwordResetRequest: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      // The claim on the token: by default, nobody got there first.
+      updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+    },
+    // An interactive transaction runs its callback against the same client.
+    $transaction: vi.fn((work: unknown) =>
+      typeof work === "function" ? work(prisma) : Promise.all(work as unknown[]),
+    ),
   };
+  return prisma;
 }
 
 describe("requestPasswordReset", () => {
@@ -104,21 +114,47 @@ describe("confirmPasswordReset", () => {
     prisma = buildPrismaMock();
   });
 
+  const validRequest = () => ({
+    id: "request-1",
+    userId: "user-1",
+    usedAt: null,
+    expiresAt: new Date(Date.now() + 60_000),
+  });
+
   it("updates the password and marks the request as used with a valid token", async () => {
-    prisma.passwordResetRequest.findUnique.mockResolvedValue({
-      id: "request-1",
-      userId: "user-1",
-      usedAt: null,
-      expiresAt: new Date(Date.now() + 60_000),
-    });
+    prisma.passwordResetRequest.findUnique.mockResolvedValue(validRequest());
 
     await confirmPasswordReset(prisma as unknown as PrismaClient, "un-token-valido", "nuevaPassword123");
 
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(prisma.user.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: "user-1" } }));
-    expect(prisma.passwordResetRequest.update).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: "request-1" } }),
-    );
+    expect(prisma.passwordResetRequest.updateMany).toHaveBeenCalledWith({
+      where: { id: "request-1", usedAt: null, expiresAt: { gt: expect.any(Date) } },
+      data: { usedAt: expect.any(Date) },
+    });
+  });
+
+  // Two confirmations with the same link at once: both read it unused, but
+  // only the first claim on the row may go on to change the password.
+  it("changes nothing when another confirmation used the token first", async () => {
+    prisma.passwordResetRequest.findUnique.mockResolvedValue(validRequest());
+    prisma.passwordResetRequest.updateMany.mockResolvedValueOnce({ count: 0 });
+
+    await expect(
+      confirmPasswordReset(prisma as unknown as PrismaClient, "un-token-valido", "nuevaPassword123"),
+    ).rejects.toMatchObject({ status: 400 } satisfies Partial<HttpError>);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it("stops every other link sent to the account from working", async () => {
+    prisma.passwordResetRequest.findUnique.mockResolvedValue(validRequest());
+
+    await confirmPasswordReset(prisma as unknown as PrismaClient, "un-token-valido", "nuevaPassword123");
+
+    expect(prisma.passwordResetRequest.updateMany).toHaveBeenCalledWith({
+      where: { userId: "user-1", id: { not: "request-1" }, usedAt: null },
+      data: { expiresAt: expect.any(Date) },
+    });
   });
 
   it("rejects a token that doesn't exist", async () => {
