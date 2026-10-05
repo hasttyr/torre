@@ -138,7 +138,7 @@ La columna "Acceso" es la compuerta de la ruta. Los servicios afinan después: "
 | GET      | `/users`                               | Administrador | Listado de usuarios                                                    |
 | PATCH    | `/users/:id/role`, `/users/:id/status` | Administrador | Cambiar el rol; activar o desactivar la cuenta                         |
 
-Límites de peticiones ([`src/middlewares/rateLimits.ts`](src/middlewares/rateLimits.ts)): `/auth/login` admite 10 intentos fallidos cada 15 minutos por IP y correo (los estudiantes que comparten la IP del campus no se bloquean entre sí) y 100 por IP en total, contra quien prueba pocas contraseñas en muchas cuentas; `/auth/register`, 10 cuentas por hora por IP; `/auth/password/forgot`, 5 solicitudes por hora por IP y correo; y toda la API, 5000 peticiones cada 15 minutos por IP. Al pasarse responde `429` con `Retry-After`. Los contadores de inicio de sesión, registro y recuperación viven en PostgreSQL (`rate_limit_counters`, [`src/middlewares/rateLimitStore.ts`](src/middlewares/rateLimitStore.ts)): todas las instancias de la API los comparten y un reinicio no los borra. El techo de toda la API queda en la memoria de cada instancia, para no sumar una consulta a cada petición. Los límites por dirección dependen de la IP que resuelve `TRUST_PROXY`; lo que eso implica detrás de Vercel está en [`docs/despliegue.md`](../docs/despliegue.md#límites-conocidos).
+Límites de peticiones ([`src/middlewares/rateLimits.ts`](src/middlewares/rateLimits.ts)): `/auth/login` admite 10 intentos fallidos cada 15 minutos por IP y correo (los estudiantes que comparten la IP del campus no se bloquean entre sí) y 100 por IP en total, contra quien prueba pocas contraseñas en muchas cuentas; `/auth/register`, 10 cuentas por hora por IP; `/auth/password/forgot`, 5 solicitudes por hora por IP y correo; y toda la API, 5000 peticiones cada 15 minutos por IP. Al pasarse responde `429` con `Retry-After`. Los contadores de inicio de sesión, registro y recuperación viven en PostgreSQL (`rate_limit_counters`, [`src/middlewares/rateLimitStore.ts`](src/middlewares/rateLimitStore.ts)): todas las instancias de la API los comparten y un reinicio no los borra. El techo de toda la API queda en la memoria de cada instancia, para no sumar una consulta a cada petición. Los límites por dirección dependen de la IP que resuelve `TRUST_PROXY`, y quien llama directo a Render (sin pasar por Vercel) escribe él mismo `X-Forwarded-For`, así que podría estrenar una IP en cada intento. Por eso `/auth/login` tiene un límite más: los intentos desde un navegador que nunca inició sesión en esa cuenta suman todos a la cuenta, sin importar la IP (10 fallidos cada 15 minutos). El navegador del dueño queda fuera de ese límite, para que un extraño no pueda bloquearlo: al iniciar sesión la API pone la cookie `torre_device` (`HttpOnly`, `SameSite=Strict`, `Path=/api/auth/login`, 90 días), con un HMAC del correo y no el correo en claro ([`src/services/deviceToken.ts`](src/services/deviceToken.ts)). Mientras alguien ataca una cuenta, su dueño entra desde los navegadores que ya usó; desde uno nuevo, espera a que pase la ventana.
 
 ### Torneos, rondas y resultados
 
@@ -168,16 +168,16 @@ Límites de peticiones ([`src/middlewares/rateLimits.ts`](src/middlewares/rateLi
 
 ### Clubes, jugadores y entrenadores
 
-| Método            | Ruta                             | Acceso                                 | Descripción                                  |
-| ----------------- | -------------------------------- | -------------------------------------- | -------------------------------------------- |
-| GET               | `/players?q=`                    | Organizador, administrador, entrenador | Buscar jugadores por nombre, correo o código |
-| GET               | `/clubs`                         | Sesión                                 | Clubes                                       |
-| GET               | `/clubs/:id/players`             | Organizador, administrador             | Jugadores de un club                         |
-| POST, PUT, DELETE | `/clubs`, `/clubs/:id`           | Organizador, administrador             | Crear, editar o eliminar un club             |
-| POST, DELETE      | `/clubs/:id/players[/:playerId]` | Organizador, administrador             | Asignar o quitar un jugador                  |
-| GET, POST         | `/coaches/players`               | Entrenador                             | Jugadores seguidos; pedir seguir a uno       |
-| DELETE            | `/coaches/players/:playerId`     | Entrenador                             | Dejar de seguir, o cancelar la solicitud     |
-| GET               | `/coaches/tournaments`           | Entrenador                             | Torneos de los jugadores que aceptaron       |
+| Método            | Ruta                             | Acceso                                 | Descripción                                                                              |
+| ----------------- | -------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------- |
+| GET               | `/players?q=`                    | Organizador, administrador, entrenador | Buscar jugadores por nombre, correo o código (el entrenador, solo con el valor completo) |
+| GET               | `/clubs`                         | Sesión                                 | Clubes                                                                                   |
+| GET               | `/clubs/:id/players`             | Organizador, administrador             | Jugadores de un club                                                                     |
+| POST, PUT, DELETE | `/clubs`, `/clubs/:id`           | Organizador, administrador             | Crear, editar o eliminar un club                                                         |
+| POST, DELETE      | `/clubs/:id/players[/:playerId]` | Organizador, administrador             | Asignar o quitar un jugador                                                              |
+| GET, POST         | `/coaches/players`               | Entrenador                             | Jugadores seguidos; pedir seguir a uno                                                   |
+| DELETE            | `/coaches/players/:playerId`     | Entrenador                             | Dejar de seguir, o cancelar la solicitud                                                 |
+| GET               | `/coaches/tournaments`           | Entrenador                             | Torneos de los jugadores que aceptaron                                                   |
 
 Un entrenador pide seguir a un jugador y no ve nada de su progreso (panel, torneos) hasta que el jugador acepta (HU24, consentimiento de la Ley 1581). Cualquiera de los dos puede terminar el vínculo.
 
