@@ -17,11 +17,6 @@ const AUDIENCE = "torre-central-hub";
 // sent). Its own audience keeps it from ever passing as a session.
 const SOCKET_AUDIENCE = "torre-central-hub-socket";
 const SOCKET_TICKET_SECONDS = 60;
-// Tokens signed before these two claims existed carry neither. Those issued
-// before this moment (2026-09-28, in JWT seconds) stay valid until they
-// expire, so the deploy signs nobody out; once JWT_EXPIRES_IN has passed
-// since, this allowance can go.
-const CLAIMS_REQUIRED_FROM = Date.UTC(2026, 8, 28) / 1000;
 
 /** Who a session is for, and the account's token version it was issued under. */
 export interface SessionClaims {
@@ -51,22 +46,13 @@ export function signSessionToken(user: AuthUser, version = 0): string {
   } as jwt.SignOptions);
 }
 
-/** Whether the token names this API and app, or predates those claims (see CLAIMS_REQUIRED_FROM). */
-function isForThisApp(payload: jwt.JwtPayload): boolean {
-  if (payload.iss === ISSUER && payload.aud === AUDIENCE) return true;
-  const predatesClaims = typeof payload.iat === "number" && payload.iat < CLAIMS_REQUIRED_FROM;
-  return payload.iss === undefined && payload.aud === undefined && predatesClaims;
-}
-
 /** Signed claims as SessionClaims, or an error when they aren't a session's shape. */
 function claimsOf(payload: jwt.JwtPayload): SessionClaims {
-  if (typeof payload.sub !== "string" || typeof payload.role !== "string") {
+  // Without a version, revoking the account's sessions couldn't reach it.
+  if (typeof payload.sub !== "string" || typeof payload.role !== "string" || typeof payload.ver !== "number") {
     throw new Error("unexpected token payload shape");
   }
-  // Tokens issued before versions existed carry none: they're version 0,
-  // which the first revocation of that account retires.
-  const version = typeof payload.ver === "number" ? payload.ver : 0;
-  return { user: { id: payload.sub, role: payload.role }, version };
+  return { user: { id: payload.sub, role: payload.role }, version: payload.ver };
 }
 
 /** When a session token stops working: the session cookie lasts exactly as long. */
@@ -108,9 +94,7 @@ export function verifySocketTicket(ticket: string): SessionClaims {
  * @throws {Error} if any of those fail or the claims aren't the expected shape.
  */
 export function verifySessionToken(token: string): SessionClaims {
-  const payload = jwt.verify(token, env.jwtSecret, { algorithms: [ALGORITHM] });
-  if (typeof payload === "string" || !isForThisApp(payload)) {
-    throw new Error("not a session token of this API");
-  }
+  const payload = jwt.verify(token, env.jwtSecret, { algorithms: [ALGORITHM], issuer: ISSUER, audience: AUDIENCE });
+  if (typeof payload === "string") throw new Error("not a session token of this API");
   return claimsOf(payload);
 }
