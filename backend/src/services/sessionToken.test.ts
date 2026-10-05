@@ -9,9 +9,8 @@ import {
   verifySocketTicket,
 } from "./sessionToken";
 
-// The day tokens started carrying an issuer and an audience.
+// The day before tokens started carrying an issuer and an audience (2026-09-28).
 const BEFORE_CLAIMS = new Date("2026-09-27T12:00:00Z");
-const AFTER_CLAIMS = new Date("2026-09-29T12:00:00Z");
 
 /** A token as the API signed them before issuers and audiences, at the current (fake) time. */
 const legacyToken = (payload: object = { sub: "user-1", role: "COACH" }) =>
@@ -52,19 +51,23 @@ describe("session tokens", () => {
     expect(() => verifySessionToken(byOtherService)).toThrow();
   });
 
-  it("accept a token issued before the claims existed until it expires, so deploying doesn't sign everyone out", () => {
+  // Every token from before the claims existed has expired by now; one that
+  // still verifies was signed some other way (or without an expiry).
+  it("refuse a token without an issuer and audience, however long ago it was issued", () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(BEFORE_CLAIMS);
 
-    // Issued before versions existed too: it reads as version 0.
-    expect(verifySessionToken(legacyToken())).toEqual({ user: { id: "user-1", role: "COACH" }, version: 0 });
+    expect(() => verifySessionToken(legacyToken())).toThrow();
   });
 
-  it("refuse a token without the claims issued since they exist", () => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(AFTER_CLAIMS);
+  it("refuse a token without the account's token version, which revocation depends on", () => {
+    const unversioned = jwt.sign({ sub: "user-1", role: "COACH" }, "test-secret", {
+      expiresIn: "1h",
+      issuer: "torre-central-hub-api",
+      audience: "torre-central-hub",
+    });
 
-    expect(() => verifySessionToken(legacyToken())).toThrow();
+    expect(() => verifySessionToken(unversioned)).toThrow();
   });
 
   it("refuse a token whose claims aren't a session's", () => {
