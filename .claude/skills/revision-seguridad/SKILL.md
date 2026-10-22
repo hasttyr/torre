@@ -1,6 +1,6 @@
 ---
 name: revision-seguridad
-description: Usar cuando se revisa la seguridad o la privacidad de torre, o un cambio que toca sesión, permisos, búsqueda o listados de personas, datos personales (Ley 1581), la bitácora, límites de peticiones, recuperación de contraseña, SQL crudo o cabeceras de despliegue.
+description: "Usar cuando se revisa la seguridad o la privacidad de torre, o un cambio que toca sesión, permisos, búsqueda o listados de personas, datos personales (Ley 1581), la bitácora, límites de peticiones, recuperación de contraseña, SQL crudo o cabeceras de despliegue."
 ---
 
 # Revisión de seguridad de torre

@@ -1,6 +1,6 @@
 ---
 name: arreglar-bug
-description: Usar cuando algo de torre no funciona como se espera: un mensaje de error en pantalla, un 4xx o 5xx inesperado, una búsqueda que no encuentra, datos o estados que no cuadran, algo que dice lo que no es, o un test que falla.
+description: "Usar cuando algo de torre no funciona como se espera: un mensaje de error en pantalla, un 4xx o 5xx inesperado, una búsqueda que no encuentra, datos o estados que no cuadran, algo que dice lo que no es, o un test que falla."
 ---
 
 # Arreglar un bug en torre

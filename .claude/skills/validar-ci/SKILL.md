@@ -1,6 +1,6 @@
 ---
 name: validar-ci
-description: Usar cuando hay que comprobar que un cambio en torre pasa el CI antes de decir que está listo, hacer commit, abrir un PR o fusionar; o cuando un job de GitHub Actions falló (backend, frontend, e2e, npm audit, cobertura) y hay que saber por qué.
+description: "Usar cuando hay que comprobar que un cambio en torre pasa el CI antes de decir que está listo, hacer commit, abrir un PR o fusionar; o cuando un job de GitHub Actions falló (backend, frontend, e2e, npm audit, cobertura) y hay que saber por qué."
 ---
 
 # Validar como el CI
