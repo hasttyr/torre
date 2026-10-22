@@ -145,7 +145,7 @@ async function onUnlink(player: { playerId: string; name: string; acceptedAt: st
                 :to="`/torneos/${tournament.id}/sala`"
                 class="self-start text-sm font-semibold text-accent"
               >
-                {{ t("tournamentRoom.follow") }}
+                {{ tournament.status === "FINISHED" ? t("tournamentRoom.results") : t("tournamentRoom.follow") }}
               </RouterLink>
             </TournamentCard>
           </li>

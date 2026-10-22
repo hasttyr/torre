@@ -183,6 +183,7 @@ describe("TournamentLiveView", () => {
     const wrapper = await mountRoom();
 
     expect(joinTournamentRoom).toHaveBeenCalledWith(socketMock, "t-1");
+    expect(wrapper.get("main header p").text()).toBe("En vivo");
     expect(wrapper.text()).toContain("Ana Torres");
     expect(wrapper.text()).toContain("descansa esta ronda");
     expect(wrapper.text()).toContain("Clasificación provisional");
@@ -273,6 +274,16 @@ describe("TournamentLiveView", () => {
     const wrapper = await mountRoom();
 
     expect(wrapper.find("[aria-label='Tablas']").exists()).toBe(false);
+  });
+
+  // The connection stays open in a finished room, but nothing in it can change.
+  it("reads as final results, not live, once the tournament is finished", async () => {
+    signIn("PLAYER");
+    vi.mocked(getTournament).mockResolvedValue({ ...TOURNAMENT, status: "FINISHED" });
+
+    const wrapper = await mountRoom();
+
+    expect(wrapper.get("main header p").text()).toBe("Resultados finales");
   });
 
   it("offers the organizer who owns it a way back to the admin panel", async () => {

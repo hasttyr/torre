@@ -94,6 +94,19 @@ describe("CoachPlayersView", () => {
     expect(wrapper.text()).toContain("Luis Gómez");
   });
 
+  it("offers a finished tournament's room for its results, not to follow live", async () => {
+    listLinkedPlayersMock.mockResolvedValue([LINKED_PLAYER]);
+    listCoachTournamentsMock.mockResolvedValue([
+      { ...COACH_TOURNAMENT, id: "t-live", status: "IN_PROGRESS" },
+      { ...COACH_TOURNAMENT, id: "t-done", status: "FINISHED" },
+    ]);
+
+    const { wrapper } = await mountView();
+
+    expect(wrapper.get("a[href='/torneos/t-live/sala']").text()).toBe("Seguir en vivo →");
+    expect(wrapper.get("a[href='/torneos/t-done/sala']").text()).toBe("Ver resultados →");
+  });
+
   it.each([
     ["Desvincular", true],
     ["Cancelar", false],

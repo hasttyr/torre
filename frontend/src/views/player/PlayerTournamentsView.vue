@@ -52,7 +52,7 @@ const { loading, loadError, retry } = useQueryStatus([enrolledQuery, availableQu
                   :to="`/torneos/${tournament.id}/sala`"
                   class="mt-1 inline-block text-sm font-semibold text-accent"
                 >
-                  {{ t("tournamentRoom.follow") }}
+                  {{ tournament.status === "FINISHED" ? t("tournamentRoom.results") : t("tournamentRoom.follow") }}
                 </RouterLink>
               </TournamentCard>
             </li>

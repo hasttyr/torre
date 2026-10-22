@@ -74,6 +74,8 @@ function selectRound(number: string | number): void {
   roundParam.value = Number(number) === published.value.at(-1)?.number ? "" : String(number);
 }
 const tournament = computed(() => tournamentEntry.data.value ?? null);
+// HU17: a finished room still listens, but nothing in it changes anymore.
+const finished = computed(() => tournament.value?.status === "FINISHED");
 const canRecord = computed(() => (tournament.value ? canRecordResults(tournament.value, auth.user) : false));
 const canManage = computed(() => (tournament.value ? canManageTournament(tournament.value, auth.user) : false));
 const canExport = computed(() => (tournament.value ? canExportDocuments(tournament.value, auth.user) : false));
@@ -133,10 +135,11 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
             <p class="flex items-center gap-2 text-xs font-semibold tracking-[0.08em] text-accent uppercase">
               <span
                 class="h-2 w-2 rounded-full"
-                :class="connected ? 'animate-pulse bg-success' : 'bg-text-faint'"
+                :class="connected && !finished ? 'animate-pulse bg-success' : 'bg-text-faint'"
                 aria-hidden="true"
               />
-              {{ connected ? t("tournamentRoom.live") : t("tournamentRoom.offline") }}
+              <template v-if="finished">{{ t("tournamentRoom.finished") }}</template>
+              <template v-else>{{ connected ? t("tournamentRoom.live") : t("tournamentRoom.offline") }}</template>
             </p>
             <h1 class="mt-1 text-2xl sm:text-3xl">{{ tournament.name }}</h1>
             <p class="mt-1 text-sm">
