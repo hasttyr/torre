@@ -428,7 +428,7 @@
     "subtitle": "Ask to follow a player: you'll see their progress once they accept.",
     "loading": "Loading players…",
     "loadError": "Could not load your linked players",
-    "searchLabel": "Search player (exact full name, email or code)",
+    "searchLabel": "Search player (first name and surname, or full email or code)",
     "searchPlaceholder": "Luis Gómez",
     "alreadyLinked": "Already on Your List",
     "link": "Request",
