@@ -2,15 +2,14 @@
 
 Aplicación web de Torre Central Hub: una SPA en Vue 3 + TypeScript con Vite, Pinia, Pinia Colada, vue-router, vue-i18n (español e inglés), Tailwind CSS 4 y reka-ui para los componentes accesibles (menús, pestañas, diálogos).
 
-La visión general del sistema está en el [README raíz](../README.md), y las decisiones de arquitectura en [`docs/arquitectura.md`](../docs/arquitectura.md).
+La visión general del sistema está en el [README raíz](../README.md), la arquitectura en [`docs/architecture.md`](../docs/architecture.md) y el porqué de cada decisión en [`docs/decisions/`](../docs/decisions/).
 
 ## Puesta en marcha
 
 Requisitos: Node.js 22.12 o superior, y el [backend](../backend/README.md) corriendo para usar la app.
 
 ```bash
-npm install
-cp .env.example .env
+npm install                 # sin .env: los valores por defecto apuntan al backend local
 npm run dev                 # http://localhost:5173
 ```
 
@@ -153,7 +152,7 @@ Las pruebas se chequean con `tsconfig.vitest.json`, que incluye los tipos de Nod
 - `/api/…` se reescribe hacia el backend en Render, así la API queda en el mismo sitio que la app y la cookie de sesión es propia, no de terceros.
 - Cada página lleva cabeceras de seguridad: HSTS, `nosniff`, `Referrer-Policy`, `X-Frame-Options: DENY`, `Permissions-Policy` y una Content-Security-Policy que se aplica. Solo admite scripts propios y el de tema de `index.html`, por su hash: si se edita ese script, `deployment.test.ts` falla hasta que se actualice el hash. `connect-src` admite el propio origen y el backend en Render (el socket va directo allí). `npm run preview` sirve las mismas cabeceras.
 
-La configuración de Vercel y Render, qué variables lleva cada uno y cómo verificar un despliegue están en [`docs/despliegue.md`](../docs/despliegue.md). En otro servidor estático hay que replicar esas reglas, incluida la redirección de `/api`. Si cambia la dirección del backend, se cambia en `vercel.json` y en `.env.production`: `deployment.test.ts` falla si no coinciden.
+La configuración de Vercel y Render, qué variables lleva cada uno y cómo verificar un despliegue están en [`docs/runbooks/despliegue.md`](../docs/runbooks/despliegue.md). En otro servidor estático hay que replicar esas reglas, incluida la redirección de `/api`. Si cambia la dirección del backend, se cambia en `vercel.json` y en `.env.production`: `deployment.test.ts` falla si no coinciden.
 
 El build lee el contrato de `../backend/src/contracts/`, así que necesita el repositorio completo, no solo la carpeta `frontend`. En Vercel, con _Root Directory_ en `frontend`, eso es la opción _Include files outside the root directory in the Build Step_ (activada por defecto).
 
