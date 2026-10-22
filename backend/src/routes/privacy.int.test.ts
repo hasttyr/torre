@@ -55,16 +55,28 @@ describe("player search", () => {
     const coach = await createUser(prisma, "COACH");
     const player = await createUser(prisma, "PLAYER", { name: "Laura Pérez" });
     await prisma.player.update({ where: { id: player.playerId! }, data: { universityCode: "20261234" } });
+    const search = async (q: string) =>
+      (await request(app).get("/api/players").query({ q }).set(bearer(coach)).expect(200)).body;
 
-    const byNameFragment = await request(app).get("/api/players?q=Lau").set(bearer(coach)).expect(200);
-    const byCodeFragment = await request(app).get("/api/players?q=2026").set(bearer(coach)).expect(200);
-    const byName = await request(app).get("/api/players?q=laura pérez").set(bearer(coach)).expect(200);
-    const byCode = await request(app).get("/api/players?q=20261234").set(bearer(coach)).expect(200);
+    expect(await search("Lau")).toEqual([]);
+    expect(await search("Laura")).toEqual([]);
+    expect(await search("lau pér")).toEqual([]);
+    expect(await search("2026")).toEqual([]);
+    expect(await search("20261234")).toEqual([expect.objectContaining({ name: "Laura Pérez" })]);
+  });
 
-    expect(byNameFragment.body).toEqual([]);
-    expect(byCodeFragment.body).toEqual([]);
-    expect(byName.body).toEqual([expect.objectContaining({ name: "Laura Pérez" })]);
-    expect(byCode.body).toEqual([expect.objectContaining({ name: "Laura Pérez" })]);
+  // The name a player gives their coach rarely matches the record letter by
+  // letter: no accents, a middle name or second surname left out.
+  it("lets a coach find a player by first name and surname, whatever the case and accents", async () => {
+    const coach = await createUser(prisma, "COACH");
+    await createUser(prisma, "PLAYER", { name: "Laura Isabel Pérez Gómez" });
+    await createUser(prisma, "PLAYER", { name: "Laura Ruiz" });
+    const search = async (q: string) =>
+      (await request(app).get("/api/players").query({ q }).set(bearer(coach)).expect(200)).body;
+
+    for (const q of ["laura pérez", "LAURA PEREZ", "Laura Gomez", "pérez laura", "Laura Isabel Pérez Gómez"]) {
+      expect(await search(q)).toEqual([expect.objectContaining({ name: "Laura Isabel Pérez Gómez" })]);
+    }
   });
 
   it("only finds active accounts, so a blocked or suppressed person can't be enrolled, linked or assigned", async () => {
