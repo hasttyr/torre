@@ -243,11 +243,16 @@ export async function enrollPlayer(
 
     // RN-01: a player cannot be enrolled twice into the same tournament.
     const existing = await tx.enrollment.findUnique({ where: { tournamentId_playerId: { tournamentId, playerId } } });
-    if (existing) {
+    if (existing && !existing.withdrawnAt) {
       throw new HttpError("ALREADY_ENROLLED");
     }
 
-    const enrollment = await tx.enrollment.create({ data: { tournamentId, playerId } });
+    // HU27 keeps a withdrawn player's enrollment, the one row per tournament
+    // and player, so enrolling them again brings it back, as a new
+    // enrollment. Registration is still open: no round has been played yet.
+    const enrollment = existing
+      ? await tx.enrollment.update({ where: { id: existing.id }, data: { withdrawnAt: null, createdAt: new Date() } })
+      : await tx.enrollment.create({ data: { tournamentId, playerId } });
     return {
       playerId: player.id,
       name: player.user.name,

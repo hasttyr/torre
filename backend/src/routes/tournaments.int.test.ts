@@ -248,3 +248,28 @@ describe("concurrent changes to one tournament (B-B2)", () => {
     expect((await prisma.round.findUniqueOrThrow({ where: { id: draft.id } })).status).toBe("GENERATED");
   });
 });
+
+describe("withdrawing a player (HU27)", () => {
+  it("while registration is open, the player can be enrolled again, once", async () => {
+    const organizer = await createUser(prisma, "ORGANIZER");
+    const [player] = await players(1);
+    const tournament = await createTournament(prisma, organizer, { status: "REGISTRATION_OPEN" });
+    const enroll = () =>
+      request(app)
+        .post(`/api/tournaments/${tournament.id}/players`)
+        .set(bearer(organizer))
+        .send({ playerId: player!.playerId });
+
+    await enroll().expect(201);
+    await request(app)
+      .post(`/api/tournaments/${tournament.id}/players/${player!.playerId}/withdraw`)
+      .set(bearer(organizer))
+      .send({})
+      .expect(204);
+    await enroll().expect(201);
+    await enroll().expect(409);
+
+    const roster = await request(app).get(`/api/tournaments/${tournament.id}/players`).set(bearer(organizer));
+    expect(roster.body).toEqual([expect.objectContaining({ playerId: player!.playerId })]);
+  });
+});
