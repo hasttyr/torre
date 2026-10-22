@@ -218,7 +218,7 @@ El seguimiento se lleva en este repositorio mediante:
 - [`backend/README.md`](./backend/README.md) y [`frontend/README.md`](./frontend/README.md): cómo correr, probar y extender cada proyecto.
 - [`docs/architecture.md`](./docs/architecture.md): arquitectura interna y estrategia de pruebas.
 - [`docs/decisions/`](./docs/decisions/): el porqué de las decisiones que sostienen el sistema.
-- [`docs/runbooks/`](./docs/runbooks/): paso a paso para validar como el CI, crear migraciones y desplegar en Vercel (frontend) y Render (backend).
+- [`docs/runbooks/`](./docs/runbooks/): paso a paso para validar como el CI, crear migraciones, desplegar en Vercel (frontend) y Render (backend) y ejecutar la regresión P01–P33 del plan de pruebas.
 - [`CLAUDE.md`](./CLAUDE.md): contexto para trabajar en el proyecto con Claude Code, con sus comandos en `.claude/skills/` (`/validar-ci`, `/nueva-feature`, `/arreglar-bug`, `/revision-seguridad`).
 
 ## Autor

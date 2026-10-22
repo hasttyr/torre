@@ -13,7 +13,7 @@ Este archivo es el contexto de entrada. El detalle está en los README de cada p
 | `backend/src/contracts/`   | Contrato de la API, compilado por los dos proyectos (alias `@contracts` en el frontend)           |
 | `docs/architecture.md`     | Cómo encajan las piezas y la estrategia de pruebas                                                |
 | `docs/decisions/`          | Por qué el sistema es como es. Leer antes de cambiar algo que parezca raro                        |
-| `docs/runbooks/`           | Paso a paso: validar como el CI, migraciones, despliegue                                          |
+| `docs/runbooks/`           | Paso a paso: validar como el CI, migraciones, despliegue, regresión P01–P33                       |
 | `.github/workflows/ci.yml` | Las compuertas que tiene que pasar cada PR                                                        |
 | `.claude/skills/`          | `/validar-ci`, `/nueva-feature`, `/arreglar-bug`, `/revision-seguridad`                           |
 
