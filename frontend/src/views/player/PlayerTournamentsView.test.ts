@@ -155,4 +155,17 @@ describe("PlayerTournamentsView in Colombia (UTC-5)", () => {
     expect(wrapper.find("a[href='/torneos/t-live/sala']").exists()).toBe(true);
     expect(wrapper.find("a[href='/torneos/t-open/sala']").exists()).toBe(false);
   });
+
+  it("offers a finished tournament's room for its results, not to follow live", async () => {
+    listAvailableTournamentsMock.mockResolvedValue([]);
+    listEnrolledTournamentsMock.mockResolvedValue([
+      { ...ENROLLED_TOURNAMENT, id: "t-live", status: "IN_PROGRESS" },
+      { ...ENROLLED_TOURNAMENT, id: "t-done", status: "FINISHED" },
+    ]);
+
+    const { wrapper } = await mountView();
+
+    expect(wrapper.get("a[href='/torneos/t-live/sala']").text()).toBe("Seguir en vivo →");
+    expect(wrapper.get("a[href='/torneos/t-done/sala']").text()).toBe("Ver resultados →");
+  });
 });
