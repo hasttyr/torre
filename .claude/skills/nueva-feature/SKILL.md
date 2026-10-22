@@ -1,6 +1,6 @@
 ---
 name: nueva-feature
-description: Usar cuando se va a agregar o cambiar comportamiento en torre, del lado que sea: un endpoint, un campo, una pantalla, una regla de negocio (HU/RN), un widget del panel, un evento en tiempo real o un texto de la interfaz.
+description: "Usar cuando se va a agregar o cambiar comportamiento en torre, del lado que sea: un endpoint, un campo, una pantalla, una regla de negocio (HU/RN), un widget del panel, un evento en tiempo real o un texto de la interfaz."
 ---
 
 # Nueva feature en torre
