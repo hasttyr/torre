@@ -68,7 +68,7 @@ Vue 3 SPA ──REST──▶ Express ──▶ servicios de dominio ──▶ P
     └────────── Socket.IO ◀── emitToTournament (tras confirmar la transacción)
 ```
 
-El detalle de capas y decisiones está en [`docs/arquitectura.md`](./docs/arquitectura.md).
+El detalle de capas está en [`docs/architecture.md`](./docs/architecture.md), y el porqué de cada decisión en [`docs/decisions/`](./docs/decisions/).
 
 ## Reglas de negocio clave
 
@@ -105,8 +105,9 @@ torre/
 │       ├── lib/              # Composables y utilidades
 │       ├── i18n/             # Español (por defecto) e inglés
 │       └── router/           # Rutas y guardas de sesión y rol
-├── docs/                     # Documento de sustentación, arquitectura y diagramas
-├── tools/github-roadmap/     # Scripts que sincronizan el roadmap con Issues/Milestones/Project
+├── docs/                     # Arquitectura, decisiones (decisions/) y guías paso a paso (runbooks/)
+├── .claude/                  # Claude Code: permisos compartidos y comandos del proyecto (skills/)
+├── CLAUDE.md                 # Contexto de entrada para Claude Code (hay uno en backend/ y en frontend/)
 └── README.md
 ```
 
@@ -136,8 +137,7 @@ npm run dev                 # http://localhost:4000 (GET /api/health)
 
 # Frontend (en otra terminal)
 cd frontend
-npm install
-cp .env.example .env        # los valores por defecto apuntan al backend local
+npm install                 # sin .env: los valores por defecto apuntan al backend local
 npm run dev                 # http://localhost:5173
 ```
 
@@ -201,7 +201,7 @@ npm run test:integration  # backend: contra PostgreSQL real
 npm run test:e2e       # frontend: flujos en navegador (Playwright), con la API real
 ```
 
-Además de las pruebas unitarias, de servicios, de rutas y de componentes, frontend y backend compilan contra el mismo contrato de la API (`backend/src/contracts/`): un campo renombrado o un valor de catálogo que un lado no conoce no compila. La estrategia completa está en [`docs/arquitectura.md`](./docs/arquitectura.md#estrategia-de-pruebas).
+Además de las pruebas unitarias, de servicios, de rutas y de componentes, frontend y backend compilan contra el mismo contrato de la API (`backend/src/contracts/`): un campo renombrado o un valor de catálogo que un lado no conoce no compila. La estrategia completa está en [`docs/architecture.md`](./docs/architecture.md#estrategia-de-pruebas), y cómo correr todo como el CI en [`docs/runbooks/validar-ci.md`](./docs/runbooks/validar-ci.md).
 
 ## Roadmap
 
@@ -213,15 +213,13 @@ El seguimiento se lleva en este repositorio mediante:
 - **[Milestones](../../milestones)** — uno por semana, con fecha límite real.
 - **[Project](../../projects)** — vista Roadmap con fechas de inicio/fin por actividad.
 
-Esta estructura se genera y actualiza con los scripts de [`tools/github-roadmap/`](./tools/github-roadmap) (ver su [README](./tools/github-roadmap/README.md)).
-
 ## Documentación
 
 - [`backend/README.md`](./backend/README.md) y [`frontend/README.md`](./frontend/README.md): cómo correr, probar y extender cada proyecto.
-- [`docs/arquitectura.md`](./docs/arquitectura.md): arquitectura interna, decisiones de diseño y la revisión de septiembre de 2026.
-- [`docs/despliegue.md`](./docs/despliegue.md): despliegue en Vercel (frontend) y Render (backend), variables de cada uno y cómo verificarlo.
-- [`docs/diagrama-componentes.md`](./docs/diagrama-componentes.md): relación entre el diagrama de componentes y las carpetas del código.
-- [`docs/DOCUMENTACION.md`](./docs/DOCUMENTACION.md): documento completo de sustentación (planteamiento del problema, marco referencial, requisitos, casos de uso, modelo de datos, plan de pruebas y trazabilidad).
+- [`docs/architecture.md`](./docs/architecture.md): arquitectura interna y estrategia de pruebas.
+- [`docs/decisions/`](./docs/decisions/): el porqué de las decisiones que sostienen el sistema.
+- [`docs/runbooks/`](./docs/runbooks/): paso a paso para validar como el CI, crear migraciones y desplegar en Vercel (frontend) y Render (backend).
+- [`CLAUDE.md`](./CLAUDE.md): contexto para trabajar en el proyecto con Claude Code, con sus comandos en `.claude/skills/` (`/validar-ci`, `/nueva-feature`, `/arreglar-bug`, `/revision-seguridad`).
 
 ## Autor
 
