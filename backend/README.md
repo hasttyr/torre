@@ -2,7 +2,7 @@
 
 API REST y canal de tiempo real de Torre Central Hub: Express 5 + TypeScript, Prisma 7 sobre PostgreSQL (con el adaptador `@prisma/adapter-pg`), Socket.IO 4, validación con zod y PDF con pdfkit.
 
-La visión general del sistema está en el [README raíz](../README.md), y las decisiones de arquitectura en [`docs/arquitectura.md`](../docs/arquitectura.md).
+La visión general del sistema está en el [README raíz](../README.md), la arquitectura en [`docs/architecture.md`](../docs/architecture.md) y el porqué de cada decisión en [`docs/decisions/`](../docs/decisions/).
 
 ## Puesta en marcha
 
@@ -33,7 +33,7 @@ Las cuentas que crea el seed (todas con contraseña `Test1234`) están en el [RE
 | `SMTP_URL`       | —                            | Proveedor de correo para los enlaces de recuperación, p. ej. `smtps://usuario:clave@smtp.proveedor.com:465`. En producción, sin él la recuperación de contraseña queda desactivada (responde `503 PASSWORD_RESET_UNAVAILABLE`); el resto de la app funciona |
 | `MAIL_FROM`      | — (con `SMTP_URL`)           | Remitente de esos correos, p. ej. `Torre Central Hub <no-reply@dominio>`                                                                                                                                                                                    |
 | `APP_TIMEZONE`   | `America/Bogota`             | Zona horaria de las fechas que escribe el servidor (p. ej. en los PDF)                                                                                                                                                                                      |
-| `TRUST_PROXY`    | — (ningún proxy)             | Detrás de un proxy inverso, cuántos saltos confiar, para que la IP del cliente sea la real y no la del proxy. Con Vercel delante de Render, `2` ([`docs/despliegue.md`](../docs/despliegue.md))                                                             |
+| `TRUST_PROXY`    | — (ningún proxy)             | Detrás de un proxy inverso, cuántos saltos confiar, para que la IP del cliente sea la real y no la del proxy. Con Vercel delante de Render, `2` ([`docs/runbooks/despliegue.md`](../docs/runbooks/despliegue.md))                                           |
 | `LOG_LEVEL`      | `info` (`silent` en pruebas) | Nivel de los logs: `trace`, `debug`, `info`, `warn`, `error`, `fatal` o `silent`                                                                                                                                                                            |
 
 Las variables se validan al arrancar ([`src/config/env.ts`](src/config/env.ts)): si falta una obligatoria o un valor no sirve (un `PORT` que no es número, un `JWT_SECRET` de menos de 32 caracteres en producción, un `CORS_ORIGIN` que no es una dirección `http(s)`), el servidor no arranca y dice cuál es. Producción sin `SMTP_URL` sí arranca: solo la recuperación de contraseña queda desactivada, y el log lo avisa al arrancar.
@@ -168,16 +168,16 @@ Límites de peticiones ([`src/middlewares/rateLimits.ts`](src/middlewares/rateLi
 
 ### Clubes, jugadores y entrenadores
 
-| Método            | Ruta                             | Acceso                                 | Descripción                                                                              |
-| ----------------- | -------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------- |
-| GET               | `/players?q=`                    | Organizador, administrador, entrenador | Buscar jugadores por nombre, correo o código (el entrenador, solo con el valor completo) |
-| GET               | `/clubs`                         | Sesión                                 | Clubes                                                                                   |
-| GET               | `/clubs/:id/players`             | Organizador, administrador             | Jugadores de un club                                                                     |
-| POST, PUT, DELETE | `/clubs`, `/clubs/:id`           | Organizador, administrador             | Crear, editar o eliminar un club                                                         |
-| POST, DELETE      | `/clubs/:id/players[/:playerId]` | Organizador, administrador             | Asignar o quitar un jugador                                                              |
-| GET, POST         | `/coaches/players`               | Entrenador                             | Jugadores seguidos; pedir seguir a uno                                                   |
-| DELETE            | `/coaches/players/:playerId`     | Entrenador                             | Dejar de seguir, o cancelar la solicitud                                                 |
-| GET               | `/coaches/tournaments`           | Entrenador                             | Torneos de los jugadores que aceptaron                                                   |
+| Método            | Ruta                             | Acceso                                 | Descripción                                                                                                                |
+| ----------------- | -------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| GET               | `/players?q=`                    | Organizador, administrador, entrenador | Buscar jugadores por nombre, correo o código (el entrenador, por nombre y apellido, o con el correo o el código completos) |
+| GET               | `/clubs`                         | Sesión                                 | Clubes                                                                                                                     |
+| GET               | `/clubs/:id/players`             | Organizador, administrador             | Jugadores de un club                                                                                                       |
+| POST, PUT, DELETE | `/clubs`, `/clubs/:id`           | Organizador, administrador             | Crear, editar o eliminar un club                                                                                           |
+| POST, DELETE      | `/clubs/:id/players[/:playerId]` | Organizador, administrador             | Asignar o quitar un jugador                                                                                                |
+| GET, POST         | `/coaches/players`               | Entrenador                             | Jugadores seguidos; pedir seguir a uno                                                                                     |
+| DELETE            | `/coaches/players/:playerId`     | Entrenador                             | Dejar de seguir, o cancelar la solicitud                                                                                   |
+| GET               | `/coaches/tournaments`           | Entrenador                             | Torneos de los jugadores que aceptaron                                                                                     |
 
 Un entrenador pide seguir a un jugador y no ve nada de su progreso (panel, torneos) hasta que el jugador acepta (HU24, consentimiento de la Ley 1581). Cualquiera de los dos puede terminar el vínculo.
 
