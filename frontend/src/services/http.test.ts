@@ -34,8 +34,10 @@ const CASES: [string, () => Promise<unknown>, Verb, string, unknown?][] = [
     { email: "a@b.co", password: "x" },
   ],
   ["auth.logoutUser", () => auth.logoutUser(), "post", "/auth/logout"],
+  ["auth.requestSocketTicket", () => auth.requestSocketTicket(), "post", "/auth/socket-ticket"],
   ["auth.fetchMe", () => auth.fetchMe(), "get", "/users/me"],
   ["auth.listMyCoaches", () => auth.listMyCoaches(), "get", "/users/me/coaches"],
+  ["auth.acceptMyCoach", () => auth.acceptMyCoach("coach-1"), "post", "/users/me/coaches/coach-1/accept"],
   ["auth.removeMyCoach", () => auth.removeMyCoach("coach-1"), "delete", "/users/me/coaches/coach-1"],
   ["auth.updateProfile", () => auth.updateProfile({ name: "Ana" }), "put", "/users/me", { name: "Ana" }],
   [
