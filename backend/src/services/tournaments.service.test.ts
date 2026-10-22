@@ -37,6 +37,7 @@ function buildPrismaMock() {
     },
     enrollment: {
       create: vi.fn(),
+      update: vi.fn(),
       findMany: vi.fn(),
       // Not enrolled yet, unless a test says otherwise.
       findUnique: vi.fn().mockResolvedValue(null),
@@ -473,6 +474,37 @@ describe("enrollPlayer", () => {
       status: 409,
       message: "El jugador ya está inscrito en este torneo",
     } satisfies Partial<HttpError>);
+  });
+
+  // HU27 keeps a withdrawn player's enrollment, and there's one per tournament
+  // and player: enrolling them again brings that one back.
+  it("enrolls a withdrawn player again by reactivating their enrollment", async () => {
+    prisma.tournament.findUnique.mockResolvedValue({
+      id: "tournament-1",
+      organizerId: "org-1",
+      status: "REGISTRATION_OPEN",
+    });
+    prisma.player.findUnique.mockResolvedValue({
+      id: "player-1",
+      universityCode: "U1",
+      program: "Sistemas",
+      semester: 5,
+      user: { name: "Luis Gómez" },
+    });
+    prisma.enrollment.findUnique.mockResolvedValue({ id: "enrollment-1", withdrawnAt: new Date("2026-09-16") });
+    prisma.enrollment.update.mockResolvedValue({ id: "enrollment-1", createdAt: new Date("2026-09-17") });
+
+    const result = await enrollPlayer(prisma as unknown as PrismaClient, "tournament-1", "player-1", {
+      id: "org-1",
+      role: "ORGANIZER",
+    });
+
+    expect(prisma.enrollment.update).toHaveBeenCalledWith({
+      where: { id: "enrollment-1" },
+      data: { withdrawnAt: null, createdAt: expect.any(Date) },
+    });
+    expect(prisma.enrollment.create).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ playerId: "player-1", enrolledAt: new Date("2026-09-17") });
   });
 
   it("responds 404 when the player doesn't exist", async () => {
