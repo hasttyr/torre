@@ -261,6 +261,16 @@ describe("dashboard widgets", () => {
     expect(log.wrapper.text()).toContain("Bye");
   });
 
+  it("tournament history and game log say so when the player has no records yet", async () => {
+    getWidgetDataMock.mockResolvedValueOnce([]);
+    const history = await mountWidget(TournamentHistoryWidget);
+    expect(history.wrapper.text()).toContain("Todavía no se ha inscrito en ningún torneo.");
+
+    getWidgetDataMock.mockResolvedValueOnce([]);
+    const log = await mountWidget(GameLogWidget);
+    expect(log.wrapper.text()).toContain("Este jugador todavía no tiene partidas registradas.");
+  });
+
   it("the game log dates each game by the viewer's day, not UTC's", async () => {
     const originalTimeZone = process.env.TZ;
     process.env.TZ = "America/Bogota";

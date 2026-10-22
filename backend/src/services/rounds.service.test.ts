@@ -274,6 +274,15 @@ describe("publishRound", () => {
 
     await expect(publishRound(asClient(prisma), "r-1", ORGANIZER)).rejects.toMatchObject({ status: 409 });
   });
+
+  it("responds 404 for an unknown round, broadcasting nothing", async () => {
+    vi.clearAllMocks();
+    const prisma = buildPrismaMock();
+    prisma.round.findUnique.mockResolvedValue(null);
+
+    await expect(publishRound(asClient(prisma), "nope", ORGANIZER)).rejects.toMatchObject({ status: 404 });
+    expect(emitToTournament).not.toHaveBeenCalled();
+  });
 });
 
 describe("listRounds", () => {
