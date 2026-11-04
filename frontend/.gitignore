@@ -5,3 +5,6 @@ playwright-report/
 # Production build values: public, and meant to be committed (the root .gitignore
 # ignores every other .env.*).
 !.env.production
+
+# Local design references (style analyses used while restyling), not part of the app.
+DESIGN*.md
