@@ -20,7 +20,7 @@ const { loading, loadError, retry } = useQueryStatus([enrolledQuery, availableQu
 </script>
 
 <template>
-  <div class="min-h-screen">
+  <div class="min-h-dvh">
     <AppHeader />
 
     <main class="container flex max-w-xl flex-col gap-8 py-10 sm:py-12">

@@ -36,9 +36,9 @@ function onOpenChange(open: boolean): void {
 <template>
   <AlertDialogRoot :open="confirm.open" @update:open="onOpenChange">
     <AlertDialogPortal>
-      <AlertDialogOverlay class="fixed inset-0 z-40 bg-black/50" />
+      <AlertDialogOverlay class="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" />
       <AlertDialogContent
-        class="card fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2"
+        class="card glass-strong fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 shadow-lg"
       >
         <AlertDialogTitle class="text-lg">{{ confirm.title }}</AlertDialogTitle>
         <AlertDialogDescription class="mt-2 text-sm text-text-muted">

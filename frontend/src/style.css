@@ -47,12 +47,23 @@
   --color-chart-loss: var(--chart-loss);
   --color-chart-grid: var(--chart-grid);
 
-  --font-display: "Fraunces Variable", "Georgia", serif;
-  --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  /* Apple's own faces where they exist (SF Pro on macOS and iOS), Inter
+     everywhere else: the same tight, neutral grotesque either way. */
+  --font-display:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
 
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 22px;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  /* Liquid glass: a translucent tint over whatever scrolls behind it. The
+     .glass component below adds the blur, the edge and the top highlight. */
+  --color-glass: var(--glass);
+  --color-glass-strong: var(--glass-strong);
+  --color-glass-border: var(--glass-border);
+
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
 
   --shadow-md: var(--shadow-md-value);
   --shadow-lg: var(--shadow-lg-value);
@@ -121,6 +132,18 @@
   --chart-loss: #e66767;
   --chart-grid: #2a2f3a;
 
+  /* Glass tinted with --surface, so it reads as the same card. */
+  --glass: rgb(25 29 37 / 55%);
+  --glass-strong: rgb(20 23 29 / 72%);
+  --glass-border: rgb(242 237 228 / 9%);
+  --glass-highlight: rgb(242 237 228 / 12%);
+
+  /* The color fields behind the page that the glass refracts: the gold
+     accent and the blue the background always had, a little stronger. */
+  --ambient-1: rgb(201 162 39 / 16%);
+  --ambient-2: rgb(63 92 178 / 14%);
+  --ambient-3: rgb(201 162 39 / 7%);
+
   --shadow-md-value: 0 8px 24px rgb(0 0 0 / 35%);
   --shadow-lg-value: 0 24px 60px rgb(0 0 0 / 45%);
 
@@ -158,6 +181,15 @@
   --chart-loss: #e34948;
   --chart-grid: #e8e3d6;
 
+  --glass: rgb(255 255 255 / 60%);
+  --glass-strong: rgb(255 253 248 / 78%);
+  --glass-border: rgb(255 255 255 / 75%);
+  --glass-highlight: rgb(255 255 255 / 95%);
+
+  --ambient-1: rgb(201 162 39 / 14%);
+  --ambient-2: rgb(63 92 178 / 9%);
+  --ambient-3: rgb(201 162 39 / 7%);
+
   --shadow-md-value: 0 8px 24px rgb(33 30 24 / 10%);
   --shadow-lg-value: 0 24px 60px rgb(33 30 24 / 14%);
 
@@ -177,6 +209,9 @@
     /* No double-tap-to-zoom delay on taps; pinch zoom keeps working. */
     touch-action: manipulation;
     -webkit-tap-highlight-color: color-mix(in oklab, var(--accent) 20%, transparent);
+    /* A phone turned to landscape doesn't inflate the text on its own. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   /* The dashboard pins its player picker under the header as well. */
@@ -215,10 +250,16 @@
 
   body {
     @apply bg-bg text-text font-sans antialiased;
+    /* Soft color fields behind the page. Liquid glass needs something to
+       refract, or it reads as a flat gray box. They're kept faint so that
+       text on glass keeps the contrast style.test.ts checks on the solid
+       surfaces. */
     background-image:
-      radial-gradient(ellipse 900px 500px at 15% -10%, rgb(201 162 39 / 10%), transparent 60%),
-      radial-gradient(ellipse 700px 500px at 100% 0%, rgb(63 92 178 / 8%), transparent 55%);
+      radial-gradient(ellipse 60vmax 45vmax at 10% -5%, var(--ambient-1), transparent 65%),
+      radial-gradient(ellipse 55vmax 45vmax at 105% 10%, var(--ambient-2), transparent 60%),
+      radial-gradient(ellipse 60vmax 40vmax at 50% 110%, var(--ambient-3), transparent 60%);
     background-attachment: fixed;
+    min-height: 100dvh;
     transition:
       background-color 0.2s ease,
       color 0.2s ease;
@@ -227,7 +268,7 @@
   h1,
   h2,
   h3 {
-    @apply font-display font-semibold text-text leading-tight text-balance;
+    @apply font-display font-semibold tracking-tight text-text leading-tight text-balance;
   }
 
   p {
@@ -241,7 +282,15 @@
      las utilidades quedan inline a propósito para que se lea el comportamiento
      de Tailwind directo en cada template. */
   .container {
-    @apply mx-auto w-full max-w-[1180px] px-4 sm:px-6;
+    @apply mx-auto w-full max-w-[1180px];
+    /* 1rem on phones, 1.5rem from sm, and always clear of a notch on the
+       side of a phone in landscape (needs viewport-fit=cover in index.html). */
+    padding-left: max(var(--container-pad), env(safe-area-inset-left));
+    padding-right: max(var(--container-pad), env(safe-area-inset-right));
+    --container-pad: 1rem;
+    @variant sm {
+      --container-pad: 1.5rem;
+    }
   }
 }
 
@@ -249,20 +298,62 @@
   /* Primitivos reutilizados en 6+ vistas (botones, campos, banners, cards):
      se agrupan acá con @apply para no repetir la misma docena de utilidades
      en cada template. Todo lo específico de cada vista queda inline. */
+  /* Liquid glass: a translucent tint with the backdrop blurred and
+     saturated, a hairline edge and light catching the top edge. Without
+     backdrop-filter, or when the OS asks for less transparency, it falls
+     back to the solid surface, the one style.test.ts checks contrast on. */
+  .glass,
+  .card,
+  .glass-strong {
+    @apply border border-glass-border;
+    background-color: var(--glass);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    backdrop-filter: blur(24px) saturate(180%);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      var(--shadow-md-value);
+  }
+
+  .glass-strong {
+    background-color: var(--glass-strong);
+    -webkit-backdrop-filter: blur(30px) saturate(190%);
+    backdrop-filter: blur(30px) saturate(190%);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass,
+    .card,
+    .glass-strong {
+      background-color: var(--surface);
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .glass,
+    .card,
+    .glass-strong {
+      background-color: var(--surface);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+
+  /* Pill buttons that give a little when pressed. min-h-11 is the 44px
+     touch target. */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-transparent px-6 py-3 text-[0.95rem] font-semibold whitespace-nowrap transition-[translate,background-color,border-color,box-shadow] disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-transparent px-6 py-2.5 text-[0.95rem] font-semibold whitespace-nowrap transition-[scale,background-color,border-color,box-shadow] duration-200 ease-spring active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
   }
 
   .btn-primary {
-    @apply bg-accent text-on-accent hover:-translate-y-px hover:bg-accent-hover hover:shadow-md;
+    @apply bg-accent text-on-accent shadow-[inset_0_1px_0_rgb(255_255_255/22%)] hover:bg-accent-hover hover:shadow-md;
   }
 
   .btn-ghost {
-    @apply border-border bg-transparent text-text hover:border-accent/40 hover:bg-accent/10;
+    @apply border-glass-border bg-glass text-text backdrop-blur-xl backdrop-saturate-150 hover:border-accent/40 hover:bg-accent/10;
   }
 
   .btn-danger {
-    @apply bg-error text-on-error hover:-translate-y-px hover:shadow-md;
+    @apply bg-error text-on-error hover:shadow-md;
   }
 
   .btn-block {
@@ -272,7 +363,7 @@
   /* Square icon-only button (reorder/remove controls in lists). Always
      paired with an aria-label, since its glyph isn't a label. */
   .icon-btn {
-    @apply inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border text-sm text-text transition-colors hover:border-accent/40 hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-40;
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-full border border-glass-border bg-glass text-sm text-text transition-colors hover:border-accent/40 hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-40;
   }
 
   .field {
@@ -286,7 +377,7 @@
 
   .field input,
   .field select {
-    @apply rounded-lg border border-border bg-surface-2 px-3.5 py-3 font-sans text-text transition-shadow placeholder:text-text-faint focus:border-accent focus:ring-3 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    @apply min-h-11 rounded-xl border border-border bg-surface-2 px-3.5 py-3 font-sans text-base text-text sm:text-[0.95rem] transition-shadow placeholder:text-text-faint focus:border-accent focus:ring-3 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .field.has-error input,
@@ -307,11 +398,11 @@
      chrome, just tighter: .field select's py-3 is sized for a standalone
      form, not a table row. */
   .select-compact {
-    @apply rounded-lg border border-border bg-surface-2 px-2.5 py-1.5 font-sans text-sm text-text transition-shadow focus:border-accent focus:ring-3 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    @apply rounded-xl border border-border bg-surface-2 px-2.5 py-1.5 font-sans text-sm text-text transition-shadow focus:border-accent focus:ring-3 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .banner {
-    @apply flex items-start gap-2.5 rounded-lg border px-4 py-3.5 text-[0.92rem];
+    @apply flex items-start gap-2.5 rounded-2xl border px-4 py-3.5 text-[0.92rem];
   }
 
   .banner--success {
@@ -323,7 +414,7 @@
   }
 
   .card {
-    @apply rounded-3xl border border-border-soft bg-surface p-6 sm:p-7;
+    @apply rounded-3xl p-5 sm:p-7;
   }
 
   .pill {

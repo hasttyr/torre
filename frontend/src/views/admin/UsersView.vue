@@ -106,7 +106,7 @@ const columns = [
 </script>
 
 <template>
-  <div class="min-h-screen">
+  <div class="min-h-dvh">
     <AppHeader />
 
     <main class="container flex max-w-4xl flex-col gap-6 py-10 sm:py-12">

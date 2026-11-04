@@ -41,7 +41,7 @@ const year = new Date().getFullYear();
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col">
+  <div class="flex min-h-dvh flex-col">
     <AppHeader />
 
     <main>
