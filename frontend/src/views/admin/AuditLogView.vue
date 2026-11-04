@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LoadError from "../../components/ui/LoadError.vue";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton.vue";
 import { extractErrorMessage } from "../../lib/errors";
 import { formatFullDateTime } from "../../lib/format";
 import { auditLogQuery } from "../../queries/admin";
@@ -55,28 +56,21 @@ function actionLabel(action: string): string {
   <div class="min-h-dvh">
     <AppHeader />
 
-    <main class="container flex max-w-3xl flex-col gap-6 py-10 sm:py-12">
+    <main class="container flex max-w-3xl flex-col gap-8 pt-12 pb-20 sm:pt-16 sm:pb-28">
       <div>
-        <h1 class="text-2xl sm:text-3xl">{{ t("auditLog.title") }}</h1>
-        <p class="mt-1 text-sm">{{ t("auditLog.subtitle") }}</p>
+        <h1 class="page-title">{{ t("auditLog.title") }}</h1>
+        <p class="mt-3">{{ t("auditLog.subtitle") }}</p>
       </div>
 
-      <p v-if="loading">{{ t("auditLog.loading") }}</p>
+      <LoadingSkeleton v-if="loading" :label="t('auditLog.loading')" variant="rows" :count="5" />
       <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
-      <p
-        v-else-if="logs.length === 0"
-        class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
-      >
+      <p v-else-if="logs.length === 0" class="empty-state">
         {{ t("auditLog.empty") }}
       </p>
 
       <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-        <li
-          v-for="log in logs"
-          :key="log.id"
-          class="flex flex-col gap-1 rounded-2xl border border-border-soft bg-surface p-4"
-        >
+        <li v-for="log in logs" :key="log.id" class="flex flex-col gap-1 rounded-[22px] bg-surface p-5">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="pill">{{ actionLabel(log.action) }}</span>
             <span class="text-sm text-text-muted">{{ formatFullDateTime(log.createdAt, locale.locale) }}</span>

@@ -42,7 +42,7 @@ function dayParts(date: string): { day: string; month: string } {
           aria-hidden="true"
         >
           <span class="text-lg font-semibold text-text tabular-nums">{{ dayParts(tournament.startDate).day }}</span>
-          <span class="text-[0.65rem] font-semibold text-text-muted uppercase">
+          <span class="text-xs font-semibold text-text-muted">
             {{ dayParts(tournament.startDate).month }}
           </span>
         </div>

@@ -6,6 +6,7 @@ import { useI18n } from "vue-i18n";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import TournamentCard from "../../components/tournament/TournamentCard.vue";
 import LoadError from "../../components/ui/LoadError.vue";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton.vue";
 import { hasTournamentRoom } from "../../lib/tournamentAccess";
 import { useQueryStatus } from "../../queries/status";
 import { availableTournamentsQuery, enrolledTournamentsQuery } from "../../queries/tournaments";
@@ -23,11 +24,11 @@ const { loading, loadError, retry } = useQueryStatus([enrolledQuery, availableQu
   <div class="min-h-dvh">
     <AppHeader />
 
-    <main class="container flex max-w-xl flex-col gap-8 py-10 sm:py-12">
+    <main class="container flex max-w-xl flex-col gap-8 pt-12 pb-20 sm:pt-16 sm:pb-28">
       <!-- The page's title for the outline (the nav already names it on
            screen); each section is an h2 and each tournament an h3. -->
       <h1 class="sr-only">{{ t("header.tournaments") }}</h1>
-      <p v-if="loading">{{ t("playerTournaments.loading") }}</p>
+      <LoadingSkeleton v-if="loading" :label="t('playerTournaments.loading')" variant="list" />
       <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <template v-else>
@@ -37,10 +38,7 @@ const { loading, loadError, retry } = useQueryStatus([enrolledQuery, availableQu
             <p class="mt-1 text-sm">{{ t("playerTournaments.myRegistrationsSubtitle") }}</p>
           </div>
 
-          <p
-            v-if="enrolled.length === 0"
-            class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
-          >
+          <p v-if="enrolled.length === 0" class="empty-state">
             {{ t("playerTournaments.myRegistrationsEmpty") }}
           </p>
 
@@ -65,10 +63,7 @@ const { loading, loadError, retry } = useQueryStatus([enrolledQuery, availableQu
             <p class="mt-1 text-sm">{{ t("playerTournaments.availableSubtitle") }}</p>
           </div>
 
-          <p
-            v-if="available.length === 0"
-            class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
-          >
+          <p v-if="available.length === 0" class="empty-state">
             {{ t("playerTournaments.availableEmpty") }}
           </p>
 

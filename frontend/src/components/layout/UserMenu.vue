@@ -39,7 +39,7 @@ onMounted(() => {
 
 // Highlighted (hover or arrow keys) instead of an outline, like any menu.
 const ITEM_CLASS =
-  "flex w-full cursor-pointer items-center justify-between gap-3 px-3 py-2 text-left text-sm font-medium outline-none select-none data-[highlighted]:bg-accent/10";
+  "flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium outline-none select-none data-[highlighted]:bg-text/6";
 
 const initials = computed(() => initialsOf(auth.user?.name));
 
@@ -64,9 +64,9 @@ function toggleInPlace(event: Event, toggle: () => void): void {
       <DropdownMenuContent
         align="end"
         :side-offset="8"
-        class="z-20 w-56 overflow-hidden rounded-lg border border-border bg-bg-elevated shadow-lg"
+        class="z-20 w-60 overflow-hidden rounded-[20px] bg-bg-elevated p-1.5 shadow-lg ring-1 ring-text/8"
       >
-        <DropdownMenuLabel class="border-b border-border-soft px-3 py-2.5">
+        <DropdownMenuLabel class="px-3 pt-2.5 pb-3">
           <p class="truncate text-sm font-semibold text-text">{{ auth.user?.name }}</p>
           <p class="truncate text-xs text-text-muted">{{ auth.user?.email }}</p>
           <p v-if="auth.user" class="truncate text-xs text-text-muted">{{ t(`roles.${auth.user.role}`) }}</p>
@@ -117,7 +117,7 @@ function toggleInPlace(event: Event, toggle: () => void): void {
           </p>
         </div>
 
-        <DropdownMenuSeparator class="h-px bg-border-soft" />
+        <DropdownMenuSeparator class="mx-3 my-1 h-px bg-border-soft" />
 
         <div class="py-1.5">
           <DropdownMenuItem as-child :class="ITEM_CLASS">

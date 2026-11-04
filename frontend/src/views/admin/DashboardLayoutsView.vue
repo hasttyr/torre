@@ -7,6 +7,7 @@ import { useI18n } from "vue-i18n";
 import { isRenderableWidget } from "../../components/dashboard/widgetRegistry";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LoadError from "../../components/ui/LoadError.vue";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton.vue";
 import { extractErrorMessage } from "../../lib/errors";
 import { useUnsavedChangesGuard } from "../../lib/unsavedChanges";
 import { useQueryParam } from "../../lib/useQueryParam";
@@ -151,13 +152,13 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
     <main ref="root" class="container flex flex-col gap-6 py-10 pb-28 sm:py-12 sm:pb-28">
       <header class="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 class="text-2xl sm:text-3xl">{{ t("dashboardLayouts.title") }}</h1>
-          <p class="mt-1 max-w-2xl text-sm">{{ t("dashboardLayouts.subtitle") }}</p>
+          <h1 class="page-title">{{ t("dashboardLayouts.title") }}</h1>
+          <p class="mt-3 max-w-2xl">{{ t("dashboardLayouts.subtitle") }}</p>
         </div>
         <RouterLink to="/panel" class="btn btn-ghost">{{ t("dashboardLayouts.backToPanel") }}</RouterLink>
       </header>
 
-      <p v-if="loading">{{ t("dashboardLayouts.loading") }}</p>
+      <LoadingSkeleton v-if="loading" :label="t('dashboardLayouts.loading')" variant="cards" :count="2" />
       <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <!-- reka-ui Tabs: arrow keys move between roles, and screen readers
@@ -207,10 +208,7 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
               <p class="mt-0.5 text-sm">{{ t("dashboardLayouts.inPanelHint") }}</p>
             </div>
 
-            <p
-              v-if="draft.length === 0"
-              class="rounded-2xl border border-dashed border-border-soft p-6 text-center text-sm text-text-muted"
-            >
+            <p v-if="draft.length === 0" class="rounded-2xl bg-surface-2 p-6 text-center text-sm text-text-muted">
               {{ t("dashboardLayouts.emptyPanel") }}
             </p>
 

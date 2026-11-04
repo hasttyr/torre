@@ -26,13 +26,15 @@ const revealed = useInView(useTemplateRef<HTMLElement>("render"), { rootMargin: 
 
 <template>
   <article
-    class="flex flex-col items-center overflow-hidden px-4 py-12 text-center sm:px-8 sm:py-16 lg:py-20"
+    class="flex flex-col items-center overflow-hidden rounded-[28px] px-4 pt-14 pb-12 text-center sm:px-8 sm:pt-20 sm:pb-16 lg:pt-24 lg:pb-20"
     :class="SURFACE_CLASSES[surface]"
   >
     <h3
-      class="max-w-2xl tracking-[-0.02em]"
+      class="max-w-3xl leading-[1.04]"
       :class="[
-        wide ? 'text-[clamp(1.9rem,1.35rem+2.4vw,3.1rem)]' : 'text-[clamp(1.6rem,1.3rem+1.3vw,2.3rem)]',
+        wide
+          ? 'text-[clamp(2.1rem,1.3rem+3vw,3.75rem)] tracking-[-0.04em]'
+          : 'text-[clamp(1.75rem,1.35rem+1.5vw,2.625rem)] tracking-[-0.035em]',
         { 'text-tile-ink-text': surface === 'ink' },
       ]"
     >
@@ -52,7 +54,7 @@ const revealed = useInView(useTemplateRef<HTMLElement>("render"), { rootMargin: 
       data-render
       aria-hidden="true"
       :data-revealed="revealed"
-      class="group/render mt-10 w-full transition duration-700 ease-out select-none data-[revealed=false]:translate-y-8 data-[revealed=false]:opacity-0 sm:mt-12"
+      class="group/render mt-12 w-full transition duration-700 ease-out select-none data-[revealed=false]:translate-y-8 data-[revealed=false]:opacity-0 sm:mt-12"
       :class="wide ? 'max-w-3xl' : 'max-w-md'"
     >
       <slot />

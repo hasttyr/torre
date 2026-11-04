@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LoadError from "../../components/ui/LoadError.vue";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton.vue";
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import { hasTournamentRoom } from "../../lib/tournamentAccess";
@@ -75,13 +76,13 @@ async function onUnlink(player: { playerId: string; name: string; acceptedAt: st
   <div class="min-h-dvh">
     <AppHeader />
 
-    <main class="container flex max-w-xl flex-col gap-6 py-10 sm:py-12">
+    <main class="container flex max-w-xl flex-col gap-8 pt-12 pb-20 sm:pt-16 sm:pb-28">
       <div>
-        <h1 class="text-2xl sm:text-3xl">{{ t("coachPlayers.title") }}</h1>
-        <p class="mt-1 text-sm">{{ t("coachPlayers.subtitle") }}</p>
+        <h1 class="page-title">{{ t("coachPlayers.title") }}</h1>
+        <p class="mt-3">{{ t("coachPlayers.subtitle") }}</p>
       </div>
 
-      <p v-if="loading">{{ t("coachPlayers.loading") }}</p>
+      <LoadingSkeleton v-if="loading" :label="t('coachPlayers.loading')" variant="rows" />
       <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <section v-else class="card">
@@ -126,10 +127,7 @@ async function onUnlink(player: { playerId: string; name: string; acceptedAt: st
         <h2 class="mb-1 text-lg">{{ t("coachPlayers.tournamentsTitle") }}</h2>
         <p class="mb-4 text-sm">{{ t("coachPlayers.tournamentsSubtitle") }}</p>
 
-        <p
-          v-if="tournaments.length === 0"
-          class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
-        >
+        <p v-if="tournaments.length === 0" class="empty-state">
           {{ t("coachPlayers.tournamentsEmpty") }}
         </p>
 

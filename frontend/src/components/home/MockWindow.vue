@@ -5,8 +5,8 @@ defineProps<{ title: string }>();
 </script>
 
 <template>
-  <div class="overflow-hidden rounded-[18px] border border-border-soft bg-surface text-left text-text shadow-product">
-    <div class="flex items-center justify-between gap-3 border-b border-border-soft px-4 py-3 sm:px-5">
+  <div class="overflow-hidden rounded-[22px] bg-surface text-left text-text shadow-product ring-1 ring-text/6">
+    <div class="flex items-center justify-between gap-3 border-b border-border-soft px-4 py-3.5 sm:px-5">
       <span class="truncate text-sm font-semibold">{{ title }}</span>
       <slot name="status" />
     </div>

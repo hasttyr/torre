@@ -9,6 +9,7 @@ import WidgetSkeleton from "../../components/dashboard/WidgetSkeleton.vue";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LazyMount from "../../components/ui/LazyMount.vue";
 import LoadError from "../../components/ui/LoadError.vue";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton.vue";
 import { currentUserId, panelQuery, prefetchWidget } from "../../queries/dashboard";
 import { extractErrorMessage } from "../../lib/errors";
 import { providePlayerSelection } from "../../lib/playerSelection";
@@ -55,29 +56,23 @@ function prefetchNearingWidget(widget: WidgetSummary): void {
   <div class="min-h-dvh">
     <AppHeader />
 
-    <main class="container flex flex-col gap-6 py-10 sm:py-12">
+    <main class="container flex flex-col gap-8 pt-12 pb-20 sm:pt-16 sm:pb-28">
       <header class="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p class="text-xs font-semibold tracking-[0.08em] text-accent uppercase">{{ t(`roles.${role}`) }}</p>
-          <h1 class="mt-1 text-2xl sm:text-3xl">{{ t("panel.greeting", { name: firstName }) }}</h1>
-          <p class="mt-1 text-sm">{{ t(`panel.subtitle.${role}`) }}</p>
+          <p class="text-[0.95rem] font-semibold text-accent">{{ t(`roles.${role}`) }}</p>
+          <h1 class="mt-1 page-title">{{ t("panel.greeting", { name: firstName }) }}</h1>
+          <p class="mt-3">{{ t(`panel.subtitle.${role}`) }}</p>
         </div>
         <RouterLink v-if="role === 'ADMINISTRATOR'" to="/panel/configuracion" class="btn btn-ghost">
           {{ t("panel.configure") }}
         </RouterLink>
       </header>
 
-      <div v-if="loading" class="grid gap-5 lg:grid-cols-2" aria-busy="true">
-        <span class="sr-only">{{ t("panel.loading") }}</span>
-        <div v-for="n in 4" :key="n" class="card h-52 animate-pulse" />
-      </div>
+      <LoadingSkeleton v-if="loading" :label="t('panel.loading')" variant="cards" :count="4" />
 
       <LoadError v-else-if="loadError" :message="loadError" />
 
-      <p
-        v-else-if="widgets.length === 0"
-        class="rounded-3xl border border-dashed border-border-soft bg-surface p-10 text-center text-text-muted"
-      >
+      <p v-else-if="widgets.length === 0" class="empty-state">
         {{ t("panel.empty") }}
       </p>
 

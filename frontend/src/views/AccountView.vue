@@ -152,8 +152,8 @@ async function onSubmit(): Promise<void> {
   <div class="min-h-dvh">
     <AppHeader />
 
-    <main class="container max-w-xl py-10 sm:py-12">
-      <h1 class="text-2xl sm:text-3xl">{{ t("account.title") }}</h1>
+    <main class="container max-w-xl pt-12 pb-20 sm:pt-16 sm:pb-28">
+      <h1 class="page-title">{{ t("account.title") }}</h1>
 
       <LoadError v-if="loadError" :message="loadError" class="mt-4" />
 

@@ -8,6 +8,7 @@ import { markCoachAccepted, myCoachesQuery, removeMyCoachFromList } from "../../
 import { useQueryStatus } from "../../queries/status";
 import { acceptMyCoach, removeMyCoach, type MyCoach, type PlayerClub } from "../../services/auth";
 import LoadError from "../ui/LoadError.vue";
+import LoadingSkeleton from "../ui/LoadingSkeleton.vue";
 import FormBanner from "../ui/FormBanner.vue";
 
 defineProps<{ club: PlayerClub | null }>();
@@ -85,7 +86,7 @@ async function onRemove(coach: MyCoach): Promise<void> {
       <div class="py-3">
         <dt class="mb-2 text-sm text-text-muted">{{ t("account.coachesLabel") }}</dt>
         <dd class="m-0">
-          <p v-if="loading" class="text-sm text-text-muted">{{ t("account.coachesLoading") }}</p>
+          <LoadingSkeleton v-if="loading" :label="t('account.coachesLoading')" variant="lines" :count="2" />
           <p v-else-if="coaches.length === 0" class="text-sm text-text-muted">{{ t("account.noCoaches") }}</p>
           <ul v-else class="m-0 flex list-none flex-col gap-1 p-0">
             <li v-for="coach in requests" :key="coach.id" class="flex items-center justify-between gap-3 text-sm">

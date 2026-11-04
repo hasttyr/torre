@@ -7,6 +7,7 @@ import { useRoute } from "vue-router";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LoadError from "../../components/ui/LoadError.vue";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton.vue";
 import PairingsTable from "../../components/tournament/PairingsTable.vue";
 import ResultEntry from "../../components/tournament/ResultEntry.vue";
 import StandingsTable from "../../components/tournament/StandingsTable.vue";
@@ -125,14 +126,14 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
   <div class="min-h-dvh">
     <AppHeader />
 
-    <main class="container flex flex-col gap-6 py-10 sm:py-12">
-      <p v-if="loading">{{ t("tournamentRoom.loading") }}</p>
+    <main class="container flex flex-col gap-8 pt-12 pb-20 sm:pt-16 sm:pb-28">
+      <LoadingSkeleton v-if="loading" :label="t('tournamentRoom.loading')" variant="room" />
       <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <template v-else-if="tournament">
         <header class="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p class="flex items-center gap-2 text-xs font-semibold tracking-[0.08em] text-accent uppercase">
+            <p class="flex items-center gap-2 text-[0.95rem] font-semibold text-accent">
               <span
                 class="h-2 w-2 rounded-full"
                 :class="connected && !finished ? 'animate-pulse bg-success' : 'bg-text-faint'"
@@ -141,8 +142,8 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
               <template v-if="finished">{{ t("tournamentRoom.finished") }}</template>
               <template v-else>{{ connected ? t("tournamentRoom.live") : t("tournamentRoom.offline") }}</template>
             </p>
-            <h1 class="mt-1 text-2xl sm:text-3xl">{{ tournament.name }}</h1>
-            <p class="mt-1 text-sm">
+            <h1 class="mt-1 page-title">{{ tournament.name }}</h1>
+            <p class="mt-3">
               {{ t(`estados.${tournament.status}`) }} ·
               {{
                 t("tournamentRoom.roundsPlayed", {

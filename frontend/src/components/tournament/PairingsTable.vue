@@ -26,7 +26,7 @@ function isWinner(match: Match, side: "white" | "black"): boolean {
       class="flex flex-col gap-2 rounded-2xl border border-border-soft px-3.5 py-3 sm:flex-row sm:items-center sm:gap-4"
       :data-match="match.id"
     >
-      <span class="text-xs font-semibold tracking-wide text-text-faint uppercase sm:w-14">
+      <span class="text-xs font-semibold text-text-faint sm:w-14">
         {{ t("rounds.board", { board: match.board }) }}
       </span>
 

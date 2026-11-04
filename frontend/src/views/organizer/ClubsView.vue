@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LoadError from "../../components/ui/LoadError.vue";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton.vue";
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import { useQueryParam } from "../../lib/useQueryParam";
@@ -210,10 +211,10 @@ async function onDelete(): Promise<void> {
   <div class="min-h-dvh">
     <AppHeader />
 
-    <main class="container flex max-w-4xl flex-col gap-6 py-10 sm:py-12">
-      <h1 class="text-2xl sm:text-3xl">{{ t("clubs.title") }}</h1>
+    <main class="container flex max-w-4xl flex-col gap-8 pt-12 pb-20 sm:pt-16 sm:pb-28">
+      <h1 class="page-title">{{ t("clubs.title") }}</h1>
 
-      <p v-if="loading">{{ t("clubs.loading") }}</p>
+      <LoadingSkeleton v-if="loading" :label="t('clubs.loading')" variant="table" :count="4" />
       <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <div v-else class="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -307,9 +308,13 @@ async function onDelete(): Promise<void> {
             :pick="onAssign"
           />
 
-          <p v-if="rosterLoading" class="mt-4 text-sm text-text-muted" role="status">
-            {{ t("clubs.rosterLoading") }}
-          </p>
+          <LoadingSkeleton
+            v-if="rosterLoading"
+            class="mt-4"
+            :label="t('clubs.rosterLoading')"
+            variant="lines"
+            :count="4"
+          />
           <div v-else-if="players.length > 0" class="mt-4 flex flex-col gap-2">
             <div
               v-for="player in players"

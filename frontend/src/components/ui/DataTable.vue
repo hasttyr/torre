@@ -157,7 +157,7 @@ const filterStatus = computed(() => {
             <th
               v-for="header in headerGroup.headers"
               :key="header.id"
-              class="border-b border-border-soft px-2.5 py-2 text-left text-sm"
+              class="border-b border-border-soft px-3 py-3 text-left text-[0.8125rem] font-semibold text-text-muted"
               :aria-sort="ariaSort(header.column.getIsSorted(), header.column.getCanSort())"
             >
               <button
@@ -176,11 +176,11 @@ const filterStatus = computed(() => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="row in table.getRowModel().rows" :key="row.id">
+          <tr v-for="row in table.getRowModel().rows" :key="row.id" class="transition-colors hover:bg-text/3">
             <td
               v-for="cell in row.getAllCells()"
               :key="cell.id"
-              class="border-b border-border-soft px-2.5 py-2 text-sm"
+              class="border-b border-border-soft/60 px-3 py-3.5 text-[0.95rem]"
             >
               <slot :name="`cell-${cell.column.id}`" :row="cell.row.original" :value="cell.getValue()">
                 <FlexRender :cell="cell" />
