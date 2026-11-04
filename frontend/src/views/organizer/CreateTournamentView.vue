@@ -88,9 +88,9 @@ async function onSubmit(): Promise<void> {
   <div class="min-h-dvh">
     <AppHeader />
 
-    <main class="container max-w-lg py-10 sm:py-12">
-      <h1 class="text-2xl sm:text-3xl">{{ t("createTournament.title") }}</h1>
-      <p class="mt-1">{{ t("createTournament.subtitle") }}</p>
+    <main class="container max-w-lg pt-12 pb-20 sm:pt-16 sm:pb-28">
+      <h1 class="page-title">{{ t("createTournament.title") }}</h1>
+      <p class="mt-3">{{ t("createTournament.subtitle") }}</p>
 
       <FadeSlide>
         <FormBanner v-if="serverError" kind="error" class="mt-4">{{ serverError }}</FormBanner>

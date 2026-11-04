@@ -84,6 +84,23 @@
 
   --animate-rise-in: rise-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-live: live 2s ease-out infinite;
+  /* Skeletons: the bones breathe slowly instead of flashing, and the whole
+     placeholder waits 150ms before showing, so a fast answer never makes
+     the page blink. */
+  --animate-skeleton: skeleton 1.8s ease-in-out infinite;
+  --animate-appear: appear 0.35s ease-out 150ms both;
+
+  @keyframes skeleton {
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  @keyframes appear {
+    from {
+      opacity: 0;
+    }
+  }
 
   @keyframes rise-in {
     from {
@@ -138,12 +155,6 @@
   --glass-border: rgb(242 237 228 / 9%);
   --glass-highlight: rgb(242 237 228 / 12%);
 
-  /* The color fields behind the page that the glass refracts: the gold
-     accent and the blue the background always had, a little stronger. */
-  --ambient-1: rgb(201 162 39 / 16%);
-  --ambient-2: rgb(63 92 178 / 14%);
-  --ambient-3: rgb(201 162 39 / 7%);
-
   --shadow-md-value: 0 8px 24px rgb(0 0 0 / 35%);
   --shadow-lg-value: 0 24px 60px rgb(0 0 0 / 45%);
 
@@ -185,10 +196,6 @@
   --glass-strong: rgb(255 253 248 / 78%);
   --glass-border: rgb(255 255 255 / 75%);
   --glass-highlight: rgb(255 255 255 / 95%);
-
-  --ambient-1: rgb(201 162 39 / 14%);
-  --ambient-2: rgb(63 92 178 / 9%);
-  --ambient-3: rgb(201 162 39 / 7%);
 
   --shadow-md-value: 0 8px 24px rgb(33 30 24 / 10%);
   --shadow-lg-value: 0 24px 60px rgb(33 30 24 / 14%);
@@ -250,25 +257,30 @@
 
   body {
     @apply bg-bg text-text font-sans antialiased;
-    /* Soft color fields behind the page. Liquid glass needs something to
-       refract, or it reads as a flat gray box. They're kept faint so that
-       text on glass keeps the contrast style.test.ts checks on the solid
-       surfaces. */
-    background-image:
-      radial-gradient(ellipse 60vmax 45vmax at 10% -5%, var(--ambient-1), transparent 65%),
-      radial-gradient(ellipse 55vmax 45vmax at 105% 10%, var(--ambient-2), transparent 60%),
-      radial-gradient(ellipse 60vmax 40vmax at 50% 110%, var(--ambient-3), transparent 60%);
-    background-attachment: fixed;
+    /* A flat ground, as in a gallery: depth comes from a step in surface
+       tone, never from a gradient behind the page (DESIGN.md). Body text
+       runs at 17px with Apple's slightly tightened tracking. */
+    font-size: 1.0625rem;
+    line-height: 1.47;
+    letter-spacing: -0.011em;
     min-height: 100dvh;
     transition:
       background-color 0.2s ease,
       color 0.2s ease;
   }
 
+  ::selection {
+    background-color: color-mix(in oklab, var(--accent) 35%, transparent);
+    color: var(--text);
+  }
+
   h1,
   h2,
   h3 {
-    @apply font-display font-semibold tracking-tight text-text leading-tight text-balance;
+    @apply font-display font-semibold text-text text-balance;
+    /* The "tight" display cadence: tracking closes in as the size grows. */
+    letter-spacing: -0.025em;
+    line-height: 1.1;
   }
 
   p {
@@ -298,20 +310,18 @@
   /* Primitivos reutilizados en 6+ vistas (botones, campos, banners, cards):
      se agrupan acá con @apply para no repetir la misma docena de utilidades
      en cada template. Todo lo específico de cada vista queda inline. */
-  /* Liquid glass: a translucent tint with the backdrop blurred and
-     saturated, a hairline edge and light catching the top edge. Without
-     backdrop-filter, or when the OS asks for less transparency, it falls
-     back to the solid surface, the one style.test.ts checks contrast on. */
+  /* Liquid glass, only for what truly floats over content: the sticky
+     header, menus and the confirm dialog. A translucent tint with the
+     backdrop blurred and saturated, and light catching the top edge.
+     Without backdrop-filter, or when the OS asks for less transparency, it
+     falls back to the solid surface, the one style.test.ts checks contrast
+     on. Cards are not glass: they are a flat step in tone (.card). */
   .glass,
-  .card,
   .glass-strong {
-    @apply border border-glass-border;
     background-color: var(--glass);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     backdrop-filter: blur(24px) saturate(180%);
-    box-shadow:
-      inset 0 1px 0 var(--glass-highlight),
-      var(--shadow-md-value);
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
   }
 
   .glass-strong {
@@ -322,7 +332,6 @@
 
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .glass,
-    .card,
     .glass-strong {
       background-color: var(--surface);
     }
@@ -330,7 +339,6 @@
 
   @media (prefers-reduced-transparency: reduce) {
     .glass,
-    .card,
     .glass-strong {
       background-color: var(--surface);
       -webkit-backdrop-filter: none;
@@ -339,45 +347,48 @@
   }
 
   /* Pill buttons that give a little when pressed. min-h-11 is the 44px
-     touch target. */
+     touch target. No shadow at rest or on hover: the fill is the button. */
   .btn {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-transparent px-6 py-2.5 text-[0.95rem] font-semibold whitespace-nowrap transition-[scale,background-color,border-color,box-shadow] duration-200 ease-spring active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-transparent px-6 py-2.5 text-[0.9375rem] font-semibold tracking-[-0.01em] whitespace-nowrap no-underline transition-[scale,background-color,border-color,color] duration-300 ease-spring active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
   }
 
   .btn-primary {
-    @apply bg-accent text-on-accent shadow-[inset_0_1px_0_rgb(255_255_255/22%)] hover:bg-accent-hover hover:shadow-md;
+    @apply bg-accent text-on-accent hover:bg-accent-hover;
   }
 
+  /* The quiet second action: an outline in the ink's own color. */
   .btn-ghost {
-    @apply border-glass-border bg-glass text-text backdrop-blur-xl backdrop-saturate-150 hover:border-accent/40 hover:bg-accent/10;
+    @apply border-text/20 bg-transparent text-text hover:border-text/45 hover:bg-text/5;
   }
 
   .btn-danger {
-    @apply bg-error text-on-error hover:shadow-md;
+    @apply bg-error text-on-error hover:brightness-110;
   }
 
   .btn-block {
     @apply w-full;
   }
 
-  /* Square icon-only button (reorder/remove controls in lists). Always
+  /* Round icon-only button (reorder/remove controls in lists). Always
      paired with an aria-label, since its glyph isn't a label. */
   .icon-btn {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-full border border-glass-border bg-glass text-sm text-text transition-colors hover:border-accent/40 hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-40;
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-full bg-text/6 text-sm text-text transition-[scale,background-color] duration-200 hover:bg-text/12 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40;
   }
 
   .field {
-    @apply flex flex-col gap-1.5;
+    @apply flex flex-col gap-2;
   }
 
   .field label,
   .field-label {
-    @apply text-sm font-semibold text-text-muted;
+    @apply text-sm font-semibold text-text;
   }
 
+  /* A field is a filled well one tone off its card, with no outline until
+     it's hovered or holds the focus. */
   .field input,
   .field select {
-    @apply min-h-11 rounded-xl border border-border bg-surface-2 px-3.5 py-3 font-sans text-base text-text sm:text-[0.95rem] transition-shadow placeholder:text-text-faint focus:border-accent focus:ring-3 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    @apply min-h-12 rounded-2xl border border-transparent bg-surface-2 px-4 py-3 font-sans text-base text-text transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-text-faint hover:border-text/15 focus:border-accent focus:ring-4 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:text-[0.98rem];
   }
 
   .field.has-error input,
@@ -386,7 +397,7 @@
   }
 
   .field-error {
-    @apply hidden items-center gap-1.5 text-[0.82rem] text-error;
+    @apply hidden items-center gap-1.5 text-[0.84rem] text-error;
   }
 
   .field.has-error .field-error {
@@ -398,26 +409,49 @@
      chrome, just tighter: .field select's py-3 is sized for a standalone
      form, not a table row. */
   .select-compact {
-    @apply rounded-xl border border-border bg-surface-2 px-2.5 py-1.5 font-sans text-sm text-text transition-shadow focus:border-accent focus:ring-3 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    @apply rounded-xl border border-transparent bg-surface-2 px-2.5 py-1.5 font-sans text-sm text-text transition-shadow hover:border-text/15 focus:border-accent focus:ring-3 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .banner {
-    @apply flex items-start gap-2.5 rounded-2xl border px-4 py-3.5 text-[0.92rem];
+    @apply flex items-start gap-2.5 rounded-2xl px-4 py-3.5 text-[0.95rem];
   }
 
   .banner--success {
-    @apply border-success/35 bg-success/10 text-success;
+    @apply bg-success/12 text-success;
   }
 
   .banner--error {
-    @apply border-error/35 bg-error/10 text-error;
+    @apply bg-error/12 text-error;
   }
 
+  /* A card is a step in tone from the ground with the large gallery
+     radius: no border, no shadow (DESIGN_2.md, "Feature Media Card"). */
   .card {
-    @apply rounded-3xl p-5 sm:p-7;
+    @apply rounded-[28px] bg-surface p-6 sm:p-8;
   }
 
   .pill {
-    @apply inline-flex items-center rounded-full bg-accent/15 px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-text;
+    @apply inline-flex items-center rounded-full bg-text/8 px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-text;
+  }
+
+  /* Every signed-in page opens with its name, set large and tight. */
+  .page-title {
+    @apply text-[clamp(2.125rem,1.5rem+2.4vw,3.5rem)] leading-[1.04] tracking-[-0.035em];
+  }
+
+  /* The line under a page's name sits a little apart from the large type. */
+  .page-title + p {
+    @apply mt-3 text-base;
+  }
+
+  /* One bone of a loading skeleton: a rounded bar in a faint tint of the
+     ink, so it reads on any surface in either theme. Size it per use. */
+  .skeleton {
+    @apply block animate-skeleton rounded-full bg-text/8;
+  }
+
+  /* Nothing to show yet: a quiet panel in the card's tone, no dashed edge. */
+  .empty-state {
+    @apply rounded-[28px] bg-surface px-6 py-12 text-center text-text-muted;
   }
 }

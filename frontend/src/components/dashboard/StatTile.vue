@@ -10,9 +10,11 @@ defineProps<{
 </script>
 
 <template>
-  <div class="flex flex-col gap-1 rounded-2xl border border-border-soft bg-surface-2/50 px-4 py-3.5">
-    <dt class="text-xs font-semibold tracking-wide text-text-muted uppercase">{{ label }}</dt>
-    <dd class="m-0 text-2xl font-semibold text-text tabular-nums">{{ value }}</dd>
+  <div class="flex flex-col gap-1 rounded-2xl bg-surface-2 px-4 py-4">
+    <dt class="text-sm text-text-muted">{{ label }}</dt>
+    <dd class="m-0 font-display text-[1.875rem] leading-tight font-semibold tracking-[-0.03em] text-text tabular-nums">
+      {{ value }}
+    </dd>
     <dd v-if="hint" class="m-0 text-xs text-text-faint">{{ hint }}</dd>
   </div>
 </template>

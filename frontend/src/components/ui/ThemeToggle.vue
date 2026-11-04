@@ -10,7 +10,7 @@ const { t } = useI18n();
 <template>
   <button
     type="button"
-    class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border text-text transition-colors hover:border-accent/40 hover:bg-accent/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+    class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-text/6 text-text transition-[background-color,scale] hover:bg-text/12 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
     :aria-label="theme.theme === 'dark' ? t('theme.switchToLight') : t('theme.switchToDark')"
     :title="theme.theme === 'dark' ? t('theme.lightMode') : t('theme.darkMode')"
     @click="theme.toggle()"

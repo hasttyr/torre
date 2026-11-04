@@ -32,10 +32,12 @@ const leader = SAMPLE_STANDINGS[0];
 </script>
 
 <template>
-  <div data-render aria-hidden="true" class="relative mx-auto w-full max-w-[30rem] select-none lg:max-w-[34rem]">
+  <div data-render aria-hidden="true" class="relative mx-auto w-full max-w-[34rem] select-none lg:max-w-[44rem]">
     <div class="@container animate-rise-in motion-reduce:animate-none">
       <div class="perspective-[1400px]">
-        <div class="rotate-x-[22deg] rounded-[3%] bg-[#2a2217] p-[3%] shadow-product transform-3d">
+        <div
+          class="rotate-x-[22deg] rounded-[3%] bg-[#2a2217] p-[3%] shadow-[0_40px_80px_-20px_rgb(0_0_0/70%)] ring-1 ring-[#c9a227]/45 transform-3d"
+        >
           <div class="grid grid-cols-8 transform-3d">
             <div
               v-for="(square, index) in squares"
@@ -61,7 +63,7 @@ const leader = SAMPLE_STANDINGS[0];
     </div>
 
     <div
-      class="absolute top-3 left-3 flex animate-rise-in flex-col gap-2 rounded-2xl border border-border-soft bg-surface/90 px-3.5 py-3 text-left text-text shadow-product backdrop-blur-md [animation-delay:350ms] motion-reduce:animate-none md:top-[10%] md:-left-20 md:px-4"
+      class="absolute top-3 left-3 z-10 flex animate-rise-in flex-col gap-2 rounded-[20px] bg-surface/92 ring-1 ring-text/8 px-3.5 py-3 text-left text-text shadow-product backdrop-blur-md [animation-delay:350ms] motion-reduce:animate-none md:top-[10%] md:-left-20 md:px-4"
     >
       <span class="flex items-center gap-2">
         <LiveBadge :label="t('home.mock.live')" />
@@ -75,7 +77,7 @@ const leader = SAMPLE_STANDINGS[0];
     </div>
 
     <div
-      class="absolute -right-20 bottom-[16%] hidden animate-rise-in flex-col rounded-2xl border border-border-soft bg-surface/90 px-4 py-3 text-left text-text shadow-product backdrop-blur-md [animation-delay:550ms] motion-reduce:animate-none md:flex"
+      class="absolute -right-20 bottom-[16%] z-10 hidden animate-rise-in flex-col rounded-[20px] bg-surface/92 ring-1 ring-text/8 px-4 py-3 text-left text-text shadow-product backdrop-blur-md [animation-delay:550ms] motion-reduce:animate-none md:flex"
     >
       <span class="text-xs text-text-muted">{{ t("home.mock.leader") }}</span>
       <span class="text-sm font-semibold">{{ leader.name }}</span>

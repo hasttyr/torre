@@ -6,6 +6,7 @@ import { useI18n } from "vue-i18n";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import TournamentCard from "../../components/tournament/TournamentCard.vue";
 import LoadError from "../../components/ui/LoadError.vue";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton.vue";
 import { useQueryStatus } from "../../queries/status";
 import { liveTournamentsQuery } from "../../queries/tournaments";
 
@@ -22,18 +23,15 @@ const { loading, loadError, retry } = useQueryStatus(query, "liveTournaments.loa
   <div class="min-h-dvh">
     <AppHeader />
 
-    <main class="container flex max-w-2xl flex-col gap-6 py-10 sm:py-12">
+    <main class="container flex max-w-2xl flex-col gap-8 pt-12 pb-20 sm:pt-16 sm:pb-28">
       <div>
-        <h1 class="text-2xl sm:text-3xl">{{ t("liveTournaments.title") }}</h1>
-        <p class="mt-1 text-sm">{{ t("liveTournaments.subtitle") }}</p>
+        <h1 class="page-title">{{ t("liveTournaments.title") }}</h1>
+        <p class="mt-3">{{ t("liveTournaments.subtitle") }}</p>
       </div>
 
-      <p v-if="loading">{{ t("liveTournaments.loading") }}</p>
+      <LoadingSkeleton v-if="loading" :label="t('liveTournaments.loading')" variant="list" />
       <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
-      <p
-        v-else-if="tournaments.length === 0"
-        class="rounded-3xl border border-dashed border-border-soft bg-surface p-8 text-center text-text-muted"
-      >
+      <p v-else-if="tournaments.length === 0" class="empty-state">
         {{ t("liveTournaments.empty") }}
       </p>
 

@@ -18,9 +18,9 @@ const { t } = useI18n();
       <p class="mt-0.5 text-sm">{{ t(`widgets.${widget}.description`) }}</p>
     </header>
     <div class="flex flex-col gap-2.5" aria-hidden="true">
-      <div class="h-4 w-2/3 animate-pulse rounded bg-surface-2 motion-reduce:animate-none" />
-      <div class="h-4 w-full animate-pulse rounded bg-surface-2 motion-reduce:animate-none" />
-      <div class="h-4 w-5/6 animate-pulse rounded bg-surface-2 motion-reduce:animate-none" />
+      <div class="skeleton h-4 w-2/3" />
+      <div class="skeleton h-4 w-full" />
+      <div class="skeleton h-4 w-5/6" />
     </div>
   </section>
 </template>

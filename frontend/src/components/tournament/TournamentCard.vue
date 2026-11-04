@@ -28,12 +28,16 @@ const heading = computed(() => `h${props.headingLevel}`);
   <component
     :is="to ? RouterLink : 'div'"
     :to="to"
-    class="flex flex-col items-start gap-2 rounded-2xl border border-border-soft bg-surface p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-    :class="to ? 'text-inherit no-underline transition-colors hover:border-accent/40' : ''"
+    class="group flex flex-col items-start gap-3 rounded-[24px] bg-surface p-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-7"
+    :class="
+      to
+        ? 'text-inherit no-underline transition-[background-color,scale] duration-300 ease-spring hover:bg-surface-2 active:scale-[0.99]'
+        : ''
+    "
   >
-    <div class="flex flex-col gap-0.5">
-      <component :is="heading" class="text-base">{{ tournament.name }}</component>
-      <p class="text-sm">
+    <div class="flex flex-col gap-1">
+      <component :is="heading" class="text-xl tracking-[-0.02em] sm:text-[1.375rem]">{{ tournament.name }}</component>
+      <p class="text-[0.95rem] tabular-nums">
         {{ formatDate(tournament.startDate, locale.locale) }} —
         {{ formatDate(tournament.endDate, locale.locale) }}
       </p>

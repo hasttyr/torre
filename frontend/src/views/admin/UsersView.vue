@@ -6,6 +6,7 @@ import { useI18n } from "vue-i18n";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import DataTable from "../../components/ui/DataTable.vue";
 import LoadError from "../../components/ui/LoadError.vue";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton.vue";
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
 import { replaceUser, usersQuery } from "../../queries/admin";
@@ -109,13 +110,13 @@ const columns = [
   <div class="min-h-dvh">
     <AppHeader />
 
-    <main class="container flex max-w-4xl flex-col gap-6 py-10 sm:py-12">
+    <main class="container flex max-w-4xl flex-col gap-8 pt-12 pb-20 sm:pt-16 sm:pb-28">
       <div>
-        <h1 class="text-2xl sm:text-3xl">{{ t("adminUsers.title") }}</h1>
-        <p class="mt-1 text-sm">{{ t("adminUsers.subtitle") }}</p>
+        <h1 class="page-title">{{ t("adminUsers.title") }}</h1>
+        <p class="mt-3">{{ t("adminUsers.subtitle") }}</p>
       </div>
 
-      <p v-if="loading">{{ t("adminUsers.loading") }}</p>
+      <LoadingSkeleton v-if="loading" :label="t('adminUsers.loading')" variant="table" :count="6" />
       <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <section v-else class="card">

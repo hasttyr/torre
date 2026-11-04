@@ -6,6 +6,7 @@ import { useRoute } from "vue-router";
 
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LoadError from "../../components/ui/LoadError.vue";
+import LoadingSkeleton from "../../components/ui/LoadingSkeleton.vue";
 import PlayerEnrollmentPanel from "../../components/tournament-admin/PlayerEnrollmentPanel.vue";
 import RegistrationControls from "../../components/tournament-admin/RegistrationControls.vue";
 import RoundManager from "../../components/tournament-admin/RoundManager.vue";
@@ -32,13 +33,13 @@ const PLAY_STATUSES = ["REGISTRATION_CLOSED", "IN_PROGRESS", "FINISHED"];
   <div class="min-h-dvh">
     <AppHeader />
 
-    <main class="container flex max-w-3xl flex-col gap-6 py-10 sm:py-12">
-      <p v-if="loading">{{ t("tournamentAdmin.loading") }}</p>
+    <main class="container flex max-w-3xl flex-col gap-8 pt-12 pb-20 sm:pt-16 sm:pb-28">
+      <LoadingSkeleton v-if="loading" :label="t('tournamentAdmin.loading')" variant="room" />
       <LoadError v-else-if="loadError" :message="loadError" :retry="retry" />
 
       <template v-else-if="tournament">
         <header class="flex flex-wrap items-center justify-between gap-4">
-          <h1 class="text-2xl sm:text-3xl">{{ tournament.name }}</h1>
+          <h1 class="page-title">{{ tournament.name }}</h1>
           <span class="pill">{{ t(`estados.${tournament.status}`) }}</span>
         </header>
 

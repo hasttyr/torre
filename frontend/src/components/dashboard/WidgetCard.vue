@@ -32,9 +32,9 @@ const { t } = useI18n();
 
     <div v-if="loading" class="flex flex-col gap-2.5" data-test="widget-loading">
       <span class="sr-only">{{ t("panel.loadingWidget") }}</span>
-      <div class="h-4 w-2/3 animate-pulse rounded bg-surface-2" />
-      <div class="h-4 w-full animate-pulse rounded bg-surface-2" />
-      <div class="h-4 w-5/6 animate-pulse rounded bg-surface-2" />
+      <div class="skeleton h-4 w-2/3" />
+      <div class="skeleton h-4 w-full" />
+      <div class="skeleton h-4 w-5/6" />
     </div>
 
     <div v-else-if="error" role="alert" class="banner banner--error items-center justify-between">
@@ -42,10 +42,7 @@ const { t } = useI18n();
       <button type="button" class="font-semibold underline" @click="$emit('retry')">{{ t("panel.retry") }}</button>
     </div>
 
-    <p
-      v-else-if="empty"
-      class="rounded-2xl border border-dashed border-border-soft p-6 text-center text-sm text-text-muted"
-    >
+    <p v-else-if="empty" class="rounded-2xl bg-surface-2 p-6 text-center text-sm text-text-muted">
       {{ emptyMessage ?? t("panel.widgetEmpty") }}
     </p>
 
