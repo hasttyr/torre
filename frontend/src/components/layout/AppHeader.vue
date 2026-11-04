@@ -51,7 +51,7 @@ function closeMobileFromKeyboard(): void {
 
 <template>
   <header
-    class="sticky top-0 z-10 border-b border-border-soft bg-header backdrop-blur-md"
+    class="glass-strong sticky top-0 z-10 rounded-none border-x-0 border-t-0 pt-[env(safe-area-inset-top)] shadow-none"
     @keydown.esc="closeMobileFromKeyboard"
   >
     <div class="container flex items-center justify-between gap-4 py-4">
@@ -91,7 +91,7 @@ function closeMobileFromKeyboard(): void {
         <button
           ref="menuButton"
           type="button"
-          class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border text-text transition-colors hover:bg-accent/10"
+          class="inline-flex h-11 w-11 items-center justify-center rounded-full border border-glass-border bg-glass text-text transition-colors hover:bg-accent/10"
           :aria-expanded="mobileOpen"
           :aria-label="mobileOpen ? t('header.closeMenu') : t('header.openMenu')"
           @click="mobileOpen = !mobileOpen"
@@ -115,14 +115,14 @@ function closeMobileFromKeyboard(): void {
       leave-from-class="opacity-100 translate-y-0"
       leave-to-class="opacity-0 -translate-y-1"
     >
-      <nav v-if="mobileOpen" class="border-t border-border-soft bg-header lg:hidden">
+      <nav v-if="mobileOpen" class="border-t border-glass-border lg:hidden">
         <div class="container flex flex-col gap-1 py-3">
           <template v-if="auth.isAuthenticated">
             <RouterLink
               v-for="item in navItems"
               :key="item.to"
               :to="item.to"
-              class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
+              class="rounded-xl px-3 py-3 text-base font-semibold text-text hover:bg-accent/10"
               @click="closeMobile"
               @touchstart.passive="prefetch(item.to)"
               @focus="prefetch(item.to)"
@@ -133,14 +133,14 @@ function closeMobileFromKeyboard(): void {
           <template v-else>
             <RouterLink
               to="/login"
-              class="rounded-lg px-3 py-2.5 text-sm font-semibold text-text hover:bg-accent/10"
+              class="rounded-xl px-3 py-3 text-base font-semibold text-text hover:bg-accent/10"
               @click="closeMobile"
             >
               {{ t("header.login") }}
             </RouterLink>
             <RouterLink
               to="/registro"
-              class="rounded-lg bg-accent px-3 py-2.5 text-center text-sm font-semibold text-on-accent"
+              class="rounded-full bg-accent px-3 py-3 text-center text-base font-semibold text-on-accent"
               @click="closeMobile"
             >
               {{ t("header.createAccount") }}

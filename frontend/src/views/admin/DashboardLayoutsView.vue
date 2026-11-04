@@ -145,7 +145,7 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
 </script>
 
 <template>
-  <div class="min-h-screen">
+  <div class="min-h-dvh">
     <AppHeader />
 
     <main ref="root" class="container flex flex-col gap-6 py-10 pb-28 sm:py-12 sm:pb-28">

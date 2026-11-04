@@ -13,7 +13,7 @@ withDefaults(defineProps<{ title: string; subtitle?: string; quote?: string; quo
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col">
+  <div class="flex min-h-dvh flex-col">
     <header class="py-6">
       <div class="container">
         <AppLogo />
@@ -23,7 +23,7 @@ withDefaults(defineProps<{ title: string; subtitle?: string; quote?: string; quo
     <main class="flex flex-1 items-center py-4 pb-12">
       <div class="container grid grid-cols-1 items-center gap-8 md:grid-cols-[1fr_1.1fr] md:gap-12">
         <aside
-          class="hidden min-h-104 flex-col justify-between rounded-3xl border border-border-soft bg-linear-to-br from-surface to-bg-elevated p-8 md:p-12 md:flex"
+          class="glass hidden min-h-104 flex-col justify-between rounded-3xl p-8 md:flex md:p-12"
           aria-hidden="true"
         >
           <span class="text-8xl leading-none text-accent opacity-85">♞</span>

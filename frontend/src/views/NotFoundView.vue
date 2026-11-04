@@ -7,7 +7,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="flex min-h-screen flex-col">
+  <div class="flex min-h-dvh flex-col">
     <header class="py-6">
       <div class="container">
         <AppLogo />
