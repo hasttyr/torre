@@ -37,7 +37,9 @@
   --color-piece-white: #ffffff;
   --color-piece-black: #1f1f1f;
 
-  /* Dashboard charts. Win/draw/loss is a diverging scale (blue <-> red with
+  /* Dashboard charts. A single series (a ranking, counts, a trend) is drawn
+     in the brand gold, so the data carries the color. Win/draw/loss is a
+     diverging scale (blue <-> red with
      a neutral gray midpoint), validated for color-vision deficiencies in
      both themes; every chart also prints its counts, so color never
      carries the meaning alone. */
@@ -143,7 +145,7 @@
   --error: #eb5a5f;
   --on-error: #17130a;
 
-  --chart-1: #3987e5;
+  --chart-1: #c9a227;
   --chart-win: #3987e5;
   --chart-draw: #b8b6ad;
   --chart-loss: #e66767;
@@ -186,7 +188,7 @@
   --error: #c1272d;
   --on-error: #ffffff;
 
-  --chart-1: #2a78d6;
+  --chart-1: #a8811a;
   --chart-win: #2a78d6;
   --chart-draw: #8a8880;
   --chart-loss: #e34948;
@@ -453,5 +455,11 @@
   /* Nothing to show yet: a quiet panel in the card's tone, no dashed edge. */
   .empty-state {
     @apply rounded-[28px] bg-surface px-6 py-12 text-center text-text-muted;
+  }
+
+  /* A widget's answer figure (how many tournaments, how many accounts):
+     the largest thing in its card, so the question is answered at a glance. */
+  .figure {
+    @apply font-display text-[clamp(2.75rem,2.1rem+1.8vw,3.75rem)] leading-none font-semibold tracking-[-0.045em] text-text tabular-nums;
   }
 }

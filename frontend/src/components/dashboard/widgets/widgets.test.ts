@@ -376,6 +376,49 @@ describe("dashboard widgets", () => {
     expect(recent.wrapper.text()).toContain("Ronda 4");
   });
 
+  it("status counts follow the tournament's life in order, printing 0 for an empty stage", async () => {
+    getWidgetDataMock.mockResolvedValue([
+      { status: "FINISHED", count: 5 },
+      { status: "IN_PROGRESS", count: 2 },
+    ]);
+
+    const { wrapper } = await mountWidget(TournamentsByStatusWidget);
+    const stages = wrapper
+      .findAll("ol > li")
+      .map((stage) => `${stage.get("span").text()} ${stage.get("strong").text()}`);
+
+    expect(stages).toEqual([
+      "Preliminar 0",
+      "Inscripciones abiertas 0",
+      "Inscripciones cerradas 0",
+      "En curso 2",
+      "Finalizado 5",
+    ]);
+  });
+
+  it("top players stand the first three on a podium, read in rank order, and list the rest", async () => {
+    const player = (n: number, points: number) => ({
+      playerId: `p${n}`,
+      name: `Jugador ${n}`,
+      points,
+      titles: 0,
+      podiums: 0,
+      tournaments: 3,
+    });
+    getWidgetDataMock.mockResolvedValue([player(1, 16), player(2, 14), player(3, 13), player(4, 9)]);
+
+    const { wrapper } = await mountWidget(TopPlayersWidget, { playerWidgets: false });
+    const [podium, rest] = wrapper.findAll("ol");
+
+    expect(podium!.findAll("li").map((step) => step.text())).toEqual([
+      expect.stringContaining("Jugador 1"),
+      expect.stringContaining("Jugador 2"),
+      expect.stringContaining("Jugador 3"),
+    ]);
+    expect(rest!.findAll("li")).toHaveLength(1);
+    expect(rest!.text()).toContain("Jugador 4");
+  });
+
   it("users by role counts active accounts and notes inactive ones", async () => {
     getWidgetDataMock.mockResolvedValue([
       { role: "PLAYER", active: 12, inactive: 2 },

@@ -16,11 +16,11 @@ const max = computed(() => Math.max(1, ...props.items.map((item) => item.value))
 </script>
 
 <template>
-  <ul class="m-0 flex list-none flex-col gap-3 p-0" :aria-label="label">
+  <ul class="m-0 flex list-none flex-col gap-4 p-0" :aria-label="label">
     <li
       v-for="item in items"
       :key="item.key"
-      class="grid grid-cols-[minmax(6.5rem,11rem)_1fr] items-center gap-3 text-sm"
+      class="grid grid-cols-[minmax(6.5rem,11rem)_1fr] items-center gap-4 text-[0.95rem]"
     >
       <div class="min-w-0">
         <p class="truncate text-text">{{ item.label }}</p>
@@ -30,7 +30,7 @@ const max = computed(() => Math.max(1, ...props.items.map((item) => item.value))
         <!-- The longest bar spans 85% of the track, leaving room for its value
              at the tip; a zero value still gets a 2px stub so the row doesn't
              look missing. -->
-        <div class="h-3 min-w-[2px] rounded-r-[4px] bg-chart-1" :style="{ width: `${(item.value / max) * 85}%` }" />
+        <div class="h-2.5 min-w-[2px] rounded-full bg-chart-1" :style="{ width: `${(item.value / max) * 85}%` }" />
         <span class="shrink-0 font-semibold text-text tabular-nums">{{ item.valueLabel ?? item.value }}</span>
       </div>
     </li>

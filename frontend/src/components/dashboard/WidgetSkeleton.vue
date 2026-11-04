@@ -12,10 +12,10 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <section class="card flex h-full min-h-52 flex-col gap-4" data-test="widget-skeleton">
+  <section class="card flex h-full min-h-52 flex-col gap-6" data-test="widget-skeleton">
     <header>
-      <h2 class="text-lg">{{ t(`widgets.${widget}.title`) }}</h2>
-      <p class="mt-0.5 text-sm">{{ t(`widgets.${widget}.description`) }}</p>
+      <h2 class="text-[1.375rem] tracking-[-0.025em]">{{ t(`widgets.${widget}.title`) }}</h2>
+      <p class="mt-1 text-[0.95rem]">{{ t(`widgets.${widget}.description`) }}</p>
     </header>
     <div class="flex flex-col gap-2.5" aria-hidden="true">
       <div class="skeleton h-4 w-2/3" />

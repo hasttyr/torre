@@ -21,11 +21,11 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <section class="card flex h-full flex-col gap-4" :aria-busy="loading">
+  <section class="card flex h-full flex-col gap-6" :aria-busy="loading">
     <header class="flex items-start justify-between gap-3">
       <div>
-        <h2 class="text-lg">{{ t(`widgets.${widget}.title`) }}</h2>
-        <p class="mt-0.5 text-sm">{{ t(`widgets.${widget}.description`) }}</p>
+        <h2 class="text-[1.375rem] tracking-[-0.025em]">{{ t(`widgets.${widget}.title`) }}</h2>
+        <p class="mt-1 text-[0.95rem]">{{ t(`widgets.${widget}.description`) }}</p>
       </div>
       <span v-if="subjectName" class="pill max-w-[45%] truncate">{{ subjectName }}</span>
     </header>

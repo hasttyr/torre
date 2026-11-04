@@ -31,10 +31,10 @@ const totalActive = computed(() => items.value.reduce((sum, item) => sum + item.
     :empty="!data || data.length === 0"
     @retry="reload"
   >
-    <div class="flex flex-col gap-4">
-      <p class="text-sm">
-        <strong class="text-2xl text-text tabular-nums">{{ totalActive }}</strong>
-        {{ t("widgets.USERS_BY_ROLE.total") }}
+    <div class="flex flex-col gap-7">
+      <p class="flex items-baseline gap-3">
+        <strong class="figure">{{ totalActive }}</strong>
+        <span class="text-text-muted">{{ t("widgets.USERS_BY_ROLE.total") }}</span>
       </p>
       <BarList :items="items" :label="t('widgets.USERS_BY_ROLE.title')" />
     </div>
