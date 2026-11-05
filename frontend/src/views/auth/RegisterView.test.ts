@@ -88,6 +88,15 @@ describe("RegisterView", () => {
     expect(roleInputs.map((input) => (input.element as HTMLInputElement).value)).toEqual(["PLAYER", "COACH"]);
   });
 
+  // RN-10 / Ley 1581: an authorization is informed when the text is a click away (#129).
+  it("links the data policy next to its checkbox, in a new tab and without ticking it", async () => {
+    const { wrapper } = await mountRegisterView();
+
+    const link = wrapper.get("[data-test='data-policy-link']");
+    expect(link.attributes()).toMatchObject({ href: "/politica-de-datos", target: "_blank", rel: "noopener" });
+    expect(link.element.closest("label")).toBeNull();
+  });
+
   it("shows validation errors and does not call the backend when the form is empty", async () => {
     const { wrapper } = await mountRegisterView();
 

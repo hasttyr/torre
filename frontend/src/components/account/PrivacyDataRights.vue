@@ -102,6 +102,9 @@ async function onDeleteData(): Promise<void> {
           version: auth.user.dataConsent.version ?? "—",
         })
       }}
+      <RouterLink to="/politica-de-datos" class="font-semibold text-accent">{{
+        t("dataPolicy.accountLink")
+      }}</RouterLink>
     </p>
 
     <FadeSlide>

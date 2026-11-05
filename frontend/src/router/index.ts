@@ -40,6 +40,12 @@ export const router = createRouter({
       component: HomeView,
     },
     {
+      // RN-10 / Ley 1581: the text the sign-up's authorization refers to (#129).
+      path: "/politica-de-datos",
+      name: "data-policy",
+      component: () => import("../views/DataPolicyView.vue"),
+    },
+    {
       // HU25 / RF17: the one listing a visitor can read without signing in.
       path: "/torneos-abiertos",
       name: "public-tournaments",

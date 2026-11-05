@@ -45,6 +45,15 @@ export type RoundStatus = (typeof ROUND_STATUSES)[number];
 export const MATCH_STATUSES = ["SCHEDULED", "IN_PROGRESS", "FINISHED", "CORRECTED"] as const;
 export type MatchStatus = (typeof MATCH_STATUSES)[number];
 
+/**
+ * Version of the personal-data treatment policy in force (RN-10, HU21), the
+ * one a new account accepts. Bump it whenever the policy's text changes
+ * (frontend dataPolicy.* in the locales); each consent keeps the version it
+ * was given under. 2026-08-01 had no text in the system; 2026-11-06 is the
+ * academic draft, until the university provides the official one (#129).
+ */
+export const DATA_POLICY_VERSION = "2026-11-06";
+
 /** RN-03: the results of a game played, in the order the UI offers them. */
 export const PLAYED_RESULTS = ["1-0", "1/2-1/2", "0-1"] as const;
 

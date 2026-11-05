@@ -199,6 +199,9 @@ const year = new Date().getFullYear();
             <RouterLink to="/registro" class="text-text-muted no-underline hover:text-text">
               {{ t("header.createAccount") }}
             </RouterLink>
+            <RouterLink to="/politica-de-datos" class="text-text-muted no-underline hover:text-text">
+              {{ t("dataPolicy.title") }}
+            </RouterLink>
           </nav>
           <nav :aria-label="t('home.footerProject')" class="flex flex-col gap-2.5 text-base">
             <span class="font-semibold text-text">{{ t("home.footerProject") }}</span>

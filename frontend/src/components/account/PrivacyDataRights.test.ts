@@ -71,6 +71,13 @@ describe("PrivacyDataRights", () => {
     }
   });
 
+  // #129: what was accepted can be read from the account.
+  it("links the consent to the policy's text", async () => {
+    const link = (await mountPanel()).get("a[href='/politica-de-datos']");
+
+    expect(link.text()).toBe("Ver la política vigente");
+  });
+
   it("marks the delete action with the theme's error color, which adapts to dark mode", async () => {
     const wrapper = await mountPanel();
     const remove = wrapper.findAll("button").find((button) => button.text().includes("Eliminar"))!;

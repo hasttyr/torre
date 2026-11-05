@@ -302,6 +302,17 @@ async function onSubmit(): Promise<void> {
           />
           <span>{{ t("register.acceptDataPolicyLabel") }}</span>
         </label>
+        <!-- Outside the label: following it mustn't tick the box. A new tab
+             keeps what's been typed in the form. -->
+        <RouterLink
+          to="/politica-de-datos"
+          target="_blank"
+          rel="noopener"
+          class="ml-6 text-sm font-semibold text-accent"
+          data-test="data-policy-link"
+        >
+          {{ t("dataPolicy.registerLink") }}
+        </RouterLink>
         <span :id="errorId('acceptDataPolicy')" class="field-error">{{ errors.acceptDataPolicy }}</span>
       </div>
 

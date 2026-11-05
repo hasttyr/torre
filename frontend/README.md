@@ -69,25 +69,26 @@ Lo que viene del servidor vive en la caché de [Pinia Colada](https://pinia-cola
 
 ## Rutas
 
-| Ruta                                               | Pantalla                                                  | Acceso                     |
-| -------------------------------------------------- | --------------------------------------------------------- | -------------------------- |
-| `/`                                                | Portada                                                   | Público                    |
-| `/login`, `/registro`                              | Ingreso y registro                                        | Público                    |
-| `/torneos-abiertos`                                | Torneos con inscripción abierta, sin sesión (HU25 / RF17) | Público                    |
-| `/olvide-password`, `/restablecer-password?token=` | Recuperar contraseña                                      | Público                    |
-| `/panel`                                           | Panel de inicio con los widgets del rol                   | Sesión                     |
-| `/panel/configuracion`                             | Widgets de cada rol                                       | Administrador              |
-| `/cuenta`                                          | Perfil y privacidad                                       | Sesión                     |
-| `/en-juego`                                        | Torneos en curso y finalizados                            | Sesión                     |
-| `/torneos/:id/sala`                                | Sala en vivo: rondas, clasificación, estadísticas         | Sesión                     |
-| `/torneos`                                         | Torneos que administra                                    | Organizador, administrador |
-| `/torneos/nuevo`                                   | Crear torneo                                              | Organizador, administrador |
-| `/torneos/:id`                                     | Gestión del torneo                                        | Organizador, administrador |
-| `/clubes`                                          | Clubes                                                    | Organizador, administrador |
-| `/mis-torneos`                                     | Inscripciones del jugador                                 | Jugador                    |
-| `/mis-jugadores`                                   | Jugadores vinculados                                      | Entrenador                 |
-| `/usuarios`                                        | Usuarios, roles y estado                                  | Administrador              |
-| `/auditoria`                                       | Bitácora de auditoría                                     | Administrador              |
+| Ruta                                               | Pantalla                                                            | Acceso                     |
+| -------------------------------------------------- | ------------------------------------------------------------------- | -------------------------- |
+| `/`                                                | Portada                                                             | Público                    |
+| `/login`, `/registro`                              | Ingreso y registro                                                  | Público                    |
+| `/torneos-abiertos`                                | Torneos con inscripción abierta, sin sesión (HU25 / RF17)           | Público                    |
+| `/politica-de-datos`                               | Política de tratamiento de datos (RN-10; hoy un borrador académico) | Público                    |
+| `/olvide-password`, `/restablecer-password?token=` | Recuperar contraseña                                                | Público                    |
+| `/panel`                                           | Panel de inicio con los widgets del rol                             | Sesión                     |
+| `/panel/configuracion`                             | Widgets de cada rol                                                 | Administrador              |
+| `/cuenta`                                          | Perfil y privacidad                                                 | Sesión                     |
+| `/en-juego`                                        | Torneos en curso y finalizados                                      | Sesión                     |
+| `/torneos/:id/sala`                                | Sala en vivo: rondas, clasificación, estadísticas                   | Sesión                     |
+| `/torneos`                                         | Torneos que administra                                              | Organizador, administrador |
+| `/torneos/nuevo`                                   | Crear torneo                                                        | Organizador, administrador |
+| `/torneos/:id`                                     | Gestión del torneo                                                  | Organizador, administrador |
+| `/clubes`                                          | Clubes                                                              | Organizador, administrador |
+| `/mis-torneos`                                     | Inscripciones del jugador                                           | Jugador                    |
+| `/mis-jugadores`                                   | Jugadores vinculados                                                | Entrenador                 |
+| `/usuarios`                                        | Usuarios, roles y estado                                            | Administrador              |
+| `/auditoria`                                       | Bitácora de auditoría                                               | Administrador              |
 
 Sin sesión, una ruta protegida lleva a `/login?redirect=<ruta>`; con un rol que no corresponde, a la portada. El backend vuelve a validar todo: la guarda del router solo evita mostrar pantallas que la API rechazaría.
 

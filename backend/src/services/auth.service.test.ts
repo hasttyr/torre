@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { DATA_POLICY_VERSION } from "../config/dataPolicy";
 import type { HttpError } from "../errors/apiErrors";
 import { loginUser, registerUser } from "./auth.service";
 import { comparePassword, hashPassword } from "./password";
@@ -76,7 +77,7 @@ describe("registerUser", () => {
     expect(createArgs.data.passwordHash).not.toBe("password123");
     expect(createArgs.data.player).toBeUndefined();
     expect(createArgs.data.dataPolicyAccepted).toBe(true);
-    expect(createArgs.data.dataPolicyVersion).toBe("2026-08-01");
+    expect(createArgs.data.dataPolicyVersion).toBe(DATA_POLICY_VERSION);
   });
 
   it("creates the account and the nested player profile when the role is PLAYER", async () => {

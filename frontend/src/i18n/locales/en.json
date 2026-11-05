@@ -887,5 +887,54 @@
     "PLAYER_OUT_OF_SCOPE": "You don't have access to this player's data.",
     "CROSS_SITE_REQUEST": "This request didn't come from the app. Reload the page and try again.",
     "PASSWORD_RESET_UNAVAILABLE": "Password recovery isn't available right now. Ask an administrator for help."
+  },
+  "dataPolicy": {
+    "title": "Personal Data Treatment Policy",
+    "draftNotice": "Draft for academic purposes (Engineering Practice IV). It isn't Universidad Central's official policy and wasn't reviewed by a data protection professional: it describes what this system does with your data so your authorization is informed until the official text arrives.",
+    "version": "Version {version}",
+    "sections": {
+      "responsible": {
+        "title": "1. Data controller",
+        "body": "Universidad Central, through the Torre Central Hub project team (Engineering Practice IV), which runs the system for the university's chess tournaments. The controller's official contact details will be added once the university provides its policy."
+      },
+      "data": {
+        "title": "2. What data is processed",
+        "body": "For your account: name, email and password (stored only as a one-way hash). If you're a player: university code, program and semester; and, if you choose to give them, birth date, gender and disability. From your participation: enrollments, games, results, standings, club and the coach links you accept. For security: the date of your authorization, an audit log of administrative actions that names you only by reference, and the network address of each sign-in attempt, for a limited time, to stop abuse."
+      },
+      "purposes": {
+        "title": "3. What it's used for",
+        "body": "Running the tournaments: enrolling and pairing you, recording results, computing standings and issuing the official documents. Showing your progress on your dashboard and, if you accept, to the coach who follows you. Protecting accounts and keeping a trail of critical actions (RN-11). It isn't used for advertising, nor sold or handed to third parties."
+      },
+      "sensitive": {
+        "title": "4. Sensitive data",
+        "body": "Gender and disability are optional: they aren't needed to take part, and you can leave them empty or delete them at any time. Only you and the system's administrators see them, and they're used for inclusion statistics. The system doesn't ask why someone missed a game, so as not to collect health data."
+      },
+      "visibility": {
+        "title": "5. Who sees what",
+        "body": "Your name appears in the pairings, results and standings of the tournaments you play, which signed-in users see. The public tournament listing, without a session, shows no personal data. Your code, program and semester are seen by tournament and club organizers, and by a coach only after you accept their link. Your email never appears in results or searches."
+      },
+      "processors": {
+        "title": "6. Data processors",
+        "body": "The system is hosted on Render (server and database) and Vercel (the web app). If configured, an email provider sends the password recovery links. They process the data only to provide that service."
+      },
+      "rights": {
+        "title": "7. Your rights (Colombian Law 1581 of 2012, art. 8)",
+        "body": "To know, update and correct your data; to ask for proof of this authorization; to know how it has been used; to revoke the authorization or ask for its deletion, unless a legal duty or a tournament in progress requires keeping it; to access it free of charge; and to file complaints with the Superintendence of Industry and Commerce."
+      },
+      "channel": {
+        "title": "8. How to exercise them",
+        "body": "From “My Account”, in the privacy section: download all your data, correct it or ask for its deletion. If you're playing a tournament in progress, the deletion completes when it ends. A query is answered within ten business days and a claim within fifteen (arts. 14 and 15)."
+      },
+      "minors": {
+        "title": "9. Minors",
+        "body": "The system is meant for university students. If a minor takes part, their legal representative must give or join their authorization, and their data is processed in their best interest."
+      },
+      "changes": {
+        "title": "10. Changes to this policy",
+        "body": "Every change raises the version. Your authorization is stored with the version and date you gave it, and you can see it in “My Account”."
+      }
+    },
+    "registerLink": "Read the policy",
+    "accountLink": "See the current policy"
   }
 }

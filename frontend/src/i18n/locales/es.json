@@ -887,5 +887,54 @@
     "PLAYER_OUT_OF_SCOPE": "No tienes acceso a los datos de este jugador.",
     "CROSS_SITE_REQUEST": "La petición no viene de la aplicación. Recarga la página e inténtalo de nuevo.",
     "PASSWORD_RESET_UNAVAILABLE": "La recuperación de contraseña no está disponible por ahora. Pide ayuda a un administrador."
+  },
+  "dataPolicy": {
+    "title": "Política de tratamiento de datos personales",
+    "draftNotice": "Borrador con fines académicos (Práctica de Ingeniería IV). No es la política oficial de la Universidad Central ni fue revisado por un profesional en protección de datos: describe lo que este sistema hace con tus datos para que la autorización sea informada mientras llega el texto oficial.",
+    "version": "Versión {version}",
+    "sections": {
+      "responsible": {
+        "title": "1. Responsable del tratamiento",
+        "body": "Universidad Central, a través del equipo del proyecto Torre Central Hub (Práctica de Ingeniería IV), que opera el sistema para la gestión de los torneos de ajedrez universitarios. Los datos de contacto oficiales del responsable se completarán cuando la universidad entregue su política."
+      },
+      "data": {
+        "title": "2. Qué datos se tratan",
+        "body": "Para tu cuenta: nombre, correo y contraseña (guardada solo como huella cifrada). Si eres jugador: código universitario, programa y semestre; y, si decides darlos, fecha de nacimiento, género y discapacidad. De tu participación: inscripciones, partidas, resultados, clasificaciones, club y vínculos con entrenadores que aceptes. Para la seguridad: la fecha de tu autorización, una bitácora de acciones administrativas que te nombra solo por referencia, y la dirección de red de cada intento de inicio de sesión, por un tiempo limitado, para frenar abusos."
+      },
+      "purposes": {
+        "title": "3. Para qué se usan",
+        "body": "Organizar los torneos: inscribirte, emparejarte, registrar resultados, calcular la clasificación y emitir los documentos oficiales. Mostrar tu progreso en tu panel y, si lo aceptas, al entrenador que te sigue. Proteger las cuentas y dejar trazabilidad de las acciones críticas (RN-11). No se usan para publicidad ni se venden ni ceden a terceros."
+      },
+      "sensitive": {
+        "title": "4. Datos sensibles",
+        "body": "Género y discapacidad son opcionales: no son necesarios para participar y puedes dejarlos vacíos o borrarlos cuando quieras. Solo los ves tú y quienes administran el sistema, y se usan para estadísticas de inclusión. El sistema no pide el motivo de una ausencia a una partida, para no recoger datos de salud."
+      },
+      "visibility": {
+        "title": "5. Quién ve qué",
+        "body": "Tu nombre aparece en los emparejamientos, resultados y clasificaciones de los torneos en que juegas, que ven los usuarios con sesión. El listado público de torneos, sin sesión, no muestra datos de personas. Tu código, programa y semestre los ven quienes organizan torneos y clubes, y un entrenador solo después de que aceptes su vínculo. Tu correo nunca aparece en resultados ni búsquedas."
+      },
+      "processors": {
+        "title": "6. Encargados del tratamiento",
+        "body": "El sistema se aloja en Render (servidor y base de datos) y Vercel (la aplicación web). Si está configurado, un proveedor de correo envía los enlaces de recuperación de contraseña. Tratan los datos solo para prestar ese servicio."
+      },
+      "rights": {
+        "title": "7. Tus derechos (Ley 1581 de 2012, art. 8)",
+        "body": "Conocer, actualizar y rectificar tus datos; pedir prueba de esta autorización; saber cómo se han usado; revocar la autorización o pedir que se supriman, cuando no haya un deber legal o un torneo en curso que obligue a conservarlos; acceder a ellos sin costo; y presentar quejas ante la Superintendencia de Industria y Comercio."
+      },
+      "channel": {
+        "title": "8. Cómo ejercerlos",
+        "body": "Desde «Mi cuenta», en la sección de privacidad: descargar todos tus datos, corregirlos o pedir su eliminación. Si juegas un torneo en curso, la eliminación se completa cuando el torneo termina. Una consulta se responde en máximo diez días hábiles y un reclamo en quince (arts. 14 y 15)."
+      },
+      "minors": {
+        "title": "9. Menores de edad",
+        "body": "El sistema está pensado para estudiantes universitarios. Si un menor de edad participa, su autorización debe darla o acompañarla su representante legal, y sus datos se tratan respetando su interés superior."
+      },
+      "changes": {
+        "title": "10. Cambios a esta política",
+        "body": "Cada cambio sube la versión. Tu autorización queda guardada con la versión y la fecha en que la diste, y la ves en «Mi cuenta»."
+      }
+    },
+    "registerLink": "Leer la política",
+    "accountLink": "Ver la política vigente"
   }
 }
