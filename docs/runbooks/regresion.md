@@ -68,6 +68,26 @@ Desviaciones que no son de un caso P sino de una regla o historia del documento 
 
 Precisiones que no cambian el resultado: en P01 los roles de autoservicio son jugador y entrenador; en P03 los permisos son por rol, no permisos sueltos; en P22 no existe una ruta para editar a otra persona.
 
+## Ejecución del 6 de noviembre de 2026
+
+Sobre el commit `d4084c5` de `main` (#113).
+
+| Paso                                               | Resultado                                                                                                                                                                                                                                                                                                                                            |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CI                                                 | En verde en GitHub: backend (640 tests, unitarios e integración contra PostgreSQL), frontend (649 tests), e2e (12 escenarios, entre ellos el ensayo técnico de la UAT) y `npm audit` sin vulnerabilidades altas                                                                                                                                      |
+| Casos P01–P33                                      | Todos cubiertos por los tests de la tabla, en verde                                                                                                                                                                                                                                                                                                  |
+| P32, PDF contra la sala                            | Coinciden fila por fila (puesto, nombre, Pts, BH, BC1 y SB) en un torneo finalizado del seed ("Copa Primavera 2026", 8 jugadores)                                                                                                                                                                                                                    |
+| Ambiente de destino (`despliegue.md`, "Verificar") | `/api/health` responde `ok`. La sesión es la cookie `torre_session` con `HttpOnly`, `Secure`, `SameSite=Lax` y `Path=/api`; en _Local Storage_ solo está el perfil (`torre.usuario`), ningún token. La sala abre su WebSocket a `wss://torre-be.onrender.com` sin errores de CSP. El listado público responde sin sesión y solo con datos del torneo |
+| Recuperación de contraseña                         | `503 PASSWORD_RESET_UNAVAILABLE`: producción no tiene correo (#130)                                                                                                                                                                                                                                                                                  |
+
+Observaciones:
+
+- El paso 4 de "Verificar" (guardar un cambio) no se hizo en producción para no modificar datos; el chequeo de origen que prueba lo cubren los tests de `sessionCookie` y los e2e.
+- El torneo "en curso" del seed aparece finalizado en producción: su fecha de fin ya pasó y lo cerró el cierre automático (decisión 010), como se espera.
+- El ensayo técnico de la UAT encontró, en su primera ejecución, que el campo de fecha de fin aparecía vacío al recargar (#125); se corrigió antes de este commit.
+
+Resultado: **cero regresiones funcionales detectadas.** Queda la aceptación P35 con los actores del torneo (#114).
+
 ## Criterios de salida
 
 1. Todos los casos P01–P33 dan el resultado esperado de esta tabla.
