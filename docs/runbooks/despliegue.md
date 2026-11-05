@@ -52,6 +52,14 @@ Merge a `main`. Vercel suele terminar antes que Render; hasta que Render compile
 3. Iniciar sesión: la cookie `torre_session` aparece para `torre-roan.vercel.app` con `HttpOnly`, `Secure`, `SameSite=Lax` y `Path=/api`; en _Local Storage_ no hay ningún token.
 4. Guardar un cambio (el nombre en _Mi perfil_). Un `403` "La petición no viene de la aplicación" es un problema de origen (`CORS_ORIGIN`, `APP_URL`).
 5. Abrir la sala en vivo de un torneo: en _Network → WS_, una conexión abierta a `wss://torre-be.onrender.com/socket.io`, sin errores de CSP en la consola.
+6. La recuperación de contraseña, sin el panel de Render: pedirla para un correo que no existe (`.invalid`, así no se envía nada a nadie). Con `SMTP_URL` responde la respuesta genérica; sin él, `503 PASSWORD_RESET_UNAVAILABLE`. Consume uno de los 5 intentos por hora de esa dirección.
+
+   ```powershell
+   Set-Content body.json '{"email":"sonda@ejemplo.invalid"}' -Encoding ascii -NoNewline
+   curl.exe -s -X POST https://torre-roan.vercel.app/api/auth/password/forgot -H "Content-Type: application/json" -H "Origin: https://torre-roan.vercel.app" --data-binary "@body.json"
+   ```
+
+   El 6 de noviembre de 2026 respondió `503`: producción no tiene correo configurado (#130). Para configurarlo hace falta una cuenta SMTP (la del correo institucional, o un servicio como Brevo o Mailgun) y poner `SMTP_URL` y `MAIL_FROM` en Render; el proveedor tiene que figurar como encargado en la política de datos.
 
 ## Si algo sale mal
 
