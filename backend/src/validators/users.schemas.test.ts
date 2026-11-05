@@ -25,4 +25,11 @@ describe("updateProfileSchema birthDate", () => {
     expect(parsed.success).toBe(false);
     expect(parsed.error?.issues[0]?.message).toBe("La fecha de nacimiento no puede ser futura");
   });
+
+  // A birth date is a calendar day, stored as UTC midnight: read in Colombia
+  // (UTC-5) it would fall on the day before, and 1900-01-01 on 1899.
+  it("accepts the first day of 1900 whatever the server's time zone", () => {
+    expect(updateProfileSchema.safeParse({ birthDate: "1900-01-01" }).success).toBe(true);
+    expect(updateProfileSchema.safeParse({ birthDate: "1899-12-31" }).success).toBe(false);
+  });
 });

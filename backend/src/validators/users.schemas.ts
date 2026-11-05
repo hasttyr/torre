@@ -37,7 +37,8 @@ export const updateProfileSchema = z.object({
     .date({ error: "La fecha de nacimiento no es válida" })
     // A refine, not .max(new Date()): that bound would be computed once, at import.
     .refine((date) => date <= new Date(), { error: "La fecha de nacimiento no puede ser futura" })
-    .refine((date) => date.getFullYear() >= 1900, { error: "La fecha de nacimiento no es válida" })
+    // UTC: the day arrives as UTC midnight, and read in Colombia (UTC-5) 1900-01-01 would be 1899.
+    .refine((date) => date.getUTCFullYear() >= 1900, { error: "La fecha de nacimiento no es válida" })
     .nullable()
     .optional(),
   gender: z.enum(GENDERS, { error: "El género no es una opción válida" }).nullable().optional(),
