@@ -441,12 +441,14 @@ enum DataRequestStatus {
 // services/auditLog.service.ts), where a typo doesn't compile.
 model AuditLog {
   id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
+  // null: the system acted on its own (a tournament closed by date,
+  // docs/decisions/010-cierre-automatico-por-fecha.md).
+  userId    String?  @map("user_id") @db.Uuid
   action    String
   detail    String?
   createdAt DateTime @default(now()) @map("created_at")
 
-  user User @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id], onDelete: Restrict)
 
   // The log is read newest first, one page at a time (see auditLog.service.ts).
   @@index([createdAt(sort: Desc), id(sort: Desc)])

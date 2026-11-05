@@ -162,7 +162,7 @@ Límites de peticiones ([`src/middlewares/rateLimits.ts`](src/middlewares/rateLi
 | POST, PUT | `/matches/:id/result`                          | Oficial                    | Registrar o corregir el resultado de una mesa           |
 | GET       | `/tournaments/:id/standings`                   | Sesión                     | Clasificación                                           |
 | GET       | `/tournaments/:id/stats`                       | Sesión                     | Estadísticas del torneo                                 |
-| POST      | `/tournaments/:id/finish`                      | Gestión                    | Finalizar el torneo                                     |
+| POST      | `/tournaments/:id/finish`                      | Gestión                    | Finalizar el torneo (o solo, al vencer: decisión 010)   |
 | GET       | `/tournaments/:id/standings.pdf`               | Oficial                    | Clasificación en PDF                                    |
 | GET       | `/rounds/:id/pairings.pdf`                     | Oficial                    | Emparejamientos de una ronda en PDF                     |
 
@@ -204,7 +204,7 @@ El cliente se conecta a Socket.IO en el mismo puerto de la API y entra a la sala
 | `match.result.recorded` | Se registra o corrige un resultado                                         |
 | `standings.updated`     | Cambia la clasificación (tras publicar una ronda o registrar un resultado) |
 | `player.withdrawn`      | Se retira un jugador (la clasificación y las estadísticas lo reflejan)     |
-| `tournament.finished`   | Se finaliza el torneo                                                      |
+| `tournament.finished`   | Se finaliza el torneo, a mano o solo al pasar su fecha de fin              |
 
 Los eventos solo avisan qué cambió (ids y poco más) y se emiten después de confirmar la transacción: si la acción falla, nadie se entera. El cliente vuelve a pedir por REST lo que necesita, con sus permisos. Lo que todavía no es público (un borrador de ronda) va a una sala aparte con los administradores del torneo.
 

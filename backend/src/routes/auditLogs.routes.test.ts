@@ -60,6 +60,29 @@ describe("GET /api/audit-logs", () => {
     });
   });
 
+  it("lists what the system did on its own with no user (decision 010)", async () => {
+    prismaMock.auditLog.findMany.mockResolvedValue([
+      {
+        id: "log-2",
+        userId: null,
+        action: "TOURNAMENT_AUTO_FINISHED",
+        detail: '"Copa" · 0F-0F: 1 · rondas borrador descartadas: 0',
+        createdAt: new Date("2026-10-03T05:00:00Z"),
+        user: null,
+      },
+    ]);
+
+    const response = await request(createApp())
+      .get("/api/audit-logs")
+      .set("Authorization", `Bearer ${tokenFor("ADMINISTRATOR")}`);
+
+    expect(response.body.entries[0]).toMatchObject({
+      userId: null,
+      userName: null,
+      action: "TOURNAMENT_AUTO_FINISHED",
+    });
+  });
+
   it("names the people an entry mentions, and leaves anything that only looks like a mention alone", async () => {
     const luis = "3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b";
     const lookalike = "{{user:------------------------------------}}";

@@ -76,7 +76,8 @@ function actionLabel(action: string): string {
             <span class="text-sm text-text-muted">{{ formatFullDateTime(log.createdAt, locale.locale) }}</span>
           </div>
           <p class="text-sm">
-            <strong>{{ log.userName }}</strong>
+            <!-- No user: the system acted on its own (a tournament closed by date). -->
+            <strong>{{ log.userName ?? t("auditLog.system") }}</strong>
             <span v-if="log.detail"> - {{ log.detail }}</span>
           </p>
         </li>

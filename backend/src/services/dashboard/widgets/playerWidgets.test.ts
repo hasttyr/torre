@@ -91,9 +91,10 @@ describe("player widgets", () => {
       titles: 1,
       bestFinish: 1,
     });
-    // RN-04: only games from published rounds count.
+    // RN-04: only games from published rounds count; a double forfeit
+    // (decision 010) was never played, so it's no game at all.
     expect(prisma.match.findMany.mock.calls[0][0].where).toMatchObject({
-      result: { isNot: null },
+      result: { is: { value: { not: "0F-0F" } } },
       round: { status: { not: "GENERATED" } },
     });
   });

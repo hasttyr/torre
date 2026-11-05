@@ -2,7 +2,7 @@
 // every recorded result (HU12) and by the seeder, and unit-tested without a
 // database.
 
-import { DEFAULT_TIEBREAKS, TIEBREAKS, type Tiebreak } from "../contracts/catalogs";
+import { DEFAULT_TIEBREAKS, DOUBLE_FORFEIT, TIEBREAKS, type Tiebreak } from "../contracts/catalogs";
 
 /** A recorded game as stored in `results.value` (RN-03 catalog). `blackId` is null for a bye. */
 export interface RecordedGame {
@@ -37,6 +37,8 @@ export function pointsFor(game: RecordedGame, byePoints = 1): { white: number; b
       return { white: 0, black: 1 };
     case "1/2-1/2":
       return { white: 0.5, black: 0.5 };
+    case DOUBLE_FORFEIT:
+      return { white: 0, black: 0 };
     default:
       throw new Error(`Unknown result value "${game.value}"`);
   }
@@ -54,7 +56,9 @@ interface Encounter {
  * @remarks
  * Byes add to the player's score but, having no opponent, contribute
  * nothing to their tiebreaks (the simplified rule, not FIDE's "virtual
- * opponent"). ARO needs ratings, which are out of this project's scope.
+ * opponent"). A double forfeit (0F-0F) was never played: it adds nothing to
+ * either player, and like FIDE's forfeits it gives neither an opponent for
+ * the tiebreaks. ARO needs ratings, which are out of this project's scope.
  */
 export function computeStandings(games: RecordedGame[], byePoints = 1): StandingValues[] {
   const scores = new Map<string, number>();
@@ -69,7 +73,7 @@ export function computeStandings(games: RecordedGame[], byePoints = 1): Standing
     const points = pointsFor(game, byePoints);
     if (game.whiteId) addScore(game.whiteId, points.white);
     if (game.blackId) addScore(game.blackId, points.black);
-    if (game.whiteId && game.blackId) {
+    if (game.whiteId && game.blackId && game.value !== DOUBLE_FORFEIT) {
       encounters.get(game.whiteId)!.push({ opponentId: game.blackId, points: points.white });
       encounters.get(game.blackId)!.push({ opponentId: game.whiteId, points: points.black });
     }

@@ -82,4 +82,35 @@ describe("getStandings (HU14)", () => {
     expect(standings).toMatchObject({ pending: true, roundsCompleted: 1, tiebreaks: ["BUCHHOLZ"] });
     expect(standings.rows[0]).toMatchObject({ rank: 1, name: "Ana", score: 2, withdrawn: true });
   });
+
+  it("points out the viewer's own row, and nobody's to someone not on the table", async () => {
+    const prisma = buildPrismaMock();
+    prisma.tournament.findUnique.mockResolvedValue({ id: "t-1", status: "FINISHED", organizerId: "org-1" });
+    prisma.standing.findMany.mockResolvedValue([
+      {
+        rank: 1,
+        playerId: "a",
+        score: 2,
+        buchholz: 1,
+        buchholzCut1: 1,
+        sonnebornBerger: 1,
+        player: { userId: "u-ana", user: { name: "Ana" } },
+      },
+      {
+        rank: 2,
+        playerId: "b",
+        score: 1,
+        buchholz: 2,
+        buchholzCut1: 2,
+        sonnebornBerger: 1,
+        player: { userId: "u-beto", user: { name: "Beto" } },
+      },
+    ]);
+    prisma.round.findMany.mockResolvedValue([]);
+    prisma.enrollment.findMany.mockResolvedValue([]);
+    prisma.tiebreakCriterion.findMany.mockResolvedValue([]);
+
+    expect((await getStandings(asClient(prisma), "t-1", { id: "u-beto", role: "PLAYER" })).viewerPlayerId).toBe("b");
+    expect((await getStandings(asClient(prisma), "t-1", { id: "org-1", role: "ORGANIZER" })).viewerPlayerId).toBeNull();
+  });
 });

@@ -68,7 +68,14 @@ const TOURNAMENT: Tournament = {
   createdAt: "2026-09-01T00:00:00.000Z",
 };
 
-const STANDINGS: Standings = { tournamentId: "t-1", pending: false, roundsCompleted: 0, tiebreaks: [], rows: [] };
+const STANDINGS: Standings = {
+  tournamentId: "t-1",
+  pending: false,
+  roundsCompleted: 0,
+  tiebreaks: [],
+  rows: [],
+  viewerPlayerId: null,
+};
 
 function round(number: number, status: Round["status"], results: (string | null)[] = [null]): Round {
   return {

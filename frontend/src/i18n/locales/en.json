@@ -446,6 +446,7 @@
   },
   "auditLog": {
     "title": "Audit Log",
+    "system": "System",
     "subtitle": "Critical administrative actions across the system, with user, date and reason.",
     "loading": "Loading audit log…",
     "loadError": "Could not load the audit log",
@@ -459,7 +460,8 @@
       "DASHBOARD_LAYOUT_CHANGED": "Role dashboard changed",
       "RESULT_CORRECTED": "Result corrected",
       "PAIRING_ADJUSTED": "Pairing adjusted manually",
-      "TOURNAMENT_FINISHED": "Tournament finished"
+      "TOURNAMENT_FINISHED": "Tournament finished",
+      "TOURNAMENT_AUTO_FINISHED": "Tournament closed by date"
     }
   },
   "adminUsers": {
@@ -671,7 +673,8 @@
     "correct": "Correct",
     "correctionReason": "Reason for the correction (optional)",
     "correctionPlaceholder": "E.g. score sheet copied wrong",
-    "saveCorrection": "Save Correction"
+    "saveCorrection": "Save Correction",
+    "doubleForfeit": "Not played: the tournament closed by date, and neither player scores (0F – 0F)."
   },
   "standings": {
     "pending": "Provisional standings: the round in play still has results missing.",
@@ -719,6 +722,15 @@
     "generate": "Generate Round {number}",
     "generating": "Pairing…",
     "closeRegistrationFirst": "Close registration and set the number of rounds to start pairing."
+  },
+  "podium": {
+    "title": "Podium",
+    "first": "Champion",
+    "second": "Runner-up",
+    "third": "Third place",
+    "points": "{points} pts",
+    "youWon": "You won the tournament.",
+    "yourPlace": "You finished {rank} of {total}."
   },
   "tournamentRoom": {
     "loading": "Loading room…",

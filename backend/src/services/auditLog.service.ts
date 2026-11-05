@@ -44,10 +44,13 @@ async function nameMentions(prisma: PrismaClient, details: (string | null)[]): P
  * Call it with the same transaction client as the action it records, so
  * both commit or neither does: a critical action whose audit trail can't be
  * written must fail, not silently succeed unaudited.
+ *
+ * @param userId - Who did it; null when the system acted on its own (a
+ * tournament closed by date), read as "Sistema".
  */
 export function recordAuditLog(
   prisma: Prisma.TransactionClient,
-  userId: string,
+  userId: string | null,
   action: AuditAction,
   detail?: string,
 ): Promise<{ id: string }> {
@@ -75,7 +78,7 @@ export async function listAuditLogs(prisma: PrismaClient, { limit, cursor }: Aud
     entries: page.map((log, index) => ({
       id: log.id,
       userId: log.userId,
-      userName: log.user.name,
+      userName: log.user?.name ?? null,
       action: log.action,
       detail: details[index] ?? null,
       createdAt: log.createdAt,

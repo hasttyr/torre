@@ -55,6 +55,7 @@ describe("formatNumber / formatPercent / formatResult", () => {
     expect(formatResult("1-0")).toBe("1 – 0");
     expect(formatResult("1/2-1/2")).toBe("½ – ½");
     expect(formatResult("0-1")).toBe("0 – 1");
+    expect(formatResult("0F-0F")).toBe("0F – 0F");
     expect(formatResult("BYE")).toBe("BYE");
   });
 });

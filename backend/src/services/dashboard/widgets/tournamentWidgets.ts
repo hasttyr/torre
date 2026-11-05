@@ -3,7 +3,7 @@ import { TournamentStatus } from "../../../generated/prisma/enums";
 
 import type { AuthUser } from "../../../types/express";
 import { tournamentWhere } from "../scopes";
-import type { GameResult } from "../../../contracts/catalogs";
+import { DOUBLE_FORFEIT, type GameResult } from "../../../contracts/catalogs";
 import type { RecentResultDto, TournamentStatusCountDto, UpcomingTournamentDto } from "../../../contracts/responses";
 
 // Widgets about tournaments, always filtered by what the viewer may see
@@ -56,10 +56,10 @@ export async function loadUpcomingTournaments(
 
 const RECENT_RESULTS_LIMIT = 8;
 
-/** RECENT_RESULTS: the latest recorded games (byes left out: nothing was played). */
+/** RECENT_RESULTS: the latest recorded games (byes and double forfeits left out: nothing was played). */
 export async function loadRecentResults(prisma: PrismaClient, viewer: AuthUser): Promise<RecentResultDto[]> {
   const results = await prisma.result.findMany({
-    where: { value: { not: "BYE" }, match: { round: { tournament: tournamentWhere(viewer) } } },
+    where: { value: { notIn: ["BYE", DOUBLE_FORFEIT] }, match: { round: { tournament: tournamentWhere(viewer) } } },
     include: {
       match: {
         include: {
@@ -80,7 +80,7 @@ export async function loadRecentResults(prisma: PrismaClient, viewer: AuthUser):
     board: match.board,
     white: match.white?.user.name ?? "—",
     black: match.black?.user.name ?? "—",
-    // Byes are filtered out above, and the CHECK constraint (RN-03) allows nothing else.
+    // Byes and double forfeits are filtered out above, and the CHECK constraint (RN-03) allows nothing else.
     value: value as GameResult,
     recordedAt,
   }));

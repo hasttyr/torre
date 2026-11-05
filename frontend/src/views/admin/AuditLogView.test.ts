@@ -66,6 +66,18 @@ describe("AuditLogView", () => {
     expect(loadMore(wrapper)).toBeUndefined();
   });
 
+  it("credits what the system did on its own to the system (a tournament closed by date)", async () => {
+    listAuditLogsMock.mockResolvedValue({
+      entries: [{ ...entry("log-2"), userId: null, userName: null, action: "TOURNAMENT_AUTO_FINISHED" }],
+      nextCursor: null,
+    });
+
+    const { wrapper } = await mountView();
+
+    expect(wrapper.get("li strong").text()).toBe("Sistema");
+    expect(wrapper.text()).toContain("Torneo cerrado por fecha");
+  });
+
   it("loads older entries on demand, one page at a time, until there are no more", async () => {
     listAuditLogsMock
       .mockResolvedValueOnce({ entries: [entry("log-1"), entry("log-2")], nextCursor: "log-2" })

@@ -13,6 +13,7 @@ Por qué el sistema es como es. Cada archivo cuenta una decisión: el problema, 
 | 007 | [Retirar a un jugador conserva su inscripción](007-retirar-conserva-la-inscripcion.md)                | oct. 2026  |
 | 008 | [La cobertura solo sube](008-la-cobertura-solo-sube.md)                                               | sept. 2026 |
 | 009 | [Los datos del servidor viven en Pinia Colada](009-datos-del-servidor-en-pinia-colada.md)             | sept. 2026 |
+| 010 | [Un torneo se cierra solo al pasar su fecha de fin](010-cierre-automatico-por-fecha.md)               | nov. 2026  |
 
 ## Cómo agregar una
 

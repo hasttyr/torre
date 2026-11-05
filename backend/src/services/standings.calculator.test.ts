@@ -8,6 +8,7 @@ describe("pointsFor", () => {
     expect(pointsFor({ whiteId: "a", blackId: "b", value: "0-1" })).toEqual({ white: 0, black: 1 });
     expect(pointsFor({ whiteId: "a", blackId: "b", value: "1/2-1/2" })).toEqual({ white: 0.5, black: 0.5 });
     expect(pointsFor({ whiteId: "a", blackId: null, value: "BYE" })).toEqual({ white: 1, black: 0 });
+    expect(pointsFor({ whiteId: "a", blackId: "b", value: "0F-0F" })).toEqual({ white: 0, black: 0 });
   });
 
   it("uses the tournament's configured bye points (HU28)", () => {
@@ -42,6 +43,21 @@ describe("computeStandings", () => {
   it("counts a bye as a point without adding tiebreaks", () => {
     const [row] = computeStandings([{ whiteId: "A", blackId: null, value: "BYE" }]);
     expect(row).toEqual({ playerId: "A", score: 1, buchholz: 0, buchholzCut1: 0, sonnebornBerger: 0 });
+  });
+
+  it("gives a double forfeit 0 to both, and neither an opponent for the tiebreaks (FIDE: unplayed)", () => {
+    // A beat B and C beat D; then A and C never played their game: A is not
+    // C's opponent for Buchholz, nor C A's.
+    const byPlayer = Object.fromEntries(
+      computeStandings([
+        { whiteId: "A", blackId: "B", value: "1-0" },
+        { whiteId: "C", blackId: "D", value: "1-0" },
+        { whiteId: "A", blackId: "C", value: "0F-0F" },
+      ]).map((row) => [row.playerId, row]),
+    );
+
+    expect(byPlayer.A).toEqual({ playerId: "A", score: 1, buchholz: 0, buchholzCut1: 0, sonnebornBerger: 0 });
+    expect(byPlayer.C).toEqual({ playerId: "C", score: 1, buchholz: 0, buchholzCut1: 0, sonnebornBerger: 0 });
   });
 });
 

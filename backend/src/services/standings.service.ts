@@ -68,7 +68,7 @@ export async function getStandings(
   const [standings, rounds, withdrawn, criteria] = await Promise.all([
     prisma.standing.findMany({
       where: { tournamentId },
-      include: { player: { select: { user: { select: { name: true } } } } },
+      include: { player: { select: { userId: true, user: { select: { name: true } } } } },
       orderBy: { rank: "asc" },
     }),
     prisma.round.findMany({ where: { tournamentId }, select: { status: true } }),
@@ -95,6 +95,7 @@ export async function getStandings(
       sonnebornBerger: Number(row.sonnebornBerger),
       withdrawn: withdrawnIds.has(row.playerId),
     })),
+    viewerPlayerId: standings.find((row) => row.player.userId === viewer.id)?.playerId ?? null,
   };
 }
 

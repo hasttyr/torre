@@ -162,6 +162,7 @@ describe("TournamentLiveView", () => {
       pending: true,
       roundsCompleted: 0,
       tiebreaks: ["BUCHHOLZ"],
+      viewerPlayerId: null,
       rows: [
         {
           rank: 1,
@@ -286,6 +287,23 @@ describe("TournamentLiveView", () => {
     expect(wrapper.get("main header p").text()).toBe("Resultados finales");
   });
 
+  it("stands the winners on a podium once the tournament is finished, and not before", async () => {
+    signIn("PLAYER");
+    vi.mocked(getTournament).mockResolvedValue({ ...TOURNAMENT, status: "FINISHED" });
+
+    const wrapper = await mountRoom();
+
+    expect(wrapper.get("[data-test='podium']").text()).toContain("Primer lugar");
+  });
+
+  it("shows no podium while the tournament is still in play", async () => {
+    signIn("PLAYER");
+
+    const wrapper = await mountRoom();
+
+    expect(wrapper.find("[data-test='podium']").exists()).toBe(false);
+  });
+
   it("offers the organizer who owns it a way back to the admin panel", async () => {
     signIn("ORGANIZER", "org-1");
 
@@ -307,6 +325,7 @@ describe("TournamentLiveView — official documents and statistics", () => {
       pending: false,
       roundsCompleted: 1,
       tiebreaks: [],
+      viewerPlayerId: null,
       rows: [
         {
           rank: 1,

@@ -56,6 +56,7 @@ function isWinner(match: Match, side: "white" | "black"): boolean {
           <span
             class="min-w-16 rounded-md px-2 py-0.5 text-center font-semibold tabular-nums"
             :class="match.result ? 'bg-surface-2 text-text' : 'text-text-faint'"
+            :title="match.result === '0F-0F' ? t('rounds.doubleForfeit') : undefined"
           >
             {{ match.result ? formatResult(match.result) : t("rounds.vs") }}
           </span>

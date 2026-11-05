@@ -7,6 +7,7 @@ import { env } from "./config/env";
 import { logger } from "./config/logger";
 import { prisma } from "./config/prisma";
 import { PostgresRateLimitStore } from "./middlewares/rateLimitStore";
+import { scheduleAutoFinish } from "./services/autoFinish.service";
 import { registerSocketHandlers } from "./sockets";
 import { resetSocketServer, setSocketServer } from "./sockets/broadcast";
 
@@ -42,11 +43,14 @@ async function main(): Promise<void> {
   process.on("unhandledRejection", (reason) => logger.error({ err: reason }, "unhandled promise rejection"));
   const server = await startServer(env.port);
   logger.info({ port: env.port }, "Torre Central Hub API listening");
+  // Tournaments past their end date close on their own (decision 010).
+  const stopAutoFinish = scheduleAutoFinish(prisma, logger);
 
   // A deploy or restart sends SIGTERM (Ctrl+C, SIGINT): finish cleanly
   // instead of dropping requests and connections mid-way.
   const shutdown = (signal: string) => {
     logger.info({ signal }, "shutting down");
+    stopAutoFinish();
     server.stop().then(
       () => process.exit(0),
       (error: unknown) => {

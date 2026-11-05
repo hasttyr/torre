@@ -8,7 +8,14 @@ import type { OfficialDocument } from "./pdfRenderer";
 // HU30: what goes on each official document. Pure mapping from the same DTOs
 // the screens use, so the paper at the venue never disagrees with the app.
 
-const RESULT_TEXT: Record<string, string> = { "1-0": "1 – 0", "0-1": "0 – 1", "1/2-1/2": "½ – ½", BYE: "Bye" };
+const RESULT_TEXT: Record<string, string> = {
+  "1-0": "1 – 0",
+  "0-1": "0 – 1",
+  "1/2-1/2": "½ – ½",
+  BYE: "Bye",
+  // A game left unplayed when the tournament closed on its own (FIDE notation).
+  "0F-0F": "0F – 0F",
+};
 
 // The documents are printed in Spanish, the venue's language.
 const TIEBREAK_LABELS: Record<Tiebreak, string> = {

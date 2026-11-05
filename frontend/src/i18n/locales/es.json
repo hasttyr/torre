@@ -446,6 +446,7 @@
   },
   "auditLog": {
     "title": "Bitácora de auditoría",
+    "system": "Sistema",
     "subtitle": "Acciones administrativas críticas del sistema, con usuario, fecha y motivo.",
     "loading": "Cargando bitácora…",
     "loadError": "No se pudo cargar la bitácora de auditoría",
@@ -459,7 +460,8 @@
       "DASHBOARD_LAYOUT_CHANGED": "Cambio de panel por rol",
       "RESULT_CORRECTED": "Corrección de resultado",
       "PAIRING_ADJUSTED": "Ajuste manual de emparejamiento",
-      "TOURNAMENT_FINISHED": "Torneo finalizado"
+      "TOURNAMENT_FINISHED": "Torneo finalizado",
+      "TOURNAMENT_AUTO_FINISHED": "Torneo cerrado por fecha"
     }
   },
   "adminUsers": {
@@ -671,7 +673,8 @@
     "correct": "Corregir",
     "correctionReason": "Motivo de la corrección (opcional)",
     "correctionPlaceholder": "Ej.: planilla mal transcrita",
-    "saveCorrection": "Guardar corrección"
+    "saveCorrection": "Guardar corrección",
+    "doubleForfeit": "Sin jugar: el torneo se cerró por fecha y ninguno de los dos suma (0F – 0F)."
   },
   "standings": {
     "pending": "Clasificación provisional: faltan resultados de la ronda en juego.",
@@ -719,6 +722,15 @@
     "generate": "Generar ronda {number}",
     "generating": "Emparejando…",
     "closeRegistrationFirst": "Cierra las inscripciones y configura el número de rondas para empezar a emparejar."
+  },
+  "podium": {
+    "title": "Podio",
+    "first": "Primer lugar",
+    "second": "Segundo lugar",
+    "third": "Tercer lugar",
+    "points": "{points} pts",
+    "youWon": "Ganaste el torneo.",
+    "yourPlace": "Terminaste en el puesto {rank} de {total}."
   },
   "tournamentRoom": {
     "loading": "Cargando sala…",

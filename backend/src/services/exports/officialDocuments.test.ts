@@ -12,6 +12,7 @@ const STANDINGS: StandingsDto = {
   pending: false,
   roundsCompleted: 5,
   tiebreaks: ["BUCHHOLZ", "SONNEBORN_BERGER"],
+  viewerPlayerId: null,
   rows: [
     {
       rank: 1,

@@ -11,6 +11,7 @@ import LoadingSkeleton from "../../components/ui/LoadingSkeleton.vue";
 import PairingsTable from "../../components/tournament/PairingsTable.vue";
 import ResultEntry from "../../components/tournament/ResultEntry.vue";
 import StandingsTable from "../../components/tournament/StandingsTable.vue";
+import TournamentPodium from "../../components/tournament/TournamentPodium.vue";
 import TournamentStats from "../../components/tournament/TournamentStats.vue";
 import { saveFile } from "../../lib/download";
 import { extractErrorMessage } from "../../lib/errors";
@@ -180,6 +181,9 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
         </header>
 
         <FormBanner v-if="actionError" kind="error">{{ actionError }}</FormBanner>
+
+        <!-- The winners, once the tournament is closed (by hand or by date). -->
+        <TournamentPodium v-if="finished && standings && standings.rows.length > 0" :standings="standings" />
 
         <div class="grid gap-5 lg:grid-cols-[1.25fr_1fr]">
           <!-- reka-ui Tabs: arrow keys move between rounds, and screen readers

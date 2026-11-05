@@ -49,8 +49,16 @@ export type MatchStatus = (typeof MATCH_STATUSES)[number];
 export const GAME_RESULTS = ["1-0", "1/2-1/2", "0-1"] as const;
 export type GameResult = (typeof GAME_RESULTS)[number];
 
-/** Every stored result: the recordable ones plus "BYE", which only the pairing engine assigns. */
-export const STORED_RESULTS = [...GAME_RESULTS, "BYE"] as const;
+/**
+ * A game left without a result when its tournament closes on its own:
+ * FIDE's double forfeit, worth 0 to both and treated as unplayed by the
+ * tiebreaks (docs/decisions/010-cierre-automatico-por-fecha.md). Only the
+ * automatic close records it.
+ */
+export const DOUBLE_FORFEIT = "0F-0F";
+
+/** Every stored result: the recordable ones plus "BYE" (pairing engine) and the double forfeit (automatic close). */
+export const STORED_RESULTS = [...GAME_RESULTS, "BYE", DOUBLE_FORFEIT] as const;
 export type StoredResult = (typeof STORED_RESULTS)[number];
 
 // HU13's tiebreak criteria, labelled by each client in its own language.
@@ -106,6 +114,9 @@ export const AUDIT_ACTIONS = [
   "PAIRING_ADJUSTED",
   "TOURNAMENT_FINISHED",
   "DASHBOARD_LAYOUT_CHANGED",
+  // Recorded by the system, with no user: a tournament past its end date
+  // closed on its own (docs/decisions/010-cierre-automatico-por-fecha.md).
+  "TOURNAMENT_AUTO_FINISHED",
 ] as const;
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
 

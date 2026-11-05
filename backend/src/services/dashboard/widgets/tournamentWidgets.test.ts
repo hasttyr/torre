@@ -84,8 +84,9 @@ describe("RECENT_RESULTS", () => {
 
     const results = await loadRecentResults(prisma as unknown as PrismaClient, ORGANIZER);
 
+    // Neither a bye nor a double forfeit (decision 010) was a game played.
     expect(prisma.result.findMany.mock.calls[0][0].where).toEqual({
-      value: { not: "BYE" },
+      value: { notIn: ["BYE", "0F-0F"] },
       match: { round: { tournament: { organizerId: "org-1" } } },
     });
     expect(results).toEqual([

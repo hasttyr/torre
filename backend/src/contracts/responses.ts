@@ -116,8 +116,9 @@ export interface DataRightResult {
 
 export interface AuditLogDto {
   id: string;
-  userId: string;
-  userName: string;
+  // null for what the system did on its own (a tournament closed by date).
+  userId: string | null;
+  userName: string | null;
   // One of AUDIT_ACTIONS for every entry written since the catalog exists.
   action: string;
   detail: string | null;
@@ -184,6 +185,9 @@ export interface StandingsDto {
   roundsCompleted: number;
   tiebreaks: Tiebreak[];
   rows: StandingRowDto[];
+  // The row of whoever asked, when they're on the table: a finished
+  // tournament tells each player where they ended up.
+  viewerPlayerId: string | null;
 }
 
 export interface BoardResults {

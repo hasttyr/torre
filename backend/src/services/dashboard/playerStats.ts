@@ -1,4 +1,5 @@
 import { pointsFor, type RecordedGame } from "../standings.calculator";
+import { DOUBLE_FORFEIT } from "../../contracts/catalogs";
 import type { PlayerTotals, ResultTally } from "../../contracts/responses";
 
 // Pure per-player game statistics (no Prisma): shared by every widget that
@@ -6,7 +7,12 @@ import type { PlayerTotals, ResultTally } from "../../contracts/responses";
 
 // RN-04: only games from published rounds are official. A draft round
 // already holds its bye (created with the draft), which must not count yet.
-export const OFFICIAL_GAME = { result: { isNot: null }, round: { status: { not: "GENERATED" } } } as const;
+// A double forfeit (a tournament closed by date) is official but was never
+// played: it's no win, draw or loss for anyone, nor a game in their log.
+export const OFFICIAL_GAME = {
+  result: { is: { value: { not: DOUBLE_FORFEIT } } },
+  round: { status: { not: "GENERATED" } },
+} as const;
 
 export interface PlayerTally {
   white: ResultTally;
