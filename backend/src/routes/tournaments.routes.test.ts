@@ -317,7 +317,7 @@ describe("POST /api/tournaments/:id/players", () => {
       universityCode: "U1",
       program: "Sistemas",
       semester: 5,
-      user: { name: "Luis Gómez" },
+      user: { name: "Luis Gómez", status: "ACTIVE" },
     });
     prismaMock.enrollment.create.mockResolvedValue({ id: "enrollment-1", createdAt: new Date("2026-09-17") });
 
@@ -337,7 +337,7 @@ describe("POST /api/tournaments/:id/players", () => {
       universityCode: "U1",
       program: "Sistemas",
       semester: 5,
-      user: { name: "Luis Gómez" },
+      user: { name: "Luis Gómez", status: "ACTIVE" },
     });
     prismaMock.enrollment.findUnique.mockResolvedValue({ id: "enrollment-1" });
 

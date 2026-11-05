@@ -137,6 +137,8 @@ const CASES: [string, () => Promise<unknown>, Verb, string, unknown?][] = [
     "post",
     "/tournaments/t-1/registration/reopen",
   ],
+  ["tournaments.enrollMe", () => tournaments.enrollMe("t-1"), "post", "/tournaments/t-1/enrollment"],
+  ["tournaments.withdrawMe", () => tournaments.withdrawMe("t-1"), "delete", "/tournaments/t-1/enrollment"],
   [
     "tournaments.closeRegistration",
     () => tournaments.closeRegistration("t-1"),

@@ -82,6 +82,16 @@ export async function reopenRegistration(id: string): Promise<Tournament> {
   return data;
 }
 
+/** HU25: the signed-in player enrolls themselves in a tournament with registration open. */
+export async function enrollMe(id: string): Promise<void> {
+  await api.post(path`/tournaments/${id}/enrollment`);
+}
+
+/** The signed-in player cancels their own enrollment, while registration is open. */
+export async function withdrawMe(id: string): Promise<void> {
+  await api.delete(path`/tournaments/${id}/enrollment`);
+}
+
 /** Closes registration for a tournament (HU06). */
 export async function closeRegistration(id: string): Promise<Tournament> {
   const { data } = await api.post<Tournament>(path`/tournaments/${id}/registration/close`);

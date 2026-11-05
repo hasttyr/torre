@@ -18,9 +18,12 @@ vi.mock("../../services/tournaments", async (importOriginal) => ({
   listMyTournaments: vi.fn(),
   listAvailableTournaments: vi.fn(),
   listEnrolledTournaments: vi.fn(),
+  enrollMe: vi.fn(),
+  withdrawMe: vi.fn(),
 }));
 
-import { listAvailableTournaments, listEnrolledTournaments } from "../../services/tournaments";
+import { enrollMe, listAvailableTournaments, listEnrolledTournaments, withdrawMe } from "../../services/tournaments";
+import { clickConfirmDialogButton, mountConfirmDialogHost } from "../../test-support/confirmDialog";
 
 const listAvailableTournamentsMock = vi.mocked(listAvailableTournaments);
 const listEnrolledTournamentsMock = vi.mocked(listEnrolledTournaments);
@@ -83,6 +86,64 @@ describe("PlayerTournamentsView", () => {
       "H2 Torneos disponibles",
       "H3 Copa Abierta",
     ]);
+  });
+
+  // HU25: a player joins a tournament with registration open by themselves.
+  describe("enrolling themselves", () => {
+    const button = (wrapper: Awaited<ReturnType<typeof mountView>>["wrapper"], name: string) =>
+      wrapper.findAll("button").find((candidate) => candidate.text() === name);
+
+    it("enrolls in an available tournament, and the page reads it back", async () => {
+      listAvailableTournamentsMock.mockResolvedValue([AVAILABLE_TOURNAMENT]);
+      listEnrolledTournamentsMock.mockResolvedValueOnce([]).mockResolvedValue([AVAILABLE_TOURNAMENT]);
+      vi.mocked(enrollMe).mockResolvedValue();
+      const { wrapper } = await mountView();
+
+      await button(wrapper, "Inscribirme")!.trigger("click");
+      await flushPromises();
+
+      expect(enrollMe).toHaveBeenCalledWith("tournament-1");
+      expect(button(wrapper, "Inscribirme")).toBeUndefined();
+      expect(button(wrapper, "Cancelar inscripción")).toBeDefined();
+    });
+
+    it("explains why the server refused, such as a program the tournament doesn't admit", async () => {
+      listAvailableTournamentsMock.mockResolvedValue([AVAILABLE_TOURNAMENT]);
+      listEnrolledTournamentsMock.mockResolvedValue([]);
+      vi.mocked(enrollMe).mockRejectedValue({
+        isAxiosError: true,
+        response: { data: { code: "PROGRAM_NOT_ELIGIBLE", params: { program: "Derecho" } } },
+      });
+      const { wrapper } = await mountView();
+
+      await button(wrapper, "Inscribirme")!.trigger("click");
+      await flushPromises();
+
+      expect(wrapper.text()).toContain("Derecho");
+    });
+
+    it("cancels an enrollment after confirming, while registration is open", async () => {
+      listAvailableTournamentsMock.mockResolvedValue([AVAILABLE_TOURNAMENT]);
+      listEnrolledTournamentsMock.mockResolvedValueOnce([AVAILABLE_TOURNAMENT]).mockResolvedValue([]);
+      vi.mocked(withdrawMe).mockResolvedValue();
+      mountConfirmDialogHost();
+      const { wrapper } = await mountView();
+
+      await button(wrapper, "Cancelar inscripción")!.trigger("click");
+      await clickConfirmDialogButton("Cancelar inscripción");
+      await flushPromises();
+
+      expect(withdrawMe).toHaveBeenCalledWith("tournament-1");
+      expect(button(wrapper, "Inscribirme")).toBeDefined();
+    });
+
+    it("offers nothing on a tournament whose registration is no longer open", async () => {
+      listAvailableTournamentsMock.mockResolvedValue([]);
+      listEnrolledTournamentsMock.mockResolvedValue([{ ...AVAILABLE_TOURNAMENT, status: "REGISTRATION_CLOSED" }]);
+      const { wrapper } = await mountView();
+
+      expect(button(wrapper, "Cancelar inscripción")).toBeUndefined();
+    });
   });
 
   it("shows empty states when there are no available tournaments or registrations", async () => {

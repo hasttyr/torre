@@ -1,4 +1,4 @@
-import type { PrismaClient } from "../generated/prisma/client";
+import type { Player, Prisma, PrismaClient, User } from "../generated/prisma/client";
 
 import { HttpError } from "../errors/apiErrors";
 import type {
@@ -76,13 +76,18 @@ export async function listAvailableTournaments(prisma: PrismaClient): Promise<To
 }
 
 // Tournaments where the authenticated user is enrolled as a player,
-// regardless of who made the enrollment (today always the organizer, see
-// HU07). A user without a Player profile (e.g. ORGANIZER role) simply
-// has no enrollments.
+// whoever made the enrollment (the organizer, HU07, or the player, HU25).
+// A user without a Player profile (e.g. ORGANIZER role) simply has no
+// enrollments. A withdrawal from a tournament that was never played (an
+// enrollment cancelled while registration was open) isn't one of them; a
+// tournament they played in before withdrawing still is (decision 007).
 /** Lists tournaments the actor (as a player) is enrolled in. */
 export async function listEnrolledTournaments(prisma: PrismaClient, actor: AuthUser): Promise<TournamentDto[]> {
   const enrollments = await prisma.enrollment.findMany({
-    where: { player: { userId: actor.id } },
+    where: {
+      player: { userId: actor.id },
+      OR: [{ withdrawnAt: null }, { tournament: { status: { in: ["IN_PROGRESS", "FINISHED"] } } }],
+    },
     include: { tournament: { include: WITH_CRITERIA } },
     orderBy: { createdAt: "desc" },
   });
@@ -292,48 +297,112 @@ export async function enrollPlayer(
   return prisma.$transaction(async (tx) => {
     const tournament = await lockTournament(tx, tournamentId);
     assertCanManageTournament(tournament, actor);
+    const player = await tx.player.findUnique({ where: { id: playerId }, include: { user: true } });
+    return enrollInto(tx, tournament, player);
+  });
+}
 
-    // CA HU06: once registration is closed, new enrollments are rejected.
+/**
+ * A player enrolls themselves in a tournament with registration open
+ * (HU25, which lists the tournaments they can join; HU07 had only the
+ * organizer enroll). Enrolling oneself is also the clearest consent to
+ * appear in the tournament. Same rules as {@link enrollPlayer}.
+ *
+ * @throws {HttpError} 400 if the actor has no player profile, 409 as in enrollPlayer.
+ */
+export async function enrollSelf(prisma: PrismaClient, tournamentId: string, actor: AuthUser): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const tournament = await lockTournament(tx, tournamentId);
+    const player = await tx.player.findUnique({ where: { userId: actor.id }, include: { user: true } });
+    if (!player) {
+      throw new HttpError("NOT_A_PLAYER");
+    }
+    await enrollInto(tx, tournament, player);
+  });
+}
+
+/**
+ * A player cancels their own enrollment, while registration is still open
+ * (nothing has been played yet). Kept as a withdrawal, like any other
+ * (decision 007), and logged as one (RN-11).
+ *
+ * @throws {HttpError} 409 if registration isn't open, 404 if not actively enrolled.
+ */
+export async function withdrawSelf(prisma: PrismaClient, tournamentId: string, actor: AuthUser): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const tournament = await lockTournament(tx, tournamentId);
     if (tournament.status !== "REGISTRATION_OPEN") {
       throw new HttpError("REGISTRATION_NOT_OPEN");
     }
-
-    const player = await tx.player.findUnique({ where: { id: playerId }, include: { user: true } });
-    if (!player) {
-      throw new HttpError("PLAYER_NOT_FOUND");
+    const enrollment = await tx.enrollment.findFirst({
+      where: { tournamentId, player: { userId: actor.id }, withdrawnAt: null },
+    });
+    if (!enrollment) {
+      throw new HttpError("NOT_ACTIVELY_ENROLLED");
     }
-
-    // Eligibility configured in HU05 (restrictedProgram/minimumSemester): validated
-    // here, not in the zod schema, because it depends on tournament and player
-    // data, not just the payload's shape.
-    if (tournament.restrictedProgram && player.program !== tournament.restrictedProgram) {
-      throw new HttpError("PROGRAM_NOT_ELIGIBLE", { program: tournament.restrictedProgram });
-    }
-    if (tournament.minimumSemester != null && player.semester < tournament.minimumSemester) {
-      throw new HttpError("SEMESTER_NOT_ELIGIBLE", { semester: tournament.minimumSemester });
-    }
-
-    // RN-01: a player cannot be enrolled twice into the same tournament.
-    const existing = await tx.enrollment.findUnique({ where: { tournamentId_playerId: { tournamentId, playerId } } });
-    if (existing && !existing.withdrawnAt) {
-      throw new HttpError("ALREADY_ENROLLED");
-    }
-
-    // HU27 keeps a withdrawn player's enrollment, the one row per tournament
-    // and player, so enrolling them again brings it back, as a new
-    // enrollment. Registration is still open: no round has been played yet.
-    const enrollment = existing
-      ? await tx.enrollment.update({ where: { id: existing.id }, data: { withdrawnAt: null, createdAt: new Date() } })
-      : await tx.enrollment.create({ data: { tournamentId, playerId } });
-    return {
-      playerId: player.id,
-      name: player.user.name,
-      universityCode: player.universityCode,
-      program: player.program,
-      semester: player.semester,
-      enrolledAt: enrollment.createdAt,
-    };
+    await tx.enrollment.update({ where: { id: enrollment.id }, data: { withdrawnAt: new Date() } });
+    await recordAuditLog(
+      tx,
+      actor.id,
+      "PLAYER_WITHDRAWN",
+      `${mention(actor.id)} de "${plain(tournament.name)}" (por su cuenta, con las inscripciones abiertas)`,
+    );
   });
+}
+
+type LockedTournament = Awaited<ReturnType<typeof lockTournament>>;
+
+/**
+ * The rules of an enrollment, whoever makes it (HU07, RN-01), on a tournament
+ * already locked. Validated after the lock (decision 004).
+ */
+async function enrollInto(
+  tx: Prisma.TransactionClient,
+  tournament: LockedTournament,
+  player: (Player & { user: User }) | null,
+): Promise<EnrolledPlayerDto> {
+  const tournamentId = tournament.id;
+  // CA HU06: once registration is closed, new enrollments are rejected.
+  if (tournament.status !== "REGISTRATION_OPEN") {
+    throw new HttpError("REGISTRATION_NOT_OPEN");
+  }
+
+  // A blocked or suppressed account can't be enrolled (Ley 1581).
+  if (!player || player.user.status !== "ACTIVE") {
+    throw new HttpError("PLAYER_NOT_FOUND");
+  }
+  const playerId = player.id;
+
+  // Eligibility configured in HU05 (restrictedProgram/minimumSemester): validated
+  // here, not in the zod schema, because it depends on tournament and player
+  // data, not just the payload's shape.
+  if (tournament.restrictedProgram && player.program !== tournament.restrictedProgram) {
+    throw new HttpError("PROGRAM_NOT_ELIGIBLE", { program: tournament.restrictedProgram });
+  }
+  if (tournament.minimumSemester != null && player.semester < tournament.minimumSemester) {
+    throw new HttpError("SEMESTER_NOT_ELIGIBLE", { semester: tournament.minimumSemester });
+  }
+
+  // RN-01: a player cannot be enrolled twice into the same tournament.
+  const existing = await tx.enrollment.findUnique({ where: { tournamentId_playerId: { tournamentId, playerId } } });
+  if (existing && !existing.withdrawnAt) {
+    throw new HttpError("ALREADY_ENROLLED");
+  }
+
+  // HU27 keeps a withdrawn player's enrollment, the one row per tournament
+  // and player, so enrolling them again brings it back, as a new
+  // enrollment. Registration is still open: no round has been played yet.
+  const enrollment = existing
+    ? await tx.enrollment.update({ where: { id: existing.id }, data: { withdrawnAt: null, createdAt: new Date() } })
+    : await tx.enrollment.create({ data: { tournamentId, playerId } });
+  return {
+    playerId: player.id,
+    name: player.user.name,
+    universityCode: player.universityCode,
+    program: player.program,
+    semester: player.semester,
+    enrolledAt: enrollment.createdAt,
+  };
 }
 
 /** Lists the players enrolled in a tournament. */

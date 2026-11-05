@@ -213,8 +213,13 @@ describe("listEnrolledTournaments", () => {
       role: "PLAYER",
     });
 
-    // Through the actor's player profile: someone without one simply has no enrollments.
-    expect(prisma.enrollment.findMany.mock.calls[0][0].where).toEqual({ player: { userId: "user-1" } });
+    // Through the actor's player profile: someone without one simply has no
+    // enrollments. An enrollment cancelled before anything was played isn't
+    // one; a tournament played before withdrawing still is (decision 007).
+    expect(prisma.enrollment.findMany.mock.calls[0][0].where).toEqual({
+      player: { userId: "user-1" },
+      OR: [{ withdrawnAt: null }, { tournament: { status: { in: ["IN_PROGRESS", "FINISHED"] } } }],
+    });
     expect(tournaments).toEqual([expect.objectContaining({ id: "tournament-1", name: "Copa Universitaria" })]);
   });
 });
@@ -427,7 +432,7 @@ describe("enrollPlayer", () => {
       universityCode: "U1",
       program: "Sistemas",
       semester: 5,
-      user: { name: "Luis Gómez" },
+      user: { name: "Luis Gómez", status: "ACTIVE" },
     });
     prisma.enrollment.create.mockResolvedValue({ id: "enrollment-1", createdAt: new Date("2026-09-17") });
 
@@ -464,7 +469,7 @@ describe("enrollPlayer", () => {
       universityCode: "U1",
       program: "Sistemas",
       semester: 5,
-      user: { name: "Luis Gómez" },
+      user: { name: "Luis Gómez", status: "ACTIVE" },
     });
     prisma.enrollment.findUnique.mockResolvedValue({ id: "enrollment-1", tournamentId: "tournament-1" });
 
@@ -489,7 +494,7 @@ describe("enrollPlayer", () => {
       universityCode: "U1",
       program: "Sistemas",
       semester: 5,
-      user: { name: "Luis Gómez" },
+      user: { name: "Luis Gómez", status: "ACTIVE" },
     });
     prisma.enrollment.findUnique.mockResolvedValue({ id: "enrollment-1", withdrawnAt: new Date("2026-09-16") });
     prisma.enrollment.update.mockResolvedValue({ id: "enrollment-1", createdAt: new Date("2026-09-17") });
@@ -536,7 +541,7 @@ describe("enrollPlayer", () => {
       universityCode: "U1",
       program: "Ingeniería Industrial",
       semester: 5,
-      user: { name: "Luis Gómez" },
+      user: { name: "Luis Gómez", status: "ACTIVE" },
     });
 
     await expect(
@@ -558,7 +563,7 @@ describe("enrollPlayer", () => {
       universityCode: "U1",
       program: "Sistemas",
       semester: 3,
-      user: { name: "Luis Gómez" },
+      user: { name: "Luis Gómez", status: "ACTIVE" },
     });
 
     await expect(
@@ -579,7 +584,7 @@ describe("enrollPlayer", () => {
       universityCode: "U1",
       program: "Sistemas",
       semester: 5,
-      user: { name: "Luis Gómez" },
+      user: { name: "Luis Gómez", status: "ACTIVE" },
     });
     prisma.enrollment.create.mockResolvedValue({ id: "enrollment-1", createdAt: new Date("2026-09-19") });
 

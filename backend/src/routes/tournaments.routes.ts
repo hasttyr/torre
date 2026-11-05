@@ -9,6 +9,7 @@ import {
   finish,
   get,
   enroll,
+  enrollMe,
   listAvailable,
   listLive,
   listMine,
@@ -19,12 +20,14 @@ import {
   standings,
   stats,
   withdraw,
+  withdrawMe,
 } from "../controllers/tournaments.controller";
 import { requireAuth, requireRole } from "../middlewares/auth";
 
 export const tournamentsRouter = Router();
 
 const canManage = requireRole("ORGANIZER", "ADMINISTRATOR");
+const isPlayer = requireRole("PLAYER");
 // HU30: the organizer or an arbiter (per tournament: see tournamentAccess.ts).
 const isOfficial = requireRole("ARBITER", "ORGANIZER", "ADMINISTRATOR");
 
@@ -51,3 +54,6 @@ tournamentsRouter.post("/:id/registration/reopen", requireAuth, canManage, reope
 tournamentsRouter.post("/:id/players", requireAuth, canManage, enroll);
 tournamentsRouter.get("/:id/players", requireAuth, canManage, listPlayers);
 tournamentsRouter.post("/:id/players/:playerId/withdraw", requireAuth, canManage, withdraw);
+// HU25: a player enrolls themselves, or cancels it while registration is open.
+tournamentsRouter.post("/:id/enrollment", requireAuth, isPlayer, enrollMe);
+tournamentsRouter.delete("/:id/enrollment", requireAuth, isPlayer, withdrawMe);

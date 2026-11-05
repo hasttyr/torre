@@ -84,6 +84,11 @@ export async function invalidateTournament(cache: QueryCache, id: string): Promi
   ]);
 }
 
+/** Reads the tournament lists again: a player's own enrollments changed (HU25). */
+export function invalidateTournamentLists(cache: QueryCache): Promise<unknown> {
+  return cache.invalidateQueries({ key: [...LISTS] });
+}
+
 /** Shows a tournament as the server answered a change to it, and refreshes the lists it appears in. */
 export function showTournament(cache: QueryCache, tournament: Tournament): void {
   cache.setQueryData(tournamentQuery(tournament.id).key, tournament);

@@ -324,10 +324,13 @@
     "loadError": "Could not load tournaments",
     "myRegistrationsTitle": "My Registrations",
     "myRegistrationsSubtitle": "Tournaments where you're already registered as a player.",
-    "myRegistrationsEmpty": "You're not registered in any tournament yet. The organizer is the one who registers you.",
+    "myRegistrationsEmpty": "You're not registered in any tournament yet. You can enroll in one with open registration, or ask the organizer.",
     "availableTitle": "Available Tournaments",
-    "availableSubtitle": "With registration currently open. Ask the organizer to register you.",
-    "availableEmpty": "There are no tournaments with open registration right now."
+    "availableSubtitle": "With registration currently open. Enroll here, or ask the organizer to register you.",
+    "availableEmpty": "There are no tournaments with open registration right now.",
+    "enroll": "Enroll",
+    "withdraw": "Cancel Enrollment",
+    "withdrawConfirm": "You'll no longer be enrolled in this tournament. You can enroll again while registration stays open."
   },
   "createTournament": {
     "title": "Create Tournament",

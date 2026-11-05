@@ -324,10 +324,13 @@
     "loadError": "No se pudieron cargar los torneos",
     "myRegistrationsTitle": "Mis inscripciones",
     "myRegistrationsSubtitle": "Torneos en los que ya estás registrado como jugador.",
-    "myRegistrationsEmpty": "Todavía no estás inscrito en ningún torneo. El organizador es quien registra tu inscripción.",
+    "myRegistrationsEmpty": "Todavía no estás inscrito en ningún torneo. Puedes inscribirte en uno con inscripción abierta, o pedírselo al organizador.",
     "availableTitle": "Torneos disponibles",
-    "availableSubtitle": "Con inscripción abierta ahora mismo. Pídele al organizador que te registre.",
-    "availableEmpty": "No hay torneos con inscripción abierta en este momento."
+    "availableSubtitle": "Con inscripción abierta ahora mismo. Inscríbete aquí, o pídele al organizador que te registre.",
+    "availableEmpty": "No hay torneos con inscripción abierta en este momento.",
+    "enroll": "Inscribirme",
+    "withdraw": "Cancelar inscripción",
+    "withdrawConfirm": "Dejarás de estar inscrito en este torneo. Puedes volver a inscribirte mientras la inscripción siga abierta."
   },
   "createTournament": {
     "title": "Crear torneo",

@@ -7,6 +7,7 @@ import {
   configureTournament,
   createTournament,
   enrollPlayer,
+  enrollSelf,
   finishTournament,
   listEnrolledPlayers,
   listAvailableTournaments,
@@ -17,6 +18,7 @@ import {
   reopenRegistration,
   getTournament,
   withdrawPlayer,
+  withdrawSelf,
 } from "../services/tournaments.service";
 import { getStandings } from "../services/standings.service";
 import { getTournamentStats } from "../services/tournamentStats.service";
@@ -112,4 +114,16 @@ export async function finish(req: Request, res: Response): Promise<void> {
 /** GET /tournaments/:id/stats — aggregate statistics of the tournament (HU16). */
 export async function stats(req: Request, res: Response): Promise<void> {
   res.status(200).json(await getTournamentStats(prisma, idParam(req, "id"), actorOf(req)));
+}
+
+/** POST /tournaments/:id/enrollment — the signed-in player enrolls themselves (HU25). */
+export async function enrollMe(req: Request, res: Response): Promise<void> {
+  await enrollSelf(prisma, idParam(req, "id"), actorOf(req));
+  res.status(204).end();
+}
+
+/** DELETE /tournaments/:id/enrollment — the signed-in player cancels their enrollment while registration is open. */
+export async function withdrawMe(req: Request, res: Response): Promise<void> {
+  await withdrawSelf(prisma, idParam(req, "id"), actorOf(req));
+  res.status(204).end();
 }

@@ -334,3 +334,83 @@ describe("reopening registration", () => {
     }
   });
 });
+
+// HU25: a player joins a tournament with registration open by themselves,
+// the clearest consent to appear in it; HU07's rules still apply.
+describe("a player enrolling themselves", () => {
+  const enrolled = async (player: TestUser) =>
+    (await request(app).get("/api/tournaments/enrolled").set(bearer(player)).expect(200)).body.map(
+      (tournament: { id: string }) => tournament.id,
+    );
+
+  it("joins a tournament with registration open, once, and can cancel it while it stays open", async () => {
+    const organizer = await createUser(prisma, "ORGANIZER");
+    const player = await createUser(prisma, "PLAYER");
+    const tournament = await createTournament(prisma, organizer, { status: "REGISTRATION_OPEN" });
+    const enrollment = `/api/tournaments/${tournament.id}/enrollment`;
+
+    await request(app).post(enrollment).set(bearer(player)).expect(204);
+    expect((await request(app).post(enrollment).set(bearer(player)).expect(409)).body.code).toBe("ALREADY_ENROLLED");
+    expect(await enrolled(player)).toEqual([tournament.id]);
+    const roster = await request(app).get(`/api/tournaments/${tournament.id}/players`).set(bearer(organizer));
+    expect(roster.body).toEqual([expect.objectContaining({ playerId: player.playerId })]);
+
+    await request(app).delete(enrollment).set(bearer(player)).expect(204);
+    expect(await enrolled(player)).toEqual([]);
+    const [entry] = await prisma.auditLog.findMany({ where: { action: "PLAYER_WITHDRAWN" } });
+    expect(entry).toMatchObject({ userId: player.id });
+    expect(entry!.detail).toContain("por su cuenta");
+
+    await request(app).post(enrollment).set(bearer(player)).expect(204);
+    expect(await enrolled(player)).toEqual([tournament.id]);
+  });
+
+  it("follows the tournament's rules: registration open and the eligibility configured", async () => {
+    const organizer = await createUser(prisma, "ORGANIZER");
+    const player = await createUser(prisma, "PLAYER");
+    const closed = await createTournament(prisma, organizer, { status: "REGISTRATION_CLOSED" });
+    const restricted = await createTournament(prisma, organizer, { status: "REGISTRATION_OPEN" });
+    await prisma.tournament.update({ where: { id: restricted.id }, data: { restrictedProgram: "Derecho" } });
+
+    const intoClosed = await request(app).post(`/api/tournaments/${closed.id}/enrollment`).set(bearer(player));
+    const intoRestricted = await request(app).post(`/api/tournaments/${restricted.id}/enrollment`).set(bearer(player));
+    const cancelClosed = await request(app).delete(`/api/tournaments/${closed.id}/enrollment`).set(bearer(player));
+
+    expect([intoClosed.status, intoClosed.body.code]).toEqual([409, "REGISTRATION_NOT_OPEN"]);
+    expect([intoRestricted.status, intoRestricted.body.code]).toEqual([409, "PROGRAM_NOT_ELIGIBLE"]);
+    expect([cancelClosed.status, cancelClosed.body.code]).toEqual([409, "REGISTRATION_NOT_OPEN"]);
+    expect(await prisma.enrollment.count()).toBe(0);
+  });
+
+  it("can't cancel an enrollment once registration closes: the organizer withdraws them from then on", async () => {
+    const organizer = await createUser(prisma, "ORGANIZER");
+    const player = await createUser(prisma, "PLAYER");
+    const tournament = await createTournament(prisma, organizer, { status: "REGISTRATION_CLOSED", players: [player] });
+
+    await request(app).delete(`/api/tournaments/${tournament.id}/enrollment`).set(bearer(player)).expect(409);
+    expect(await enrolled(player)).toEqual([tournament.id]);
+  });
+
+  it("is only for players, and only for themselves", async () => {
+    const organizer = await createUser(prisma, "ORGANIZER");
+    const tournament = await createTournament(prisma, organizer, { status: "REGISTRATION_OPEN" });
+
+    for (const someone of [organizer, await createUser(prisma, "COACH")]) {
+      await request(app).post(`/api/tournaments/${tournament.id}/enrollment`).set(bearer(someone)).expect(403);
+    }
+    expect(await prisma.enrollment.count()).toBe(0);
+  });
+
+  it("doesn't let an organizer enroll a blocked account either", async () => {
+    const organizer = await createUser(prisma, "ORGANIZER");
+    const blocked = await createUser(prisma, "PLAYER");
+    await prisma.user.update({ where: { id: blocked.id }, data: { status: "INACTIVE" } });
+    const tournament = await createTournament(prisma, organizer, { status: "REGISTRATION_OPEN" });
+
+    await request(app)
+      .post(`/api/tournaments/${tournament.id}/players`)
+      .set(bearer(organizer))
+      .send({ playerId: blocked.playerId })
+      .expect(404);
+  });
+});

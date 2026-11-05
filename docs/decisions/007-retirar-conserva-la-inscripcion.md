@@ -11,6 +11,7 @@ Un jugador retirado ya pudo haber jugado partidas, que siguen contando en el his
 - Retirar marca la inscripción con `withdrawnAt`; no la borra. El retirado sale de la lista activa y de los emparejamientos siguientes (RN-07), y aparece marcado en la clasificación si llegó a jugar.
 - Volver a inscribir a un retirado reactiva esa misma fila (`withdrawnAt: null`, y `createdAt` pasa a ser el momento de la nueva inscripción). Solo puede pasar con las inscripciones abiertas, es decir, antes de cualquier ronda, así que no reabre historial de juego.
 - Inscribir a alguien que ya está activo sigue siendo `409 ALREADY_ENROLLED`.
+- Desde el 5 de noviembre de 2026 (#135) un jugador también se inscribe solo, y puede cancelar su inscripción mientras las inscripciones sigan abiertas. Cancelar es un retiro como cualquier otro: marca `withdrawnAt` y queda en la bitácora. "Mis inscripciones" no muestra un retiro de un torneo que no llegó a jugarse; sí uno en el que ya jugó.
 
 ## Consecuencias
 
@@ -19,5 +20,5 @@ Un jugador retirado ya pudo haber jugado partidas, que siguen contando en el his
 
 ## Dónde está
 
-- `backend/src/services/tournaments.service.ts` (`enrollPlayer`, `withdrawPlayer`, `listEnrolledPlayers`), `backend/src/services/rounds.service.ts` (sin retirados al emparejar o publicar).
+- `backend/src/services/tournaments.service.ts` (`enrollPlayer`, `enrollSelf`, `withdrawPlayer`, `withdrawSelf`, `listEnrolledPlayers`, `listEnrolledTournaments`), `backend/src/services/rounds.service.ts` (sin retirados al emparejar o publicar).
 - `backend/src/routes/tournaments.int.test.ts` ("withdrawing a player").
