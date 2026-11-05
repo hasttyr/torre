@@ -15,6 +15,7 @@ import {
   listMyEnrollments,
   listPlayers,
   open,
+  reopen,
   standings,
   stats,
   withdraw,
@@ -46,6 +47,7 @@ tournamentsRouter.post("/:id/finish", requireAuth, canManage, finish);
 tournamentsRouter.put("/:id/configuration", requireAuth, canManage, configure);
 tournamentsRouter.post("/:id/registration/open", requireAuth, canManage, open);
 tournamentsRouter.post("/:id/registration/close", requireAuth, canManage, close);
+tournamentsRouter.post("/:id/registration/reopen", requireAuth, canManage, reopen);
 tournamentsRouter.post("/:id/players", requireAuth, canManage, enroll);
 tournamentsRouter.get("/:id/players", requireAuth, canManage, listPlayers);
 tournamentsRouter.post("/:id/players/:playerId/withdraw", requireAuth, canManage, withdraw);

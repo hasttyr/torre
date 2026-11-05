@@ -227,6 +227,51 @@ export function openRegistration(prisma: PrismaClient, tournamentId: string, act
   return transitionRegistration(prisma, tournamentId, "open", actor);
 }
 
+/**
+ * Opens registration again (HU06), so whoever arrives between closing it and
+ * round 1 can still play. Only while no round is published: after that, a
+ * new player would join a tournament already under way. A round 1 still in
+ * draft is discarded: it was paired without them, and round 1's draw is
+ * made again when it's generated next.
+ *
+ * @throws {HttpError} 409 unless registration is closed and no round is published.
+ */
+export async function reopenRegistration(
+  prisma: PrismaClient,
+  tournamentId: string,
+  actor: AuthUser,
+): Promise<TournamentDto> {
+  return toTournamentDto(
+    await prisma.$transaction(async (tx) => {
+      const tournament = await lockTournament(tx, tournamentId);
+      assertCanManageTournament(tournament, actor);
+      // A published round moves the tournament to IN_PROGRESS: the status
+      // alone tells there's none.
+      if (tournament.status !== "REGISTRATION_CLOSED") {
+        throw new HttpError("REGISTRATION_CANNOT_REOPEN");
+      }
+
+      const drafts = { tournamentId, status: "GENERATED" } as const;
+      const discarded = await tx.round.count({ where: drafts });
+      await tx.result.deleteMany({ where: { match: { round: drafts } } });
+      await tx.match.deleteMany({ where: { round: drafts } });
+      await tx.round.deleteMany({ where: drafts });
+
+      await recordAuditLog(
+        tx,
+        actor.id,
+        "REGISTRATION_REOPENED",
+        `"${plain(tournament.name)}"${discarded > 0 ? " (borrador de la ronda 1 descartado)" : ""}`,
+      );
+      return tx.tournament.update({
+        where: { id: tournamentId },
+        data: { status: "REGISTRATION_OPEN" },
+        include: WITH_CRITERIA,
+      });
+    }),
+  );
+}
+
 /** Closes registration for a tournament (HU06). */
 export function closeRegistration(prisma: PrismaClient, tournamentId: string, actor: AuthUser): Promise<TournamentDto> {
   return transitionRegistration(prisma, tournamentId, "close", actor);

@@ -14,6 +14,7 @@ import {
   listLiveTournaments,
   listMyTournaments,
   openRegistration,
+  reopenRegistration,
   getTournament,
   withdrawPlayer,
 } from "../services/tournaments.service";
@@ -68,6 +69,11 @@ export async function open(req: Request, res: Response): Promise<void> {
 /** POST /tournaments/:id/registration/close — closes registration (HU06). */
 export async function close(req: Request, res: Response): Promise<void> {
   res.status(200).json(await closeRegistration(prisma, idParam(req, "id"), actorOf(req)));
+}
+
+/** POST /tournaments/:id/registration/reopen — opens registration again before round 1 is published (HU06). */
+export async function reopen(req: Request, res: Response): Promise<void> {
+  res.status(200).json(await reopenRegistration(prisma, idParam(req, "id"), actorOf(req)));
 }
 
 /** POST /tournaments/:id/players — enrolls a player into the tournament (HU07). */

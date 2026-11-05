@@ -5,8 +5,8 @@ import { useI18n } from "vue-i18n";
 
 import { useConfirm } from "../../lib/confirm";
 import { extractErrorMessage } from "../../lib/errors";
-import { showTournament, tournamentQuery } from "../../queries/tournaments";
-import { closeRegistration, openRegistration } from "../../services/tournaments";
+import { invalidateTournament, showTournament, tournamentQuery } from "../../queries/tournaments";
+import { closeRegistration, openRegistration, reopenRegistration } from "../../services/tournaments";
 import FadeSlide from "../ui/FadeSlide.vue";
 import FormBanner from "../ui/FormBanner.vue";
 
@@ -36,7 +36,7 @@ async function onOpen(): Promise<void> {
   }
 }
 
-/** Closes registration for the current tournament, after confirmation: it can't be reopened. */
+/** Closes registration for the current tournament, after confirmation. */
 async function onClose(): Promise<void> {
   const confirmed = await confirm({
     title: t("tournamentAdmin.closeRegistration"),
@@ -52,6 +52,32 @@ async function onClose(): Promise<void> {
   submitting.value = true;
   try {
     showTournament(cache, await closeRegistration(props.tournamentId));
+  } catch (submitError) {
+    error.value = extractErrorMessage(submitError, t("common.genericServerError"));
+  } finally {
+    submitting.value = false;
+  }
+}
+/**
+ * Opens closed registration again, for whoever arrives before round 1 is
+ * published, after confirmation: a round 1 still in draft is discarded.
+ */
+async function onReopen(): Promise<void> {
+  const confirmed = await confirm({
+    title: t("tournamentAdmin.reopenRegistration"),
+    message: t("tournamentAdmin.reopenRegistrationConfirm"),
+    confirmLabel: t("tournamentAdmin.reopenRegistration"),
+  });
+  if (!confirmed) {
+    return;
+  }
+
+  error.value = null;
+  submitting.value = true;
+  try {
+    showTournament(cache, await reopenRegistration(props.tournamentId));
+    // Its round 1 draft, if any, is gone.
+    await invalidateTournament(cache, props.tournamentId);
   } catch (submitError) {
     error.value = extractErrorMessage(submitError, t("common.genericServerError"));
   } finally {
@@ -83,6 +109,14 @@ async function onClose(): Promise<void> {
         @click="onClose"
       >
         {{ t("tournamentAdmin.closeRegistration") }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-ghost"
+        :disabled="submitting || status !== 'REGISTRATION_CLOSED'"
+        @click="onReopen"
+      >
+        {{ t("tournamentAdmin.reopenRegistration") }}
       </button>
     </div>
   </section>

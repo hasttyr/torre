@@ -54,6 +54,10 @@ export const API_ERRORS = {
   ],
   REGISTRATION_CANNOT_OPEN: [409, "Solo se pueden abrir las inscripciones de un torneo recién creado"],
   REGISTRATION_CANNOT_CLOSE: [409, "Solo se pueden cerrar las inscripciones mientras están abiertas"],
+  REGISTRATION_CANNOT_REOPEN: [
+    409,
+    "Solo se pueden reabrir las inscripciones ya cerradas de un torneo que todavía no publicó su primera ronda",
+  ],
   REGISTRATION_NOT_OPEN: [409, "El torneo no tiene las inscripciones abiertas"],
   PROGRAM_NOT_ELIGIBLE: [409, 'Este torneo solo admite jugadores del programa "{program}"'],
   SEMESTER_NOT_ELIGIBLE: [409, "Este torneo exige un semestre mínimo de {semester}"],

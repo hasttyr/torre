@@ -76,6 +76,12 @@ export async function openRegistration(id: string): Promise<Tournament> {
   return data;
 }
 
+/** Opens registration again, before round 1 is published; discards a round 1 draft (HU06). */
+export async function reopenRegistration(id: string): Promise<Tournament> {
+  const { data } = await api.post<Tournament>(path`/tournaments/${id}/registration/reopen`);
+  return data;
+}
+
 /** Closes registration for a tournament (HU06). */
 export async function closeRegistration(id: string): Promise<Tournament> {
   const { data } = await api.post<Tournament>(path`/tournaments/${id}/registration/close`);

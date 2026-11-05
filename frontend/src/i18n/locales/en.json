@@ -369,7 +369,9 @@
     "registrationSubtitle": "Control when new participants are accepted. Current status:",
     "openRegistration": "Open Registration",
     "closeRegistration": "Close Registration",
-    "closeRegistrationConfirm": "No one else will be able to enroll, and registration can't be reopened. Then you'll be able to generate the first round.",
+    "reopenRegistration": "Reopen Registration",
+    "reopenRegistrationConfirm": "Late arrivals will be able to enroll. If round 1 is a draft, it's discarded: you'll generate it again, with everyone, once you close registration.",
+    "closeRegistrationConfirm": "No one else will be able to enroll. Then you'll be able to generate the first round. You can reopen it as long as the first round isn't published.",
     "playersTitle": "Registered Players",
     "playersSubtitle": "Official list of tournament participants.",
     "searchLabel": "Search player (name, email or code)",
@@ -464,6 +466,7 @@
       "PAIRING_ADJUSTED": "Pairing adjusted manually",
       "TOURNAMENT_FINISHED": "Tournament finished",
       "TOURNAMENT_END_DATE_CHANGED": "End date changed",
+      "REGISTRATION_REOPENED": "Registration reopened",
       "TOURNAMENT_AUTO_FINISHED": "Tournament closed by date"
     }
   },
@@ -814,6 +817,7 @@
     "TIEBREAKS_LOCKED": "Tiebreaks and bye points can't change anymore: round 1 has already started.",
     "REGISTRATION_CANNOT_OPEN": "Registration can only be opened for a newly created tournament.",
     "REGISTRATION_CANNOT_CLOSE": "Registration can only be closed while it's open.",
+    "REGISTRATION_CANNOT_REOPEN": "Registration can only be reopened once closed, in a tournament that hasn't published its first round.",
     "REGISTRATION_NOT_OPEN": "The tournament isn't open for registration.",
     "PROGRAM_NOT_ELIGIBLE": "This tournament only admits players from the “{program}” program.",
     "SEMESTER_NOT_ELIGIBLE": "This tournament requires at least semester {semester}.",

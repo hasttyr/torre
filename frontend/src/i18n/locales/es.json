@@ -369,7 +369,9 @@
     "registrationSubtitle": "Controla cuándo se aceptan nuevos participantes. Estado actual:",
     "openRegistration": "Abrir inscripciones",
     "closeRegistration": "Cerrar inscripciones",
-    "closeRegistrationConfirm": "Nadie más podrá inscribirse y las inscripciones no se pueden volver a abrir. Después podrás generar la primera ronda.",
+    "reopenRegistration": "Reabrir inscripciones",
+    "reopenRegistrationConfirm": "Quien llegue tarde podrá inscribirse. Si la ronda 1 está en borrador, se descarta: la generarás de nuevo, con todos, al cerrarlas.",
+    "closeRegistrationConfirm": "Nadie más podrá inscribirse. Después podrás generar la primera ronda. Podrás reabrirlas mientras no publiques la primera ronda.",
     "playersTitle": "Jugadores inscritos",
     "playersSubtitle": "Listado oficial de participantes del torneo.",
     "searchLabel": "Buscar jugador (nombre, correo o código)",
@@ -464,6 +466,7 @@
       "PAIRING_ADJUSTED": "Ajuste manual de emparejamiento",
       "TOURNAMENT_FINISHED": "Torneo finalizado",
       "TOURNAMENT_END_DATE_CHANGED": "Fecha de fin cambiada",
+      "REGISTRATION_REOPENED": "Inscripciones reabiertas",
       "TOURNAMENT_AUTO_FINISHED": "Torneo cerrado por fecha"
     }
   },
@@ -814,6 +817,7 @@
     "TIEBREAKS_LOCKED": "Los desempates y los puntos del bye ya no se pueden cambiar: la primera ronda ya empezó.",
     "REGISTRATION_CANNOT_OPEN": "Solo se pueden abrir las inscripciones de un torneo recién creado.",
     "REGISTRATION_CANNOT_CLOSE": "Solo se pueden cerrar las inscripciones mientras están abiertas.",
+    "REGISTRATION_CANNOT_REOPEN": "Solo se pueden reabrir las inscripciones ya cerradas de un torneo que todavía no publicó su primera ronda.",
     "REGISTRATION_NOT_OPEN": "El torneo no tiene las inscripciones abiertas.",
     "PROGRAM_NOT_ELIGIBLE": "Este torneo solo admite jugadores del programa «{program}».",
     "SEMESTER_NOT_ELIGIBLE": "Este torneo exige un semestre mínimo de {semester}.",

@@ -16,6 +16,7 @@ vi.mock("../../services/tournaments", async (importOriginal) => ({
   configureTournament: vi.fn(),
   openRegistration: vi.fn(),
   closeRegistration: vi.fn(),
+  reopenRegistration: vi.fn(),
   enrollPlayer: vi.fn(),
   listEnrolledPlayers: vi.fn(),
   withdrawPlayer: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock("../../services/players", () => ({
 import {
   openRegistration,
   closeRegistration,
+  reopenRegistration,
   configureTournament,
   enrollPlayer,
   listEnrolledPlayers,
@@ -397,7 +399,7 @@ describe("TournamentAdminView", () => {
     });
   });
 
-  it("closes registration only after confirming, since it can't be reopened (HU06)", async () => {
+  it("closes registration only after confirming, saying until when it can be reopened (HU06)", async () => {
     getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
     closeRegistrationMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_CLOSED" });
     mountConfirmDialogHost();
@@ -407,13 +409,45 @@ describe("TournamentAdminView", () => {
     await closeBtn.trigger("click");
     await wrapper.vm.$nextTick();
 
-    expect(document.body.textContent).toContain("no se pueden volver a abrir");
+    expect(document.body.textContent).toContain("Podrás reabrirlas mientras no publiques la primera ronda");
     expect(closeRegistrationMock).not.toHaveBeenCalled();
 
     await clickConfirmDialogButton("Cerrar inscripciones");
     await flushPromises();
 
     expect(closeRegistrationMock).toHaveBeenCalledWith("tournament-1");
+  });
+
+  // Whoever arrives between closing registration and round 1 can still play.
+  it("reopens closed registration after confirming that a round 1 draft is discarded", async () => {
+    // Like the server: read again after reopening, it's open.
+    getTournamentMock
+      .mockResolvedValueOnce({ ...CREATED_TOURNAMENT, status: "REGISTRATION_CLOSED" })
+      .mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
+    vi.mocked(reopenRegistration).mockResolvedValue({ ...CREATED_TOURNAMENT, status: "REGISTRATION_OPEN" });
+    mountConfirmDialogHost();
+
+    const { wrapper } = await mountView();
+    const reopenBtn = wrapper.findAll("button").find((btn) => btn.text() === "Reabrir inscripciones")!;
+    expect(reopenBtn.attributes("disabled")).toBeUndefined();
+    await reopenBtn.trigger("click");
+    await wrapper.vm.$nextTick();
+
+    expect(document.body.textContent).toContain("Si la ronda 1 está en borrador, se descarta");
+    await clickConfirmDialogButton("Reabrir inscripciones");
+    await flushPromises();
+
+    expect(reopenRegistration).toHaveBeenCalledWith("tournament-1");
+    expect(wrapper.text()).toContain("Inscripciones abiertas");
+  });
+
+  it("offers reopening registration only while it is closed", async () => {
+    getTournamentMock.mockResolvedValue({ ...CREATED_TOURNAMENT, status: "IN_PROGRESS" });
+
+    const { wrapper } = await mountView();
+
+    const reopenBtn = wrapper.findAll("button").find((btn) => btn.text() === "Reabrir inscripciones")!;
+    expect(reopenBtn.attributes("disabled")).toBeDefined();
   });
 
   it("keeps registration open when closing it is cancelled", async () => {

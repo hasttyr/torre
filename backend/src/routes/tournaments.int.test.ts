@@ -273,3 +273,64 @@ describe("withdrawing a player (HU27)", () => {
     expect(roster.body).toEqual([expect.objectContaining({ playerId: player!.playerId })]);
   });
 });
+
+// Whoever arrives between closing registration and round 1 can still play.
+describe("reopening registration", () => {
+  const players = (count: number) => Promise.all(Array.from({ length: count }, () => createUser(prisma, "PLAYER")));
+
+  it("is possible before round 1 is published: its draft is discarded, and late players can enroll", async () => {
+    const organizer = await createUser(prisma, "ORGANIZER");
+    const [early, late] = await players(3).then((all) => [all.slice(0, 2), all[2]!] as const);
+    const tournament = await createTournament(prisma, organizer, {
+      status: "REGISTRATION_CLOSED",
+      roundsCount: 3,
+      players: early,
+    });
+    await request(app).post(`/api/tournaments/${tournament.id}/rounds`).set(bearer(organizer)).expect(201);
+
+    const reopened = await request(app)
+      .post(`/api/tournaments/${tournament.id}/registration/reopen`)
+      .set(bearer(organizer))
+      .expect(200);
+
+    expect(reopened.body.status).toBe("REGISTRATION_OPEN");
+    expect(await prisma.round.count({ where: { tournamentId: tournament.id } })).toBe(0);
+    expect(await prisma.match.count()).toBe(0);
+    const [entry] = await prisma.auditLog.findMany({ where: { action: "REGISTRATION_REOPENED" } });
+    expect(entry).toMatchObject({ userId: organizer.id, detail: '"Copa Otoño" (borrador de la ronda 1 descartado)' });
+
+    await request(app)
+      .post(`/api/tournaments/${tournament.id}/players`)
+      .set(bearer(organizer))
+      .send({ playerId: late.playerId })
+      .expect(201);
+    await request(app).post(`/api/tournaments/${tournament.id}/registration/close`).set(bearer(organizer)).expect(200);
+    const round1 = await request(app).post(`/api/tournaments/${tournament.id}/rounds`).set(bearer(organizer));
+    expect(round1.status).toBe(201);
+    expect(round1.body.matches).toHaveLength(2);
+  });
+
+  it("is refused once a round is published, or before registration ever opened", async () => {
+    const organizer = await createUser(prisma, "ORGANIZER");
+    const reopen = async (status: "IN_PROGRESS" | "CREATED" | "REGISTRATION_OPEN") => {
+      const tournament = await createTournament(prisma, organizer, { status });
+      return request(app).post(`/api/tournaments/${tournament.id}/registration/reopen`).set(bearer(organizer));
+    };
+
+    for (const status of ["IN_PROGRESS", "CREATED", "REGISTRATION_OPEN"] as const) {
+      const refused = await reopen(status);
+      expect(refused.status).toBe(409);
+      expect(refused.body.code).toBe("REGISTRATION_CANNOT_REOPEN");
+    }
+    expect(await prisma.auditLog.count()).toBe(0);
+  });
+
+  it("is only for whoever manages the tournament", async () => {
+    const organizer = await createUser(prisma, "ORGANIZER");
+    const tournament = await createTournament(prisma, organizer, { status: "REGISTRATION_CLOSED" });
+
+    for (const someone of [await createUser(prisma, "ORGANIZER"), await createUser(prisma, "PLAYER")]) {
+      await request(app).post(`/api/tournaments/${tournament.id}/registration/reopen`).set(bearer(someone)).expect(403);
+    }
+  });
+});

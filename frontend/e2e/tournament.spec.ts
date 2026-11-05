@@ -36,7 +36,7 @@ test("an organizer runs round 1, an arbiter scores a game, and the room follows 
   // HU05-HU07: three rounds, registration open, four players in, registration closed.
   await organizer.locator("#roundsCount").fill("3");
   await organizer.getByRole("button", { name: "Guardar configuración" }).click();
-  await organizer.getByRole("button", { name: "Abrir inscripciones" }).click();
+  await organizer.getByRole("button", { name: "Abrir inscripciones", exact: true }).click();
   for (const player of PLAYERS) {
     await organizer.locator("#playerQuery").fill(player);
     await organizer
