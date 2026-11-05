@@ -221,6 +221,7 @@ El seguimiento se lleva en este repositorio mediante:
 - [`docs/architecture.md`](./docs/architecture.md): arquitectura interna y estrategia de pruebas.
 - [`docs/decisions/`](./docs/decisions/): el porqué de las decisiones que sostienen el sistema.
 - [`docs/runbooks/`](./docs/runbooks/): paso a paso para validar como el CI, crear migraciones, desplegar en Vercel (frontend) y Render (backend) y ejecutar la regresión P01–P33 del plan de pruebas.
+- [`docs/entrega/`](./docs/entrega/): la entrega final (qué se entrega, cómo evaluarlo, qué queda pendiente) y el acta de aceptación P35.
 - [`CLAUDE.md`](./CLAUDE.md): contexto para trabajar en el proyecto con Claude Code, con sus comandos en `.claude/skills/` (`/validar-ci`, `/nueva-feature`, `/arreglar-bug`, `/revision-seguridad`).
 
 ## Autor
