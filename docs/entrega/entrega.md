@@ -43,13 +43,13 @@ Están, cada una con su porqué, en `docs/runbooks/regresion.md` ("Ajustes respe
 
 ## Pendiente fuera del código
 
-| Qué                                       | Issue | Quién lo resuelve                                                                                          |
-| ----------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------- |
-| Aceptación P35 con los actores del torneo | #114  | Organizador, árbitro y estudiantes, con el acta `acta-uat-p35.md`                                          |
-| Ensayo de la UAT con personas             | #131  | Un organizador de la universidad que no sea del equipo, con `ensayo-uat.md`                                |
-| Correo para recuperar la contraseña       | #130  | Quien administre Render: una cuenta SMTP y las variables `SMTP_URL` y `MAIL_FROM`                          |
-| Texto oficial de la política de datos     | #129  | La universidad o un profesional en protección de datos; después, reemplazar el borrador y subir la versión |
+| Qué                                                     | Issue | Quién lo resuelve                                                                                          |
+| ------------------------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------- |
+| Aceptación P35 con los actores del torneo               | #114  | Organizador, árbitro y estudiantes, con el acta `acta-uat-p35.md`                                          |
+| Ensayo de la UAT con personas                           | #131  | Un organizador de la universidad que no sea del equipo, con `ensayo-uat.md`                                |
+| Correo para recuperar la contraseña y avisar las rondas | #130  | Quien administre Render: una cuenta SMTP y las variables `SMTP_URL` y `MAIL_FROM`                          |
+| Texto oficial de la política de datos                   | #129  | La universidad o un profesional en protección de datos; después, reemplazar el borrador y subir la versión |
 
 ## Después de la entrega (Fase 5)
 
-La sala pública de solo lectura (#140) quedó hecha, con el borrador de la política de datos ([decisión 013](../decisions/013-sala-publica.md)): cuando llegue la política oficial, tiene que decir lo mismo sobre quién ve los nombres. Quedan abiertos, con sus condiciones: el aviso al publicarse una ronda (#141), que necesita el correo de producción (#130); y un motor suizo más cercano a FIDE C.04.3 (#142), que antes pide mostrar con torneos reales que la simplificación cambió algún emparejamiento.
+La sala pública de solo lectura (#140) quedó hecha, con el borrador de la política de datos ([decisión 013](../decisions/013-sala-publica.md)): cuando llegue la política oficial, tiene que decir lo mismo sobre quién ve los nombres. El aviso por correo al publicarse una ronda (#141) también quedó hecho: sale en cuanto producción tenga correo (#130), y mientras no lo tenga, la cuenta del jugador dice que no se están enviando. Queda abierto, con su condición, un motor suizo más cercano a FIDE C.04.3 (#142), que antes pide mostrar con torneos reales que la simplificación cambió algún emparejamiento.

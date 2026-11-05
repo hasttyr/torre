@@ -47,6 +47,14 @@ export interface PlayerProfileDto {
   club: PlayerClubDto | null;
 }
 
+/** #141: the user's notification choices, and whether the system can send email at all. */
+export interface NotificationSettingsDto {
+  roundPublished: boolean;
+  // False when the deployment has no mail provider: the page says the
+  // notices aren't going out, instead of letting the user count on them.
+  emailAvailable: boolean;
+}
+
 export interface UserDto {
   id: string;
   name: string;

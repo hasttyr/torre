@@ -46,6 +46,13 @@ export const updateProfileSchema = z.object({
 
 export type UpdateProfileSchemaInput = z.infer<typeof updateProfileSchema>;
 
+// #141: the user's own notification choices.
+export const notificationSettingsSchema = z.object({
+  roundPublished: z.boolean({ error: "Indica si quieres el aviso" }),
+});
+
+export type NotificationSettingsSchemaInput = z.infer<typeof notificationSettingsSchema>;
+
 // HU22/Ley 1581 de 2012: derechos ARCO ejercidos por el titular sobre sus
 // propios datos. RECTIFICATION reutiliza updateProfileSchema (mismo shape
 // que HU20) en vez de duplicar sus reglas de validación.

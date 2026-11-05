@@ -1,7 +1,11 @@
 import type { Request, Response } from "express";
 
+import { env } from "../config/env";
+import { logger } from "../config/logger";
+import { roundNoticeSender } from "../config/mailer";
 import { prisma } from "../config/prisma";
 import { actorOf } from "../middlewares/auth";
+import { noticeRoundPublished } from "../services/roundNotices";
 import { discardRound, generateRound, listRounds, publishRound, swapPlayers } from "../services/rounds.service";
 import { idParam } from "../validators/params";
 import { parseOrThrow } from "../validators/parse";
@@ -33,5 +37,13 @@ export async function swap(req: Request, res: Response): Promise<void> {
 
 /** POST /rounds/:id/publish — publishes a draft round (HU09). */
 export async function publish(req: Request, res: Response): Promise<void> {
-  res.status(200).json(await publishRound(prisma, idParam(req, "id"), actorOf(req)));
+  const roundId = idParam(req, "id");
+  res.status(200).json(await publishRound(prisma, roundId, actorOf(req)));
+  // #141: after answering, so a slow mail provider never holds up the
+  // organizer; the round is published whatever happens to the notices.
+  if (roundNoticeSender) {
+    noticeRoundPublished(prisma, roundNoticeSender, roundId, env.appUrl)
+      .then((outcome) => logger.info({ roundId, ...outcome }, "round notices sent"))
+      .catch((error: unknown) => logger.error({ roundId, err: error }, "round notices failed"));
+  }
 }

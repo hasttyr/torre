@@ -296,6 +296,14 @@
     "affiliationsTitle": "Mi club y entrenadores",
     "affiliationsSubtitle": "Tu club lo asigna el organizador. Un entrenador solo ve tu progreso si aceptas su solicitud, y puedes dejar de compartirlo cuando quieras.",
     "affiliationsLoadError": "No se pudieron cargar tus entrenadores vinculados",
+    "notifications": {
+      "title": "Avisos",
+      "roundPublished": "Avisarme por correo cuando se publique una ronda de un torneo que juego",
+      "hint": "El correo dice qué ronda se publicó y enlaza a la sala; tu rival y tu mesa se ven en la sala.",
+      "unavailable": "Por ahora este sistema no tiene correo configurado, así que los avisos no se están enviando. Revisa la sala del torneo para ver cada ronda.",
+      "saveError": "No se pudo guardar tu elección. Inténtalo de nuevo.",
+      "loadError": "No se pudieron cargar tus avisos"
+    },
     "clubLabel": "Club",
     "noClub": "Sin club asignado",
     "coachesLabel": "Entrenadores",
@@ -918,7 +926,7 @@
       },
       "purposes": {
         "title": "3. Para qué se usan",
-        "body": "Organizar los torneos: inscribirte, emparejarte, registrar resultados, calcular la clasificación y emitir los documentos oficiales. Mostrar tu progreso en tu panel y, si lo aceptas, al entrenador que te sigue. Proteger las cuentas y dejar trazabilidad de las acciones críticas (RN-11). No se usan para publicidad ni se venden ni ceden a terceros."
+        "body": "Organizar los torneos: inscribirte, emparejarte, registrar resultados, calcular la clasificación, emitir los documentos oficiales y avisarte por correo cuando se publica una ronda de un torneo que juegas (lo desactivas en «Mi cuenta»). Mostrar tu progreso en tu panel y, si lo aceptas, al entrenador que te sigue. Proteger las cuentas y dejar trazabilidad de las acciones críticas (RN-11). No se usan para publicidad ni se venden ni ceden a terceros."
       },
       "sensitive": {
         "title": "4. Datos sensibles",
@@ -930,7 +938,7 @@
       },
       "processors": {
         "title": "6. Encargados del tratamiento",
-        "body": "El sistema se aloja en Render (servidor y base de datos) y Vercel (la aplicación web). Si está configurado, un proveedor de correo envía los enlaces de recuperación de contraseña. Tratan los datos solo para prestar ese servicio."
+        "body": "El sistema se aloja en Render (servidor y base de datos) y Vercel (la aplicación web). Si está configurado, un proveedor de correo envía los enlaces de recuperación de contraseña y los avisos de ronda publicada, que no nombran a otros jugadores. Tratan los datos solo para prestar ese servicio."
       },
       "rights": {
         "title": "7. Tus derechos (Ley 1581 de 2012, art. 8)",

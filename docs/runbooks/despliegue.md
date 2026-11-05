@@ -31,7 +31,7 @@ Navegador ── https://torre-roan.vercel.app ──────────►
 | `CORS_ORIGIN`  | `https://torre-roan.vercel.app`, exactamente                                                 |
 | `APP_URL`      | `https://torre-roan.vercel.app` (base de los enlaces que la API envía por correo)            |
 | `TRUST_PROXY`  | `2` (Vercel y el balanceador de Render)                                                      |
-| `SMTP_URL`     | Opcional. Sin él, todo funciona salvo la recuperación de contraseña                          |
+| `SMTP_URL`     | Opcional. Sin él, todo funciona salvo la recuperación de contraseña y los avisos de ronda    |
 | `MAIL_FROM`    | Con `SMTP_URL`: `Torre Central Hub <no-reply@dominio>`                                       |
 
 Todas las variables y su validación: [`backend/README.md`](../../backend/README.md#variables-de-entorno).

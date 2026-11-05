@@ -296,6 +296,14 @@
     "affiliationsTitle": "My Club and Coaches",
     "affiliationsSubtitle": "Your club is assigned by the organizer. A coach only sees your progress if you accept their request, and you can stop sharing it at any time.",
     "affiliationsLoadError": "Could not load your linked coaches",
+    "notifications": {
+      "title": "Notices",
+      "roundPublished": "Email me when a round of a tournament I play is published",
+      "hint": "The email says which round was published and links to the room; your opponent and board are shown in the room.",
+      "unavailable": "This system has no email configured yet, so notices aren't being sent. Check the tournament's room for each round.",
+      "saveError": "Your choice couldn't be saved. Please try again.",
+      "loadError": "Your notices couldn't be loaded"
+    },
     "clubLabel": "Club",
     "noClub": "No club assigned",
     "coachesLabel": "Coaches",
@@ -918,7 +926,7 @@
       },
       "purposes": {
         "title": "3. What it's used for",
-        "body": "Running the tournaments: enrolling and pairing you, recording results, computing standings and issuing the official documents. Showing your progress on your dashboard and, if you accept, to the coach who follows you. Protecting accounts and keeping a trail of critical actions (RN-11). It isn't used for advertising, nor sold or handed to third parties."
+        "body": "Running the tournaments: enrolling and pairing you, recording results, computing standings, issuing the official documents and emailing you when a round of a tournament you play is published (you turn it off in “My account”). Showing your progress on your dashboard and, if you accept, to the coach who follows you. Protecting accounts and keeping a trail of critical actions (RN-11). It isn't used for advertising, nor sold or handed to third parties."
       },
       "sensitive": {
         "title": "4. Sensitive data",
@@ -930,7 +938,7 @@
       },
       "processors": {
         "title": "6. Data processors",
-        "body": "The system is hosted on Render (server and database) and Vercel (the web app). If configured, an email provider sends the password recovery links. They process the data only to provide that service."
+        "body": "The system is hosted on Render (server and database) and Vercel (the web app). If configured, an email provider sends the password recovery links and the published-round notices, which name no other player. They process the data only to provide that service."
       },
       "rights": {
         "title": "7. Your rights (Colombian Law 1581 of 2012, art. 8)",

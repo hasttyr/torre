@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref, useTemplateRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import NotificationSettings from "../components/account/NotificationSettings.vue";
 import PlayerAffiliations from "../components/account/PlayerAffiliations.vue";
 import PrivacyDataRights from "../components/account/PrivacyDataRights.vue";
 import AppHeader from "../components/layout/AppHeader.vue";
@@ -284,6 +285,8 @@ async function onSubmit(): Promise<void> {
       </section>
 
       <PlayerAffiliations v-if="auth.user?.player" :club="auth.user.player.club" />
+
+      <NotificationSettings v-if="auth.user?.player" />
 
       <PrivacyDataRights v-if="auth.user" />
     </main>

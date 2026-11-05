@@ -116,6 +116,10 @@ model User {
   dataPolicyAcceptedAt DateTime? @map("data_policy_accepted_at")
   dataPolicyVersion    String?   @map("data_policy_version")
 
+  // #141: an email when a round of a tournament they play is published.
+  // Off from their account; see services/roundNotices.ts.
+  roundNotices Boolean @default(true) @map("round_notices")
+
   role                  Role                   @relation(fields: [roleId], references: [id])
   player                Player?
   organizedTournaments  Tournament[]           @relation("TournamentOrganizer")

@@ -1,19 +1,23 @@
 import type { Request, Response } from "express";
 
+import { roundNoticeSender } from "../config/mailer";
 import { prisma } from "../config/prisma";
 import { actorOf } from "../middlewares/auth";
 import { acceptCoach, removeCoach } from "../services/coaches.service";
 import { exerciseDataRight } from "../services/dataRights.service";
 import {
+  getNotificationSettings,
   getUserById,
   listMyCoaches,
   listUsers,
+  updateNotificationSettings,
   updateOwnProfile,
   updateUserRole,
   updateUserStatus,
 } from "../services/users.service";
 import {
   dataRequestSchema,
+  notificationSettingsSchema,
   updateProfileSchema,
   updateRoleSchema,
   updateStatusSchema,
@@ -82,4 +86,15 @@ export async function exerciseRight(req: Request, res: Response): Promise<void> 
 
   const result = await exerciseDataRight(prisma, input, actorOf(req));
   res.status(200).json(result);
+}
+
+/** GET /users/me/notifications — the actor's notification choices (#141). */
+export async function myNotifications(req: Request, res: Response): Promise<void> {
+  res.status(200).json(await getNotificationSettings(prisma, actorOf(req), roundNoticeSender !== null));
+}
+
+/** PUT /users/me/notifications — turns the actor's round notices on or off (#141). */
+export async function updateMyNotifications(req: Request, res: Response): Promise<void> {
+  const input = parseOrThrow(notificationSettingsSchema, req.body);
+  res.status(200).json(await updateNotificationSettings(prisma, input, actorOf(req), roundNoticeSender !== null));
 }

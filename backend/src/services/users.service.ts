@@ -2,11 +2,11 @@ import type { Prisma, PrismaClient } from "../generated/prisma/client";
 
 import { HttpError } from "../errors/apiErrors";
 import type { AuthUser } from "../types/express";
-import type { UpdateProfileSchemaInput } from "../validators/users.schemas";
+import type { NotificationSettingsSchemaInput, UpdateProfileSchemaInput } from "../validators/users.schemas";
 import { mention, recordAuditLog } from "./auditLog.service";
 import { REVOKE_SESSIONS } from "./sessionToken";
 import { toUserDto, type UserDto } from "./user.mapper";
-import type { MyCoachDto } from "../contracts/responses";
+import type { MyCoachDto, NotificationSettingsDto } from "../contracts/responses";
 
 const PLAYER_FIELDS = ["universityCode", "program", "semester", "birthDate", "gender", "disability"] as const;
 
@@ -214,3 +214,31 @@ export async function listMyCoaches(prisma: PrismaClient, actor: AuthUser): Prom
 }
 
 export type { MyCoachDto };
+
+/** #141: the actor's notification choices. */
+export async function getNotificationSettings(
+  prisma: PrismaClient,
+  actor: AuthUser,
+  emailAvailable: boolean,
+): Promise<NotificationSettingsDto> {
+  const user = await prisma.user.findUnique({ where: { id: actor.id }, select: { roundNotices: true } });
+  if (!user) {
+    throw new HttpError("USER_NOT_FOUND");
+  }
+  return { roundPublished: user.roundNotices, emailAvailable };
+}
+
+/** #141: turns the actor's round notices on or off. */
+export async function updateNotificationSettings(
+  prisma: PrismaClient,
+  input: NotificationSettingsSchemaInput,
+  actor: AuthUser,
+  emailAvailable: boolean,
+): Promise<NotificationSettingsDto> {
+  const user = await prisma.user.update({
+    where: { id: actor.id },
+    data: { roundNotices: input.roundPublished },
+    select: { roundNotices: true },
+  });
+  return { roundPublished: user.roundNotices, emailAvailable };
+}

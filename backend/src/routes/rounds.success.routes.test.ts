@@ -28,12 +28,17 @@ vi.mock("../services/rounds.service", () => ({
   swapPlayers: vi.fn().mockResolvedValue({ id: "8a72ea86-e571-5811-ad69-735b423fb932" }),
   publishRound: vi.fn().mockResolvedValue({ id: "8a72ea86-e571-5811-ad69-735b423fb932", status: "RECORDING_RESULTS" }),
 }));
+vi.mock("../services/roundNotices", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../services/roundNotices")>()),
+  noticeRoundPublished: vi.fn().mockResolvedValue({ sent: 2, failed: 0 }),
+}));
 vi.mock("../services/results.service", () => ({
   recordResult: vi.fn().mockResolvedValue(undefined),
   correctResult: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { correctResult, recordResult } from "../services/results.service";
+import { noticeRoundPublished } from "../services/roundNotices";
 import { discardRound, generateRound, listRounds, publishRound, swapPlayers } from "../services/rounds.service";
 import { signSessionToken } from "../services/sessionToken";
 
@@ -122,6 +127,13 @@ describe("round endpoints", () => {
 
     expect(published.status).toBe(200);
     expect(publishRound).toHaveBeenCalledWith(prismaMock, "8a72ea86-e571-5811-ad69-735b423fb932", ORGANIZER);
+    // #141: the players are told, after the organizer has their answer.
+    expect(noticeRoundPublished).toHaveBeenCalledWith(
+      prismaMock,
+      expect.objectContaining({ send: expect.any(Function) }),
+      "8a72ea86-e571-5811-ad69-735b423fb932",
+      expect.any(String),
+    );
     expect(discarded.status).toBe(204);
     expect(discardRound).toHaveBeenCalledWith(prismaMock, "632dfc18-be3f-57eb-83a8-ce37e20ee667", ORGANIZER);
   });

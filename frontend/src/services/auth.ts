@@ -8,6 +8,7 @@ import {
   type Disability,
   type Gender,
   type MyCoachDto,
+  type NotificationSettingsDto,
   type PlayerClubDto,
   type PlayerProfileDto,
   type SelfAssignableRole,
@@ -154,4 +155,19 @@ export async function requestPasswordReset(email: string): Promise<void> {
 /** Confirms a password reset with the one-time token from the reset link (HU19). */
 export async function confirmPasswordReset(token: string, newPassword: string): Promise<void> {
   await api.post("/auth/password/reset", { token, newPassword });
+}
+
+/** #141: the signed-in user's notification choices, and whether the system sends email at all. */
+export type NotificationSettings = Serialized<NotificationSettingsDto>;
+
+/** #141: reads the signed-in user's notification choices. */
+export async function getNotificationSettings(): Promise<NotificationSettings> {
+  const { data } = await api.get<NotificationSettings>("/users/me/notifications");
+  return data;
+}
+
+/** #141: turns the email on a round's publication on or off. */
+export async function updateNotificationSettings(roundPublished: boolean): Promise<NotificationSettings> {
+  const { data } = await api.put<NotificationSettings>("/users/me/notifications", { roundPublished });
+  return data;
 }
