@@ -827,7 +827,7 @@
     "RESULTS_PENDING": "Round {number} still has results to record",
     "ALL_ROUNDS_PLAYED": "The tournament has already played its {count} rounds.",
     "NOT_ENOUGH_PLAYERS": "At least 2 active players are needed to pair.",
-    "PAIRING_IMPOSSIBLE": "No pairing avoids repeating a game in round {number}.",
+    "PAIRING_IMPOSSIBLE": "No pairing avoids repeating a game in round {number}. To go on, lower the configuration's “Number of rounds” to the rounds already played and use “Finish Tournament”, or withdraw a player and generate the round again.",
     "DISCARD_NEEDS_DRAFT": "A round can only be discarded before it's published.",
     "ADJUST_NEEDS_DRAFT": "A round can only be adjusted before it's published.",
     "PUBLISH_NEEDS_DRAFT": "This round is already published.",

@@ -234,4 +234,22 @@ describe("RoundManager", () => {
 
     expect(wrapper.text()).toContain("No existe un emparejamiento");
   });
+
+  // No draft is created: the organizer needs to know how to go on from here.
+  it("says how to go on when no pairing avoids a rematch", async () => {
+    vi.mocked(listRounds).mockResolvedValue([round(1, "STANDINGS_UPDATED", ["1-0"])]);
+    vi.mocked(generateRound).mockRejectedValue({
+      isAxiosError: true,
+      response: { data: { code: "PAIRING_IMPOSSIBLE", params: { number: 2 }, error: "No existe" } },
+    });
+
+    const wrapper = await mountManager({ ...TOURNAMENT, status: "IN_PROGRESS" });
+    await button(wrapper, "Generar ronda 2")!.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("ronda 2");
+    expect(wrapper.text()).toContain("Número de rondas");
+    expect(wrapper.text()).toContain("Finalizar torneo");
+    expect(wrapper.text()).toContain("retira");
+  });
 });

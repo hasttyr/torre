@@ -73,7 +73,10 @@ export const API_ERRORS = {
   RESULTS_PENDING: [409, "Faltan resultados de la ronda {number}"],
   ALL_ROUNDS_PLAYED: [409, "El torneo ya jugó sus {count} rondas"],
   NOT_ENOUGH_PLAYERS: [409, "Se necesitan al menos 2 jugadores activos para emparejar"],
-  PAIRING_IMPOSSIBLE: [409, "No existe un emparejamiento que evite repetir enfrentamientos en la ronda {number}"],
+  PAIRING_IMPOSSIBLE: [
+    409,
+    "No existe un emparejamiento que evite repetir enfrentamientos en la ronda {number}. Para seguir, baja el número de rondas a las ya jugadas y finaliza el torneo, o retira a un jugador",
+  ],
   DISCARD_NEEDS_DRAFT: [409, "Solo se puede descartar una ronda antes de publicarla"],
   ADJUST_NEEDS_DRAFT: [409, "Solo se puede ajustar una ronda antes de publicarla"],
   PUBLISH_NEEDS_DRAFT: [409, "Esta ronda ya fue publicada"],
