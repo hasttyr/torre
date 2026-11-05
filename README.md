@@ -30,7 +30,7 @@ El sistema cubre de extremo a extremo:
 - Creación y configuración de torneos, apertura y cierre de inscripciones
 - Gestión de clubes y vinculación de jugadores con entrenadores
 - Descubrimiento de torneos disponibles y consulta de torneos administrados
-- Emparejamiento suizo adaptado (modelo Dutch, FIDE C.04.1-C.04.3), incluyendo bye automático
+- Emparejamiento suizo adaptado y simplificado del sistema Dutch (FIDE C.04.3), incluyendo bye automático
 - Registro y corrección autorizada de resultados
 - Cálculo de clasificación y aplicación de desempates (Buchholz, Buchholz Cortado, Sonneborn-Berger, ARO)
 - Publicación de emparejamientos y clasificación en tiempo real
@@ -180,6 +180,8 @@ Decisiones de alcance:
 - **ARO no se calcula**: necesita el rating de los rivales, y el cálculo de rating está fuera del alcance del proyecto. Si un torneo lo incluye en su orden de desempates, se omite.
 - **Resultado particular** sí se aplica como último desempate.
 - El **bye** vale 1, ½ o 0 puntos según el torneo (1 por defecto), y ese valor, como el orden de desempates, no se puede cambiar después de generar la ronda 1.
+- **El bye no cuenta en los desempates**: suma sus puntos al puntaje, pero no le da rival a quien lo recibe, así que no aporta nada a su Buchholz ni a su Sonneborn-Berger. Es una regla simplificada; FIDE le da un rival virtual. Para un jugador: a igualdad de puntos, quien tuvo bye suele quedar detrás en el Buchholz.
+- **Un empate que ningún desempate resuelve** es un puesto compartido (1, 1, 3), en la sala y en el PDF. El resultado particular solo desempata si todos los empatados se enfrentaron entre sí.
 - Si ningún emparejamiento evita repetir un enfrentamiento, la generación se rechaza con un mensaje claro en lugar de repetirlo en silencio.
 
 ## Paneles por rol

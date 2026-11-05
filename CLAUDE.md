@@ -19,7 +19,7 @@ Este archivo es el contexto de entrada. El detalle está en los README de cada p
 
 ## Glosario
 
-- **HUxx**: historia de usuario (HU01–HU30), **RN-xx**: regla de negocio. Vienen del documento de sustentación, que ya no está en el repo; el código las cita en comentarios para decir de dónde sale una regla.
+- **HUxx**: historia de usuario (HU01–HU31), **RN-xx**: regla de negocio. Vienen del documento de sustentación, que ya no está en el repo; el código las cita en comentarios para decir de dónde sale una regla.
 - Reglas que más se tocan: RN-01 no inscribir dos veces, RN-02 no repetir enfrentamientos, RN-03 catálogo de resultados, RN-04 solo cuenta lo publicado, RN-05 orden de desempates fijo desde la ronda 1, RN-06 quién registra resultados, RN-07 un retirado no se empareja, RN-08 bye, RN-09 ajuste manual con motivo, RN-10 consentimiento de la política de datos, RN-11 acciones críticas a la bitácora.
 - **Roles**: `PLAYER` y `COACH` se registran solos; `ORGANIZER`, `ARBITER` y `ADMINISTRATOR` los asigna un administrador. Que cualquiera pueda ser `COACH` importa para la privacidad (ver `docs/decisions/006-busqueda-de-jugadores-del-coach.md`).
 - **Estados del torneo**: `CREATED` → `REGISTRATION_OPEN` → `REGISTRATION_CLOSED` → `IN_PROGRESS` → `FINISHED`. Las inscripciones se abren una sola vez, y las rondas solo se generan con ellas cerradas.
