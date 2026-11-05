@@ -4,6 +4,7 @@ import { DOUBLE_FORFEIT } from "../contracts/catalogs";
 import { emitToTournament } from "../sockets/broadcast";
 import { SOCKET_EVENTS } from "../sockets/events";
 import { plain, recordAuditLog } from "./auditLog.service";
+import { BOGOTA_OFFSET_MS, DAY_MS, todayInBogota } from "./bogotaCalendar";
 import { completeBlockedSuppressions } from "./dataRights.service";
 import { recalculateStandings } from "./standings.service";
 import { lockTournament } from "./tournamentAccess";
@@ -15,10 +16,6 @@ import { lockTournament } from "./tournamentAccess";
 // final. A tournament that never started (no round published, so never
 // IN_PROGRESS) is left alone.
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-// Colombia is UTC-5 all year (no daylight saving).
-const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000;
-
 /**
  * The moment a tournament ending on `endDate` is over: the end of that day
  * in Bogotá. A tournament date is a calendar day, stored at UTC midnight.
@@ -27,11 +24,8 @@ export function closesAt(endDate: Date): Date {
   return new Date(endDate.getTime() + DAY_MS + BOGOTA_OFFSET_MS);
 }
 
-/** Today's calendar day in Bogotá, stored like a tournament date: at UTC midnight. */
-export function todayInBogota(now = new Date()): Date {
-  const local = now.getTime() - BOGOTA_OFFSET_MS;
-  return new Date(local - (local % DAY_MS));
-}
+// Where tournaments.service.ts has always found it.
+export { todayInBogota };
 
 export interface AutoFinishOutcome {
   finished: string[];

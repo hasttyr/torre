@@ -1,4 +1,5 @@
 import type { Club, Player, Role, User } from "../generated/prisma/client";
+import { todayInBogota } from "./bogotaCalendar";
 import type {
   DataConsentDto,
   PlayerClubDto,
@@ -12,12 +13,16 @@ export function playerDetails(player: PlayerDetailsDto): PlayerDetailsDto {
   return { universityCode: player.universityCode, program: player.program, semester: player.semester };
 }
 
-/** Computes age in whole years from a birth date, as of `today`. */
-export function calculateAge(birthDate: Date, today: Date = new Date()): number {
-  let age = today.getFullYear() - birthDate.getFullYear();
+/**
+ * Computes age in whole years from a birth date, as of `today` (Colombia's
+ * calendar day by default). Both are calendar days stored at UTC midnight,
+ * so both are read in UTC: in the server's zone the birthday came a day early.
+ */
+export function calculateAge(birthDate: Date, today: Date = todayInBogota()): number {
+  let age = today.getUTCFullYear() - birthDate.getUTCFullYear();
   const hasNotHadBirthdayYet =
-    today.getMonth() < birthDate.getMonth() ||
-    (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate());
+    today.getUTCMonth() < birthDate.getUTCMonth() ||
+    (today.getUTCMonth() === birthDate.getUTCMonth() && today.getUTCDate() < birthDate.getUTCDate());
   if (hasNotHadBirthdayYet) {
     age -= 1;
   }

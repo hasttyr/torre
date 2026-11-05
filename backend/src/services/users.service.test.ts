@@ -243,4 +243,16 @@ describe("calculateAge", () => {
   it("correctly calculates the exact birthday date", () => {
     expect(calculateAge(new Date("2000-06-01"), new Date("2026-06-01"))).toBe(26);
   });
+
+  // A birth date is a calendar day stored at UTC midnight, and "today" is
+  // Colombia's: the day before the birthday, nobody is a year older yet.
+  it("doesn't add the year a day early, morning or evening in Colombia", () => {
+    vi.useFakeTimers({ now: new Date("2026-05-31T15:00:00Z") }); // 10:00 on May 31 in Bogotá
+    expect(calculateAge(new Date("2000-06-01"))).toBe(25);
+    vi.setSystemTime(new Date("2026-06-01T02:00:00Z")); // 21:00 on May 31 in Bogotá
+    expect(calculateAge(new Date("2000-06-01"))).toBe(25);
+    vi.setSystemTime(new Date("2026-06-01T15:00:00Z")); // the birthday
+    expect(calculateAge(new Date("2000-06-01"))).toBe(26);
+    vi.useRealTimers();
+  });
 });
