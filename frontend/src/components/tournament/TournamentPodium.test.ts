@@ -56,6 +56,19 @@ describe("TournamentPodium", () => {
     ]);
   });
 
+  // UC13: a tie no tiebreak resolved is a shared place, on the podium too.
+  it("shows a shared place as the place it is", () => {
+    const tied = standings(null);
+    tied.rows = [row(1, "a", "Ana Torres", 3), row(1, "b", "Beto Ruiz", 3), row(3, "c", "Caro Díaz", 1.5)];
+
+    const places = mountPodium(tied)
+      .findAll("ol > li")
+      .map((li) => li.findAll(":scope > span").map((part) => part.text())[0]);
+
+    expect(places).toEqual(["1", "1", "3"]);
+    expect(mountPodium(tied).text()).not.toContain("Segundo lugar");
+  });
+
   it("tells a player where they finished", () => {
     expect(mountPodium(standings("d")).get("[data-test='podium-viewer']").text()).toBe(
       "Terminaste en el puesto 4 de 4.",

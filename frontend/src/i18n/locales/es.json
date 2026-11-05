@@ -690,7 +690,8 @@
     "cut1": "Buchholz Cortado 1",
     "sb": "Sonneborn-Berger",
     "withdrawn": "retirado",
-    "tiebreakOrder": "Desempates en orden: {order}"
+    "tiebreakOrder": "Desempates en orden: {order}",
+    "sharedPlace": "Un puesto repetido es un empate que ningún desempate resolvió."
   },
   "roundManager": {
     "title": "Rondas",

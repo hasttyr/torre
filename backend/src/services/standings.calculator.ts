@@ -89,43 +89,69 @@ export function computeStandings(games: RecordedGame[], byePoints = 1): Standing
   });
 }
 
-// Negative when `a` ranks ahead of `b`, like Array#sort's comparator.
-type Comparator = (a: StandingValues, b: StandingValues) => number;
+// Splits players tied so far into groups, best first: one group when the
+// criterion can't tell them apart.
+type Splitter = <T extends StandingValues>(tied: T[]) => T[][];
 
+/** Groups by a value, highest first. */
 const byDescending =
-  (field: "buchholz" | "buchholzCut1" | "sonnebornBerger"): Comparator =>
-  (a, b) =>
-    b[field] - a[field];
+  (valueOf: (row: StandingValues) => number): Splitter =>
+  (tied) => {
+    const groups = new Map<number, (typeof tied)[number][]>();
+    for (const row of tied) {
+      const value = valueOf(row);
+      groups.set(value, [...(groups.get(value) ?? []), row]);
+    }
+    return [...groups.entries()].sort(([a], [b]) => b - a).map(([, rows]) => rows);
+  };
 
-/** Direct encounter: whoever scored more against the other in their games together ranks first. */
-function directEncounter(games: RecordedGame[]): Comparator {
+/**
+ * Direct encounter ("resultado particular"): the tied players ranked by what
+ * they scored in their games together. As FIDE applies it, only when every
+ * one of them met every other: otherwise it doesn't resolve the tie. A
+ * cycle (A beat B, B beat C, C beat A) leaves them level, so it doesn't
+ * either. A double forfeit was never played (decision 010): not a meeting.
+ */
+function directEncounter(games: RecordedGame[]): Splitter {
   const scoredAgainst = new Map<string, number>();
   for (const game of games) {
-    if (!game.whiteId || !game.blackId) continue;
+    if (!game.whiteId || !game.blackId || game.value === DOUBLE_FORFEIT) continue;
     const points = pointsFor(game);
     const whiteKey = `${game.whiteId}>${game.blackId}`;
     const blackKey = `${game.blackId}>${game.whiteId}`;
     scoredAgainst.set(whiteKey, (scoredAgainst.get(whiteKey) ?? 0) + points.white);
     scoredAgainst.set(blackKey, (scoredAgainst.get(blackKey) ?? 0) + points.black);
   }
-  return (a, b) =>
-    (scoredAgainst.get(`${b.playerId}>${a.playerId}`) ?? 0) - (scoredAgainst.get(`${a.playerId}>${b.playerId}`) ?? 0);
+  const met = (a: string, b: string) => scoredAgainst.has(`${a}>${b}`);
+
+  return (tied) => {
+    const ids = tied.map((row) => row.playerId);
+    const allMet = ids.every((a) => ids.every((b) => a === b || met(a, b)));
+    if (!allMet) return [tied];
+    return byDescending((row) => sum(ids.map((other) => scoredAgainst.get(`${row.playerId}>${other}`) ?? 0)))(tied);
+  };
 }
 
 // Every criterion the calculator can compute (ARO can't: see TIEBREAKS).
-function tiebreakComparators(games: RecordedGame[]): Partial<Record<Tiebreak, Comparator>> {
+function tiebreakSplitters(games: RecordedGame[]): Partial<Record<Tiebreak, Splitter>> {
   return {
-    BUCHHOLZ: byDescending("buchholz"),
-    BUCHHOLZ_CUT1: byDescending("buchholzCut1"),
-    SONNEBORN_BERGER: byDescending("sonnebornBerger"),
+    BUCHHOLZ: byDescending((row) => row.buchholz),
+    BUCHHOLZ_CUT1: byDescending((row) => row.buchholzCut1),
+    SONNEBORN_BERGER: byDescending((row) => row.sonnebornBerger),
     DIRECT_ENCOUNTER: directEncounter(games),
   };
 }
 
 /**
- * Sorts standings best-first: score, then each tiebreak in the tournament's
+ * Ranks standings best-first: score, then each tiebreak in the tournament's
  * configured order (criteria it can't compute, i.e. ARO, are skipped). Falls
  * back to {@link DEFAULT_TIEBREAKS} when the tournament has none configured.
+ *
+ * Players no criterion tells apart share a place (UC13, HU13: an unresolved
+ * tie is shown as such), and the next one counts the places taken: 1, 1, 3.
+ * Each criterion splits the groups still tied, instead of comparing players
+ * two by two: the direct encounter isn't transitive, and a pairwise sort
+ * would have ranked a cycle by whatever order the rows came in.
  *
  * @param games - The tournament's recorded games; only needed by the
  * direct-encounter tiebreak (DIRECT_ENCOUNTER, "resultado particular").
@@ -134,21 +160,23 @@ export function rankStandings<T extends StandingValues>(
   rows: T[],
   tiebreaks: readonly Tiebreak[],
   games: RecordedGame[] = [],
-): T[] {
+): (T & { rank: number })[] {
   const order = tiebreaks.length > 0 ? tiebreaks : DEFAULT_TIEBREAKS;
-  const available = tiebreakComparators(games);
-  const comparators = order.flatMap((tiebreak) => available[tiebreak] ?? []);
+  const available = tiebreakSplitters(games);
+  const splitters = [byDescending((row) => row.score), ...order.flatMap((tiebreak) => available[tiebreak] ?? [])];
 
-  return rows.slice().sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    for (const compare of comparators) {
-      const order = compare(a, b);
-      if (order !== 0) return order;
-    }
-    return 0;
+  let groups = [rows];
+  for (const split of splitters) {
+    groups = groups.flatMap((tied) => (tied.length > 1 ? split(tied) : [tied]));
+  }
+
+  let place = 1;
+  return groups.flatMap((tied) => {
+    const ranked = tied.map((row) => ({ ...row, rank: place }));
+    place += tied.length;
+    return ranked;
   });
 }
-
 function sum(values: number[]): number {
   return values.reduce((total, value) => total + value, 0);
 }

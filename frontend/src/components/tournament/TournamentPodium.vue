@@ -15,10 +15,13 @@ const { t } = useI18n();
 const locale = useLocaleStore();
 
 const STEPS = [
-  { place: 1, nameKey: "podium.first", order: "order-2", height: "h-28 sm:h-36", tone: 1 },
-  { place: 2, nameKey: "podium.second", order: "order-1", height: "h-20 sm:h-24", tone: 0.55 },
-  { place: 3, nameKey: "podium.third", order: "order-3", height: "h-14 sm:h-16", tone: 0.35 },
+  { place: 1, order: "order-2", height: "h-28 sm:h-36", tone: 1 },
+  { place: 2, order: "order-1", height: "h-20 sm:h-24", tone: 0.55 },
+  { place: 3, order: "order-3", height: "h-14 sm:h-16", tone: 0.35 },
 ];
+// A step is named by the place its player holds, not by its position: a tie
+// no tiebreak resolved is a shared place (UC13), two champions on 1.
+const PLACE_NAMES: Record<number, string> = { 1: "podium.first", 2: "podium.second", 3: "podium.third" };
 
 const podium = computed(() =>
   STEPS.flatMap((step) => {
@@ -48,12 +51,12 @@ const points = (score: number) => t("podium.points", { points: formatNumber(scor
       <li v-for="step in podium" :key="step.place" class="flex min-w-0 flex-col items-center" :class="step.order">
         <span
           class="mb-2 inline-flex size-10 items-center justify-center rounded-full font-display text-lg font-semibold tabular-nums"
-          :class="step.place === 1 ? 'bg-accent text-on-accent' : 'bg-text/8 text-text'"
+          :class="step.row.rank === 1 ? 'bg-accent text-on-accent' : 'bg-text/8 text-text'"
           aria-hidden="true"
         >
-          {{ step.place }}
+          {{ step.row.rank }}
         </span>
-        <span class="text-xs font-semibold text-text-muted">{{ t(step.nameKey) }}</span>
+        <span class="text-xs font-semibold text-text-muted">{{ t(PLACE_NAMES[step.row.rank] ?? "") }}</span>
         <strong
           class="mt-1 w-full truncate text-center text-[0.95rem] text-text sm:text-base"
           :class="{ 'text-accent': step.row.playerId === standings.viewerPlayerId }"

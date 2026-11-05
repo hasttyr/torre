@@ -59,6 +59,17 @@ describe("standingsDocument (HU30)", () => {
     ]);
   });
 
+  // UC13 / P12: two players on the same place aren't a typo on the sheet.
+  it("explains a shared place, and only when there is one", () => {
+    const tied = { ...STANDINGS, rows: STANDINGS.rows.map((row) => ({ ...row, rank: 1 })) };
+    const sheet = (standings: StandingsDto) =>
+      standingsDocument({ name: "Liga", roundsCount: 5 }, standings, GENERATED_AT, "America/Bogota");
+
+    expect(sheet(tied).tables[0].rows.map((row) => row[0])).toEqual(["1", "1"]);
+    expect(sheet(tied).notes).toContain("Un puesto repetido es un empate que ningún desempate resolvió.");
+    expect(sheet(STANDINGS).notes.join(" ")).not.toContain("puesto repetido");
+  });
+
   it("says so when the standings are still provisional", () => {
     const document = standingsDocument(
       { name: "Liga", roundsCount: 5 },

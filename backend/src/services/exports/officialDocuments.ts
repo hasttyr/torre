@@ -42,6 +42,11 @@ function generatedNotes(generatedAt: Date, timeZone: string): string[] {
   ];
 }
 
+/** Whether two players or more share a place: a tie no tiebreak resolved. */
+function hasSharedPlace(standings: StandingsDto): boolean {
+  return new Set(standings.rows.map((row) => row.rank)).size < standings.rows.length;
+}
+
 /** The standings sheet: rank, player, points and the computable tiebreaks. */
 export function standingsDocument(
   tournament: Pick<Tournament, "name" | "roundsCount">,
@@ -60,6 +65,8 @@ export function standingsDocument(
       ...(standings.tiebreaks.length > 0
         ? [`Desempates en orden: ${standings.tiebreaks.map((tiebreak) => TIEBREAK_LABELS[tiebreak]).join(" › ")}.`]
         : []),
+      // UC13 / HU13: players no tiebreak tells apart share their place.
+      ...(hasSharedPlace(standings) ? ["Un puesto repetido es un empate que ningún desempate resolvió."] : []),
     ],
     tables: [
       {

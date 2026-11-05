@@ -52,7 +52,9 @@ export async function recalculateStandings(db: Db, tournamentId: string): Promis
 
   await db.standing.deleteMany({ where: { tournamentId } });
   await db.standing.createMany({
-    data: ranked.map((row, index) => ({ tournamentId, ...row, rank: index + 1 })),
+    // A tie no tiebreak resolves is a shared place (UC13): rank comes from
+    // rankStandings, not from the row's position.
+    data: ranked.map((row) => ({ tournamentId, ...row })),
   });
 }
 
@@ -69,7 +71,8 @@ export async function getStandings(
     prisma.standing.findMany({
       where: { tournamentId },
       include: { player: { select: { userId: true, user: { select: { name: true } } } } },
-      orderBy: { rank: "asc" },
+      // Players sharing a place, in a stable order everyone sees the same.
+      orderBy: [{ rank: "asc" }, { player: { user: { name: "asc" } } }],
     }),
     prisma.round.findMany({ where: { tournamentId }, select: { status: true } }),
     prisma.enrollment.findMany({

@@ -80,7 +80,7 @@ describe("rankStandings", () => {
   it("ignores tiebreak names it can't compute (ARO) and uses a default order when none is set", () => {
     const rows = [row("a", 2, 3, 0), row("b", 2, 4, 0)];
 
-    expect(rankStandings(rows, ["ARO"]).map((r) => r.playerId)).toEqual(["a", "b"]);
+    expect(rankStandings(rows, ["ARO"]).map((r) => r.rank)).toEqual([1, 1]);
     expect(rankStandings(rows, []).map((r) => r.playerId)).toEqual(["b", "a"]);
   });
 
@@ -88,8 +88,82 @@ describe("rankStandings", () => {
     const rows = [row("a", 2, 3, 0), row("b", 2, 3, 0)];
     const games = [{ whiteId: "a", blackId: "b", value: "0-1" }];
 
-    expect(rankStandings(rows, ["BUCHHOLZ", "DIRECT_ENCOUNTER"], games).map((r) => r.playerId)).toEqual(["b", "a"]);
-    // Without their game on record, the tie stays as it was.
-    expect(rankStandings(rows, ["DIRECT_ENCOUNTER"]).map((r) => r.playerId)).toEqual(["a", "b"]);
+    expect(placesOf(rankStandings(rows, ["BUCHHOLZ", "DIRECT_ENCOUNTER"], games))).toEqual([
+      ["b", 1],
+      ["a", 2],
+    ]);
+    // Without their game on record, the tie isn't resolved.
+    expect(placesOf(rankStandings(rows, ["DIRECT_ENCOUNTER"]))).toEqual([
+      ["a", 1],
+      ["b", 1],
+    ]);
+  });
+
+  // UC13 / HU13 / P12: a tie that no configured criterion resolves is shown
+  // as a shared place, not as an order nobody decided.
+  describe("a tie no criterion resolves", () => {
+    it("is a shared place, and the next player counts the places taken", () => {
+      const rows = [row("c", 1, 0, 0), row("a", 2, 3, 1), row("b", 2, 3, 1)];
+
+      expect(placesOf(rankStandings(rows, ["BUCHHOLZ", "SONNEBORN_BERGER"]))).toEqual([
+        ["a", 1],
+        ["b", 1],
+        ["c", 3],
+      ]);
+    });
+
+    it("whatever order the players came in", () => {
+      const rows = [row("b", 2, 3, 1), row("a", 2, 3, 1)];
+
+      expect(rankStandings(rows, ["BUCHHOLZ"]).map((r) => r.rank)).toEqual([1, 1]);
+    });
+
+    it("includes a cycle of direct encounters: A beat B, B beat C, C beat A", () => {
+      const rows = [row("a", 1, 2, 1), row("b", 1, 2, 1), row("c", 1, 2, 1)];
+      const games = [
+        { whiteId: "a", blackId: "b", value: "1-0" },
+        { whiteId: "b", blackId: "c", value: "1-0" },
+        { whiteId: "c", blackId: "a", value: "1-0" },
+      ];
+
+      for (const order of [rows, [...rows].reverse()]) {
+        expect(rankStandings(order, ["DIRECT_ENCOUNTER"], games).map((r) => r.rank)).toEqual([1, 1, 1]);
+      }
+    });
+
+    it("applies the direct encounter only among tied players who all met (FIDE)", () => {
+      const rows = [row("a", 1, 2, 1), row("b", 1, 2, 1), row("c", 1, 2, 1)];
+      const games = [{ whiteId: "a", blackId: "b", value: "1-0" }];
+
+      expect(rankStandings(rows, ["DIRECT_ENCOUNTER"], games).map((r) => r.rank)).toEqual([1, 1, 1]);
+    });
+
+    it("orders by their games together when the three of them met", () => {
+      const rows = [row("c", 1, 2, 1), row("b", 1, 2, 1), row("a", 1, 2, 1)];
+      const games = [
+        { whiteId: "a", blackId: "b", value: "1-0" },
+        { whiteId: "a", blackId: "c", value: "1/2-1/2" },
+        { whiteId: "b", blackId: "c", value: "1/2-1/2" },
+      ];
+
+      expect(placesOf(rankStandings(rows, ["DIRECT_ENCOUNTER"], games))).toEqual([
+        ["a", 1],
+        ["c", 2],
+        ["b", 3],
+      ]);
+    });
+
+    it("leaves a tie Buchholz resolves as it was", () => {
+      const rows = [row("a", 2, 3, 0), row("b", 2, 4, 0)];
+
+      expect(placesOf(rankStandings(rows, ["BUCHHOLZ"]))).toEqual([
+        ["b", 1],
+        ["a", 2],
+      ]);
+    });
   });
 });
+
+function placesOf(ranked: { playerId: string; rank: number }[]): [string, number][] {
+  return ranked.map((r) => [r.playerId, r.rank]);
+}

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { formatNumber } from "../../lib/format";
@@ -6,7 +7,7 @@ import type { StandingRow, Standings } from "../../services/rounds";
 import { useLocaleStore } from "../../stores/locale";
 
 // HU14: the official standings, with the tiebreak columns that decide ties.
-defineProps<{ standings: Standings }>();
+const props = defineProps<{ standings: Standings }>();
 
 const { t } = useI18n();
 const locale = useLocaleStore();
@@ -20,6 +21,11 @@ const TIEBREAKS: { short: string; nameKey: string; value: (row: StandingRow) => 
   { short: "BC1", nameKey: "standings.cut1", value: (row) => row.buchholzCut1 },
   { short: "SB", nameKey: "standings.sb", value: (row) => row.sonnebornBerger },
 ];
+
+// UC13 / HU13: players no tiebreak tells apart share their place.
+const hasSharedPlace = computed(
+  () => new Set(props.standings.rows.map((row) => row.rank)).size < props.standings.rows.length,
+);
 
 const HEADER = "border-b border-border-soft px-2 py-2 font-semibold";
 const CELL = "border-b border-border-soft px-2 py-2";
@@ -69,6 +75,8 @@ const CELL = "border-b border-border-soft px-2 py-2";
         </tbody>
       </table>
     </div>
+
+    <p v-if="hasSharedPlace" class="text-xs text-text-faint">{{ t("standings.sharedPlace") }}</p>
 
     <p v-if="standings.tiebreaks.length > 0" class="text-xs text-text-faint">
       {{

@@ -690,7 +690,8 @@
     "cut1": "Buchholz Cut 1",
     "sb": "Sonneborn-Berger",
     "withdrawn": "withdrawn",
-    "tiebreakOrder": "Tiebreaks in order: {order}"
+    "tiebreakOrder": "Tiebreaks in order: {order}",
+    "sharedPlace": "A repeated place is a tie no tiebreak resolved."
   },
   "roundManager": {
     "title": "Rounds",

@@ -58,6 +58,40 @@ describe("recalculateStandings (HU12/HU13)", () => {
   });
 });
 
+describe("recalculateStandings — an unresolved tie (UC13, P12)", () => {
+  it("stores a shared place for players no tiebreak tells apart", async () => {
+    const prisma = buildPrismaMock();
+    prisma.tournament.findUniqueOrThrow.mockResolvedValue({ id: "t-1", byePoints: 1, tiebreakCriteria: [] });
+    // a and b both beat c and d, who drew: identical in every criterion.
+    prisma.result.findMany.mockResolvedValue([
+      { value: "1-0", match: { whiteId: "a", blackId: "c" } },
+      { value: "1-0", match: { whiteId: "b", blackId: "d" } },
+    ]);
+    prisma.enrollment.findMany.mockResolvedValue([]);
+
+    await recalculateStandings(asClient(prisma), "t-1");
+
+    const rows = prisma.standing.createMany.mock.calls[0][0].data;
+    expect(rows.map((row: { rank: number }) => row.rank)).toEqual([1, 1, 3, 3]);
+  });
+
+  it("lists players sharing a place by name", async () => {
+    const prisma = buildPrismaMock();
+    prisma.tournament.findUnique.mockResolvedValue({ id: "t-1", status: "FINISHED", organizerId: "org-1" });
+    prisma.standing.findMany.mockResolvedValue([]);
+    prisma.round.findMany.mockResolvedValue([]);
+    prisma.enrollment.findMany.mockResolvedValue([]);
+    prisma.tiebreakCriterion.findMany.mockResolvedValue([]);
+
+    await getStandings(asClient(prisma), "t-1", { id: "org-1", role: "ORGANIZER" });
+
+    expect(prisma.standing.findMany.mock.calls[0][0].orderBy).toEqual([
+      { rank: "asc" },
+      { player: { user: { name: "asc" } } },
+    ]);
+  });
+});
+
 describe("getStandings (HU14)", () => {
   it("flags the table as pending while the latest round has games without a result", async () => {
     const prisma = buildPrismaMock();

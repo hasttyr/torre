@@ -26,6 +26,17 @@ const STANDINGS = {
 describe("StandingsTable", () => {
   beforeEach(() => setActivePinia(createPinia()));
 
+  // UC13 / P12: two players on the same place tied in every tiebreak.
+  it("explains a shared place, and only when there is one", () => {
+    const row = STANDINGS.rows[0]!;
+    const tied = { ...STANDINGS, rows: [row, { ...row, playerId: "p2", name: "Beto Ruiz" }] } as Standings;
+    const text = (standings: Standings) =>
+      mount(StandingsTable, { props: { standings }, global: { plugins: [i18n] } }).text();
+
+    expect(text(tied)).toContain("Un puesto repetido es un empate que ningún desempate resolvió.");
+    expect(text(STANDINGS)).not.toContain("puesto repetido");
+  });
+
   it("spells out every abbreviated column for screen readers, and explains it on hover", () => {
     const wrapper = mount(StandingsTable, { props: { standings: STANDINGS }, global: { plugins: [i18n] } });
 
