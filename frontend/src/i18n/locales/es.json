@@ -90,7 +90,8 @@
     "createAccount": "Crear cuenta",
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú",
-    "live": "En juego"
+    "live": "En juego",
+    "sections": "Secciones"
   },
   "userMenu": {
     "menuAria": "Menú de {name}",
@@ -160,6 +161,7 @@
     "footerProject": "Proyecto",
     "footerCode": "Código en GitHub",
     "footerLegal": "© {year} Torre Central Hub. Práctica de Ingeniería IV.",
+    "photoCredit": "Foto de fondo",
     "mock": {
       "round": "Ronda 3",
       "published": "Publicada",

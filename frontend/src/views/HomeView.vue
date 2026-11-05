@@ -6,10 +6,11 @@ import HeroBoard from "../components/home/HeroBoard.vue";
 import ShowcaseTile from "../components/home/ShowcaseTile.vue";
 import AppHeader from "../components/layout/AppHeader.vue";
 
-// The landing is a gallery: a dark stage where the board stands as the
-// piece on show, the facts, the six features (two wide, then four in a
-// checkerboard of light and ink cards), the four steps, a closing call on
-// ink, and the name set at full width as the close.
+// The landing stands on the app's photograph, shown plainly behind the
+// hero (the headline, the board) and veiled below it, where the facts, the
+// six features (two wide, then four alternating light and ink glass), the
+// four steps and the closing call sit on glass panes; the name set at full
+// width is the close.
 const { t } = useI18n();
 
 // The features' illustrations are below the fold: they come in one chunk
@@ -34,7 +35,9 @@ const STEPS = [
 
 // The landing's large calls to action: a little taller than the app's buttons.
 const PILL = "min-h-12 px-8 text-base";
-// On the dark stage both themes use the bright gold and an ivory outline.
+// The hero's second action: a glass pill on the photograph.
+const ON_PHOTO_SECONDARY = "glass-strong text-text ring-1 ring-glass-border hover:bg-surface";
+// On ink glass both themes use the bright gold and an ivory outline.
 const ON_INK_PRIMARY = "bg-tile-ink-accent text-tile-ink-on-accent hover:bg-tile-ink-accent-hover";
 const ON_INK_SECONDARY =
   "border-tile-ink-text/25 text-tile-ink-text hover:border-tile-ink-text/55 hover:bg-tile-ink-text/8";
@@ -47,24 +50,29 @@ const year = new Date().getFullYear();
     <AppHeader />
 
     <main>
-      <!-- The stage: dark in both themes, like a vitrine, so the board's wood
-           and gold carry the color. -->
-      <section class="overflow-hidden bg-tile-ink pt-16 pb-20 text-center sm:pt-24 sm:pb-28 lg:pt-28 lg:pb-32">
+      <!-- The hero: the photograph under a lighter veil (only full-ink, large
+           type sits on it), fading into the page's veiled ground below. The
+           header floats over its top. -->
+      <section class="relative isolate -mt-18 overflow-hidden pt-32 pb-20 text-center sm:pt-40 sm:pb-28 lg:pb-32">
+        <div
+          class="photo-stage absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,black_70%,transparent)]"
+          aria-hidden="true"
+        />
         <div class="container flex max-w-[1320px] flex-col items-center">
-          <h1 class="text-[clamp(2.25rem,0.4rem+6.6vw,6.5rem)] leading-[0.98] tracking-[-0.045em] text-tile-ink-text">
+          <h1 class="text-[clamp(2.25rem,0.4rem+6.6vw,6.5rem)] leading-[0.98] tracking-[-0.045em]">
             {{ t("home.titleLine1") }}<br />
-            {{ t("home.titleLine2") }}
+            <span class="text-accent-hover">{{ t("home.titleLine2") }}</span>
           </h1>
           <p
-            class="mt-8 max-w-[38rem] text-[clamp(1.0625rem,0.95rem+0.45vw,1.3125rem)] leading-normal text-pretty text-tile-ink-muted"
+            class="mt-8 max-w-[38rem] text-[clamp(1.0625rem,0.95rem+0.45vw,1.3125rem)] leading-normal text-pretty text-text"
           >
             {{ t("home.subtitle") }}
           </p>
           <div class="mt-10 flex flex-wrap justify-center gap-3">
-            <RouterLink to="/registro" class="btn" :class="[PILL, ON_INK_PRIMARY]">
+            <RouterLink to="/registro" class="btn btn-primary" :class="PILL">
               {{ t("home.ctaPrimary") }}
             </RouterLink>
-            <a href="#funciona" class="btn" :class="[PILL, ON_INK_SECONDARY]">{{ t("home.ctaSecondary") }}</a>
+            <a href="#funciona" class="btn" :class="[PILL, ON_PHOTO_SECONDARY]">{{ t("home.ctaSecondary") }}</a>
           </div>
 
           <div class="mt-16 w-full sm:mt-20 lg:mt-24">
@@ -73,8 +81,11 @@ const year = new Date().getFullYear();
         </div>
       </section>
 
-      <section class="bg-bg py-16 sm:py-24">
-        <ul :aria-label="t('home.factsLabel')" class="container grid grid-cols-2 gap-x-6 gap-y-12 lg:grid-cols-4">
+      <section class="container py-8 sm:py-12">
+        <ul
+          :aria-label="t('home.factsLabel')"
+          class="pane m-0 grid list-none grid-cols-2 gap-x-6 gap-y-12 rounded-[28px] p-8 sm:p-12 lg:grid-cols-4"
+        >
           <li v-for="n in FACTS" :key="n" class="flex flex-col gap-3">
             <strong
               class="font-display text-[clamp(3rem,2rem+3.6vw,5.5rem)] leading-[0.9] font-semibold tracking-[-0.05em] text-accent"
@@ -86,7 +97,7 @@ const year = new Date().getFullYear();
         </ul>
       </section>
 
-      <section id="funciona" class="bg-bg">
+      <section id="funciona">
         <div class="container pt-8 pb-14 text-center sm:pt-16 sm:pb-20">
           <h2 class="mx-auto max-w-4xl text-[clamp(2.25rem,1.3rem+3.6vw,4.5rem)] leading-[1.02] tracking-[-0.04em]">
             {{ t("home.featuresTitle") }}
@@ -120,7 +131,7 @@ const year = new Date().getFullYear();
         </div>
       </section>
 
-      <section class="bg-bg py-20 sm:py-32">
+      <section class="py-20 sm:py-32">
         <div class="container">
           <h2 class="max-w-3xl text-[clamp(2.25rem,1.3rem+3.6vw,4.5rem)] leading-[1.02] tracking-[-0.04em]">
             {{ t("home.stepsTitle") }}
@@ -128,8 +139,8 @@ const year = new Date().getFullYear();
 
           <!-- A real sequence, so the numbers stay; set large and faint, they
                lead the eye without competing with the step's name. -->
-          <ol class="mt-14 grid gap-x-8 gap-y-12 sm:mt-20 sm:grid-cols-2 lg:grid-cols-4">
-            <li v-for="step in STEPS" :key="step.n" class="flex flex-col gap-4">
+          <ol class="m-0 mt-14 grid list-none gap-3 p-0 sm:mt-20 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+            <li v-for="step in STEPS" :key="step.n" class="pane flex flex-col gap-6 rounded-[28px] p-7 sm:p-8">
               <span
                 class="font-display text-[clamp(3rem,2.4rem+2vw,4.25rem)] leading-none font-semibold tracking-[-0.05em] text-text/25 tabular-nums"
                 aria-hidden="true"
@@ -146,7 +157,7 @@ const year = new Date().getFullYear();
       </section>
 
       <section
-        class="relative mx-3 overflow-hidden rounded-[28px] bg-tile-ink py-24 text-center sm:mx-4 sm:py-32 lg:py-40"
+        class="pane-ink relative mx-3 overflow-hidden rounded-[28px] py-24 text-center sm:mx-4 sm:py-32 lg:py-40"
       >
         <span
           class="pointer-events-none absolute -right-10 -bottom-24 font-display text-[20rem] leading-none text-tile-ink-accent/10 select-none sm:-bottom-32 sm:text-[30rem] lg:right-[5%]"
@@ -173,9 +184,9 @@ const year = new Date().getFullYear();
       </section>
     </main>
 
-    <footer class="mt-auto overflow-hidden bg-bg pt-16 pb-8 sm:pt-24">
+    <footer class="mt-auto overflow-hidden pt-16 pb-8 sm:pt-24">
       <div class="container">
-        <div class="grid gap-10 sm:grid-cols-[1.6fr_1fr_1fr]">
+        <div class="pane grid gap-10 rounded-[28px] p-8 sm:grid-cols-[1.6fr_1fr_1fr] sm:p-12">
           <p class="max-w-xs text-base">{{ t("home.footerText") }}</p>
           <nav :aria-label="t('home.footerAccount')" class="flex flex-col gap-2.5 text-base">
             <span class="font-semibold text-text">{{ t("home.footerAccount") }}</span>
@@ -208,10 +219,28 @@ const year = new Date().getFullYear();
           <span class="text-accent">♜</span>Torre Central Hub
         </p>
 
-        <div class="mt-8 flex flex-col gap-1 text-sm text-text-faint sm:flex-row sm:justify-between">
+        <div class="mt-8 flex flex-col gap-1 text-sm text-text-muted sm:flex-row sm:justify-between">
           <span>{{ t("home.footerLegal", { year }) }}</span>
           <span>{{ t("home.eyebrow") }}</span>
         </div>
+        <!-- The background photograph's credit, as its licence asks. -->
+        <p class="mt-2 text-sm text-text-muted">
+          {{ t("home.photoCredit") }}:
+          <a
+            href="https://commons.wikimedia.org/wiki/File:Chess_pieces_close_up.jpg"
+            target="_blank"
+            rel="noopener"
+            class="text-text-muted underline-offset-2 hover:text-text"
+            >“Chess pieces close up”</a
+          >, Aaaatu,
+          <a
+            href="https://creativecommons.org/licenses/by-sa/4.0/"
+            target="_blank"
+            rel="noopener"
+            class="text-text-muted underline-offset-2 hover:text-text"
+            >CC BY-SA 4.0</a
+          >
+        </p>
       </div>
     </footer>
   </div>

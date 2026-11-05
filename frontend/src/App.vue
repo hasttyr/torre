@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { defineAsyncComponent, ref, watch } from "vue";
 
+import MobileTabBar from "./components/layout/MobileTabBar.vue";
 import SkipLink from "./components/layout/SkipLink.vue";
 import { whenIdle } from "./lib/idle";
 import { useAuthStore } from "./stores/auth";
@@ -35,6 +36,8 @@ watch(
 </script>
 
 <template>
+  <!-- The photograph every page stands on (style.css, .backdrop). -->
+  <div class="backdrop" aria-hidden="true" />
   <SkipLink />
   <!-- Keyed by path: /torneos/A/sala → /torneos/B/sala is a new page, not A's
        page left in place (its data, socket room and exports all belong to A).
@@ -42,5 +45,6 @@ watch(
   <RouterView v-slot="{ Component, route }">
     <component :is="Component" :key="route.path" />
   </RouterView>
+  <MobileTabBar />
   <ConfirmDialogHost v-if="confirmHostNeeded" />
 </template>

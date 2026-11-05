@@ -90,7 +90,8 @@
     "createAccount": "Create Account",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "live": "Live"
+    "live": "Live",
+    "sections": "Sections"
   },
   "userMenu": {
     "menuAria": "Menu for {name}",
@@ -160,6 +161,7 @@
     "footerProject": "Project",
     "footerCode": "Source Code on GitHub",
     "footerLegal": "© {year} Torre Central Hub. Software Engineering IV Practicum.",
+    "photoCredit": "Background photo",
     "mock": {
       "round": "Round 3",
       "published": "Published",

@@ -312,9 +312,12 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
     >
       <div
         v-if="!loading && isDirty(activeRole)"
-        class="fixed inset-x-0 bottom-0 z-10 border-t border-border-soft bg-header backdrop-blur-md"
+        class="container fixed inset-x-0 bottom-[calc(6.25rem+env(safe-area-inset-bottom))] z-30 lg:bottom-4"
       >
-        <div class="container flex flex-wrap items-center justify-between gap-3 py-3.5">
+        <!-- Floats like the header; on phones, above the tab bar. -->
+        <div
+          class="glass-strong flex flex-wrap items-center justify-between gap-3 rounded-[28px] px-5 py-3 shadow-lg ring-1 ring-glass-border"
+        >
           <p class="text-sm text-text">
             {{ t("dashboardLayouts.pending", { role: t(`roles.${activeRole}`) }) }}
             <span v-if="saveError" role="alert" class="ml-2 text-error">{{ saveError }}</span>

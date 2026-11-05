@@ -70,7 +70,7 @@ function actionLabel(action: string): string {
       </p>
 
       <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-        <li v-for="log in logs" :key="log.id" class="flex flex-col gap-1 rounded-[22px] bg-surface p-5">
+        <li v-for="log in logs" :key="log.id" class="flex flex-col gap-1 rounded-[22px] pane p-5">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <span class="pill">{{ actionLabel(log.action) }}</span>
             <span class="text-sm text-text-muted">{{ formatFullDateTime(log.createdAt, locale.locale) }}</span>

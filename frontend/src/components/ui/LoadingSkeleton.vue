@@ -34,7 +34,7 @@ const width = (index: number) => WIDTHS[index % WIDTHS.length];
         <li
           v-for="n in count"
           :key="n"
-          class="flex flex-col items-start gap-3 rounded-[24px] bg-surface p-6 sm:flex-row sm:items-center sm:justify-between sm:px-7"
+          class="flex flex-col items-start gap-3 rounded-[24px] pane p-6 sm:flex-row sm:items-center sm:justify-between sm:px-7"
         >
           <span class="flex w-full flex-col gap-2.5">
             <span class="skeleton h-5" :class="width(n)" />
@@ -45,7 +45,7 @@ const width = (index: number) => WIDTHS[index % WIDTHS.length];
       </ul>
 
       <ul v-else-if="variant === 'rows'" class="m-0 flex list-none flex-col gap-3 p-0">
-        <li v-for="n in count" :key="n" class="flex flex-col gap-2.5 rounded-[22px] bg-surface p-5">
+        <li v-for="n in count" :key="n" class="flex flex-col gap-2.5 rounded-[22px] pane p-5">
           <span class="skeleton h-4" :class="width(n)" />
           <span class="skeleton h-3 w-1/4" />
         </li>

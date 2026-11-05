@@ -64,3 +64,42 @@ describe.each(Object.entries(THEMES))("%s theme contrast (WCAG AA)", (_theme, to
     expect(contrast(tokens[foreground]!, tokens[background]!)).toBeGreaterThanOrEqual(AA);
   });
 });
+
+// The photograph behind every page (.backdrop) runs from pure black to pure
+// white, so text set straight on it is checked against the veil laid over
+// both extremes: what reads there reads over any pixel of it.
+/** The `--name: rgb(r g b / a%)` veil of the block that starts with `selector`, over a black or a white pixel, as hex. */
+function veiledHex(selector: string, name: string, pixel: 0 | 255): string {
+  const start = css.indexOf(selector);
+  const block = css.slice(start, css.indexOf("}", start));
+  const match = new RegExp(String.raw`--${name}:\s*rgb\((\d+) (\d+) (\d+) / (\d+)%\)`).exec(block);
+  if (!match) throw new Error(`--${name} not found in ${selector}`);
+  const alpha = Number(match[4]) / 100;
+  return (
+    "#" +
+    [match[1], match[2], match[3]]
+      .map((channel) => Math.round(Number(channel) * alpha + pixel * (1 - alpha)))
+      .map((channel) => channel.toString(16).padStart(2, "0"))
+      .join("")
+  );
+}
+
+const SELECTORS = { dark: ':root[data-theme="dark"] {', light: ':root[data-theme="light"] {' };
+
+describe.each(Object.entries(SELECTORS))("%s theme text over the photograph", (theme, selector) => {
+  const tokens = THEMES[theme as keyof typeof THEMES];
+
+  it.each([0, 255] as const)("page text reads through the veil over a pixel of %i", (pixel) => {
+    const ground = veiledHex(selector, "veil", pixel);
+    expect(contrast(tokens.text!, ground)).toBeGreaterThanOrEqual(AA);
+    expect(contrast(tokens["text-muted"]!, ground)).toBeGreaterThanOrEqual(AA);
+  });
+
+  // The hero's lighter veil holds only large type: full ink at AA, and the
+  // gold line at the 3:1 that large text needs.
+  it.each([0, 255] as const)("the hero's large type reads through its lighter veil over a pixel of %i", (pixel) => {
+    const ground = veiledHex(selector, "veil-soft", pixel);
+    expect(contrast(tokens.text!, ground)).toBeGreaterThanOrEqual(AA);
+    expect(contrast(tokens["accent-hover"]!, ground)).toBeGreaterThanOrEqual(3);
+  });
+});

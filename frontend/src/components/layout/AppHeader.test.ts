@@ -77,9 +77,8 @@ describe("AppHeader navigation", () => {
     expect(user.findAll("button[aria-haspopup='menu']").map((avatar) => avatar.text())).toEqual(["AT", "AT"]);
   });
 
-  it("opens the mobile menu with the same links, and closes it on navigation", async () => {
-    const wrapper = await mountHeader("COACH");
-    // The user menu's button also has aria-expanded: pick the hamburger by its label.
+  it("opens a visitor's mobile menu with login and sign-up, and closes it on navigation", async () => {
+    const wrapper = await mountHeader(null);
     const toggle = () => wrapper.get("button[aria-label='Abrir menú'], button[aria-label='Cerrar menú']");
     expect(wrapper.findAll("nav")).toHaveLength(1);
 
@@ -87,18 +86,19 @@ describe("AppHeader navigation", () => {
     expect(toggle().attributes("aria-expanded")).toBe("true");
     expect(wrapper.findAll("nav")).toHaveLength(2);
     const mobileNav = wrapper.findAll("nav").at(-1)!;
-    expect(mobileNav.findAll("a").map((link) => link.attributes("href"))).toEqual([
-      "/panel",
-      "/mis-jugadores",
-      "/en-juego",
-    ]);
+    expect(mobileNav.findAll("a").map((link) => link.attributes("href"))).toEqual(["/login", "/registro"]);
 
     await mobileNav.findAll("a")[0].trigger("click");
     expect(toggle().attributes("aria-expanded")).toBe("false");
   });
 
+  it("gives signed-in users no menu button on phones: their sections are in the tab bar", async () => {
+    const wrapper = await mountHeader("COACH");
+
+    expect(wrapper.find("button[aria-label='Abrir menú']").exists()).toBe(false);
+  });
+
   it("closes the mobile menu on Escape, handing focus back to its button", async () => {
-    useAuthStore().$patch({ user: { id: "u-1", name: "Ana Torres", role: "COACH" } as never });
     const router = appRoutes();
     await router.push("/");
     // attachTo: focus only moves between attached nodes in jsdom.

@@ -50,106 +50,98 @@ function closeMobileFromKeyboard(): void {
 </script>
 
 <template>
-  <header
-    class="glass-strong sticky top-0 z-30 pt-[env(safe-area-inset-top)] shadow-[inset_0_-1px_0_var(--glass-border)]"
-    @keydown.esc="closeMobileFromKeyboard"
-  >
-    <div class="container flex min-h-16 items-center justify-between gap-4 py-2.5">
-      <AppLogo collapsible />
+  <!-- A floating bar: a glass pill held a little off the top and the sides,
+       over the page's photograph. Above everything on the page (z-30), below
+       the confirm dialog. -->
+  <header class="sticky top-0 z-30 pt-[max(0.75rem,env(safe-area-inset-top))]" @keydown.esc="closeMobileFromKeyboard">
+    <div class="container">
+      <div class="glass-strong rounded-[28px] shadow-lg ring-1 ring-glass-border">
+        <div class="flex min-h-14 items-center justify-between gap-4 py-2 pr-2 pl-4 sm:pl-5">
+          <AppLogo collapsible />
 
-      <!-- Desktop nav: hidden below lg (an administrator has up to six links,
+          <!-- Desktop nav: hidden below lg (an administrator has up to six links,
            which would overflow a tablet-width bar), visible from lg upward. -->
-      <nav class="hidden items-center gap-1 lg:flex">
-        <template v-if="auth.isAuthenticated">
-          <RouterLink
-            v-for="item in navItems"
-            :key="item.to"
-            :to="item.to"
-            class="rounded-full px-3.5 py-2 text-[0.875rem] font-medium text-text-muted no-underline transition-colors hover:text-text [&.router-link-active]:bg-text/8 [&.router-link-active]:text-text"
-            @mouseenter="prefetch(item.to)"
-            @focus="prefetch(item.to)"
-          >
-            {{ t(item.labelKey) }}
-          </RouterLink>
-          <LazyUserMenu />
-        </template>
-        <template v-else>
-          <RouterLink
-            to="/login"
-            class="rounded-full px-3.5 py-2 text-[0.875rem] font-medium text-text-muted no-underline transition-colors hover:text-text"
-            >{{ t("header.login") }}</RouterLink
-          >
-          <RouterLink to="/registro" class="btn btn-primary ml-1 min-h-9 px-4 py-1.5 text-[0.875rem]">{{
-            t("header.createAccount")
-          }}</RouterLink>
-          <LocaleToggle />
-          <ThemeToggle />
-        </template>
-      </nav>
+          <nav class="hidden items-center gap-1 lg:flex">
+            <template v-if="auth.isAuthenticated">
+              <RouterLink
+                v-for="item in navItems"
+                :key="item.to"
+                :to="item.to"
+                class="rounded-full px-3.5 py-2 text-[0.875rem] font-medium text-text-muted no-underline transition-colors hover:text-text [&.router-link-active]:bg-surface [&.router-link-active]:text-text [&.router-link-active]:shadow-sm"
+                @mouseenter="prefetch(item.to)"
+                @focus="prefetch(item.to)"
+              >
+                {{ t(item.labelKey) }}
+              </RouterLink>
+              <LazyUserMenu />
+            </template>
+            <template v-else>
+              <RouterLink
+                to="/login"
+                class="rounded-full px-3.5 py-2 text-[0.875rem] font-medium text-text-muted no-underline transition-colors hover:text-text"
+                >{{ t("header.login") }}</RouterLink
+              >
+              <RouterLink to="/registro" class="btn btn-primary ml-1 min-h-9 px-4 py-1.5 text-[0.875rem]">{{
+                t("header.createAccount")
+              }}</RouterLink>
+              <LocaleToggle />
+              <ThemeToggle />
+            </template>
+          </nav>
 
-      <!-- Mobile controls: user menu or theme toggle + hamburger button. -->
-      <div class="flex items-center gap-2 lg:hidden">
-        <LazyUserMenu v-if="auth.isAuthenticated" />
-        <template v-else>
-          <LocaleToggle />
-          <ThemeToggle />
-        </template>
-        <button
-          ref="menuButton"
-          type="button"
-          class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-text/6 text-text transition-[background-color,scale] hover:bg-text/12 active:scale-95"
-          :aria-expanded="mobileOpen"
-          :aria-label="mobileOpen ? t('header.closeMenu') : t('header.openMenu')"
-          @click="mobileOpen = !mobileOpen"
+          <!-- Mobile controls: a signed-in user's sections are in the tab bar at
+           the bottom (MobileTabBar), so only the user menu is here; a
+           visitor gets the toggles and a menu with login and sign-up. -->
+          <div class="flex items-center gap-2 lg:hidden">
+            <LazyUserMenu v-if="auth.isAuthenticated" />
+            <template v-else>
+              <LocaleToggle />
+              <ThemeToggle />
+            </template>
+            <button
+              v-if="!auth.isAuthenticated"
+              ref="menuButton"
+              type="button"
+              class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-text/6 text-text transition-[background-color,scale] hover:bg-text/12 active:scale-95"
+              :aria-expanded="mobileOpen"
+              :aria-label="mobileOpen ? t('header.closeMenu') : t('header.openMenu')"
+              @click="mobileOpen = !mobileOpen"
+            >
+              <svg v-if="!mobileOpen" viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
+                <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+              </svg>
+              <svg v-else viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
+                <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Mobile nav panel: opens below the header, hidden from lg upward. -->
+        <Transition
+          enter-active-class="transition duration-150 ease-out"
+          enter-from-class="opacity-0 -translate-y-1"
+          enter-to-class="opacity-100 translate-y-0"
+          leave-active-class="transition duration-100 ease-in"
+          leave-from-class="opacity-100 translate-y-0"
+          leave-to-class="opacity-0 -translate-y-1"
         >
-          <svg v-if="!mobileOpen" viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
-            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
-          </svg>
-          <svg v-else viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
-            <path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
-          </svg>
-        </button>
+          <nav v-if="mobileOpen" class="lg:hidden">
+            <div class="flex flex-col gap-1 px-3 pt-1 pb-4">
+              <RouterLink
+                to="/login"
+                class="rounded-2xl px-3 py-3 text-[1.375rem] font-semibold tracking-[-0.02em] text-text no-underline hover:bg-text/6"
+                @click="closeMobile"
+              >
+                {{ t("header.login") }}
+              </RouterLink>
+              <RouterLink to="/registro" class="btn btn-primary mt-2 text-base" @click="closeMobile">
+                {{ t("header.createAccount") }}
+              </RouterLink>
+            </div>
+          </nav>
+        </Transition>
       </div>
     </div>
-
-    <!-- Mobile nav panel: opens below the header, hidden from lg upward. -->
-    <Transition
-      enter-active-class="transition duration-150 ease-out"
-      enter-from-class="opacity-0 -translate-y-1"
-      enter-to-class="opacity-100 translate-y-0"
-      leave-active-class="transition duration-100 ease-in"
-      leave-from-class="opacity-100 translate-y-0"
-      leave-to-class="opacity-0 -translate-y-1"
-    >
-      <nav v-if="mobileOpen" class="lg:hidden">
-        <div class="container flex flex-col gap-1 pt-2 pb-6">
-          <template v-if="auth.isAuthenticated">
-            <RouterLink
-              v-for="item in navItems"
-              :key="item.to"
-              :to="item.to"
-              class="rounded-2xl px-3 py-3 text-[1.375rem] font-semibold tracking-[-0.02em] text-text no-underline hover:bg-text/6"
-              @click="closeMobile"
-              @touchstart.passive="prefetch(item.to)"
-              @focus="prefetch(item.to)"
-            >
-              {{ t(item.labelKey) }}
-            </RouterLink>
-          </template>
-          <template v-else>
-            <RouterLink
-              to="/login"
-              class="rounded-2xl px-3 py-3 text-[1.375rem] font-semibold tracking-[-0.02em] text-text no-underline hover:bg-text/6"
-              @click="closeMobile"
-            >
-              {{ t("header.login") }}
-            </RouterLink>
-            <RouterLink to="/registro" class="btn btn-primary mt-3 text-base" @click="closeMobile">
-              {{ t("header.createAccount") }}
-            </RouterLink>
-          </template>
-        </div>
-      </nav>
-    </Transition>
   </header>
 </template>

@@ -28,10 +28,10 @@ const heading = computed(() => `h${props.headingLevel}`);
   <component
     :is="to ? RouterLink : 'div'"
     :to="to"
-    class="group flex flex-col items-start gap-3 rounded-[24px] bg-surface p-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-7"
+    class="group flex flex-col items-start gap-3 rounded-[24px] pane p-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:px-7"
     :class="
       to
-        ? 'text-inherit no-underline transition-[background-color,scale] duration-300 ease-spring hover:bg-surface-2 active:scale-[0.99]'
+        ? 'text-inherit no-underline transition-[translate,scale] duration-300 ease-spring hover:-translate-y-0.5 active:scale-[0.99]'
         : ''
     "
   >

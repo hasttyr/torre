@@ -3,19 +3,19 @@ import { useTemplateRef } from "vue";
 
 import { useInView } from "../../lib/useInView";
 
-// One feature on the landing: a tile with square edges (the change of
-// surface between tiles is the divider), the feature's name, one line on
-// what it does, and an illustration of it drawn with sample data. A wide
-// tile spans the page and gets the larger type.
+// One feature on the landing: a glass tile (light, or the dark ink glass)
+// with the feature's name, one line on what it does, and an illustration
+// of it drawn with sample data. A wide tile spans the page and gets the
+// larger type.
 withDefaults(defineProps<{ title: string; text: string; surface?: "theme" | "elevated" | "ink"; wide?: boolean }>(), {
   surface: "theme",
   wide: false,
 });
 
 const SURFACE_CLASSES = {
-  theme: "bg-bg",
-  elevated: "bg-bg-elevated",
-  ink: "bg-tile-ink",
+  theme: "pane",
+  elevated: "pane",
+  ink: "pane-ink",
 } as const;
 
 // The illustration rises in once most of it is on screen, not the moment
