@@ -1,5 +1,16 @@
 import type { Club, Player, Role, User } from "../generated/prisma/client";
-import type { DataConsentDto, PlayerClubDto, PlayerProfileDto, UserDto } from "../contracts/responses";
+import type {
+  DataConsentDto,
+  PlayerClubDto,
+  PlayerDetailsDto,
+  PlayerProfileDto,
+  UserDto,
+} from "../contracts/responses";
+
+/** What identifies a player at the university, beyond their name. */
+export function playerDetails(player: PlayerDetailsDto): PlayerDetailsDto {
+  return { universityCode: player.universityCode, program: player.program, semester: player.semester };
+}
 
 /** Computes age in whole years from a birth date, as of `today`. */
 export function calculateAge(birthDate: Date, today: Date = new Date()): number {

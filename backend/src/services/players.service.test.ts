@@ -48,6 +48,33 @@ describe("searchPlayers", () => {
     expect(findMany.mock.calls[0]![0].where.OR[0]).toEqual({ id: { in: [] } });
   });
 
+  it("shows a coach a player's details only once the player has accepted their link", async () => {
+    const player = (id: string, coachLinks: { id: string }[]) => ({
+      id,
+      user: { name: id },
+      universityCode: "U1",
+      program: "Sistemas",
+      semester: 5,
+      coachLinks,
+    });
+    const findMany = vi.fn().mockResolvedValue([player("linked", [{ id: "link-1" }]), player("stranger", [])]);
+    const $queryRaw = vi.fn().mockResolvedValue([]);
+
+    const found = await searchPlayers({ player: { findMany }, $queryRaw } as unknown as PrismaClient, "a@uni.edu", {
+      id: "coach-1",
+      role: "COACH",
+    });
+
+    expect(findMany.mock.calls[0]![0].include.coachLinks.where).toEqual({
+      coachId: "coach-1",
+      acceptedAt: { not: null },
+    });
+    expect(found).toEqual([
+      { id: "linked", name: "linked", universityCode: "U1", program: "Sistemas", semester: 5 },
+      { id: "stranger", name: "stranger" },
+    ]);
+  });
+
   it("still lets whoever runs tournaments and clubs search by any fragment", async () => {
     const findMany = vi.fn().mockResolvedValue([]);
 

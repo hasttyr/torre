@@ -110,7 +110,9 @@ async function onUnlink(player: { playerId: string; name: string; acceptedAt: st
           >
             <div class="flex flex-col gap-0.5">
               <strong class="text-sm text-text">{{ player.name }}</strong>
-              <span class="text-sm text-text-muted">{{ player.universityCode }} · {{ player.program }}</span>
+              <span v-if="player.universityCode" class="text-sm text-text-muted"
+                >{{ player.universityCode }} · {{ player.program }}</span
+              >
               <span v-if="player.acceptedAt === null" class="text-xs font-semibold text-text-faint">
                 {{ t("coachPlayers.pending") }}
               </span>

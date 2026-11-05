@@ -79,6 +79,28 @@ describe("player search", () => {
     }
   });
 
+  // HU24 / Ley 1581 (restricted circulation): a coach finds the player they
+  // were named, but learns no more about them until the player accepts.
+  it("shows a coach only the name of a player who hasn't accepted their link", async () => {
+    const coach = await createUser(prisma, "COACH");
+    const player = await createUser(prisma, "PLAYER", { name: "Laura Pérez" });
+    const search = async () =>
+      (await request(app).get("/api/players").query({ q: "laura perez" }).set(bearer(coach)).expect(200)).body;
+    const linked = async () => (await request(app).get("/api/coaches/players").set(bearer(coach)).expect(200)).body;
+
+    expect(await search()).toEqual([{ id: player.playerId, name: "Laura Pérez" }]);
+
+    const link = await request(app).post("/api/coaches/players").set(bearer(coach)).send({ playerId: player.playerId });
+    expect(link.body).not.toHaveProperty("universityCode");
+    expect(await search()).toEqual([{ id: player.playerId, name: "Laura Pérez" }]);
+    expect(await linked()).toEqual([expect.not.objectContaining({ universityCode: expect.anything() })]);
+
+    await request(app).post(`/api/users/me/coaches/${coach.id}/accept`).set(bearer(player)).expect(204);
+    const details = { universityCode: expect.any(String), program: expect.any(String), semester: expect.any(Number) };
+    expect(await search()).toEqual([{ id: player.playerId, name: "Laura Pérez", ...details }]);
+    expect(await linked()).toEqual([expect.objectContaining(details)]);
+  });
+
   it("only finds active accounts, so a blocked or suppressed person can't be enrolled, linked or assigned", async () => {
     const organizer = await createUser(prisma, "ORGANIZER");
     const blocked = await createUser(prisma, "PLAYER", { name: "Laura Pérez" });

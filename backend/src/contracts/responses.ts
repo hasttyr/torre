@@ -257,22 +257,30 @@ export interface ClubPlayerDto {
   semester: number;
 }
 
-/** A search hit: never the email, which is only a search key. */
-export interface PlayerSearchResultDto {
+/**
+ * A search hit: never the email, which is only a search key. A coach without
+ * an accepted link (HU24) gets only id and name: the details wait for the
+ * player's consent (Ley 1581, restricted circulation).
+ */
+export interface PlayerSearchResultDto extends Partial<PlayerDetailsDto> {
   id: string;
   name: string;
+}
+
+/** What identifies a player at the university, beyond their name. */
+export interface PlayerDetailsDto {
   universityCode: string;
   program: string;
   semester: number;
 }
 
-/** HU24, the coach's side: a player they follow, or have asked to. */
-export interface LinkedPlayerDto {
+/**
+ * HU24, the coach's side: a player they follow, or have asked to. The
+ * details come only once the player accepts.
+ */
+export interface LinkedPlayerDto extends Partial<PlayerDetailsDto> {
   playerId: string;
   name: string;
-  universityCode: string;
-  program: string;
-  semester: number;
   linkedAt: Date;
   /** When the player accepted; null while it's still a request. */
   acceptedAt: Date | null;

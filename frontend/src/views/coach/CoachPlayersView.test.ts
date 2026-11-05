@@ -33,8 +33,13 @@ const LINKED_PLAYER = {
   linkedAt: "2026-09-17T00:00:00.000Z",
   acceptedAt: "2026-09-18T00:00:00.000Z",
 };
-// Asked to follow, not accepted yet (HU24).
-const PENDING_PLAYER = { ...LINKED_PLAYER, playerId: "player-2", name: "Eva Ruiz", acceptedAt: null };
+// Asked to follow, not accepted yet (HU24): the API sends the name alone.
+const PENDING_PLAYER = {
+  playerId: "player-2",
+  name: "Eva Ruiz",
+  linkedAt: "2026-09-17T00:00:00.000Z",
+  acceptedAt: null,
+};
 
 const COACH_TOURNAMENT = {
   id: "tournament-1",
@@ -139,6 +144,8 @@ describe("CoachPlayersView", () => {
     expect(rows[0].text()).not.toContain("Esperando que acepte");
     expect(rows[1].text()).toContain("Eva Ruiz");
     expect(rows[1].text()).toContain("Esperando que acepte");
+    expect(rows[0].text()).toContain("U123 · Sistemas");
+    expect(rows[1].text()).not.toContain("·");
   });
 
   it("cancels a pending request right away: nothing was shared yet", async () => {

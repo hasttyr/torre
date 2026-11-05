@@ -102,6 +102,16 @@ describe("PlayerSearchPicker", () => {
     expect((wrapper.get("input").element as HTMLInputElement).value).toBe("Luis");
   });
 
+  // A coach without an accepted link gets only the name (HU24).
+  it("shows just the name when the search didn't hand out the player's details", async () => {
+    vi.mocked(searchPlayers).mockResolvedValue([{ id: "p-luis", name: "Luis Gómez" }]);
+    const wrapper = mountPicker();
+
+    await typeAndWait(wrapper, "Luis Gómez");
+
+    expect(wrapper.get("li").text()).not.toContain("·");
+  });
+
   it("says so when nobody matches", async () => {
     vi.mocked(searchPlayers).mockResolvedValue([]);
     const wrapper = mountPicker();

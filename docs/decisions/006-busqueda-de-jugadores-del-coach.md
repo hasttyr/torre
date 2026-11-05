@@ -17,14 +17,17 @@ Para un coach:
 
 Organizadores y administradores, que gestionan torneos y clubes, siguen buscando por cualquier fragmento.
 
+**Qué ve el coach** (desde el 5 de noviembre de 2026, #124): de un jugador que todavía no aceptó su vínculo, solo el nombre (y el `id` para pedirle el vínculo). Código universitario, programa y semestre llegan cuando el jugador acepta, en la búsqueda y en la lista "Mis jugadores". Organizadores y administradores los siguen viendo siempre. Es el punto medio de "seguridad sobre comodidad": se recortan campos, no la búsqueda.
+
 ## Consecuencias
 
 - Un coach encuentra al jugador que le dio su nombre y apellido, sin poder recorrer el directorio con fragmentos.
+- Si dos jugadores comparten nombre, el coach no los distingue por código ni programa antes de pedir el vínculo: el jugador equivocado rechaza la solicitud. Es el precio de no darle a una cuenta que cualquiera puede crear datos que el titular no autorizó (HU24, Ley 1581: circulación restringida).
 - Las tildes se ignoran con la extensión `unaccent` de PostgreSQL (migración `20261022000000_unaccent`): la base de producción tiene que permitirla (en PostgreSQL 13 o superior la puede crear el dueño de la base).
 - La comparación por palabras se hace en SQL crudo; el resto de la búsqueda sigue en Prisma.
 - Si la búsqueda vuelve a parecer "rota" para un coach, no basta con volver a los fragmentos: eso reabre la exposición del directorio. Cualquier cambio tiene que mantener el límite.
 
 ## Dónde está
 
-- `backend/src/services/players.service.ts` (`playersNamed`, `matching`).
+- `backend/src/services/players.service.ts` (`playersNamed`, `matching`, `searchPlayers`) y `coaches.service.ts` (`listLinkedPlayers`).
 - `backend/src/routes/privacy.int.test.ts` ("player search") y `backend/src/services/players.service.test.ts`.

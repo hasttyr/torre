@@ -5,6 +5,7 @@ import type { AuthUser } from "../types/express";
 import type { LinkPlayerSchemaInput } from "../validators/coaches.schemas";
 import { isUniqueConstraintError } from "./prismaErrors";
 import { toTournamentDto } from "./tournament.mapper";
+import { playerDetails } from "./user.mapper";
 import type { CoachTournamentDto, CoachTournamentPlayerDto, LinkedPlayerDto } from "../contracts/responses";
 
 /** The links a player has accepted: the only ones that show a coach their progress. */
@@ -33,9 +34,7 @@ export async function linkPlayer(
     return {
       playerId: player.id,
       name: player.user.name,
-      universityCode: player.universityCode,
-      program: player.program,
-      semester: player.semester,
+      // A request: the details wait for the player's consent (HU24).
       linkedAt: link.createdAt,
       acceptedAt: link.acceptedAt,
     };
@@ -58,9 +57,9 @@ export async function listLinkedPlayers(prisma: PrismaClient, actor: AuthUser): 
   return links.map((link) => ({
     playerId: link.player.id,
     name: link.player.user.name,
-    universityCode: link.player.universityCode,
-    program: link.player.program,
-    semester: link.player.semester,
+    // HU24 / Ley 1581: the coach learns who the player is at the university
+    // only once the player accepts; a request shows the name they gave.
+    ...(link.acceptedAt && playerDetails(link.player)),
     linkedAt: link.createdAt,
     acceptedAt: link.acceptedAt,
   }));

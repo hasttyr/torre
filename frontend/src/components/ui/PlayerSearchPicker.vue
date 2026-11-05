@@ -56,7 +56,9 @@ async function onPick(player: PlayerSearchResult): Promise<void> {
         >
           <div class="flex flex-col gap-0.5">
             <strong class="text-text">{{ player.name }}</strong>
-            <span class="text-sm text-text-muted">{{ player.universityCode }} · {{ player.program }}</span>
+            <span v-if="player.universityCode" class="text-sm text-text-muted"
+              >{{ player.universityCode }} · {{ player.program }}</span
+            >
           </div>
           <button type="button" class="btn btn-ghost" :disabled="busy || isAdded(player)" @click="onPick(player)">
             {{ isAdded(player) ? addedLabel : actionLabel }}

@@ -2,6 +2,8 @@ import type { Prisma, PrismaClient } from "../generated/prisma/client";
 
 import type { AuthUser } from "../types/express";
 import type { PlayerSearchResultDto } from "../contracts/responses";
+import { ACCEPTED_LINK } from "./coaches.service";
+import { playerDetails } from "./user.mapper";
 
 const RESULT_LIMIT = 10;
 
@@ -58,6 +60,7 @@ export async function searchPlayers(
     return [];
   }
 
+  const coach = viewer.role === "COACH";
   const players = await prisma.player.findMany({
     where: {
       // A blocked or suppressed account ("Usuario eliminado") can't be
@@ -65,18 +68,23 @@ export async function searchPlayers(
       user: { status: "ACTIVE" },
       OR: await matching(prisma, text, viewer),
     },
-    include: { user: true },
+    include: {
+      user: true,
+      ...(coach && { coachLinks: { where: { coachId: viewer.id, ...ACCEPTED_LINK }, select: { id: true } } }),
+    },
     take: RESULT_LIMIT,
     orderBy: { user: { name: "asc" } },
   });
 
-  return players.map((player) => ({
-    id: player.id,
-    name: player.user.name,
-    universityCode: player.universityCode,
-    program: player.program,
-    semester: player.semester,
-  }));
+  return players.map((player) => {
+    const found = { id: player.id, name: player.user.name };
+    // HU24 / Ley 1581: until the player accepts a coach's link, the coach
+    // gets the name they searched for and nothing more about the person.
+    if (coach && player.coachLinks.length === 0) {
+      return found;
+    }
+    return { ...found, ...playerDetails(player) };
+  });
 }
 
 export type { PlayerSearchResultDto };

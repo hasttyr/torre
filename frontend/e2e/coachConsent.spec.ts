@@ -1,12 +1,16 @@
 import { expect, test } from "./fixtures.ts";
 
 // HU24 with the player's consent (Ley 1581): a coach asks to follow a player,
-// sees nothing of their progress until the player accepts, and then does.
+// sees nothing of their progress, nor who they are at the university (code,
+// program), until the player accepts, and then does.
 
 test("a coach follows a player only once the player accepts", async ({ signInAs }) => {
   const coach = await signInAs("marta.rios@test.com");
   await coach.goto("/mis-jugadores");
   await coach.locator("#coachPlayerQuery").fill("Laura Pineda");
+  const found = coach.getByRole("listitem").filter({ hasText: "Laura Pineda" });
+  await expect(found).toBeVisible();
+  await expect(found).not.toContainText("·");
   await coach
     .getByRole("listitem")
     .filter({ hasText: "Laura Pineda" })
@@ -15,6 +19,7 @@ test("a coach follows a player only once the player accepts", async ({ signInAs 
 
   const request = coach.locator("[data-linked-player]").filter({ hasText: "Laura Pineda" });
   await expect(request).toContainText("Esperando que acepte");
+  await expect(request).not.toContainText("·");
 
   const player = await signInAs("laura.pineda@test.com");
   await player.goto("/cuenta");
@@ -25,4 +30,5 @@ test("a coach follows a player only once the player accepts", async ({ signInAs 
   await coach.reload();
   await expect(request).toBeVisible();
   await expect(request).not.toContainText("Esperando que acepte");
+  await expect(request).toContainText("·");
 });
