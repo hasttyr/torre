@@ -344,7 +344,13 @@ describe("TournamentAdminView", () => {
 
   // A tournament past its end date closes on its own (decision 010).
   describe("its end date", () => {
-    const IN_PROGRESS = { ...CREATED_TOURNAMENT, status: "IN_PROGRESS" as const, endDate: "2026-11-10" };
+    // Dates as the API sends them: a calendar day at UTC midnight, in ISO.
+    const IN_PROGRESS = {
+      ...CREATED_TOURNAMENT,
+      status: "IN_PROGRESS" as const,
+      startDate: "2026-10-01T00:00:00.000Z",
+      endDate: "2026-11-10T00:00:00.000Z",
+    };
 
     beforeEach(() => {
       vi.useFakeTimers({ toFake: ["Date"] });

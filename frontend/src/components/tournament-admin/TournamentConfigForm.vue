@@ -31,7 +31,9 @@ function configFormOf(tournament: Tournament) {
   return {
     roundsCount: tournament.roundsCount != null ? String(tournament.roundsCount) : "",
     timeControl: tournament.timeControl ?? "",
-    endDate: tournament.endDate,
+    // The API sends a calendar day at UTC midnight, in ISO; the date field
+    // takes the day itself.
+    endDate: tournament.endDate.slice(0, 10),
     tiebreaks:
       tournament.tiebreakCriteria.length > 0 ? tournament.tiebreakCriteria.map((c) => c.name) : [...DEFAULT_TIEBREAKS],
     byePoints: String(tournament.byePoints ?? 1),
@@ -85,7 +87,7 @@ const canEditTiebreaks = computed(() => current.value?.status === "CREATED");
 // its start. The backend checks it against Bogotá's calendar.
 const earliestEndDate = computed(() => {
   const today = toIsoDate(new Date());
-  const start = current.value?.startDate ?? today;
+  const start = current.value?.startDate.slice(0, 10) ?? today;
   return start > today ? start : today;
 });
 
@@ -102,7 +104,7 @@ async function onSubmit(): Promise<void> {
       timeControl: configForm.timeControl.trim() || undefined,
       // Only when it moved: an untouched date already in the past (a
       // tournament not started yet) isn't refused for being sent again.
-      endDate: configForm.endDate !== filledFrom?.endDate ? configForm.endDate : undefined,
+      endDate: filledFrom && configForm.endDate !== configFormOf(filledFrom).endDate ? configForm.endDate : undefined,
       tiebreakCriteria: canEditTiebreaks.value ? tiebreakCriteria : undefined,
       // Same lock as the tiebreaks: fixed once round 1 exists (HU28).
       byePoints: canEditTiebreaks.value ? (Number(configForm.byePoints) as 0 | 0.5 | 1) : undefined,
