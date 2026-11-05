@@ -1,6 +1,6 @@
 # 011. Una incomparecencia suma sus puntos, pero no es una partida jugada
 
-Vigente desde el 6 de noviembre de 2026 (#136). Amplía la [010](010-cierre-automatico-por-fecha.md), que trajo el `0F-0F` solo para el cierre automático.
+Vigente desde el 5 de noviembre de 2026 (#136). Amplía la [010](010-cierre-automatico-por-fecha.md), que trajo el `0F-0F` solo para el cierre automático.
 
 ## Contexto
 

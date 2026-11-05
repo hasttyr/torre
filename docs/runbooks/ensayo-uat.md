@@ -4,9 +4,9 @@ Guion del ensayo previo a la aceptación P35 (#114, #131). La regresión P01–P
 
 ## Antes del ensayo
 
-- **Ensayo técnico automático.** `frontend/e2e/uatRehearsal.spec.ts` recorre el mismo día con sus incidentes (llegada tarde, autoinscripción, incomparecencia, fecha de fin extendida, "tu mesa"), contra la API real, en cada ejecución del CI. Si está en rojo, no tiene sentido citar a las personas. El 6 de noviembre de 2026 pasó, y en su primera ejecución encontró un error real que ya está corregido: el campo de fecha de fin aparecía vacío.
+- **Ensayo técnico automático.** `frontend/e2e/uatRehearsal.spec.ts` recorre el mismo día con sus incidentes (llegada tarde, autoinscripción, incomparecencia, fecha de fin extendida, "tu mesa"), contra la API real, en cada ejecución del CI. Si está en rojo, no tiene sentido citar a las personas. El 5 de noviembre de 2026 pasó, y en su primera ejecución encontró un error real que ya está corregido: el campo de fecha de fin aparecía vacío.
 - **Cuentas del seed, no datos reales.** Mientras la política de datos sea un borrador académico (#129), el ensayo se hace con las cuentas de `backend/prisma/seed.ts` (contraseña `Test1234`), no con datos de estudiantes.
-- **Correo.** Si el guion incluye recuperar la contraseña, comprobar antes que producción tenga correo (`despliegue.md`, "Verificar", paso 6). El 6 de noviembre de 2026 no lo tenía (#130): ese paso se omite o se acuerda con el docente cómo se evalúa.
+- **Correo.** Si el guion incluye recuperar la contraseña, comprobar antes que producción tenga correo (`despliegue.md`, "Verificar", paso 6). El 5 de noviembre de 2026 no lo tenía (#130): ese paso se omite o se acuerda con el docente cómo se evalúa.
 
 ## Quiénes
 

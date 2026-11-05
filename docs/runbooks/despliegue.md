@@ -59,7 +59,7 @@ Merge a `main`. Vercel suele terminar antes que Render; hasta que Render compile
    curl.exe -s -X POST https://torre-roan.vercel.app/api/auth/password/forgot -H "Content-Type: application/json" -H "Origin: https://torre-roan.vercel.app" --data-binary "@body.json"
    ```
 
-   El 6 de noviembre de 2026 respondió `503`: producción no tiene correo configurado (#130). Para configurarlo hace falta una cuenta SMTP (la del correo institucional, o un servicio como Brevo o Mailgun) y poner `SMTP_URL` y `MAIL_FROM` en Render; el proveedor tiene que figurar como encargado en la política de datos.
+   El 5 de noviembre de 2026 respondió `503`: producción no tiene correo configurado (#130). Para configurarlo hace falta una cuenta SMTP (la del correo institucional, o un servicio como Brevo o Mailgun) y poner `SMTP_URL` y `MAIL_FROM` en Render; el proveedor tiene que figurar como encargado en la política de datos.
 
 ## Si algo sale mal
 

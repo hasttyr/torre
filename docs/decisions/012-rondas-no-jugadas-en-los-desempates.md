@@ -1,6 +1,6 @@
 # 012. Una ronda no jugada cuenta en los desempates contra un rival ficticio
 
-Vigente desde el 6 de noviembre de 2026 (#139). Reemplaza lo que decían la [010](010-cierre-automatico-por-fecha.md) y la [011](011-incomparecencias.md) sobre los desempates: que una incomparecencia "no le da rival a ninguno".
+Vigente desde el 5 de noviembre de 2026 (#139). Reemplaza lo que decían la [010](010-cierre-automatico-por-fecha.md) y la [011](011-incomparecencias.md) sobre los desempates: que una incomparecencia "no le da rival a ninguno".
 
 ## Contexto
 

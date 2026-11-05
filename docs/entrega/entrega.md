@@ -9,7 +9,7 @@ Lo que se entrega de Torre Central Hub al cierre de la Fase 4 (#115), cómo eval
 | Aplicación      | `https://torre-roan.vercel.app` (Vercel)                                                                                                                    |
 | API             | `https://torre-be.onrender.com` (Render, con su PostgreSQL)                                                                                                 |
 | Código          | `main` de este repositorio; los dos despliegan solos desde ahí                                                                                              |
-| Commit validado | El de la ejecución de la regresión (`docs/runbooks/regresion.md`, "Ejecución del 6 de noviembre de 2026"), y los posteriores que solo agregan documentación |
+| Commit validado | El de la ejecución de la regresión (`docs/runbooks/regresion.md`, "Ejecución del 5 de noviembre de 2026"), y los posteriores que solo agregan documentación |
 
 Para evaluar, las cuentas de demostración del seed (contraseña `Test1234`): `admin@test.com`, `organizer@test.com`, `arbiter@test.com`, `coach@test.com` y `player@test.com`, más los jugadores del historial (README, "Datos de prueba"). Producción tiene cargados esos datos de demostración, no datos de estudiantes reales.
 

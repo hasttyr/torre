@@ -68,7 +68,7 @@ Desviaciones que no son de un caso P sino de una regla o historia del documento 
 
 Precisiones que no cambian el resultado: en P01 los roles de autoservicio son jugador y entrenador; en P03 los permisos son por rol, no permisos sueltos; en P22 no existe una ruta para editar a otra persona.
 
-## Ejecución del 6 de noviembre de 2026
+## Ejecución del 5 de noviembre de 2026
 
 Sobre el commit `d4084c5` de `main` (#113).
 
