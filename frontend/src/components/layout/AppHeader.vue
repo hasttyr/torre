@@ -51,7 +51,7 @@ function closeMobileFromKeyboard(): void {
 
 <template>
   <header
-    class="glass-strong sticky top-0 z-10 pt-[env(safe-area-inset-top)] shadow-[inset_0_-1px_0_var(--glass-border)]"
+    class="glass-strong sticky top-0 z-30 pt-[env(safe-area-inset-top)] shadow-[inset_0_-1px_0_var(--glass-border)]"
     @keydown.esc="closeMobileFromKeyboard"
   >
     <div class="container flex min-h-16 items-center justify-between gap-4 py-2.5">
