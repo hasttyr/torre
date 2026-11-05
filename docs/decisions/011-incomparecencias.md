@@ -11,7 +11,7 @@ El catálogo de resultados (RN-03) solo tenía `1-0`, `½-½` y `0-1`. Cuando un
 - Quien registra resultados (RN-06) puede anotar las incomparecencias de FIDE: `1F-0F` (no se presentaron las negras), `0F-1F` (no se presentaron las blancas) y `0F-0F` (ninguno). El `0F-0F` sigue siendo también lo que pone el cierre automático.
 - Suman sus puntos al puntaje: 1 a quien se presentó, 0 a quien no.
 - Para todo lo demás son partidas no jugadas, como FIDE trata las incomparecencias:
-  - no le dan rival a ninguno para el Buchholz ni el Sonneborn-Berger, ni cuentan como resultado particular;
+  - no le dan un rival real a ninguno para el Buchholz ni el Sonneborn-Berger: cuentan contra un rival ficticio, como manda FIDE (desde la [decisión 012](012-rondas-no-jugadas-en-los-desempates.md)), y no cuentan como resultado particular;
   - no cuentan para RN-02: los dos pueden emparejarse en una ronda siguiente;
   - no cuentan para la alternancia de colores;
   - no son victoria, tablas ni derrota en las estadísticas, ni aparecen en el historial de partidas.

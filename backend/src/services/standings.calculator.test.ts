@@ -43,36 +43,81 @@ describe("computeStandings", () => {
     expect(byPlayer.B.score).toBe(0);
   });
 
-  it("counts a bye as a point without adding tiebreaks", () => {
-    const [row] = computeStandings([{ whiteId: "A", blackId: null, value: "BYE" }]);
-    expect(row).toEqual({ playerId: "A", score: 1, buchholz: 0, buchholzCut1: 0, sonnebornBerger: 0 });
-  });
+  // FIDE C.07 (from 1 March 2026), art. 16.4: for their own tiebreaks, a
+  // participant plays each unplayed round against a dummy with their own
+  // score, capped at a draw's points times the rounds (16.4.2), and scores
+  // what the round awarded. Decision 012.
+  describe("an unplayed round (decision 012)", () => {
+    const byPlayer = (games: { whiteId: string; blackId: string | null; value: string }[], roundsCount?: number) =>
+      Object.fromEntries(computeStandings(games, 1, { roundsCount }).map((row) => [row.playerId, row]));
 
-  it("gives a double forfeit 0 to both, and neither an opponent for the tiebreaks (FIDE: unplayed)", () => {
-    // A beat B and C beat D; then A and C never played their game: A is not
-    // C's opponent for Buchholz, nor C A's.
-    const byPlayer = Object.fromEntries(
-      computeStandings([
+    it("plays a bye against a dummy with the player's own score", () => {
+      expect(byPlayer([{ whiteId: "A", blackId: null, value: "BYE" }]).A).toEqual({
+        playerId: "A",
+        score: 1,
+        buchholz: 1,
+        // Its only contribution is the one Cut 1 removes.
+        buchholzCut1: 0,
+        sonnebornBerger: 1,
+      });
+    });
+
+    it("caps the dummy's score at a draw's points times the tournament's rounds (16.4.2)", () => {
+      expect(byPlayer([{ whiteId: "A", blackId: null, value: "BYE" }], 1).A).toMatchObject({
+        buchholz: 0.5,
+        sonnebornBerger: 0.5,
+      });
+    });
+
+    // The issue's case: five players, an odd field, two rounds. E (bye in
+    // round 1) and C tie on 2 points; with the bye worth nothing to its
+    // Buchholz, E used to come out level with C or behind.
+    it("no longer leaves whoever had the bye behind on Buchholz among the tied", () => {
+      const rows = byPlayer(
+        [
+          { whiteId: "A", blackId: "B", value: "1-0" },
+          { whiteId: "C", blackId: "D", value: "1-0" },
+          { whiteId: "E", blackId: null, value: "BYE" },
+          { whiteId: "A", blackId: "E", value: "0-1" },
+          { whiteId: "C", blackId: "B", value: "1-0" },
+          { whiteId: "D", blackId: null, value: "BYE" },
+        ],
+        2,
+      );
+
+      // E: A (1) plus the dummy, 2 points capped at 1 (½ × 2 rounds). C: D (1) and B (0).
+      expect([rows.E!.score, rows.E!.buchholz]).toEqual([2, 2]);
+      expect([rows.C!.score, rows.C!.buchholz]).toEqual([2, 1]);
+      // Opponents count a bye with the points it awarded (16.3): D's 1 is
+      // C's Buchholz, as if D had won that round.
+      expect(rows.D!.score).toBe(1);
+    });
+
+    it("plays a forfeit against a dummy capped at the absent opponent's score (16.4.1)", () => {
+      // A beat B, C beat D; then C didn't show up against A.
+      const rows = byPlayer([
+        { whiteId: "A", blackId: "B", value: "1-0" },
+        { whiteId: "C", blackId: "D", value: "1-0" },
+        { whiteId: "C", blackId: "A", value: "0F-1F" },
+      ]);
+
+      // A (2 points): B's 0 and a dummy capped at C's 1, won.
+      expect(rows.A).toEqual({ playerId: "A", score: 2, buchholz: 1, buchholzCut1: 1, sonnebornBerger: 1 });
+      // C (1 point): D's 0 and a dummy capped at its own 1, lost. A forfeit
+      // loss is a voluntary unplayed round: Cut 1 removes it first (16.5).
+      expect(rows.C).toEqual({ playerId: "C", score: 1, buchholz: 1, buchholzCut1: 0, sonnebornBerger: 0 });
+    });
+
+    it("counts a double forfeit as a loss to a dummy for both", () => {
+      const rows = byPlayer([
         { whiteId: "A", blackId: "B", value: "1-0" },
         { whiteId: "C", blackId: "D", value: "1-0" },
         { whiteId: "A", blackId: "C", value: "0F-0F" },
-      ]).map((row) => [row.playerId, row]),
-    );
+      ]);
 
-    expect(byPlayer.A).toEqual({ playerId: "A", score: 1, buchholz: 0, buchholzCut1: 0, sonnebornBerger: 0 });
-    expect(byPlayer.C).toEqual({ playerId: "C", score: 1, buchholz: 0, buchholzCut1: 0, sonnebornBerger: 0 });
-  });
-
-  it("gives a one-sided forfeit's point to whoever showed up, and neither an opponent for the tiebreaks", () => {
-    const byPlayer = Object.fromEntries(
-      computeStandings([
-        { whiteId: "A", blackId: "B", value: "1-0" },
-        { whiteId: "C", blackId: "A", value: "0F-1F" },
-      ]).map((row) => [row.playerId, row]),
-    );
-
-    expect(byPlayer.A).toEqual({ playerId: "A", score: 2, buchholz: 0, buchholzCut1: 0, sonnebornBerger: 0 });
-    expect(byPlayer.C).toEqual({ playerId: "C", score: 0, buchholz: 0, buchholzCut1: 0, sonnebornBerger: 0 });
+      expect(rows.A).toEqual({ playerId: "A", score: 1, buchholz: 1, buchholzCut1: 0, sonnebornBerger: 0 });
+      expect(rows.C).toEqual({ playerId: "C", score: 1, buchholz: 1, buchholzCut1: 0, sonnebornBerger: 0 });
+    });
   });
 });
 

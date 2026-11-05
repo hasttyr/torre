@@ -51,9 +51,10 @@ export const PLAYED_RESULTS = ["1-0", "1/2-1/2", "0-1"] as const;
 /**
  * FIDE's forfeits: a game not played because one side didn't show up (the
  * other gets the point, 1F-0F / 0F-1F) or neither did (0F-0F, 0 to both).
- * Worth their points, but unplayed for everything else: no opponent for
- * the tiebreaks, no meeting for RN-02, no color, and no win, draw or loss
- * in the statistics (docs/decisions/011-incomparecencias.md). A closed
+ * Worth their points, but unplayed for everything else: a dummy opponent,
+ * not a real one, for the tiebreaks (decision 012), no meeting for RN-02,
+ * no color, and no win, draw or loss in the statistics
+ * (docs/decisions/011-incomparecencias.md). A closed
  * catalog, with no reason written: a free-text reason for not showing up
  * invites health data (Ley 1581, art. 5).
  */

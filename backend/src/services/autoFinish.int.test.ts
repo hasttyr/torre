@@ -116,7 +116,8 @@ describe("closing a tournament past its end date (decision 010)", () => {
 
     // Ana 2 (beat Beto and Caro), Caro and Dani ½ each, Beto 0: the double
     // forfeit gave Dani and Beto nothing. Caro ranks over Dani on Buchholz
-    // (Ana's 2 + Dani's ½), as Dani's unplayed game gives no opponent.
+    // (Ana's 2 + Dani's ½): Dani's unplayed game is against a dummy capped
+    // at the absent Beto's 0 (FIDE 16.4.1, decision 012).
     const standings = await prisma.standing.findMany({
       where: { tournamentId: tournament.id },
       orderBy: { rank: "asc" },

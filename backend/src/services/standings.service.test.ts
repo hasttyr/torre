@@ -58,6 +58,30 @@ describe("recalculateStandings (HU12/HU13)", () => {
   });
 });
 
+describe("recalculateStandings — a bye in the tiebreaks (decision 012)", () => {
+  it("caps the bye's dummy opponent at a draw's points times the tournament's rounds", async () => {
+    const prisma = buildPrismaMock();
+    prisma.tournament.findUniqueOrThrow.mockResolvedValue({
+      id: "t-1",
+      byePoints: 1,
+      roundsCount: 3,
+      tiebreakCriteria: [],
+    });
+    // A wins twice and has a bye: 3 points, but the dummy counts 1.5 (½ × 3).
+    prisma.result.findMany.mockResolvedValue([
+      { value: "1-0", match: { whiteId: "a", blackId: "b" } },
+      { value: "1-0", match: { whiteId: "a", blackId: "c" } },
+      { value: "BYE", match: { whiteId: "a", blackId: null } },
+    ]);
+    prisma.enrollment.findMany.mockResolvedValue([]);
+
+    await recalculateStandings(asClient(prisma), "t-1");
+
+    const rows = prisma.standing.createMany.mock.calls[0][0].data;
+    expect(rows.find((row: { playerId: string }) => row.playerId === "a")).toMatchObject({ score: 3, buchholz: 1.5 });
+  });
+});
+
 describe("recalculateStandings — an unresolved tie (UC13, P12)", () => {
   it("stores a shared place for players no tiebreak tells apart", async () => {
     const prisma = buildPrismaMock();

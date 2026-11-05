@@ -2,19 +2,20 @@
 
 Por qué el sistema es como es. Cada archivo cuenta una decisión: el problema, lo que se eligió, lo que cuesta y dónde vive en el código. Antes de cambiar algo que parece raro o demasiado estricto, conviene buscar aquí: muchas veces es a propósito.
 
-| #   | Decisión                                                                                              | Desde      |
-| --- | ----------------------------------------------------------------------------------------------------- | ---------- |
-| 001 | [El contrato de la API se comparte, no se copia](001-contrato-compartido.md)                          | sept. 2026 |
-| 002 | [La sesión es una cookie que ningún script lee](002-sesion-en-cookie-httponly.md)                     | sept. 2026 |
-| 003 | [Los eventos en tiempo real solo avisan](003-los-eventos-solo-avisan.md)                              | sept. 2026 |
-| 004 | [Los cambios a un torneo van bajo bloqueo, con su auditoría](004-cambios-a-un-torneo-bajo-bloqueo.md) | sept. 2026 |
-| 005 | [La bitácora no guarda nombres](005-la-bitacora-no-guarda-nombres.md)                                 | sept. 2026 |
-| 006 | [La búsqueda de jugadores del coach](006-busqueda-de-jugadores-del-coach.md)                          | oct. 2026  |
-| 007 | [Retirar a un jugador conserva su inscripción](007-retirar-conserva-la-inscripcion.md)                | oct. 2026  |
-| 008 | [La cobertura solo sube](008-la-cobertura-solo-sube.md)                                               | sept. 2026 |
-| 009 | [Los datos del servidor viven en Pinia Colada](009-datos-del-servidor-en-pinia-colada.md)             | sept. 2026 |
-| 010 | [Un torneo se cierra solo al pasar su fecha de fin](010-cierre-automatico-por-fecha.md)               | nov. 2026  |
-| 011 | [Una incomparecencia suma sus puntos, pero no es una partida jugada](011-incomparecencias.md)         | nov. 2026  |
+| #   | Decisión                                                                                                            | Desde      |
+| --- | ------------------------------------------------------------------------------------------------------------------- | ---------- |
+| 001 | [El contrato de la API se comparte, no se copia](001-contrato-compartido.md)                                        | sept. 2026 |
+| 002 | [La sesión es una cookie que ningún script lee](002-sesion-en-cookie-httponly.md)                                   | sept. 2026 |
+| 003 | [Los eventos en tiempo real solo avisan](003-los-eventos-solo-avisan.md)                                            | sept. 2026 |
+| 004 | [Los cambios a un torneo van bajo bloqueo, con su auditoría](004-cambios-a-un-torneo-bajo-bloqueo.md)               | sept. 2026 |
+| 005 | [La bitácora no guarda nombres](005-la-bitacora-no-guarda-nombres.md)                                               | sept. 2026 |
+| 006 | [La búsqueda de jugadores del coach](006-busqueda-de-jugadores-del-coach.md)                                        | oct. 2026  |
+| 007 | [Retirar a un jugador conserva su inscripción](007-retirar-conserva-la-inscripcion.md)                              | oct. 2026  |
+| 008 | [La cobertura solo sube](008-la-cobertura-solo-sube.md)                                                             | sept. 2026 |
+| 009 | [Los datos del servidor viven en Pinia Colada](009-datos-del-servidor-en-pinia-colada.md)                           | sept. 2026 |
+| 010 | [Un torneo se cierra solo al pasar su fecha de fin](010-cierre-automatico-por-fecha.md)                             | nov. 2026  |
+| 011 | [Una incomparecencia suma sus puntos, pero no es una partida jugada](011-incomparecencias.md)                       | nov. 2026  |
+| 012 | [Una ronda no jugada cuenta en los desempates contra un rival ficticio](012-rondas-no-jugadas-en-los-desempates.md) | nov. 2026  |
 
 ## Cómo agregar una
 

@@ -61,9 +61,9 @@ El sistema hace esto a propósito, así que el resultado esperado se ajustó a l
 
 Desviaciones que no son de un caso P sino de una regla o historia del documento de sustentación:
 
-| Regla o historia                   | El documento esperaba                                                                     | El sistema hace                                                                                                                 | Por qué                                                                                                                        |
-| ---------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Bye en los desempates (HU13, HU28) | El bye como en FIDE, con un rival virtual que cuenta en el Buchholz y el Sonneborn-Berger | El bye suma sus puntos al puntaje, pero no le da rival a quien lo recibe: no aporta nada a su Buchholz ni a su Sonneborn-Berger | Regla simplificada, explicada en el README ("Decisiones de alcance"). El rival virtual queda para después de la entrega (#139) |
+| Regla o historia                 | El documento esperaba                                                              | El sistema hace                                    | Por qué                                                                                                            |
+| -------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Retiros en los desempates (HU27) | Las rondas después de un retiro, como byes de cero puntos (FIDE C.07, art. 16.1.1) | Un retirado cuenta solo con las partidas que tiene | El sistema no guarda en qué ronda se retiró alguien (decisión 012). El bye y las incomparecencias sí siguen a FIDE |
 
 Precisiones que no cambian el resultado: en P01 los roles de autoservicio son jugador y entrenador; en P03 los permisos son por rol, no permisos sueltos; en P22 no existe una ruta para editar a otra persona.
 

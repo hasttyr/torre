@@ -32,7 +32,7 @@ El sistema cubre de extremo a extremo:
 - Descubrimiento de torneos disponibles y consulta de torneos administrados
 - Emparejamiento suizo adaptado y simplificado del sistema Dutch (FIDE C.04.3), incluyendo bye automático
 - Registro y corrección autorizada de resultados
-- Cálculo de clasificación y aplicación de desempates (Buchholz, Buchholz Cortado, Sonneborn-Berger, ARO)
+- Cálculo de clasificación y aplicación de desempates (Buchholz, Buchholz Cortado, Sonneborn-Berger, resultado particular; ARO se omite, ver "Decisiones de alcance")
 - Publicación de emparejamientos y clasificación en tiempo real
 - Retiro de jugadores y ajuste manual de emparejamientos
 - Exportación e impresión de clasificación y emparejamientos en PDF
@@ -180,7 +180,7 @@ Decisiones de alcance:
 - **ARO no se calcula**: necesita el rating de los rivales, y el cálculo de rating está fuera del alcance del proyecto. Si un torneo lo incluye en su orden de desempates, se omite.
 - **Resultado particular** sí se aplica como último desempate.
 - El **bye** vale 1, ½ o 0 puntos según el torneo (1 por defecto), y ese valor, como el orden de desempates, no se puede cambiar después de generar la ronda 1.
-- **El bye no cuenta en los desempates**: suma sus puntos al puntaje, pero no le da rival a quien lo recibe, así que no aporta nada a su Buchholz ni a su Sonneborn-Berger. Es una regla simplificada; FIDE le da un rival virtual. Para un jugador: a igualdad de puntos, quien tuvo bye suele quedar detrás en el Buchholz.
+- **El bye y las incomparecencias en los desempates**: como manda FIDE (reglamento de desempates vigente desde marzo de 2026, art. 16), cuentan contra un rival ficticio con el puntaje del propio jugador, con tope en la mitad del número de rondas (y, en una incomparecencia, en el puntaje del rival ausente). Para un jugador: tener bye ya no le baja el Buchholz. Detalle en la decisión 012.
 - **Un empate que ningún desempate resuelve** es un puesto compartido (1, 1, 3), en la sala y en el PDF. El resultado particular solo desempata si todos los empatados se enfrentaron entre sí.
 - Si ningún emparejamiento evita repetir un enfrentamiento, la generación se rechaza con un mensaje claro en lugar de repetirlo en silencio.
 

@@ -36,7 +36,8 @@ export async function recalculateStandings(db: Db, tournamentId: string): Promis
     loadOfficialGames(db, tournamentId),
     db.enrollment.findMany({ where: { tournamentId, withdrawnAt: null }, select: { playerId: true } }),
   ]);
-  const computed = computeStandings(games, Number(tournament.byePoints));
+  // FIDE 16.4.2: a dummy opponent's score is capped by the tournament's rounds (decision 012).
+  const computed = computeStandings(games, Number(tournament.byePoints), { roundsCount: tournament.roundsCount });
   // Every active player is on the table from round 1, at 0 until their
   // first recorded game; a withdrawn player stays only if they played.
   const listed = new Set(computed.map((row) => row.playerId));
