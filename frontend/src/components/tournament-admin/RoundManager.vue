@@ -4,7 +4,7 @@ import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 
 import { useConfirm } from "../../lib/confirm";
-import { extractErrorMessage } from "../../lib/errors";
+import { errorCodeOf, extractErrorMessage } from "../../lib/errors";
 import { useTournamentLive } from "../../lib/useTournamentLive";
 import { useQueryStatus } from "../../queries/status";
 import { invalidateTournament, roundsQuery, standingsQuery, tournamentQuery } from "../../queries/tournaments";
@@ -75,9 +75,11 @@ async function run(action: () => Promise<unknown>): Promise<boolean> {
   try {
     await action();
     await invalidateTournament(cache, props.tournamentId);
+    rematchOffered.value = false;
     return true;
   } catch (err) {
     error.value = extractErrorMessage(err, t("common.genericServerError"));
+    rematchOffered.value = errorCodeOf(err) === "PAIRING_IMPOSSIBLE";
     return false;
   } finally {
     busy.value = false;
@@ -85,6 +87,20 @@ async function run(action: () => Promise<unknown>): Promise<boolean> {
 }
 
 const onGenerate = () => run(() => generateRound(props.tournamentId));
+
+// RN-02 / HU08: when no pairing avoids a rematch, the organizer may
+// authorize one, as a manual adjustment that says why (RN-09). The server
+// repeats as few games as it can; the draft is reviewed before publishing.
+const rematchOffered = ref(false);
+const rematchReason = ref("");
+const rematchReasonError = ref<string | null>(null);
+
+async function onGenerateWithRematch(): Promise<void> {
+  const reason = rematchReason.value.trim();
+  rematchReasonError.value = reason.length < 3 ? t("roundManager.rematchReasonRequired") : null;
+  if (rematchReasonError.value) return;
+  if (await run(() => generateRound(props.tournamentId, { reason }))) rematchReason.value = "";
+}
 
 /** Swaps two seats in the draft (the form is only shown while there's one). */
 async function onSwap(payload: SwapPayload): Promise<boolean> {
@@ -186,6 +202,31 @@ async function onFinish(): Promise<void> {
       <button type="button" class="btn btn-primary self-start" :disabled="busy" @click="onGenerate">
         {{ busy ? t("roundManager.generating") : t("roundManager.generate", { number: nextNumber }) }}
       </button>
+
+      <form
+        v-if="rematchOffered"
+        novalidate
+        class="flex flex-col gap-3 border-t border-border-soft pt-4"
+        data-test="rematch-form"
+        @submit.prevent="onGenerateWithRematch"
+      >
+        <p class="text-sm">{{ t("roundManager.rematchHint") }}</p>
+        <div class="field" :class="{ 'has-error': rematchReasonError }">
+          <label for="rematchReason">{{ t("roundManager.rematchReasonLabel") }}</label>
+          <textarea
+            id="rematchReason"
+            v-model="rematchReason"
+            name="rematchReason"
+            rows="2"
+            :aria-invalid="rematchReasonError ? 'true' : undefined"
+            aria-describedby="rematchReasonError"
+          />
+          <span id="rematchReasonError" class="field-error">{{ rematchReasonError }}</span>
+        </div>
+        <button type="submit" class="btn btn-ghost self-start" :disabled="busy">
+          {{ t("roundManager.rematchSubmit") }}
+        </button>
+      </form>
     </template>
 
     <p v-else class="text-sm text-text-muted">{{ t("roundManager.closeRegistrationFirst") }}</p>

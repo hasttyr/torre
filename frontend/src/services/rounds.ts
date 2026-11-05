@@ -40,9 +40,13 @@ export async function listRounds(tournamentId: string): Promise<Round[]> {
   return data;
 }
 
-/** Pairs the next round as a draft (HU08). */
-export async function generateRound(tournamentId: string): Promise<Round> {
-  const { data } = await api.post<Round>(path`/tournaments/${tournamentId}/rounds`);
+/**
+ * Pairs the next round as a draft (HU08). With `rematch`, the organizer
+ * authorizes repeating games when no pairing avoids it (RN-02), saying why (RN-09).
+ */
+export async function generateRound(tournamentId: string, rematch?: { reason: string }): Promise<Round> {
+  const body = rematch ? { allowRematches: true, reason: rematch.reason } : undefined;
+  const { data } = await api.post<Round>(path`/tournaments/${tournamentId}/rounds`, body);
   return data;
 }
 

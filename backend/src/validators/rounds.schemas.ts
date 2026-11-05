@@ -19,14 +19,30 @@ export const correctResultSchema = z.object({
 });
 
 // HU29/RN-09: a manual adjustment must say why.
+const adjustmentReason = z
+  .string({ error: "Indica el motivo del ajuste (RN-09)" })
+  .trim()
+  .min(3, "Indica el motivo del ajuste (RN-09)")
+  .max(MAX_LENGTH.reason, tooLong(MAX_LENGTH.reason));
+
 export const swapPlayersSchema = z.object({
   playerAId: idSchema,
   playerBId: idSchema,
-  reason: z
-    .string({ error: "Indica el motivo del ajuste (RN-09)" })
-    .trim()
-    .min(3, "Indica el motivo del ajuste (RN-09)")
-    .max(MAX_LENGTH.reason, tooLong(MAX_LENGTH.reason)),
+  reason: adjustmentReason,
 });
+
+// RN-02 / HU08: when no pairing avoids a rematch, the organizer may
+// authorize some. That is a manual adjustment too (RN-09): it says why.
+export const generateRoundSchema = z
+  .object({
+    allowRematches: z.boolean().optional(),
+    reason: adjustmentReason.optional(),
+  })
+  .refine((data) => !data.allowRematches || data.reason !== undefined, {
+    error: "Indica el motivo del ajuste (RN-09)",
+    path: ["reason"],
+  });
+
+export type GenerateRoundSchemaInput = z.infer<typeof generateRoundSchema>;
 
 export type SwapPlayersSchemaInput = z.infer<typeof swapPlayersSchema>;

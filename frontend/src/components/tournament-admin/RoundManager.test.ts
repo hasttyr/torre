@@ -235,6 +235,56 @@ describe("RoundManager", () => {
     expect(wrapper.text()).toContain("No existe un emparejamiento");
   });
 
+  // RN-02 / HU08: no pairing avoids a rematch; the organizer may authorize
+  // one, as a manual adjustment that says why (RN-09).
+  describe("when no pairing avoids a rematch", () => {
+    async function refusedRound2() {
+      vi.mocked(listRounds).mockResolvedValue([round(1, "STANDINGS_UPDATED", ["1-0"])]);
+      vi.mocked(generateRound).mockRejectedValueOnce({
+        isAxiosError: true,
+        response: { data: { code: "PAIRING_IMPOSSIBLE", params: { number: 2 } } },
+      });
+      const wrapper = await mountManager({ ...TOURNAMENT, status: "IN_PROGRESS" });
+      await button(wrapper, "Generar ronda 2")!.trigger("click");
+      await flushPromises();
+      return wrapper;
+    }
+
+    it("offers to generate it authorizing a rematch, with its reason", async () => {
+      vi.mocked(generateRound).mockResolvedValue(round(2, "GENERATED", [null]));
+      const wrapper = await refusedRound2();
+
+      await wrapper.get("#rematchReason").setValue("  Quedan dos jugadores  ");
+      await wrapper.get("[data-test='rematch-form']").trigger("submit.prevent");
+      await flushPromises();
+
+      expect(generateRound).toHaveBeenLastCalledWith("t-1", { reason: "Quedan dos jugadores" });
+    });
+
+    it("asks for the reason before authorizing it (RN-09)", async () => {
+      const wrapper = await refusedRound2();
+
+      await wrapper.get("[data-test='rematch-form']").trigger("submit.prevent");
+      await flushPromises();
+
+      expect(generateRound).toHaveBeenCalledTimes(1);
+      expect(wrapper.text()).toContain("Indica el motivo de la revancha (RN-09).");
+    });
+
+    it("isn't offered for any other refusal", async () => {
+      vi.mocked(listRounds).mockResolvedValue([]);
+      vi.mocked(generateRound).mockRejectedValue({
+        isAxiosError: true,
+        response: { data: { code: "NOT_ENOUGH_PLAYERS" } },
+      });
+      const wrapper = await mountManager();
+      await button(wrapper, "Generar ronda 1")!.trigger("click");
+      await flushPromises();
+
+      expect(wrapper.find("#rematchReason").exists()).toBe(false);
+    });
+  });
+
   // No draft is created: the organizer needs to know how to go on from here.
   it("says how to go on when no pairing avoids a rematch", async () => {
     vi.mocked(listRounds).mockResolvedValue([round(1, "STANDINGS_UPDATED", ["1-0"])]);

@@ -4,7 +4,7 @@ import { HttpError, type ApiErrorCode } from "../errors/apiErrors";
 import { emitToTournament, emitToTournamentManagers } from "../sockets/broadcast";
 import { SOCKET_EVENTS } from "../sockets/events";
 import type { AuthUser } from "../types/express";
-import type { SwapPlayersSchemaInput } from "../validators/rounds.schemas";
+import type { GenerateRoundSchemaInput, SwapPlayersSchemaInput } from "../validators/rounds.schemas";
 import { mention, plain, recordAuditLog } from "./auditLog.service";
 import { candidatesFromHistory, drawPairingNumbers, type PlayedGame } from "./pairing/pairingHistory";
 import { pairRound, PairingImpossibleError } from "./pairing/swissPairing";
@@ -97,10 +97,21 @@ function assertPreviousRoundClosed(last: Round | null): void {
  * HU08/HU28: pairs the next round and stores it as a draft. Round 1 also
  * makes the random draw that fixes every player's pairing number.
  *
+ * RN-02 allows a rematch only as a manual adjustment the organizer
+ * authorizes: with `allowRematches` (and its reason, RN-09) a round no
+ * pairing could make without repeating games is paired anyway, repeating as
+ * few as possible. It stays a draft to review, and the rematches go to the
+ * audit log with the reason (RN-11).
+ *
  * @throws {HttpError} 409 if the tournament's state doesn't allow a new round
- * or no pairing avoids a rematch.
+ * or no pairing avoids a rematch (and none was authorized).
  */
-export async function generateRound(prisma: PrismaClient, tournamentId: string, actor: AuthUser): Promise<RoundDto> {
+export async function generateRound(
+  prisma: PrismaClient,
+  tournamentId: string,
+  actor: AuthUser,
+  options: GenerateRoundSchemaInput = {},
+): Promise<RoundDto> {
   const round = await prisma.$transaction(async (tx) => {
     const tournament = await lockTournament(tx, tournamentId);
     assertCanManageTournament(tournament, actor);
@@ -139,7 +150,9 @@ export async function generateRound(prisma: PrismaClient, tournamentId: string, 
     const games = await loadPlayedGames(tx, tournamentId);
     let pairing;
     try {
-      pairing = pairRound(candidatesFromHistory(players, games, Number(tournament.byePoints)));
+      pairing = pairRound(candidatesFromHistory(players, games, Number(tournament.byePoints)), {
+        allowRematches: options.allowRematches ?? false,
+      });
     } catch (error) {
       if (error instanceof PairingImpossibleError) {
         throw new HttpError("PAIRING_IMPOSSIBLE", { number });
@@ -147,10 +160,38 @@ export async function generateRound(prisma: PrismaClient, tournamentId: string, 
       throw error;
     }
 
+    if (pairing.rematches.length > 0) {
+      await recordRematches(tx, tournament.name, number, pairing.rematches, options.reason ?? "", actor);
+    }
     return createDraftRound(tx, tournamentId, number, drawn, pairing);
   });
 
   return toRoundDto(round);
+}
+
+/** RN-09/RN-11: the rematches an organizer authorized: who plays whom again, and why. */
+async function recordRematches(
+  tx: Db,
+  tournamentName: string,
+  number: number,
+  rematches: { whiteId: string; blackId: string }[],
+  reason: string,
+  actor: AuthUser,
+): Promise<void> {
+  const players = await tx.player.findMany({
+    where: { id: { in: rematches.flatMap((pair) => [pair.whiteId, pair.blackId]) } },
+    select: { id: true, userId: true },
+  });
+  const userOf = new Map(players.map((player) => [player.id, player.userId]));
+  const pairs = rematches.map(
+    (pair) => `${mention(userOf.get(pair.whiteId) ?? "")} vs ${mention(userOf.get(pair.blackId) ?? "")}`,
+  );
+  await recordAuditLog(
+    tx,
+    actor.id,
+    "PAIRING_ADJUSTED",
+    `Ronda ${number} de "${plain(tournamentName)}": revancha autorizada, ${pairs.join("; ")} — ${plain(reason)}`,
+  );
 }
 
 /** Persists a freshly paired round as a draft (and, for round 1, the pairing numbers drawn). */

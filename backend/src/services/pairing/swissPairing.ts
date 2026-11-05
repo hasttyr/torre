@@ -8,7 +8,9 @@
 //   2 vs n/2+2, ...); whoever can't be paired inside their group floats down
 //   to the next one;
 // - nobody meets the same opponent twice (RN-02): a backtracking search
-//   tries the next-best opponent when a choice leads to a dead end;
+//   tries the next-best opponent when a choice leads to a dead end. Only
+//   when the organizer authorizes it (RN-02's "manual adjustment") does it
+//   repeat games, and then as few as possible;
 // - an odd field gives a bye to the lowest-ranked player who hasn't had one
 //   (RN-08, FIDE basic Swiss rules art. 3);
 // - colors equalize first, then alternate.
@@ -36,6 +38,16 @@ export interface RoundPairing {
   // In board order: board 1 first.
   pairings: Pairing[];
   byeId: string | null;
+  // The pairings that repeat a game: always none, unless authorized.
+  rematches: Pairing[];
+}
+
+export interface PairingOptions {
+  /**
+   * RN-02 / HU08: when no pairing avoids a rematch, the organizer may
+   * authorize some. The engine then repeats as few games as it can.
+   */
+  allowRematches?: boolean;
 }
 
 /** No pairing exists that respects RN-02 (every option repeats a game). */
@@ -69,17 +81,26 @@ function opponentPreference(player: PairingCandidate, remaining: PairingCandidat
   ];
 }
 
-/** Pairs everyone in `ranked` (even count) without rematches, or returns null. */
-function pairAll(ranked: PairingCandidate[], budget: { steps: number }): [PairingCandidate, PairingCandidate][] | null {
+/**
+ * Pairs everyone in `ranked` (even count) repeating at most `rematches`
+ * games (RN-02: none unless authorized), or returns null.
+ */
+function pairAll(
+  ranked: PairingCandidate[],
+  budget: { steps: number },
+  rematches: number,
+): [PairingCandidate, PairingCandidate][] | null {
   if (ranked.length === 0) return [];
   if (--budget.steps < 0) throw new PairingImpossibleError();
 
   const [player, ...rest] = ranked;
   for (const opponent of opponentPreference(player, ranked)) {
-    if (player.opponents.has(opponent.id)) continue;
+    const repeats = player.opponents.has(opponent.id);
+    if (repeats && rematches === 0) continue;
     const others = pairAll(
       rest.filter((candidate) => candidate !== opponent),
       budget,
+      rematches - (repeats ? 1 : 0),
     );
     if (others) return [[player, opponent], ...others];
   }
@@ -106,10 +127,26 @@ function allocateColors(higher: PairingCandidate, lower: PairingCandidate, board
 /**
  * Pairs one round.
  *
- * @throws {PairingImpossibleError} when no pairing avoids a rematch; the
- * organizer then needs a manual adjustment (HU29), which RN-02 allows.
+ * @throws {PairingImpossibleError} when no pairing avoids a rematch and none
+ * was authorized (`allowRematches`), which RN-02 allows the organizer to do.
  */
-export function pairRound(players: PairingCandidate[]): RoundPairing {
+export function pairRound(players: PairingCandidate[], options: PairingOptions = {}): RoundPairing {
+  // Authorized: fewest rematches first, one more each time it can't be done
+  // with fewer. A search that runs out of steps moves on to allowing one more.
+  const most = options.allowRematches ? Math.floor(players.length / 2) : 0;
+  for (let rematches = 0; rematches <= most; rematches++) {
+    try {
+      const pairing = pairWith(players, rematches);
+      if (pairing) return pairing;
+    } catch (error) {
+      if (!(error instanceof PairingImpossibleError) || rematches === most) throw error;
+    }
+  }
+  throw new PairingImpossibleError();
+}
+
+/** Pairs one round repeating at most `rematches` games, or returns null. */
+function pairWith(players: PairingCandidate[], rematches: number): RoundPairing | null {
   const ranked = [...players].sort(byRanking);
   const budget = { steps: MAX_SEARCH_STEPS };
 
@@ -129,14 +166,17 @@ export function pairRound(players: PairingCandidate[]): RoundPairing {
     const pairs = pairAll(
       ranked.filter((player) => player !== bye),
       budget,
+      rematches,
     );
     if (pairs) {
+      const pairings = pairs.map(([higher, lower], index) => allocateColors(higher, lower, index + 1));
       return {
-        pairings: pairs.map(([higher, lower], index) => allocateColors(higher, lower, index + 1)),
+        pairings,
         byeId: bye?.id ?? null,
+        rematches: pairings.filter((_, index) => pairs[index]![0].opponents.has(pairs[index]![1].id)),
       };
     }
   }
 
-  throw new PairingImpossibleError();
+  return null;
 }

@@ -47,6 +47,12 @@ export function extractErrorMessage(error: unknown, fallback: string): string {
   return typeof body?.error === "string" ? body.error : fallback;
 }
 
+/** The stable code of a refused API call ("PAIRING_IMPOSSIBLE"), to react to one in particular. */
+export function errorCodeOf(error: unknown): string | undefined {
+  const code = bodyOf(error)?.code;
+  return typeof code === "string" ? code : undefined;
+}
+
 /**
  * The message for each invalid field of a rejected request (VALIDATION_FAILED),
  * keyed by its path ("name", "player.semester"), for a form to show inline.

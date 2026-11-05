@@ -62,7 +62,32 @@ describe("round endpoints", () => {
       .set("Authorization", bearer("ORGANIZER", "org-1"));
 
     expect(response.status).toBe(201);
-    expect(generateRound).toHaveBeenCalledWith(prismaMock, "8eedb80f-c149-5eb9-a514-93f2fb9eeca0", ORGANIZER);
+    expect(generateRound).toHaveBeenCalledWith(prismaMock, "8eedb80f-c149-5eb9-a514-93f2fb9eeca0", ORGANIZER, {});
+  });
+
+  // RN-02 / HU08: a rematch the organizer authorizes is a manual adjustment (RN-09).
+  it("POST /tournaments/:id/rounds passes on an authorized rematch with its reason", async () => {
+    const response = await request(createApp())
+      .post("/api/tournaments/8eedb80f-c149-5eb9-a514-93f2fb9eeca0/rounds")
+      .set("Authorization", bearer("ORGANIZER", "org-1"))
+      .send({ allowRematches: true, reason: "  Quedan cuatro jugadores  " });
+
+    expect(response.status).toBe(201);
+    expect(generateRound).toHaveBeenCalledWith(prismaMock, "8eedb80f-c149-5eb9-a514-93f2fb9eeca0", ORGANIZER, {
+      allowRematches: true,
+      reason: "Quedan cuatro jugadores",
+    });
+  });
+
+  it("POST /tournaments/:id/rounds refuses a rematch authorized without a reason (RN-09)", async () => {
+    const response = await request(createApp())
+      .post("/api/tournaments/8eedb80f-c149-5eb9-a514-93f2fb9eeca0/rounds")
+      .set("Authorization", bearer("ORGANIZER", "org-1"))
+      .send({ allowRematches: true });
+
+    expect(response.status).toBe(400);
+    expect(response.body.fields).toEqual({ reason: "Indica el motivo del ajuste (RN-09)" });
+    expect(generateRound).not.toHaveBeenCalled();
   });
 
   it("POST /rounds/:id/swap passes the validated adjustment on", async () => {

@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from "pinia";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { useLocaleStore } from "../stores/locale";
-import { extractErrorMessage, fieldErrorsOf } from "./errors";
+import { errorCodeOf, extractErrorMessage, fieldErrorsOf } from "./errors";
 
 /** A failed request, as axios rejects it, answered with `body`. */
 function answered(status: number, body: unknown): AxiosError {
@@ -75,5 +75,15 @@ describe("fieldErrorsOf", () => {
   it("returns nothing for any other failure", () => {
     expect(fieldErrorsOf(answered(409, { error: "…", code: "EMAIL_TAKEN" }))).toEqual({});
     expect(fieldErrorsOf(new Error("boom"))).toEqual({});
+  });
+});
+
+describe("errorCodeOf", () => {
+  it("reads the stable code of a refused call, and nothing from anything else", () => {
+    expect(errorCodeOf({ isAxiosError: true, response: { data: { code: "PAIRING_IMPOSSIBLE" } } })).toBe(
+      "PAIRING_IMPOSSIBLE",
+    );
+    expect(errorCodeOf({ isAxiosError: true, response: { data: { code: 409 } } })).toBeUndefined();
+    expect(errorCodeOf(new Error("offline"))).toBeUndefined();
   });
 });

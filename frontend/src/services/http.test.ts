@@ -171,6 +171,13 @@ const CASES: [string, () => Promise<unknown>, Verb, string, unknown?][] = [
   ["tournaments.finishTournament", () => tournaments.finishTournament("t-1"), "post", "/tournaments/t-1/finish"],
   ["rounds.listRounds", () => rounds.listRounds("t-1"), "get", "/tournaments/t-1/rounds"],
   ["rounds.generateRound", () => rounds.generateRound("t-1"), "post", "/tournaments/t-1/rounds"],
+  [
+    "rounds.generateRound (authorizing a rematch)",
+    () => rounds.generateRound("t-1", { reason: "Quedan dos" }),
+    "post",
+    "/tournaments/t-1/rounds",
+    { allowRematches: true, reason: "Quedan dos" },
+  ],
   ["rounds.discardRound", () => rounds.discardRound("r-1"), "delete", "/rounds/r-1"],
   [
     "rounds.swapPlayers",

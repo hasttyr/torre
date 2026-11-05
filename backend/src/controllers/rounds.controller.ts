@@ -5,7 +5,7 @@ import { actorOf } from "../middlewares/auth";
 import { discardRound, generateRound, listRounds, publishRound, swapPlayers } from "../services/rounds.service";
 import { idParam } from "../validators/params";
 import { parseOrThrow } from "../validators/parse";
-import { swapPlayersSchema } from "../validators/rounds.schemas";
+import { generateRoundSchema, swapPlayersSchema } from "../validators/rounds.schemas";
 
 /** GET /tournaments/:id/rounds — the tournament's rounds with their pairings (HU18). */
 export async function list(req: Request, res: Response): Promise<void> {
@@ -14,7 +14,9 @@ export async function list(req: Request, res: Response): Promise<void> {
 
 /** POST /tournaments/:id/rounds — pairs the next round as a draft (HU08, HU28). */
 export async function generate(req: Request, res: Response): Promise<void> {
-  res.status(201).json(await generateRound(prisma, idParam(req, "id"), actorOf(req)));
+  // The body is optional: only an authorized rematch (RN-02) carries one.
+  const options = parseOrThrow(generateRoundSchema, req.body ?? {});
+  res.status(201).json(await generateRound(prisma, idParam(req, "id"), actorOf(req), options));
 }
 
 /** DELETE /rounds/:id — discards a draft round. */

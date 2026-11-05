@@ -451,3 +451,41 @@ describe("a forfeit", () => {
     expect(round2.status).toBe(201);
   });
 });
+
+// RN-02 / HU08: no rematch "except a manual adjustment authorized by the organizer".
+describe("an authorized rematch", () => {
+  it("pairs a round no pairing could make without repeating, as a draft, logged with its reason", async () => {
+    const organizer = await createUser(prisma, "ORGANIZER");
+    const [ana, beto] = await Promise.all(["Ana", "Beto"].map((name) => createUser(prisma, "PLAYER", { name })));
+    const tournament = await createTournament(prisma, organizer, {
+      status: "REGISTRATION_CLOSED",
+      roundsCount: 2,
+      players: [ana!, beto!],
+    });
+    const rounds = `/api/tournaments/${tournament.id}/rounds`;
+    const round1 = (await request(app).post(rounds).set(bearer(organizer)).expect(201)).body;
+    await request(app).post(`/api/rounds/${round1.id}/publish`).set(bearer(organizer)).expect(200);
+    await request(app)
+      .post(`/api/matches/${round1.matches[0].id}/result`)
+      .set(bearer(organizer))
+      .send({ value: "1-0" })
+      .expect(204);
+
+    const refused = await request(app).post(rounds).set(bearer(organizer));
+    expect([refused.status, refused.body.code]).toEqual([409, "PAIRING_IMPOSSIBLE"]);
+
+    const round2 = await request(app)
+      .post(rounds)
+      .set(bearer(organizer))
+      .send({ allowRematches: true, reason: "Solo quedan dos jugadores" });
+    expect(round2.status).toBe(201);
+    expect(round2.body).toMatchObject({ number: 2, status: "GENERATED" });
+    const [entry] = await prisma.auditLog.findMany({ where: { action: "PAIRING_ADJUSTED" } });
+    expect(entry).toMatchObject({ userId: organizer.id });
+    expect(entry!.detail).toContain("Ronda 2");
+    expect(entry!.detail).toContain("revancha autorizada");
+    expect(entry!.detail).toContain("Solo quedan dos jugadores");
+    // The log names people by reference, never by name (decision 005).
+    expect(entry!.detail).not.toContain("Ana");
+  });
+});

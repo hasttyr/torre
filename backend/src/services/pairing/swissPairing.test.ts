@@ -117,6 +117,45 @@ describe("pairRound", () => {
     );
   });
 
+  // RN-02 / HU08: "except a manual adjustment authorized by the organizer".
+  describe("with rematches authorized", () => {
+    it("pairs anyway, repeating as few games as possible, and says which", () => {
+      // Four players who all met: any round repeats two games, never more.
+      const met = (id: string, pairingNumber: number) =>
+        player(id, pairingNumber, { opponents: ["A", "B", "C", "D"].filter((other) => other !== id) });
+      const result = pairRound([met("A", 1), met("B", 2), met("C", 3), met("D", 4)], { allowRematches: true });
+
+      expect(result.pairings).toHaveLength(2);
+      expect(result.rematches).toHaveLength(2);
+    });
+
+    it("repeats only the games it must, keeping the rest new", () => {
+      // A and B met, but A-C and B-D are new: no rematch is needed at all.
+      const result = pairRound(
+        [player("A", 1, { opponents: ["B"] }), player("B", 2, { opponents: ["A"] }), player("C", 3), player("D", 4)],
+        { allowRematches: true },
+      );
+
+      expect(result.rematches).toEqual([]);
+    });
+
+    it("repeats one game when only one has to be", () => {
+      const result = pairRound([player("A", 1, { opponents: ["B"] }), player("B", 2, { opponents: ["A"] })], {
+        allowRematches: true,
+      });
+
+      expect(result.rematches).toEqual([{ whiteId: expect.any(String), blackId: expect.any(String) }]);
+      expect(result.pairings).toEqual(result.rematches);
+    });
+
+    it("isn't the default: without authorization a rematch is still impossible", () => {
+      expect(pairRound([player("A", 1), player("B", 2)]).rematches).toEqual([]);
+      expect(() => pairRound([player("A", 1, { opponents: ["B"] }), player("B", 2, { opponents: ["A"] })])).toThrow(
+        PairingImpossibleError,
+      );
+    });
+  });
+
   it("pairs a full round-robin-sized field over several rounds without ever repeating", () => {
     const ids = ["A", "B", "C", "D", "E", "F", "G", "H"];
     const history = new Map(ids.map((id) => [id, new Set<string>()]));
