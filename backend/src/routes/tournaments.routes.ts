@@ -14,6 +14,7 @@ import {
   listLive,
   listMine,
   listMyEnrollments,
+  listPublic,
   listPlayers,
   open,
   reopen,
@@ -35,6 +36,8 @@ const isOfficial = requireRole("ARBITER", "ORGANIZER", "ADMINISTRATOR");
 // "enrolled"/"live" as a :id.
 tournamentsRouter.get("/mine", requireAuth, canManage, listMine);
 tournamentsRouter.get("/available", requireAuth, listAvailable);
+// HU25 / RF17: the public listing, without a session (its own rate limit in app.ts).
+tournamentsRouter.get("/public", listPublic);
 tournamentsRouter.get("/enrolled", requireAuth, listMyEnrollments);
 tournamentsRouter.get("/live", requireAuth, listLive);
 tournamentsRouter.post("/", requireAuth, canManage, create);

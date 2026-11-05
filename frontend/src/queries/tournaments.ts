@@ -8,6 +8,7 @@ import {
   listEnrolledTournaments,
   listLiveTournaments,
   listMyTournaments,
+  listPublicTournaments,
   type EnrolledPlayer,
   type Tournament,
 } from "../services/tournaments";
@@ -38,6 +39,12 @@ export const myTournamentsQuery = defineQueryOptions({
 export const availableTournamentsQuery = defineQueryOptions({
   key: [...LISTS, "available"],
   query: () => listAvailableTournaments(),
+});
+
+/** Tournaments open for registration, as a visitor without a session sees them (HU25 / RF17). */
+export const publicTournamentsQuery = defineQueryOptions({
+  key: [...LISTS, "public"],
+  query: () => listPublicTournaments(),
 });
 
 /** The tournaments the signed-in player is registered in. */

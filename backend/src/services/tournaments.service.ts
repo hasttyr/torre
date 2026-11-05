@@ -20,7 +20,7 @@ import {
   loadTournament,
   lockTournament,
 } from "./tournamentAccess";
-import type { EnrolledPlayerDto } from "../contracts/responses";
+import type { EnrolledPlayerDto, PublicTournamentDto } from "../contracts/responses";
 
 const WITH_CRITERIA = { tiebreakCriteria: true } as const;
 
@@ -73,6 +73,30 @@ export async function listAvailableTournaments(prisma: PrismaClient): Promise<To
     orderBy: { startDate: "asc" },
   });
   return tournaments.map(toTournamentDto);
+}
+
+/**
+ * HU25 / RF17: the tournaments open for registration, for a visitor without a
+ * session. Selected field by field, so a column added to the tournament later
+ * (or the organizer) never reaches a page anyone can read.
+ */
+export async function listPublicTournaments(prisma: PrismaClient): Promise<PublicTournamentDto[]> {
+  return prisma.tournament.findMany({
+    where: { status: "REGISTRATION_OPEN" },
+    select: {
+      id: true,
+      name: true,
+      startDate: true,
+      endDate: true,
+      status: true,
+      format: true,
+      roundsCount: true,
+      timeControl: true,
+      restrictedProgram: true,
+      minimumSemester: true,
+    },
+    orderBy: { startDate: "asc" },
+  });
 }
 
 // Tournaments where the authenticated user is enrolled as a player,

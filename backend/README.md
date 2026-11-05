@@ -145,6 +145,7 @@ Límites de peticiones ([`src/middlewares/rateLimits.ts`](src/middlewares/rateLi
 | Método       | Ruta                                                      | Acceso                     | Descripción                                                                                              |
 | ------------ | --------------------------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------- |
 | GET          | `/tournaments/mine`                                       | Organizador, administrador | Torneos que administra                                                                                   |
+| GET          | `/tournaments/public`                                     | Sin sesión (límite propio) | Torneos con inscripciones abiertas, sin datos de personas (HU25 / RF17)                                  |
 | GET          | `/tournaments/available`                                  | Sesión                     | Torneos con inscripciones abiertas                                                                       |
 | GET          | `/tournaments/enrolled`                                   | Sesión                     | Torneos en los que está inscrito el jugador                                                              |
 | GET          | `/tournaments/live`                                       | Sesión                     | Torneos en curso y finalizados                                                                           |

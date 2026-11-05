@@ -87,6 +87,7 @@
     "users": "Users",
     "auditLog": "Audit Log",
     "login": "Log In",
+    "openTournaments": "Open Tournaments",
     "createAccount": "Create Account",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
@@ -785,6 +786,17 @@
     "loading": "Loading tournaments…",
     "loadError": "The tournaments couldn't be loaded",
     "empty": "No tournament is in progress or finished yet."
+  },
+  "publicTournaments": {
+    "title": "Tournaments Open for Registration",
+    "subtitle": "The university's tournaments you can still join. To enroll, sign in or create an account:",
+    "loading": "Loading tournaments…",
+    "loadError": "The tournaments couldn't be loaded",
+    "empty": "There are no tournaments with open registration right now.",
+    "rounds": "{count} rounds",
+    "timeControl": "time control {timeControl}",
+    "program": "{program} only",
+    "minimumSemester": "semester {semester} and up"
   },
   "tournamentStats": {
     "players": "Active players",

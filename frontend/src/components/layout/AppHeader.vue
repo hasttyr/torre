@@ -77,6 +77,11 @@ function closeMobileFromKeyboard(): void {
             </template>
             <template v-else>
               <RouterLink
+                to="/torneos-abiertos"
+                class="rounded-full px-3.5 py-2 text-[0.875rem] font-medium text-text-muted no-underline transition-colors hover:text-text"
+                >{{ t("header.openTournaments") }}</RouterLink
+              >
+              <RouterLink
                 to="/login"
                 class="rounded-full px-3.5 py-2 text-[0.875rem] font-medium text-text-muted no-underline transition-colors hover:text-text"
                 >{{ t("header.login") }}</RouterLink
@@ -128,6 +133,13 @@ function closeMobileFromKeyboard(): void {
         >
           <nav v-if="mobileOpen" class="lg:hidden">
             <div class="flex flex-col gap-1 px-3 pt-1 pb-4">
+              <RouterLink
+                to="/torneos-abiertos"
+                class="rounded-2xl px-3 py-3 text-[1.375rem] font-semibold tracking-[-0.02em] text-text no-underline hover:bg-text/6"
+                @click="closeMobile"
+              >
+                {{ t("header.openTournaments") }}
+              </RouterLink>
               <RouterLink
                 to="/login"
                 class="rounded-2xl px-3 py-3 text-[1.375rem] font-semibold tracking-[-0.02em] text-text no-underline hover:bg-text/6"

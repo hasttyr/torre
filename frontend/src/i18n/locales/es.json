@@ -87,6 +87,7 @@
     "users": "Usuarios",
     "auditLog": "Auditoría",
     "login": "Iniciar sesión",
+    "openTournaments": "Torneos abiertos",
     "createAccount": "Crear cuenta",
     "openMenu": "Abrir menú",
     "closeMenu": "Cerrar menú",
@@ -785,6 +786,17 @@
     "loading": "Cargando torneos…",
     "loadError": "No se pudieron cargar los torneos",
     "empty": "No hay torneos en curso ni finalizados todavía."
+  },
+  "publicTournaments": {
+    "title": "Torneos con inscripción abierta",
+    "subtitle": "Los torneos de la universidad a los que todavía puedes unirte. Para inscribirte, entra con tu cuenta o crea una:",
+    "loading": "Cargando torneos…",
+    "loadError": "No se pudieron cargar los torneos",
+    "empty": "No hay torneos con inscripción abierta en este momento.",
+    "rounds": "{count} rondas",
+    "timeControl": "ritmo {timeControl}",
+    "program": "solo {program}",
+    "minimumSemester": "desde semestre {semester}"
   },
   "tournamentStats": {
     "players": "Jugadores activos",

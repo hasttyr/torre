@@ -157,6 +157,25 @@ export interface TournamentDto {
   createdAt: Date;
 }
 
+/**
+ * HU25 / RF17: a tournament open for registration, as anyone sees it without
+ * signing in. Only the tournament: nothing about a person, not even who
+ * organizes it.
+ */
+export type PublicTournamentDto = Pick<
+  TournamentDto,
+  | "id"
+  | "name"
+  | "startDate"
+  | "endDate"
+  | "status"
+  | "format"
+  | "roundsCount"
+  | "timeControl"
+  | "restrictedProgram"
+  | "minimumSemester"
+>;
+
 export interface EnrolledPlayerDto {
   playerId: string;
   name: string;

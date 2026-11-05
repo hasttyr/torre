@@ -37,6 +37,7 @@ export function createApp(options: AppOptions = {}) {
   app.post("/api/auth/login", limits.loginPerAddress, limits.loginFromUnknownDevice, limits.login);
   app.post("/api/auth/register", limits.register);
   app.post("/api/auth/password/forgot", limits.passwordReset);
+  app.get("/api/tournaments/public", limits.publicListing);
 
   app.use("/api", rejectCrossSiteWrites([env.corsOrigin, env.appUrl]));
   app.use("/api", router);

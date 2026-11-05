@@ -47,8 +47,9 @@ describe("AppHeader navigation", () => {
     expect(desktopLinks(await mountHeader(role))).toEqual(expected);
   });
 
-  it("offers login and sign-up to visitors", async () => {
-    expect(desktopLinks(await mountHeader(null))).toEqual(["/login", "/registro"]);
+  // HU25 / RF17: the tournaments open for registration, readable without signing in.
+  it("offers visitors the open tournaments, login and sign-up", async () => {
+    expect(desktopLinks(await mountHeader(null))).toEqual(["/torneos-abiertos", "/login", "/registro"]);
   });
 
   it.each(["mouseenter", "focus"])("starts downloading a section's page on %s of its link", async (event) => {
@@ -77,7 +78,7 @@ describe("AppHeader navigation", () => {
     expect(user.findAll("button[aria-haspopup='menu']").map((avatar) => avatar.text())).toEqual(["AT", "AT"]);
   });
 
-  it("opens a visitor's mobile menu with login and sign-up, and closes it on navigation", async () => {
+  it("opens a visitor's mobile menu with its links, and closes it on navigation", async () => {
     const wrapper = await mountHeader(null);
     const toggle = () => wrapper.get("button[aria-label='Abrir menú'], button[aria-label='Cerrar menú']");
     expect(wrapper.findAll("nav")).toHaveLength(1);
@@ -86,7 +87,11 @@ describe("AppHeader navigation", () => {
     expect(toggle().attributes("aria-expanded")).toBe("true");
     expect(wrapper.findAll("nav")).toHaveLength(2);
     const mobileNav = wrapper.findAll("nav").at(-1)!;
-    expect(mobileNav.findAll("a").map((link) => link.attributes("href"))).toEqual(["/login", "/registro"]);
+    expect(mobileNav.findAll("a").map((link) => link.attributes("href"))).toEqual([
+      "/torneos-abiertos",
+      "/login",
+      "/registro",
+    ]);
 
     await mobileNav.findAll("a")[0].trigger("click");
     expect(toggle().attributes("aria-expanded")).toBe("false");

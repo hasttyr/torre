@@ -190,6 +190,9 @@ const year = new Date().getFullYear();
           <p class="max-w-xs text-base">{{ t("home.footerText") }}</p>
           <nav :aria-label="t('home.footerAccount')" class="flex flex-col gap-2.5 text-base">
             <span class="font-semibold text-text">{{ t("home.footerAccount") }}</span>
+            <RouterLink to="/torneos-abiertos" class="text-text-muted no-underline hover:text-text">
+              {{ t("header.openTournaments") }}
+            </RouterLink>
             <RouterLink to="/login" class="text-text-muted no-underline hover:text-text">
               {{ t("header.login") }}
             </RouterLink>

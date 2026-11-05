@@ -2,6 +2,7 @@ import {
   DEFAULT_TIEBREAKS,
   TIEBREAKS,
   type EnrolledPlayerDto,
+  type PublicTournamentDto,
   type Tiebreak,
   type TiebreakCriterionDto,
   type TournamentDto,
@@ -14,6 +15,13 @@ export { DEFAULT_TIEBREAKS, TIEBREAKS, type Tiebreak };
 export type TiebreakCriterion = Serialized<TiebreakCriterionDto>;
 export type Tournament = Serialized<TournamentDto>;
 export type EnrolledPlayer = Serialized<EnrolledPlayerDto>;
+export type PublicTournament = Serialized<PublicTournamentDto>;
+
+/** HU25 / RF17: the tournaments open for registration, without a session. */
+export async function listPublicTournaments(): Promise<PublicTournament[]> {
+  const { data } = await api.get<PublicTournament[]>("/tournaments/public");
+  return data;
+}
 
 export interface CreateTournamentPayload {
   name: string;

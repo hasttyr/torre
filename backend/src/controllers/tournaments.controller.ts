@@ -14,6 +14,7 @@ import {
   listEnrolledTournaments,
   listLiveTournaments,
   listMyTournaments,
+  listPublicTournaments,
   openRegistration,
   reopenRegistration,
   getTournament,
@@ -126,4 +127,9 @@ export async function enrollMe(req: Request, res: Response): Promise<void> {
 export async function withdrawMe(req: Request, res: Response): Promise<void> {
   await withdrawSelf(prisma, idParam(req, "id"), actorOf(req));
   res.status(204).end();
+}
+
+/** GET /tournaments/public — tournaments open for registration, without a session (HU25 / RF17). */
+export async function listPublic(_req: Request, res: Response): Promise<void> {
+  res.status(200).json(await listPublicTournaments(prisma));
 }

@@ -102,6 +102,7 @@ const CASES: [string, () => Promise<unknown>, Verb, string, unknown?][] = [
   ["coaches.unlinkPlayer", () => coaches.unlinkPlayer("p-1"), "delete", "/coaches/players/p-1"],
   ["coaches.listCoachTournaments", () => coaches.listCoachTournaments(), "get", "/coaches/tournaments"],
   ["tournaments.listMyTournaments", () => tournaments.listMyTournaments(), "get", "/tournaments/mine"],
+  ["tournaments.listPublicTournaments", () => tournaments.listPublicTournaments(), "get", "/tournaments/public"],
   [
     "tournaments.listAvailableTournaments",
     () => tournaments.listAvailableTournaments(),

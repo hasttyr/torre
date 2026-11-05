@@ -40,6 +40,12 @@ export const router = createRouter({
       component: HomeView,
     },
     {
+      // HU25 / RF17: the one listing a visitor can read without signing in.
+      path: "/torneos-abiertos",
+      name: "public-tournaments",
+      component: () => import("../views/PublicTournamentsView.vue"),
+    },
+    {
       path: "/registro",
       name: "register",
       component: () => import("../views/auth/RegisterView.vue"),

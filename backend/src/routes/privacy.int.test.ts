@@ -189,3 +189,43 @@ describe("coach links (HU24)", () => {
     await request(app).delete(`/api/users/me/coaches/${coach.id}`).set(bearer(player)).expect(404);
   });
 });
+
+// HU25 / RF17: the only listing a visitor without a session can read.
+describe("the public tournament listing", () => {
+  it("shows a visitor the tournaments open for registration, and nothing about any person", async () => {
+    const organizer = await createUser(prisma, "ORGANIZER", { name: "Organizadora Visible" });
+    const player = await createUser(prisma, "PLAYER", { name: "Jugadora Inscrita" });
+    const open = await createTournament(prisma, organizer, { status: "REGISTRATION_OPEN", players: [player] });
+    await createTournament(prisma, organizer, { status: "CREATED" });
+    await createTournament(prisma, organizer, { status: "IN_PROGRESS", players: [player] });
+
+    const listed = await request(app).get("/api/tournaments/public").expect(200);
+
+    expect(listed.body).toHaveLength(1);
+    expect(Object.keys(listed.body[0]).sort()).toEqual(
+      [
+        "endDate",
+        "format",
+        "id",
+        "minimumSemester",
+        "name",
+        "restrictedProgram",
+        "roundsCount",
+        "startDate",
+        "status",
+        "timeControl",
+      ].sort(),
+    );
+    expect(listed.body[0]).toMatchObject({ id: open.id, status: "REGISTRATION_OPEN" });
+    const text = JSON.stringify(listed.body);
+    for (const personal of [organizer.id, player.id, player.playerId!, "Organizadora", "Jugadora"]) {
+      expect(text).not.toContain(personal);
+    }
+  });
+
+  it("is the only listing open without a session", async () => {
+    for (const path of ["/api/tournaments/available", "/api/tournaments/live", "/api/tournaments/enrolled"]) {
+      await request(app).get(path).expect(401);
+    }
+  });
+});
