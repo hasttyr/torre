@@ -16,6 +16,7 @@ Por qué el sistema es como es. Cada archivo cuenta una decisión: el problema, 
 | 010 | [Un torneo se cierra solo al pasar su fecha de fin](010-cierre-automatico-por-fecha.md)                             | nov. 2026  |
 | 011 | [Una incomparecencia suma sus puntos, pero no es una partida jugada](011-incomparecencias.md)                       | nov. 2026  |
 | 012 | [Una ronda no jugada cuenta en los desempates contra un rival ficticio](012-rondas-no-jugadas-en-los-desempates.md) | nov. 2026  |
+| 013 | [La sala pública muestra solo nombres y cifras deportivas](013-sala-publica.md)                                     | nov. 2026  |
 
 ## Cómo agregar una
 

@@ -52,6 +52,13 @@ export const router = createRouter({
       component: () => import("../views/PublicTournamentsView.vue"),
     },
     {
+      // #140: a tournament's read-only room, without a session (names and
+      // sporting figures only; noindex in vercel.json).
+      path: `/sala-publica/:id${TOURNAMENT_ID}`,
+      name: "public-room",
+      component: () => import("../views/PublicRoomView.vue"),
+    },
+    {
       path: "/registro",
       name: "register",
       component: () => import("../views/auth/RegisterView.vue"),

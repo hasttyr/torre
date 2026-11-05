@@ -8,7 +8,7 @@ import TournamentCard from "../components/tournament/TournamentCard.vue";
 import LoadError from "../components/ui/LoadError.vue";
 import LoadingSkeleton from "../components/ui/LoadingSkeleton.vue";
 import { useQueryStatus } from "../queries/status";
-import { publicTournamentsQuery } from "../queries/tournaments";
+import { publicRoomsQuery, publicTournamentsQuery } from "../queries/tournaments";
 import type { PublicTournament } from "../services/tournaments";
 
 // HU25 / RF17: the tournaments open for registration, for a visitor who
@@ -19,6 +19,11 @@ const { t } = useI18n();
 const query = useQuery(publicTournamentsQuery);
 const tournaments = computed(() => query.data.value ?? []);
 const { loading, loadError, retry } = useQueryStatus(query, "publicTournaments.loadError");
+
+// #140: tournaments being played or finished, whose room anyone can follow.
+// A failure here only hides the section: the listing above is the page.
+const roomsQuery = useQuery(publicRoomsQuery);
+const rooms = computed(() => roomsQuery.data.value ?? []);
 
 /** Rounds, time control and who may join, as one line. */
 function details(tournament: PublicTournament): string {
@@ -63,6 +68,18 @@ function details(tournament: PublicTournament): string {
           </TournamentCard>
         </li>
       </ul>
+
+      <section v-if="rooms.length > 0" aria-labelledby="public-rooms-heading" class="flex flex-col gap-3">
+        <h2 id="public-rooms-heading" class="text-lg">{{ t("publicTournaments.roomsTitle") }}</h2>
+        <p class="text-sm text-text-muted">{{ t("publicTournaments.roomsSubtitle") }}</p>
+        <ul class="m-0 flex list-none flex-col gap-3 p-0">
+          <li v-for="room in rooms" :key="room.id">
+            <TournamentCard :tournament="room" :to="`/sala-publica/${room.id}`" :heading-level="3">
+              <span class="text-sm font-semibold text-accent">{{ t("publicTournaments.openRoom") }}</span>
+            </TournamentCard>
+          </li>
+        </ul>
+      </section>
     </main>
   </div>
 </template>

@@ -2,6 +2,7 @@ import {
   DEFAULT_TIEBREAKS,
   TIEBREAKS,
   type EnrolledPlayerDto,
+  type PublicRoomDto,
   type PublicTournamentDto,
   type Tiebreak,
   type TiebreakCriterionDto,
@@ -16,10 +17,23 @@ export type TiebreakCriterion = Serialized<TiebreakCriterionDto>;
 export type Tournament = Serialized<TournamentDto>;
 export type EnrolledPlayer = Serialized<EnrolledPlayerDto>;
 export type PublicTournament = Serialized<PublicTournamentDto>;
+export type PublicRoom = Serialized<PublicRoomDto>;
 
 /** HU25 / RF17: the tournaments open for registration, without a session. */
 export async function listPublicTournaments(): Promise<PublicTournament[]> {
   const { data } = await api.get<PublicTournament[]>("/tournaments/public");
+  return data;
+}
+
+/** #140: tournaments being played or finished, whose public room anyone can open. */
+export async function listPublicRooms(): Promise<PublicTournament[]> {
+  const { data } = await api.get<PublicTournament[]>("/tournaments/public/rooms");
+  return data;
+}
+
+/** #140: a tournament's read-only room (published rounds and standings), without a session. */
+export async function getPublicRoom(id: string): Promise<PublicRoom> {
+  const { data } = await api.get<PublicRoom>(path`/tournaments/public/${id}`);
   return data;
 }
 

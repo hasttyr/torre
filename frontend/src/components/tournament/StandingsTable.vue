@@ -7,7 +7,9 @@ import type { StandingRow, Standings } from "../../services/rounds";
 import { useLocaleStore } from "../../stores/locale";
 
 // HU14: the official standings, with the tiebreak columns that decide ties.
-const props = defineProps<{ standings: Standings }>();
+// The public room (#140) sends the same table without player ids.
+type Row = Omit<StandingRow, "playerId"> & { playerId?: string };
+const props = defineProps<{ standings: Pick<Standings, "pending" | "tiebreaks"> & { rows: Row[] } }>();
 
 const { t } = useI18n();
 const locale = useLocaleStore();
@@ -16,7 +18,7 @@ const number = (value: number): string => formatNumber(value, locale.locale, 2);
 
 // Standard FIDE abbreviations. Each header shows the abbreviation (its
 // full name on hover) and gives screen readers the full name instead.
-const TIEBREAKS: { short: string; nameKey: string; value: (row: StandingRow) => number }[] = [
+const TIEBREAKS: { short: string; nameKey: string; value: (row: Row) => number }[] = [
   { short: "BH", nameKey: "standings.buchholz", value: (row) => row.buchholz },
   { short: "BC1", nameKey: "standings.cut1", value: (row) => row.buchholzCut1 },
   { short: "SB", nameKey: "standings.sb", value: (row) => row.sonnebornBerger },
@@ -61,7 +63,11 @@ const CELL = "border-b border-border-soft px-2 py-2";
           </tr>
         </thead>
         <tbody>
-          <tr v-for="row in standings.rows" :key="row.playerId" :class="{ 'opacity-60': row.withdrawn }">
+          <tr
+            v-for="(row, index) in standings.rows"
+            :key="row.playerId ?? index"
+            :class="{ 'opacity-60': row.withdrawn }"
+          >
             <td :class="[CELL, 'font-semibold text-text tabular-nums']">{{ row.rank }}</td>
             <td :class="[CELL, 'text-text']">
               {{ row.name }}

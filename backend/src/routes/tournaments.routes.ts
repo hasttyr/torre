@@ -15,6 +15,8 @@ import {
   listMine,
   listMyEnrollments,
   listPublic,
+  listRooms,
+  publicRoom,
   listPlayers,
   open,
   reopen,
@@ -38,6 +40,9 @@ tournamentsRouter.get("/mine", requireAuth, canManage, listMine);
 tournamentsRouter.get("/available", requireAuth, listAvailable);
 // HU25 / RF17: the public listing, without a session (its own rate limit in app.ts).
 tournamentsRouter.get("/public", listPublic);
+// #140: the read-only room, without a session (same limit, and noindex, in app.ts).
+tournamentsRouter.get("/public/rooms", listRooms);
+tournamentsRouter.get("/public/:id", publicRoom);
 tournamentsRouter.get("/enrolled", requireAuth, listMyEnrollments);
 tournamentsRouter.get("/live", requireAuth, listLive);
 tournamentsRouter.post("/", requireAuth, canManage, create);

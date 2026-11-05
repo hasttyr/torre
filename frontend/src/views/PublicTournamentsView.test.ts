@@ -9,9 +9,10 @@ import PublicTournamentsView from "./PublicTournamentsView.vue";
 vi.mock("../services/tournaments", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../services/tournaments")>()),
   listPublicTournaments: vi.fn(),
+  listPublicRooms: vi.fn(),
 }));
 
-import { listPublicTournaments } from "../services/tournaments";
+import { listPublicRooms, listPublicTournaments } from "../services/tournaments";
 
 const OPEN = {
   id: "t-1",
@@ -46,6 +47,7 @@ describe("PublicTournamentsView", () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    vi.mocked(listPublicRooms).mockResolvedValue([]);
   });
 
   it("lists the tournaments open for registration, with their rounds, time control and who may join", async () => {
@@ -66,6 +68,19 @@ describe("PublicTournamentsView", () => {
     const links = (await mountView()).findAll("main a").map((link) => link.attributes("href"));
 
     expect(links).toEqual(expect.arrayContaining(["/login", "/registro"]));
+  });
+
+  // #140: tournaments in play or finished, whose public room anyone can follow.
+  it("links to the public room of the tournaments being played or finished", async () => {
+    vi.mocked(listPublicTournaments).mockResolvedValue([]);
+    vi.mocked(listPublicRooms).mockResolvedValue([
+      { ...OPEN, id: "t-2", name: "Copa Primavera", status: "IN_PROGRESS" },
+    ]);
+
+    const room = (await mountView()).get("a[href='/sala-publica/t-2']");
+
+    expect(room.text()).toContain("Copa Primavera");
+    expect(room.text()).toContain("Ver la sala");
   });
 
   it("says so when no tournament is open", async () => {

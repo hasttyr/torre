@@ -1,19 +1,20 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="M extends Board">
 import { useI18n } from "vue-i18n";
 
 import { formatResult } from "../../lib/format";
-import { isForfeit, type Match, type Round } from "../../services/rounds";
+import { isForfeit, type Board } from "../../services/rounds";
 
 // A round's boards: who plays whom, with which color, and the result.
 // Purely presentational; whatever a viewer may DO with a board (record,
 // correct) comes in through the `actions` slot, so the same table serves
-// the draft review, the public room and the arbiter's result entry.
-defineProps<{ round: Round }>();
-defineSlots<{ actions?: (props: { match: Match }) => unknown }>();
+// the draft review, the room, the arbiter's result entry and the public
+// room (#140), whose boards carry no ids.
+defineProps<{ round: { matches: M[] } }>();
+defineSlots<{ actions?: (props: { match: M }) => unknown }>();
 
 const { t } = useI18n();
 
-function isWinner(match: Match, side: "white" | "black"): boolean {
+function isWinner(match: Board, side: "white" | "black"): boolean {
   return (
     (side === "white" && (match.result === "1-0" || match.result === "1F-0F")) ||
     (side === "black" && (match.result === "0-1" || match.result === "0F-1F"))
@@ -25,7 +26,7 @@ function isWinner(match: Match, side: "white" | "black"): boolean {
   <ol class="m-0 flex list-none flex-col gap-2 p-0">
     <li
       v-for="match in round.matches"
-      :key="match.id"
+      :key="match.board"
       class="flex flex-col gap-2 rounded-2xl border border-border-soft px-3.5 py-3 sm:flex-row sm:items-center sm:gap-4"
       :data-match="match.id"
     >

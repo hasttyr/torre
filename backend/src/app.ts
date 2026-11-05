@@ -10,6 +10,12 @@ import { requestLogger } from "./middlewares/requestLogger";
 import { rejectCrossSiteWrites } from "./middlewares/sessionCookie";
 import { router } from "./routes";
 
+/** #140: keeps a public page out of search results, where students' names could be found by anyone. */
+const noIndex: express.RequestHandler = (_req, res, next) => {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
+  next();
+};
+
 export interface AppOptions {
   /** Where the sign-in, sign-up and password-reset limits count (see createRateLimits); memory unless given. */
   rateLimitStore?: RateLimitStoreFactory;
@@ -37,7 +43,9 @@ export function createApp(options: AppOptions = {}) {
   app.post("/api/auth/login", limits.loginPerAddress, limits.loginFromUnknownDevice, limits.login);
   app.post("/api/auth/register", limits.register);
   app.post("/api/auth/password/forgot", limits.passwordReset);
-  app.get("/api/tournaments/public", limits.publicListing);
+  // HU25 / #140: the pages anyone can read without a session share one limit,
+  // and ask search engines not to index them: the room carries students' names.
+  app.use("/api/tournaments/public", noIndex, limits.publicListing);
 
   app.use("/api", rejectCrossSiteWrites([env.corsOrigin, env.appUrl]));
   app.use("/api", router);

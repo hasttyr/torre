@@ -800,7 +800,22 @@
     "rounds": "{count} rounds",
     "timeControl": "time control {timeControl}",
     "program": "{program} only",
-    "minimumSemester": "semester {semester} and up"
+    "minimumSemester": "semester {semester} and up",
+    "roomsTitle": "Tournaments in play and finished",
+    "roomsSubtitle": "Follow their pairings and standings without signing in.",
+    "openRoom": "Open the room →"
+  },
+  "publicRoom": {
+    "loading": "Loading the room…",
+    "loadError": "The room couldn't be loaded",
+    "inProgress": "In play · refreshes every minute",
+    "finished": "Tournament finished",
+    "notice": "Public room: names and sporting results only, the same ones posted at the venue.",
+    "round": "Round {number}",
+    "pairings": "Pairings",
+    "noRounds": "No rounds have been published yet.",
+    "standings": "Standings",
+    "earlier": "Earlier rounds"
   },
   "tournamentStats": {
     "players": "Active players",
@@ -911,7 +926,7 @@
       },
       "visibility": {
         "title": "5. Who sees what",
-        "body": "Your name appears in the pairings, results and standings of the tournaments you play, which signed-in users see. The public tournament listing, without a session, shows no personal data. Your code, program and semester are seen by tournament and club organizers, and by a coach only after you accept their link. Your email never appears in results or searches."
+        "body": "Your name appears in the pairings, results and standings of the tournaments you play. Once the first round is published, anyone can see them without signing in, in the tournament's public room: the same information posted at the venue, only your name and sporting results, on pages that ask search engines not to index them. The listing of tournaments open for registration shows no personal data. Your code, program and semester are seen by tournament and club organizers, and by a coach only after you accept their link. Your email never appears in results or searches."
       },
       "processors": {
         "title": "6. Data processors",

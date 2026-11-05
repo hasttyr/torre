@@ -22,6 +22,15 @@ export { FORFEIT_RESULTS, GAME_RESULTS, isForfeit, PLAYED_RESULTS, type GameResu
 export type Seat = Serialized<SeatDto>;
 export type Match = Serialized<MatchDto>;
 export type Round = Serialized<RoundDto>;
+/** A board as the pairings table shows it: a room's match, or a public room's (#140), which has no ids. */
+export interface Board {
+  id?: string;
+  board: number;
+  white: { name: string } | null;
+  black: { name: string } | null;
+  result: Match["result"];
+  isBye: boolean;
+}
 export type StandingRow = Serialized<StandingRowDto>;
 export type Standings = Serialized<StandingsDto>;
 export type BoardResults = Serialized<BoardResultsDto>;

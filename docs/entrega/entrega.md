@@ -52,4 +52,4 @@ Están, cada una con su porqué, en `docs/runbooks/regresion.md` ("Ajustes respe
 
 ## Después de la entrega (Fase 5)
 
-Quedan abiertos, con sus condiciones: la sala pública de solo lectura (#140) y el aviso al publicarse una ronda (#141), que esperan la política de datos oficial; y un motor suizo más cercano a FIDE C.04.3 (#142), que antes pide mostrar con torneos reales que la simplificación cambió algún emparejamiento.
+La sala pública de solo lectura (#140) quedó hecha, con el borrador de la política de datos ([decisión 013](../decisions/013-sala-publica.md)): cuando llegue la política oficial, tiene que decir lo mismo sobre quién ve los nombres. Quedan abiertos, con sus condiciones: el aviso al publicarse una ronda (#141), que necesita el correo de producción (#130); y un motor suizo más cercano a FIDE C.04.3 (#142), que antes pide mostrar con torneos reales que la simplificación cambió algún emparejamiento.

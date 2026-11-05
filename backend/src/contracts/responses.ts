@@ -176,6 +176,51 @@ export type PublicTournamentDto = Pick<
   | "minimumSemester"
 >;
 
+/**
+ * #140: a board of a published round in the public room. Players by name
+ * only: no id, so the page can't be used to follow a person across
+ * tournaments by anything but what's printed at the venue.
+ */
+export interface PublicMatchDto {
+  board: number;
+  white: string | null;
+  black: string | null;
+  result: StoredResult | null;
+  isBye: boolean;
+}
+
+export interface PublicRoundDto {
+  number: number;
+  status: RoundStatus;
+  matches: PublicMatchDto[];
+}
+
+/** #140: a standings row in the public room: a name and sporting figures, nothing else. */
+export interface PublicStandingRowDto {
+  rank: number;
+  name: string;
+  score: number;
+  buchholz: number;
+  buchholzCut1: number;
+  sonnebornBerger: number;
+  withdrawn: boolean;
+}
+
+/**
+ * #140: a tournament's room as anyone reads it without signing in, to project
+ * it at the venue or share it: the published rounds and the standings.
+ */
+export interface PublicRoomDto {
+  tournament: PublicTournamentDto;
+  rounds: PublicRoundDto[];
+  standings: {
+    pending: boolean;
+    roundsCompleted: number;
+    tiebreaks: Tiebreak[];
+    rows: PublicStandingRowDto[];
+  };
+}
+
 export interface EnrolledPlayerDto {
   playerId: string;
   name: string;

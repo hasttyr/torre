@@ -8,6 +8,8 @@ import {
   listEnrolledTournaments,
   listLiveTournaments,
   listMyTournaments,
+  getPublicRoom,
+  listPublicRooms,
   listPublicTournaments,
   type EnrolledPlayer,
   type Tournament,
@@ -46,6 +48,21 @@ export const publicTournamentsQuery = defineQueryOptions({
   key: [...LISTS, "public"],
   query: () => listPublicTournaments(),
 });
+
+/** #140: tournaments whose public room a visitor can open. */
+export const publicRoomsQuery = defineQueryOptions({
+  key: [...LISTS, "public", "rooms"],
+  query: () => listPublicRooms(),
+});
+
+/**
+ * #140: a tournament's public room. Its own key, outside ["tournament", id]:
+ * it's a different answer (names only) for a visitor without a session.
+ */
+export const publicRoomQuery = defineQueryOptions((id: string) => ({
+  key: ["public-room", id],
+  query: () => getPublicRoom(id),
+}));
 
 /** The tournaments the signed-in player is registered in. */
 export const enrolledTournamentsQuery = defineQueryOptions({

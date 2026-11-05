@@ -103,6 +103,8 @@ const CASES: [string, () => Promise<unknown>, Verb, string, unknown?][] = [
   ["coaches.listCoachTournaments", () => coaches.listCoachTournaments(), "get", "/coaches/tournaments"],
   ["tournaments.listMyTournaments", () => tournaments.listMyTournaments(), "get", "/tournaments/mine"],
   ["tournaments.listPublicTournaments", () => tournaments.listPublicTournaments(), "get", "/tournaments/public"],
+  ["tournaments.listPublicRooms", () => tournaments.listPublicRooms(), "get", "/tournaments/public/rooms"],
+  ["tournaments.getPublicRoom", () => tournaments.getPublicRoom("t-1"), "get", "/tournaments/public/t-1"],
   [
     "tournaments.listAvailableTournaments",
     () => tournaments.listAvailableTournaments(),

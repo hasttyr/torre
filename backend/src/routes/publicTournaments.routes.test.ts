@@ -52,4 +52,17 @@ describe("GET /tournaments/public", () => {
     expect(refused.status).toBe(429);
     expect(refused.body.code).toBe("RATE_LIMITED");
   });
+
+  // #140: the public room is just as easy to scrape, so it counts against the same limit.
+  it("counts the public rooms against the same limit", async () => {
+    const server = serve();
+    for (let attempt = 0; attempt < 150; attempt++) {
+      await request(server).get("/api/tournaments/public").expect(200);
+      await request(server).get("/api/tournaments/public/rooms").expect(200);
+    }
+
+    const refused = await request(server).get("/api/tournaments/public/rooms");
+
+    expect(refused.status).toBe(429);
+  });
 });

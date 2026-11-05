@@ -24,6 +24,24 @@ import type { EnrolledPlayerDto, PublicTournamentDto } from "../contracts/respon
 
 const WITH_CRITERIA = { tiebreakCriteria: true } as const;
 
+/**
+ * What a visitor without a session may read about a tournament: its own
+ * facts, never the organizer. Selected field by field, so a column added to
+ * the tournament later never reaches a public page (HU25, #140).
+ */
+export const PUBLIC_TOURNAMENT_SELECT = {
+  id: true,
+  name: true,
+  startDate: true,
+  endDate: true,
+  status: true,
+  format: true,
+  roundsCount: true,
+  timeControl: true,
+  restrictedProgram: true,
+  minimumSemester: true,
+} satisfies Prisma.TournamentSelect;
+
 /** A tournament date as the calendar day it stands for (YYYY-MM-DD). */
 const calendarDay = (date: Date) => date.toISOString().slice(0, 10);
 
@@ -83,18 +101,7 @@ export async function listAvailableTournaments(prisma: PrismaClient): Promise<To
 export async function listPublicTournaments(prisma: PrismaClient): Promise<PublicTournamentDto[]> {
   return prisma.tournament.findMany({
     where: { status: "REGISTRATION_OPEN" },
-    select: {
-      id: true,
-      name: true,
-      startDate: true,
-      endDate: true,
-      status: true,
-      format: true,
-      roundsCount: true,
-      timeControl: true,
-      restrictedProgram: true,
-      minimumSemester: true,
-    },
+    select: PUBLIC_TOURNAMENT_SELECT,
     orderBy: { startDate: "asc" },
   });
 }

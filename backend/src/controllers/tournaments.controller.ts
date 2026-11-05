@@ -21,6 +21,7 @@ import {
   withdrawPlayer,
   withdrawSelf,
 } from "../services/tournaments.service";
+import { getPublicRoom, listPublicRooms } from "../services/publicRoom.service";
 import { getStandings } from "../services/standings.service";
 import { getTournamentStats } from "../services/tournamentStats.service";
 import {
@@ -132,4 +133,14 @@ export async function withdrawMe(req: Request, res: Response): Promise<void> {
 /** GET /tournaments/public — tournaments open for registration, without a session (HU25 / RF17). */
 export async function listPublic(_req: Request, res: Response): Promise<void> {
   res.status(200).json(await listPublicTournaments(prisma));
+}
+
+/** GET /tournaments/public/rooms — tournaments being played or finished, without a session (#140). */
+export async function listRooms(_req: Request, res: Response): Promise<void> {
+  res.status(200).json(await listPublicRooms(prisma));
+}
+
+/** GET /tournaments/public/:id — a tournament's read-only room, without a session (#140). */
+export async function publicRoom(req: Request, res: Response): Promise<void> {
+  res.status(200).json(await getPublicRoom(prisma, idParam(req, "id")));
 }

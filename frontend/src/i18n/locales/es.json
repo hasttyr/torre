@@ -800,7 +800,22 @@
     "rounds": "{count} rondas",
     "timeControl": "ritmo {timeControl}",
     "program": "solo {program}",
-    "minimumSemester": "desde semestre {semester}"
+    "minimumSemester": "desde semestre {semester}",
+    "roomsTitle": "Torneos en juego y terminados",
+    "roomsSubtitle": "Sigue sus emparejamientos y su clasificación sin entrar.",
+    "openRoom": "Ver la sala →"
+  },
+  "publicRoom": {
+    "loading": "Cargando la sala…",
+    "loadError": "No se pudo cargar la sala",
+    "inProgress": "En juego · se actualiza cada minuto",
+    "finished": "Torneo terminado",
+    "notice": "Sala pública: solo nombres y resultados deportivos, los mismos que se publican en el lugar del torneo.",
+    "round": "Ronda {number}",
+    "pairings": "Emparejamientos",
+    "noRounds": "Todavía no hay rondas publicadas.",
+    "standings": "Clasificación",
+    "earlier": "Rondas anteriores"
   },
   "tournamentStats": {
     "players": "Jugadores activos",
@@ -911,7 +926,7 @@
       },
       "visibility": {
         "title": "5. Quién ve qué",
-        "body": "Tu nombre aparece en los emparejamientos, resultados y clasificaciones de los torneos en que juegas, que ven los usuarios con sesión. El listado público de torneos, sin sesión, no muestra datos de personas. Tu código, programa y semestre los ven quienes organizan torneos y clubes, y un entrenador solo después de que aceptes su vínculo. Tu correo nunca aparece en resultados ni búsquedas."
+        "body": "Tu nombre aparece en los emparejamientos, resultados y clasificaciones de los torneos en que juegas. Desde que se publica la primera ronda, cualquiera puede verlos sin sesión en la sala pública del torneo: la misma información que se publica en el lugar del torneo, solo tu nombre y tus resultados deportivos, en páginas que piden a los buscadores no indexarlas. El listado de torneos con inscripción abierta no muestra datos de personas. Tu código, programa y semestre los ven quienes organizan torneos y clubes, y un entrenador solo después de que aceptes su vínculo. Tu correo nunca aparece en resultados ni búsquedas."
       },
       "processors": {
         "title": "6. Encargados del tratamiento",

@@ -74,6 +74,21 @@ describe("vercel.json", () => {
   });
 });
 
+// #140: the public room puts students' names on a page anyone can open.
+describe("the public room", () => {
+  it("asks search engines not to index it, and keeps every other header", () => {
+    const headers = pageHeaders("/sala-publica/3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b");
+
+    expect(headers["X-Robots-Tag"]).toBe("noindex, nofollow");
+    expect(headers["Content-Security-Policy"]).toBeDefined();
+    expect(rewriteOf("/sala-publica/3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b")).toBe("/index.html");
+  });
+
+  it("is the only page marked that way: the landing must stay findable", () => {
+    expect(pageHeaders("/")).not.toHaveProperty("X-Robots-Tag");
+  });
+});
+
 describe("security headers", () => {
   const headers = pageHeaders("/torneos/3f2b8c1e-6a4d-4e2f-9b7a-1c5d8e9f0a2b/sala");
 

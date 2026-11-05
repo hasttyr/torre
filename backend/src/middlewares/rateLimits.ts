@@ -126,9 +126,10 @@ export function createRateLimits(sharedStore?: RateLimitStoreFactory) {
       keyGenerator: address,
       store: shared("login-address"),
     }),
-    // The public tournament listing (HU25): the only page anyone can read
-    // without signing in, so the one a scraper would hammer. A person
-    // reloads it a few times; a campus behind one address, a few hundred.
+    // The public pages (HU25's listing, #140's room): the only ones anyone
+    // can read without signing in, so the ones a scraper would hammer. A
+    // person reloads them a few times, and an open room refreshes once a
+    // minute (15 per window); a campus behind one address, a few hundred.
     publicListing: limit({ windowMinutes: 15, limit: 300, keyGenerator: address }),
     // Account spam, and the password hashing each sign-up costs.
     register: limit({ windowMinutes: 60, limit: 10, keyGenerator: address, store: shared("register") }),
