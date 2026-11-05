@@ -761,6 +761,13 @@
     "standingsFile": "standings.pdf",
     "roundFile": "round-{number}.pdf"
   },
+  "myBoard": {
+    "title": "Your game · Round {number}",
+    "game": "Board {board} · {color} against {opponent}",
+    "white": "white",
+    "black": "black",
+    "bye": "You rest: you have this round's bye."
+  },
   "liveTournaments": {
     "title": "Tournaments in Play",
     "subtitle": "Follow each tournament's pairings, results and standings live.",

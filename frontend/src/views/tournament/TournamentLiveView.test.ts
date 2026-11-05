@@ -304,6 +304,27 @@ describe("TournamentLiveView", () => {
     expect(wrapper.find("[data-test='podium']").exists()).toBe(false);
   });
 
+  // "Your board": the viewer's game in the newest published round, at the top.
+  it("tells a player who opens the room where they play the round in progress", async () => {
+    signIn("PLAYER");
+    vi.mocked(listRounds).mockResolvedValue([ROUND, SECOND_ROUND]);
+    vi.mocked(getStandings).mockResolvedValue({
+      ...(await getStandings("t-1")),
+      viewerPlayerId: "p2",
+    });
+
+    const wrapper = await mountRoom("/torneos/t-1/sala?ronda=1");
+
+    // The newest round, even while an older one is open below.
+    expect(wrapper.get("[data-test='my-board']").text()).toContain("Ronda 2");
+    expect(wrapper.get("[data-test='my-board']").text()).toContain("negras contra Marta Ríos");
+  });
+
+  it("shows no board of their own to someone not playing", async () => {
+    signIn("ARBITER");
+    expect((await mountRoom()).find("[data-test='my-board']").exists()).toBe(false);
+  });
+
   it("offers the organizer who owns it a way back to the admin panel", async () => {
     signIn("ORGANIZER", "org-1");
 

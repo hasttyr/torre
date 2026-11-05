@@ -8,6 +8,7 @@ import { useRoute } from "vue-router";
 import AppHeader from "../../components/layout/AppHeader.vue";
 import LoadError from "../../components/ui/LoadError.vue";
 import LoadingSkeleton from "../../components/ui/LoadingSkeleton.vue";
+import MyBoard from "../../components/tournament/MyBoard.vue";
 import PairingsTable from "../../components/tournament/PairingsTable.vue";
 import ResultEntry from "../../components/tournament/ResultEntry.vue";
 import StandingsTable from "../../components/tournament/StandingsTable.vue";
@@ -181,6 +182,13 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
         </header>
 
         <FormBanner v-if="actionError" kind="error">{{ actionError }}</FormBanner>
+
+        <!-- A player's own game in the round in play, found at a glance. -->
+        <MyBoard
+          v-if="!finished && published.length > 0"
+          :round="published.at(-1)!"
+          :player-id="standings?.viewerPlayerId ?? null"
+        />
 
         <!-- The winners, once the tournament is closed (by hand or by date). -->
         <TournamentPodium v-if="finished && standings && standings.rows.length > 0" :standings="standings" />

@@ -761,6 +761,13 @@
     "standingsFile": "clasificacion.pdf",
     "roundFile": "ronda-{number}.pdf"
   },
+  "myBoard": {
+    "title": "Tu partida · Ronda {number}",
+    "game": "Mesa {board} · {color} contra {opponent}",
+    "white": "blancas",
+    "black": "negras",
+    "bye": "Descansas: tienes el bye de esta ronda."
+  },
   "liveTournaments": {
     "title": "Torneos en juego",
     "subtitle": "Sigue en vivo los emparejamientos, resultados y la clasificación de cada torneo.",
