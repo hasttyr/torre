@@ -4,12 +4,12 @@ Lo que se entrega de Torre Central Hub al cierre de la Fase 4 (#115), cómo eval
 
 ## Qué se entrega
 
-| Pieza           | Dónde                                                                                                                                                       |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Aplicación      | `https://torre-roan.vercel.app` (Vercel)                                                                                                                    |
-| API             | `https://torre-be.onrender.com` (Render, con su PostgreSQL)                                                                                                 |
-| Código          | `main` de este repositorio; los dos despliegan solos desde ahí                                                                                              |
-| Commit validado | El de la ejecución de la regresión (`docs/runbooks/regresion.md`, "Ejecución del 5 de noviembre de 2026"), y los posteriores que solo agregan documentación |
+| Pieza           | Dónde                                                                                                                                                                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Aplicación      | `https://torre-roan.vercel.app` (Vercel)                                                                                                                                                                                                                 |
+| API             | `https://torre-be.onrender.com` (Render, con su PostgreSQL)                                                                                                                                                                                              |
+| Código          | `main` de este repositorio; los dos despliegan solos desde ahí                                                                                                                                                                                           |
+| Commit validado | El último de `main` con el CI en verde. La regresión manual (`docs/runbooks/regresion.md`, "Ejecución del 5 de noviembre de 2026") se hizo antes de la sala pública (#140) y los avisos de ronda (#141); sus casos automáticos se repiten en cada commit |
 
 Para evaluar, las cuentas de demostración del seed (contraseña `Test1234`): `admin@test.com`, `organizer@test.com`, `arbiter@test.com`, `coach@test.com` y `player@test.com`, más los jugadores del historial (README, "Datos de prueba"). Producción tiene cargados esos datos de demostración, no datos de estudiantes reales.
 
@@ -18,6 +18,7 @@ En el plan gratuito de Render la API duerme sin tráfico: la primera visita tard
 ## Cómo se verificó
 
 - **Regresión P01–P33** (#113): todos los casos con su test en verde en el CI, el PDF comparado con la sala (P32) y el ambiente revisado contra `docs/runbooks/despliegue.md`. Resultado: cero regresiones funcionales. Detalle en `docs/runbooks/regresion.md`.
+- **Sala pública y avisos de ronda** (#140, #141): lo que la sala pública no puede mostrar y a quién le llega el aviso se prueba contra la base real (`publicRoom.int.test.ts`, `roundNotices.int.test.ts`); la sala, también de punta a punta (`frontend/e2e/publicTournaments.spec.ts`).
 - **Ensayo técnico de la UAT** (#131): `frontend/e2e/uatRehearsal.spec.ts` recorre un día de torneo con sus incidentes en cada ejecución del CI.
 - **Compuertas del CI** (`.github/workflows/ci.yml`): lint, tipos, formato, pruebas con umbrales de cobertura, build, auditoría de dependencias y e2e, en cada commit de `main`.
 
@@ -27,7 +28,7 @@ En el plan gratuito de Render la API duerme sin tráfico: la primera visita tard
 | ----------------------------------- | -------------------------------------------------------------- |
 | Qué hace el sistema y cómo correrlo | `README.md`, `backend/README.md`, `frontend/README.md`         |
 | Cómo está construido                | `docs/architecture.md`                                         |
-| Por qué es como es                  | `docs/decisions/` (001–012)                                    |
+| Por qué es como es                  | `docs/decisions/` (001–013)                                    |
 | Operarlo                            | `docs/runbooks/` (validar como el CI, migraciones, despliegue) |
 | Probarlo                            | `docs/runbooks/regresion.md`, `docs/runbooks/ensayo-uat.md`    |
 | Aceptarlo                           | `docs/entrega/acta-uat-p35.md`                                 |
