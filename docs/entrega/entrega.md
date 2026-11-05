@@ -1,6 +1,6 @@
 # Entrega final
 
-Lo que se entrega de Torre Central Hub al cierre de la Fase 4 (#115), cómo evaluarlo y qué queda pendiente fuera del código. A partir de esta entrega el código queda congelado: solo entran correcciones de fallos que bloqueen la aceptación (P35).
+Lo que se entrega de Torre Central Hub al cierre de la Fase 4 (#115), cómo evaluarlo y qué queda pendiente fuera del código. A partir de esta entrega el código queda congelado: no se implementa nada más, y solo entran correcciones de fallos que bloqueen la aceptación (P35).
 
 ## Qué se entrega
 
@@ -28,7 +28,7 @@ En el plan gratuito de Render la API duerme sin tráfico: la primera visita tard
 | ----------------------------------- | -------------------------------------------------------------- |
 | Qué hace el sistema y cómo correrlo | `README.md`, `backend/README.md`, `frontend/README.md`         |
 | Cómo está construido                | `docs/architecture.md`                                         |
-| Por qué es como es                  | `docs/decisions/` (001–013)                                    |
+| Por qué es como es                  | `docs/decisions/` (001–014)                                    |
 | Operarlo                            | `docs/runbooks/` (validar como el CI, migraciones, despliegue) |
 | Probarlo                            | `docs/runbooks/regresion.md`, `docs/runbooks/ensayo-uat.md`    |
 | Aceptarlo                           | `docs/entrega/acta-uat-p35.md`                                 |
@@ -40,6 +40,7 @@ Están, cada una con su porqué, en `docs/runbooks/regresion.md` ("Ajustes respe
 - **P13:** ARO no se calcula; necesita ratings, fuera del alcance.
 - **P16, P26 y P27:** son ajustes a propósito: estadísticas visibles con sesión, consentimiento del jugador para el entrenador e inscripción solo con estado abierto.
 - **Retiros en los desempates:** no siguen el art. 16.1.1 de FIDE (decisión 012).
+- **Emparejamiento:** un Dutch de FIDE simplificado, sin rating ni criterios absolutos de color. Las bases del torneo lo anuncian (decisión 014).
 - **RN-10:** la política de datos es un borrador académico hasta que la universidad entregue la oficial.
 
 ## Pendiente fuera del código
@@ -53,4 +54,4 @@ Están, cada una con su porqué, en `docs/runbooks/regresion.md` ("Ajustes respe
 
 ## Después de la entrega (Fase 5)
 
-La sala pública de solo lectura (#140) quedó hecha, con el borrador de la política de datos ([decisión 013](../decisions/013-sala-publica.md)): cuando llegue la política oficial, tiene que decir lo mismo sobre quién ve los nombres. El aviso por correo al publicarse una ronda (#141) también quedó hecho: sale en cuanto producción tenga correo (#130), y mientras no lo tenga, la cuenta del jugador dice que no se están enviando. Queda abierto, con su condición, un motor suizo más cercano a FIDE C.04.3 (#142), que antes pide mostrar con torneos reales que la simplificación cambió algún emparejamiento.
+La sala pública de solo lectura (#140) quedó hecha, con el borrador de la política de datos ([decisión 013](../decisions/013-sala-publica.md)): cuando llegue la política oficial, tiene que decir lo mismo sobre quién ve los nombres. El aviso por correo al publicarse una ronda (#141) también quedó hecho: sale en cuanto producción tenga correo (#130), y mientras no lo tenga, la cuenta del jugador dice que no se están enviando. El motor suizo más cercano a FIDE C.04.3 (#142) se cerró sin implementar ([decisión 014](../decisions/014-motor-suizo-simplificado.md)): no hay evidencia de que la simplificación cambie un emparejamiento, sin rating no llegaría a ser FIDE, y reescribirlo arriesgaba lo que ya pasó la regresión. Con eso no queda trabajo de código abierto: lo pendiente es lo de la tabla anterior, que resuelven personas fuera del equipo.

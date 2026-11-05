@@ -14,6 +14,7 @@ Aceptación formal del sistema por los actores del torneo (#114). Se llena el d�
 | Árbitro               |                                                                                                                              |
 | Jugadores (cuántos)   |                                                                                                                              |
 | Equipo (solo observa) |                                                                                                                              |
+| Bases del torneo      | Anuncian el emparejamiento suizo simplificado (decisión 014): sí / no                                                        |
 | Cuentas usadas        | Del seed (`backend/prisma/seed.ts`), no datos reales de estudiantes, mientras la política de datos sea un borrador académico |
 
 ## Criterios de aceptación
