@@ -24,14 +24,15 @@ En el plan gratuito de Render la API duerme sin tráfico: la primera visita tard
 
 ## Documentación
 
-| Para                                | Documento                                                      |
-| ----------------------------------- | -------------------------------------------------------------- |
-| Qué hace el sistema y cómo correrlo | `README.md`, `backend/README.md`, `frontend/README.md`         |
-| Cómo está construido                | `docs/architecture.md`                                         |
-| Por qué es como es                  | `docs/decisions/` (001–014)                                    |
-| Operarlo                            | `docs/runbooks/` (validar como el CI, migraciones, despliegue) |
-| Probarlo                            | `docs/runbooks/regresion.md`, `docs/runbooks/ensayo-uat.md`    |
-| Aceptarlo                           | `docs/entrega/acta-uat-p35.md`                                 |
+| Para                                | Documento                                                                              |
+| ----------------------------------- | -------------------------------------------------------------------------------------- |
+| Qué hace el sistema y cómo correrlo | `README.md`, `backend/README.md`, `frontend/README.md`                                 |
+| Cómo está construido                | `docs/architecture.md`                                                                 |
+| Por qué es como es                  | `docs/decisions/` (001–014)                                                            |
+| Operarlo                            | `docs/runbooks/` (validar como el CI, migraciones, despliegue)                         |
+| Probarlo                            | `docs/plan-de-pruebas.md`, `docs/runbooks/regresion.md`, `docs/runbooks/ensayo-uat.md` |
+| Usarlo                              | `docs/manual-de-usuario.md`                                                            |
+| Aceptarlo                           | `docs/entrega/acta-uat-p35.md`                                                         |
 
 ## Desviaciones respecto del documento de sustentación
 

@@ -6,16 +6,17 @@ Este archivo es el contexto de entrada. El detalle está en los README de cada p
 
 ## Mapa
 
-| Dónde                      | Qué                                                                                               |
-| -------------------------- | ------------------------------------------------------------------------------------------------- |
-| `backend/`                 | API REST (Express 5, Prisma 7, PostgreSQL) y Socket.IO → `backend/CLAUDE.md`, `backend/README.md` |
-| `frontend/`                | SPA Vue 3 (Vite, Pinia Colada, vue-i18n, Tailwind 4) → `frontend/CLAUDE.md`, `frontend/README.md` |
-| `backend/src/contracts/`   | Contrato de la API, compilado por los dos proyectos (alias `@contracts` en el frontend)           |
-| `docs/architecture.md`     | Cómo encajan las piezas y la estrategia de pruebas                                                |
-| `docs/decisions/`          | Por qué el sistema es como es. Leer antes de cambiar algo que parezca raro                        |
-| `docs/runbooks/`           | Paso a paso: validar como el CI, migraciones, despliegue, regresión P01–P33, ensayo de la UAT     |
-| `.github/workflows/ci.yml` | Las compuertas que tiene que pasar cada PR                                                        |
-| `.claude/skills/`          | `/validar-ci`, `/nueva-feature`, `/arreglar-bug`, `/revision-seguridad`                           |
+| Dónde                      | Qué                                                                                                                          |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `backend/`                 | API REST (Express 5, Prisma 7, PostgreSQL) y Socket.IO → `backend/CLAUDE.md`, `backend/README.md`                            |
+| `frontend/`                | SPA Vue 3 (Vite, Pinia Colada, vue-i18n, Tailwind 4) → `frontend/CLAUDE.md`, `frontend/README.md`                            |
+| `backend/src/contracts/`   | Contrato de la API, compilado por los dos proyectos (alias `@contracts` en el frontend)                                      |
+| `docs/architecture.md`     | Cómo encajan las piezas y la estrategia de pruebas                                                                           |
+| `docs/decisions/`          | Por qué el sistema es como es. Leer antes de cambiar algo que parezca raro                                                   |
+| `docs/plan-de-pruebas.md`  | El plan de pruebas por niveles y su ejecución; el manual de usuario está al lado, validado por `frontend/src/manual.test.ts` |
+| `docs/runbooks/`           | Paso a paso: validar como el CI, migraciones, despliegue, regresión P01–P33, ensayo de la UAT                                |
+| `.github/workflows/ci.yml` | Las compuertas que tiene que pasar cada PR                                                                                   |
+| `.claude/skills/`          | `/validar-ci`, `/nueva-feature`, `/arreglar-bug`, `/revision-seguridad`                                                      |
 
 ## Glosario
 
