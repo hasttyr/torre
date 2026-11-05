@@ -10,6 +10,7 @@ import { emitToTournament } from "../sockets/broadcast";
 import { SOCKET_EVENTS } from "../sockets/events";
 import type { AuthUser } from "../types/express";
 import { mention, plain, recordAuditLog } from "./auditLog.service";
+import { todayInBogota } from "./autoFinish.service";
 import { completeBlockedSuppressions } from "./dataRights.service";
 import { toTournamentDto, type TournamentDto } from "./tournament.mapper";
 import {
@@ -22,6 +23,9 @@ import {
 import type { EnrolledPlayerDto } from "../contracts/responses";
 
 const WITH_CRITERIA = { tiebreakCriteria: true } as const;
+
+/** A tournament date as the calendar day it stands for (YYYY-MM-DD). */
+const calendarDay = (date: Date) => date.toISOString().slice(0, 10);
 
 /** Creates a new tournament owned by the actor. */
 export async function createTournament(
@@ -109,21 +113,43 @@ export async function getTournament(
 }
 
 /**
- * Updates a tournament's rounds, time control, tiebreak order and eligibility rules.
+ * Updates a tournament's rounds, time control, tiebreak order, eligibility
+ * rules and end date.
  *
  * @throws {HttpError} 404 if it doesn't exist, 403 if not allowed to manage
- * it, 409 if changing the tiebreak order after round 1 has started.
+ * it, 409 if changing the tiebreak order after round 1 has started or
+ * moving the end date before today or before the start.
  */
 export async function configureTournament(
   prisma: PrismaClient,
   tournamentId: string,
   data: ConfigureTournamentSchemaInput,
   actor: AuthUser,
+  now = new Date(),
 ): Promise<TournamentDto> {
   const updated = await prisma.$transaction(async (tx) => {
     const tournament = await lockTournament(tx, tournamentId);
     assertCanManageTournament(tournament, actor);
     assertNotFinished(tournament);
+
+    const newEndDate =
+      data.endDate && data.endDate.getTime() !== tournament.endDate.getTime() ? data.endDate : undefined;
+    if (newEndDate) {
+      // A tournament past its end date closes on its own (decision 010), so
+      // the date only moves to a day still to come, today included.
+      if (newEndDate < tournament.startDate) {
+        throw new HttpError("END_DATE_BEFORE_START", { startDate: calendarDay(tournament.startDate) });
+      }
+      if (newEndDate < todayInBogota(now)) {
+        throw new HttpError("END_DATE_IN_PAST");
+      }
+      await recordAuditLog(
+        tx,
+        actor.id,
+        "TOURNAMENT_END_DATE_CHANGED",
+        `"${plain(tournament.name)}": ${calendarDay(tournament.endDate)} -> ${calendarDay(newEndDate)}`,
+      );
+    }
 
     if (data.roundsCount !== undefined) {
       // A tournament can't be configured for fewer rounds than it already has:
@@ -162,6 +188,7 @@ export async function configureTournament(
         ...(data.restrictedProgram !== undefined ? { restrictedProgram: data.restrictedProgram } : {}),
         ...(data.minimumSemester !== undefined ? { minimumSemester: data.minimumSemester } : {}),
         ...(data.byePoints !== undefined ? { byePoints: data.byePoints } : {}),
+        ...(newEndDate ? { endDate: newEndDate } : {}),
       },
       include: WITH_CRITERIA,
     });

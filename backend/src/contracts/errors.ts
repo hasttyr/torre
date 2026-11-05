@@ -46,6 +46,8 @@ export const API_ERRORS = {
   TOURNAMENT_FORBIDDEN: [403, "No tienes permiso para administrar este torneo"],
   TOURNAMENT_FINISHED: [409, "El torneo ya finalizó: no admite más cambios"],
   ROUNDS_BELOW_GENERATED: [409, "El torneo ya tiene {count} rondas generadas: no puede configurarse con menos"],
+  END_DATE_BEFORE_START: [409, "La fecha de fin no puede ser anterior a la fecha de inicio ({startDate})"],
+  END_DATE_IN_PAST: [409, "La fecha de fin no puede ser anterior a hoy"],
   TIEBREAKS_LOCKED: [
     409,
     "No se pueden modificar los desempates ni los puntos del bye después de iniciada la primera ronda",

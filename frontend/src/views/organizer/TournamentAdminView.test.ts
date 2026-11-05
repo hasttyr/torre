@@ -1,11 +1,12 @@
 import { useQueryCache } from "@pinia/colada";
 import { flushPromises, mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRouter, createWebHistory } from "vue-router";
 
 import { i18n } from "../../i18n";
 import { clickConfirmDialogButton, mountConfirmDialogHost } from "../../test-support/confirmDialog";
+import DateField from "../../components/ui/DateField.vue";
 import TournamentAdminView from "./TournamentAdminView.vue";
 
 vi.mock("../../services/tournaments", async (importOriginal) => ({
@@ -337,6 +338,63 @@ describe("TournamentAdminView", () => {
       expect.objectContaining({ roundsCount: 7, timeControl: "90+30" }),
     );
     expect(wrapper.get("[role='status']").text()).toContain("Configuración guardada");
+  });
+
+  // A tournament past its end date closes on its own (decision 010).
+  describe("its end date", () => {
+    const IN_PROGRESS = { ...CREATED_TOURNAMENT, status: "IN_PROGRESS" as const, endDate: "2026-11-10" };
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-11-08T12:00:00"));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    async function mountWithPicker() {
+      getTournamentMock.mockResolvedValue(IN_PROGRESS);
+      const view = await mountView();
+      // The date picker is its own chunk.
+      await vi.dynamicImportSettled();
+      await flushPromises();
+      return view;
+    }
+
+    it("is extended from the configuration form", async () => {
+      configureTournamentMock.mockResolvedValue({ ...IN_PROGRESS, endDate: "2026-11-20" });
+      const { wrapper } = await mountWithPicker();
+
+      expect((wrapper.get("#configEndDate").element as HTMLInputElement).value).toBe("10/11/2026");
+      await wrapper.get("#configEndDate").setValue("20/11/2026");
+      await wrapper.get("#configEndDate").trigger("blur");
+      await wrapper.get(".config-form").trigger("submit.prevent");
+      await flushPromises();
+
+      expect(configureTournamentMock).toHaveBeenCalledWith(
+        "tournament-1",
+        expect.objectContaining({ endDate: "2026-11-20" }),
+      );
+    });
+
+    it("isn't sent when it didn't change, so saving the rest doesn't touch it", async () => {
+      configureTournamentMock.mockResolvedValue(IN_PROGRESS);
+      const { wrapper } = await mountWithPicker();
+
+      await wrapper.get("#timeControl").setValue("90+30");
+      await wrapper.get(".config-form").trigger("submit.prevent");
+      await flushPromises();
+
+      expect(configureTournamentMock.mock.calls[0]![1].endDate).toBeUndefined();
+    });
+
+    it("can't be picked before today, nor before the tournament starts", async () => {
+      const { wrapper } = await mountWithPicker();
+
+      const field = wrapper.findAllComponents(DateField).find((date) => date.props("id") === "configEndDate")!;
+      expect(field.props("minDate")).toBe("2026-11-08");
+    });
   });
 
   it("closes registration only after confirming, since it can't be reopened (HU06)", async () => {

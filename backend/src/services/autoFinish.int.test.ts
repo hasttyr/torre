@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { prisma } from "../config/prisma";
 import { createTournament, createUser, raceWithChange, resetDatabase, type TestUser } from "../testing/testDatabase";
 import { finishOverdueTournaments, scheduleAutoFinish } from "./autoFinish.service";
+import { configureTournament } from "./tournaments.service";
 
 beforeEach(async () => {
   await resetDatabase(prisma);
@@ -73,6 +74,26 @@ describe("closing a tournament past its end date (decision 010)", () => {
 
     expect(await finishOverdueTournaments(prisma, BEFORE_THE_END)).toEqual({ finished: [], failed: [] });
     expect((await prisma.tournament.findUniqueOrThrow({ where: { id: tournament.id } })).status).toBe("IN_PROGRESS");
+  });
+
+  it("leaves open a tournament its organizer extended before the date was over", async () => {
+    const { tournament } = await tournamentLeftUnfinished();
+    const organizer = { id: tournament.organizerId, role: "ORGANIZER" } as const;
+
+    await configureTournament(prisma, tournament.id, { endDate: new Date("2026-10-05") }, organizer, BEFORE_THE_END);
+
+    expect(await finishOverdueTournaments(prisma, AFTER_THE_END)).toEqual({ finished: [], failed: [] });
+    expect((await prisma.tournament.findUniqueOrThrow({ where: { id: tournament.id } })).status).toBe("IN_PROGRESS");
+    const [extended] = await prisma.auditLog.findMany({ where: { action: "TOURNAMENT_END_DATE_CHANGED" } });
+    expect(extended).toMatchObject({
+      userId: organizer.id,
+      detail: expect.stringContaining("2026-10-02 -> 2026-10-05"),
+    });
+    // Over at the end of its new date, like any other.
+    expect(await finishOverdueTournaments(prisma, new Date("2026-10-06T05:00:00Z"))).toEqual({
+      finished: [tournament.id],
+      failed: [],
+    });
   });
 
   it("closes it with what was played: a double forfeit for the unrecorded game, the draft discarded", async () => {

@@ -352,6 +352,8 @@
     "configSubtitle": "Rondas, ritmo y orden de desempates.",
     "roundsCountLabel": "Número de rondas",
     "timeControlLabel": "Ritmo",
+    "endDateLabel": "Fecha de fin",
+    "endDateHint": "Al terminar este día el torneo se cierra solo con lo jugado. Si se alarga, extiéndela antes.",
     "tiebreaksLabel": "Orden de desempates",
     "tiebreaksLockedHint": "No se puede modificar: ya inició la primera ronda.",
     "eligibilityLegend": "Elegibilidad de inscripción (opcional)",
@@ -461,6 +463,7 @@
       "RESULT_CORRECTED": "Corrección de resultado",
       "PAIRING_ADJUSTED": "Ajuste manual de emparejamiento",
       "TOURNAMENT_FINISHED": "Torneo finalizado",
+      "TOURNAMENT_END_DATE_CHANGED": "Fecha de fin cambiada",
       "TOURNAMENT_AUTO_FINISHED": "Torneo cerrado por fecha"
     }
   },
@@ -805,6 +808,8 @@
     "TOURNAMENT_FORBIDDEN": "No tienes permiso para administrar este torneo.",
     "TOURNAMENT_FINISHED": "El torneo ya finalizó: no admite más cambios.",
     "ROUNDS_BELOW_GENERATED": "El torneo ya tiene {count} rondas generadas: no puede configurarse con menos.",
+    "END_DATE_BEFORE_START": "La fecha de fin no puede ser anterior a la de inicio ({startDate}).",
+    "END_DATE_IN_PAST": "La fecha de fin no puede ser anterior a hoy: un torneo se extiende antes de que venza.",
     "TIEBREAKS_LOCKED": "Los desempates y los puntos del bye ya no se pueden cambiar: la primera ronda ya empezó.",
     "REGISTRATION_CANNOT_OPEN": "Solo se pueden abrir las inscripciones de un torneo recién creado.",
     "REGISTRATION_CANNOT_CLOSE": "Solo se pueden cerrar las inscripciones mientras están abiertas.",

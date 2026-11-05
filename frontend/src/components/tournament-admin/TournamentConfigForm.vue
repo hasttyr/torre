@@ -3,11 +3,13 @@ import { useQuery, useQueryCache } from "@pinia/colada";
 import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 
+import { toIsoDate } from "../../lib/dates";
 import { extractErrorMessage } from "../../lib/errors";
 import { hasChanges, useUnsavedChangesGuard } from "../../lib/unsavedChanges";
 import { showTournament, tournamentQuery } from "../../queries/tournaments";
 import { configureTournament, DEFAULT_TIEBREAKS, type Tiebreak, type Tournament } from "../../services/tournaments";
 import TiebreakOrderPicker from "./TiebreakOrderPicker.vue";
+import DateField from "../ui/DateField.vue";
 import FadeSlide from "../ui/FadeSlide.vue";
 import FormBanner from "../ui/FormBanner.vue";
 
@@ -29,6 +31,7 @@ function configFormOf(tournament: Tournament) {
   return {
     roundsCount: tournament.roundsCount != null ? String(tournament.roundsCount) : "",
     timeControl: tournament.timeControl ?? "",
+    endDate: tournament.endDate,
     tiebreaks:
       tournament.tiebreakCriteria.length > 0 ? tournament.tiebreakCriteria.map((c) => c.name) : [...DEFAULT_TIEBREAKS],
     byePoints: String(tournament.byePoints ?? 1),
@@ -40,6 +43,7 @@ function configFormOf(tournament: Tournament) {
 const configForm = reactive({
   roundsCount: "",
   timeControl: "",
+  endDate: "",
   tiebreaks: [...DEFAULT_TIEBREAKS] as Tiebreak[],
   byePoints: "1",
   restrictedProgram: "",
@@ -76,6 +80,15 @@ useUnsavedChangesGuard(() => current.value !== null && hasChanges(configForm, co
 // decides; this only avoids a submit that is already known to fail.
 const canEditTiebreaks = computed(() => current.value?.status === "CREATED");
 
+// A tournament past its end date closes on its own (decision 010): one that
+// runs long is extended before then, to a day not over yet and not before
+// its start. The backend checks it against Bogotá's calendar.
+const earliestEndDate = computed(() => {
+  const today = toIsoDate(new Date());
+  const start = current.value?.startDate ?? today;
+  return start > today ? start : today;
+});
+
 /** Validates and submits the tournament configuration form. */
 async function onSubmit(): Promise<void> {
   error.value = null;
@@ -87,6 +100,9 @@ async function onSubmit(): Promise<void> {
     const saved = await configureTournament(props.tournamentId, {
       roundsCount: configForm.roundsCount ? Number(configForm.roundsCount) : undefined,
       timeControl: configForm.timeControl.trim() || undefined,
+      // Only when it moved: an untouched date already in the past (a
+      // tournament not started yet) isn't refused for being sent again.
+      endDate: configForm.endDate !== filledFrom?.endDate ? configForm.endDate : undefined,
       tiebreakCriteria: canEditTiebreaks.value ? tiebreakCriteria : undefined,
       // Same lock as the tiebreaks: fixed once round 1 exists (HU28).
       byePoints: canEditTiebreaks.value ? (Number(configForm.byePoints) as 0 | 0.5 | 1) : undefined,
@@ -142,6 +158,12 @@ async function onSubmit(): Promise<void> {
             placeholder="90+30"
           />
         </div>
+      </div>
+
+      <div class="field">
+        <label for="configEndDate">{{ t("tournamentAdmin.endDateLabel") }}</label>
+        <DateField id="configEndDate" v-model="configForm.endDate" :min-date="earliestEndDate" />
+        <span class="text-sm text-text-muted">{{ t("tournamentAdmin.endDateHint") }}</span>
       </div>
 
       <div class="field">

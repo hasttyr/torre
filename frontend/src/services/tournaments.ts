@@ -25,6 +25,8 @@ export interface CreateTournamentPayload {
 export interface ConfigureTournamentPayload {
   roundsCount?: number;
   timeControl?: string;
+  /** "YYYY-MM-DD"; moving it changes when the tournament closes on its own (decision 010). */
+  endDate?: string;
   tiebreakCriteria?: TiebreakCriterion[];
   // An explicit null clears the restriction; omitting the field leaves it as-is.
   restrictedProgram?: string | null;
@@ -62,7 +64,7 @@ export async function getTournament(id: string): Promise<Tournament> {
   return data;
 }
 
-/** Updates a tournament's rounds, time control, tiebreak order and eligibility rules. */
+/** Updates a tournament's rounds, time control, tiebreak order, eligibility rules and end date. */
 export async function configureTournament(id: string, payload: ConfigureTournamentPayload): Promise<Tournament> {
   const { data } = await api.put<Tournament>(path`/tournaments/${id}/configuration`, payload);
   return data;

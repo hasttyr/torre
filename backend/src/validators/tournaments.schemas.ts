@@ -49,6 +49,11 @@ export const configureTournamentSchema = z.object({
     .max(MAX_VALUE.roundsCount, tooHigh(MAX_VALUE.roundsCount))
     .optional(),
   timeControl: z.string().trim().min(1, "El ritmo es requerido").max(50, tooLong(50)).optional(),
+  // A tournament that runs long is extended before it closes on its own
+  // (docs/decisions/010-cierre-automatico-por-fecha.md). Its limits (not
+  // before today nor before the start) depend on the stored tournament:
+  // checked in configureTournament.
+  endDate: z.coerce.date({ error: "La fecha de fin no es válida" }).optional(),
   tiebreakCriteria: tiebreakOrderSchema.optional(),
   // Registration eligibility (see comment in schema.prisma). An explicit
   // null clears the restriction; undefined (field absent) leaves it as-is.

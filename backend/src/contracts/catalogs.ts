@@ -113,6 +113,9 @@ export const AUDIT_ACTIONS = [
   "RESULT_CORRECTED",
   "PAIRING_ADJUSTED",
   "TOURNAMENT_FINISHED",
+  // A tournament's end date moved, so it closes on its own on another day
+  // (docs/decisions/010-cierre-automatico-por-fecha.md).
+  "TOURNAMENT_END_DATE_CHANGED",
   "DASHBOARD_LAYOUT_CHANGED",
   // Recorded by the system, with no user: a tournament past its end date
   // closed on its own (docs/decisions/010-cierre-automatico-por-fecha.md).

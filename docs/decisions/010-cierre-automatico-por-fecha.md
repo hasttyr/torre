@@ -25,10 +25,11 @@ Cerrarlo por la fecha obliga a decidir qué pasa con lo que quedó a medias, y e
 - `results.value` admite `0F-0F` (la restricción `CHECK` cambió) y `audit_logs.user_id` admite `NULL`. Quien lea la bitácora tiene que contar con entradas sin usuario.
 - Toda estadística de "partidas jugadas" usa `OFFICIAL_GAME`, que ya deja fuera el `0F-0F`; una consulta nueva que cuente resultados a mano tiene que hacerlo también.
 - Una vez cerrado no hay vuelta atrás: como en el cierre manual, el torneo ya no admite cambios. La fecha de fin pasa a importar: un torneo que se alarga hay que extenderlo antes de que venza.
+- Por eso el organizador puede mover la fecha de fin de un torneo no finalizado desde su configuración (`PUT /tournaments/:id/configuration`, #125), bajo el bloqueo del torneo: a hoy o a un día posterior (en Bogotá), nunca antes del inicio. Cada cambio queda en la bitácora como `TOURNAMENT_END_DATE_CHANGED`, con la fecha anterior y la nueva y sin texto libre.
 
 ## Dónde está
 
-- `backend/src/services/autoFinish.service.ts` (`finishOverdueTournaments`, `scheduleAutoFinish`), arrancado en `backend/src/server.ts`.
+- `backend/src/services/autoFinish.service.ts` (`finishOverdueTournaments`, `scheduleAutoFinish`, `todayInBogota`), arrancado en `backend/src/server.ts`; la extensión, en `configureTournament` (`tournaments.service.ts`).
 - `backend/src/services/standings.calculator.ts` (`0F-0F` en puntos y desempates), `backend/src/services/dashboard/playerStats.ts` (`OFFICIAL_GAME`).
 - `backend/prisma/migrations/*_auto_finish_by_date`.
 - `frontend/src/components/tournament/TournamentPodium.vue`.

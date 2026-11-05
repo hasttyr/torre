@@ -27,6 +27,12 @@ export function closesAt(endDate: Date): Date {
   return new Date(endDate.getTime() + DAY_MS + BOGOTA_OFFSET_MS);
 }
 
+/** Today's calendar day in Bogotá, stored like a tournament date: at UTC midnight. */
+export function todayInBogota(now = new Date()): Date {
+  const local = now.getTime() - BOGOTA_OFFSET_MS;
+  return new Date(local - (local % DAY_MS));
+}
+
 export interface AutoFinishOutcome {
   finished: string[];
   failed: { tournamentId: string; error: unknown }[];

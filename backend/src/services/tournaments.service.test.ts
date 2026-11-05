@@ -723,6 +723,78 @@ describe("finishTournament (HU17)", () => {
   });
 });
 
+// A tournament past its end date closes on its own (decision 010): one that
+// runs long is extended before that, and only to a day still to come.
+describe("configureTournament — end date", () => {
+  const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
+  // 2026-11-10, 22:00 in Bogotá: still the 10th there, already the 11th in UTC.
+  const NOW = new Date("2026-11-11T03:00:00.000Z");
+  const ORGANIZER = { id: "org-1", role: "ORGANIZER" } as const;
+  const TOURNAMENT = {
+    id: "tournament-1",
+    name: "Copa Central",
+    organizerId: "org-1",
+    status: "IN_PROGRESS",
+    startDate: day("2026-11-01"),
+    endDate: day("2026-11-10"),
+  };
+  let prisma: ReturnType<typeof buildPrismaMock> & { auditLog: { create: ReturnType<typeof vi.fn> } };
+
+  beforeEach(() => {
+    prisma = { ...buildPrismaMock(), auditLog: { create: vi.fn().mockResolvedValue({ id: "log-1" }) } };
+    prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => unknown) => fn(prisma));
+    prisma.tournament.findUnique.mockResolvedValue(TOURNAMENT);
+    prisma.tournament.update.mockImplementation(async ({ data }) => ({ id: "tournament-1", ...data }));
+  });
+
+  const configure = (endDate: string) =>
+    configureTournament(prisma as unknown as PrismaClient, "tournament-1", { endDate: day(endDate) }, ORGANIZER, NOW);
+
+  it("moves it to a later day, and the audit trail says from when to when (RN-11)", async () => {
+    await configure("2026-11-20");
+
+    expect(prisma.tournament.update.mock.calls[0]![0].data.endDate).toEqual(day("2026-11-20"));
+    expect(prisma.auditLog.create.mock.calls[0]![0].data).toMatchObject({
+      action: "TOURNAMENT_END_DATE_CHANGED",
+      detail: '"Copa Central": 2026-11-10 -> 2026-11-20',
+    });
+  });
+
+  it("accepts today in Bogotá, even when it's already tomorrow in UTC", async () => {
+    prisma.tournament.findUnique.mockResolvedValue({ ...TOURNAMENT, endDate: day("2026-11-12") });
+
+    await configure("2026-11-10");
+
+    expect(prisma.tournament.update.mock.calls[0]![0].data.endDate).toEqual(day("2026-11-10"));
+  });
+
+  it("refuses a day already over in Bogotá", async () => {
+    await expect(configure("2026-11-09")).rejects.toMatchObject({ code: "END_DATE_IN_PAST", status: 409 });
+    expect(prisma.tournament.update).not.toHaveBeenCalled();
+    expect(prisma.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("refuses a day before the tournament starts", async () => {
+    prisma.tournament.findUnique.mockResolvedValue({
+      ...TOURNAMENT,
+      startDate: day("2026-11-15"),
+      endDate: day("2026-11-16"),
+    });
+
+    await expect(configure("2026-11-14")).rejects.toMatchObject({
+      code: "END_DATE_BEFORE_START",
+      params: { startDate: "2026-11-15" },
+    });
+  });
+
+  it("logs nothing when the date sent is the one it already had", async () => {
+    await configure("2026-11-10");
+
+    expect(prisma.auditLog.create).not.toHaveBeenCalled();
+    expect(prisma.tournament.update.mock.calls[0]![0].data).not.toHaveProperty("endDate");
+  });
+});
+
 describe("configureTournament — rounds already generated", () => {
   it("refuses a number of rounds below the rounds the tournament already has", async () => {
     const prisma = buildPrismaMock();

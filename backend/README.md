@@ -150,7 +150,7 @@ Límites de peticiones ([`src/middlewares/rateLimits.ts`](src/middlewares/rateLi
 | GET       | `/tournaments/live`                            | Sesión                     | Torneos en curso y finalizados                          |
 | POST      | `/tournaments`                                 | Organizador, administrador | Crear torneo                                            |
 | GET       | `/tournaments/:id`                             | Sesión                     | Detalle                                                 |
-| PUT       | `/tournaments/:id/configuration`               | Gestión                    | Rondas, ritmo, desempates, valor del bye                |
+| PUT       | `/tournaments/:id/configuration`               | Gestión                    | Rondas, ritmo, desempates, valor del bye, fecha de fin  |
 | POST      | `/tournaments/:id/registration/open`, `/close` | Gestión                    | Abrir o cerrar inscripciones                            |
 | GET, POST | `/tournaments/:id/players`                     | Gestión                    | Inscritos; inscribir un jugador                         |
 | POST      | `/tournaments/:id/players/:playerId/withdraw`  | Gestión                    | Retirar a un jugador                                    |

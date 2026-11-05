@@ -47,3 +47,15 @@ describe("configureTournamentSchema tiebreaks (RN-05, HU13)", () => {
     ).toEqual(["Un desempate no puede repetirse"]);
   });
 });
+
+describe("configureTournamentSchema end date (decision 010)", () => {
+  it("takes a calendar day, as the tournament stores it", () => {
+    expect(configureTournamentSchema.parse({ endDate: "2026-11-20" }).endDate).toEqual(
+      new Date("2026-11-20T00:00:00.000Z"),
+    );
+  });
+
+  it("refuses something that isn't a date", () => {
+    expect(issuesOf({ endDate: "someday" })).toEqual(["La fecha de fin no es válida"]);
+  });
+});

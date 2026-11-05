@@ -352,6 +352,8 @@
     "configSubtitle": "Rounds, time control and tiebreak order.",
     "roundsCountLabel": "Number of rounds",
     "timeControlLabel": "Time control",
+    "endDateLabel": "End date",
+    "endDateHint": "When this day ends, the tournament closes on its own with what was played. If it runs long, extend it before then.",
     "tiebreaksLabel": "Tiebreak order",
     "tiebreaksLockedHint": "Cannot be modified: round 1 has already started.",
     "eligibilityLegend": "Registration eligibility (optional)",
@@ -461,6 +463,7 @@
       "RESULT_CORRECTED": "Result corrected",
       "PAIRING_ADJUSTED": "Pairing adjusted manually",
       "TOURNAMENT_FINISHED": "Tournament finished",
+      "TOURNAMENT_END_DATE_CHANGED": "End date changed",
       "TOURNAMENT_AUTO_FINISHED": "Tournament closed by date"
     }
   },
@@ -805,6 +808,8 @@
     "TOURNAMENT_FORBIDDEN": "You don't have permission to manage this tournament.",
     "TOURNAMENT_FINISHED": "The tournament is finished: it can't be changed anymore.",
     "ROUNDS_BELOW_GENERATED": "The tournament already has {count} rounds generated: it can't be set to fewer.",
+    "END_DATE_BEFORE_START": "The end date can't be before the start date ({startDate}).",
+    "END_DATE_IN_PAST": "The end date can't be before today: a tournament is extended before it's over.",
     "TIEBREAKS_LOCKED": "Tiebreaks and bye points can't change anymore: round 1 has already started.",
     "REGISTRATION_CANNOT_OPEN": "Registration can only be opened for a newly created tournament.",
     "REGISTRATION_CANNOT_CLOSE": "Registration can only be closed while it's open.",
