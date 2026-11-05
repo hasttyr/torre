@@ -2,7 +2,7 @@
 import { useI18n } from "vue-i18n";
 
 import { formatResult } from "../../lib/format";
-import type { Match, Round } from "../../services/rounds";
+import { isForfeit, type Match, type Round } from "../../services/rounds";
 
 // A round's boards: who plays whom, with which color, and the result.
 // Purely presentational; whatever a viewer may DO with a board (record,
@@ -14,7 +14,10 @@ defineSlots<{ actions?: (props: { match: Match }) => unknown }>();
 const { t } = useI18n();
 
 function isWinner(match: Match, side: "white" | "black"): boolean {
-  return (side === "white" && match.result === "1-0") || (side === "black" && match.result === "0-1");
+  return (
+    (side === "white" && (match.result === "1-0" || match.result === "1F-0F")) ||
+    (side === "black" && (match.result === "0-1" || match.result === "0F-1F"))
+  );
 }
 </script>
 
@@ -56,7 +59,7 @@ function isWinner(match: Match, side: "white" | "black"): boolean {
           <span
             class="min-w-16 rounded-md px-2 py-0.5 text-center font-semibold tabular-nums"
             :class="match.result ? 'bg-surface-2 text-text' : 'text-text-faint'"
-            :title="match.result === '0F-0F' ? t('rounds.doubleForfeit') : undefined"
+            :title="match.result && isForfeit(match.result) ? t(`rounds.forfeitHint.${match.result}`) : undefined"
           >
             {{ match.result ? formatResult(match.result) : t("rounds.vs") }}
           </span>

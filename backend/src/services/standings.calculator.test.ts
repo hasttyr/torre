@@ -9,6 +9,9 @@ describe("pointsFor", () => {
     expect(pointsFor({ whiteId: "a", blackId: "b", value: "1/2-1/2" })).toEqual({ white: 0.5, black: 0.5 });
     expect(pointsFor({ whiteId: "a", blackId: null, value: "BYE" })).toEqual({ white: 1, black: 0 });
     expect(pointsFor({ whiteId: "a", blackId: "b", value: "0F-0F" })).toEqual({ white: 0, black: 0 });
+    // A forfeit: whoever showed up gets the point.
+    expect(pointsFor({ whiteId: "a", blackId: "b", value: "1F-0F" })).toEqual({ white: 1, black: 0 });
+    expect(pointsFor({ whiteId: "a", blackId: "b", value: "0F-1F" })).toEqual({ white: 0, black: 1 });
   });
 
   it("uses the tournament's configured bye points (HU28)", () => {
@@ -58,6 +61,18 @@ describe("computeStandings", () => {
 
     expect(byPlayer.A).toEqual({ playerId: "A", score: 1, buchholz: 0, buchholzCut1: 0, sonnebornBerger: 0 });
     expect(byPlayer.C).toEqual({ playerId: "C", score: 1, buchholz: 0, buchholzCut1: 0, sonnebornBerger: 0 });
+  });
+
+  it("gives a one-sided forfeit's point to whoever showed up, and neither an opponent for the tiebreaks", () => {
+    const byPlayer = Object.fromEntries(
+      computeStandings([
+        { whiteId: "A", blackId: "B", value: "1-0" },
+        { whiteId: "C", blackId: "A", value: "0F-1F" },
+      ]).map((row) => [row.playerId, row]),
+    );
+
+    expect(byPlayer.A).toEqual({ playerId: "A", score: 2, buchholz: 0, buchholzCut1: 0, sonnebornBerger: 0 });
+    expect(byPlayer.C).toEqual({ playerId: "C", score: 0, buchholz: 0, buchholzCut1: 0, sonnebornBerger: 0 });
   });
 });
 
@@ -129,6 +144,13 @@ describe("rankStandings", () => {
       for (const order of [rows, [...rows].reverse()]) {
         expect(rankStandings(order, ["DIRECT_ENCOUNTER"], games).map((r) => r.rank)).toEqual([1, 1, 1]);
       }
+    });
+
+    it("doesn't count a forfeit as their direct encounter", () => {
+      const rows = [row("a", 1, 2, 1), row("b", 1, 2, 1)];
+      const games = [{ whiteId: "a", blackId: "b", value: "1F-0F" }];
+
+      expect(rankStandings(rows, ["DIRECT_ENCOUNTER"], games).map((r) => r.rank)).toEqual([1, 1]);
     });
 
     it("applies the direct encounter only among tied players who all met (FIDE)", () => {

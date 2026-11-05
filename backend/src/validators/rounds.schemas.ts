@@ -7,7 +7,9 @@ import { GAME_RESULTS, type GameResult } from "../contracts/catalogs";
 // but only the pairing engine assigns it (HU28), never a user.
 export { GAME_RESULTS, type GameResult };
 
-const resultValue = z.enum(GAME_RESULTS, { error: "El resultado debe ser 1-0, 0-1 o 1/2-1/2" });
+const resultValue = z.enum(GAME_RESULTS, {
+  error: "El resultado debe ser 1-0, 0-1, 1/2-1/2 o una incomparecencia: 1F-0F, 0F-1F o 0F-0F",
+});
 
 export const recordResultSchema = z.object({ value: resultValue });
 

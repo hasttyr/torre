@@ -45,20 +45,37 @@ export type RoundStatus = (typeof ROUND_STATUSES)[number];
 export const MATCH_STATUSES = ["SCHEDULED", "IN_PROGRESS", "FINISHED", "CORRECTED"] as const;
 export type MatchStatus = (typeof MATCH_STATUSES)[number];
 
-/** RN-03: the results a person can record, in the order the UI offers them. */
-export const GAME_RESULTS = ["1-0", "1/2-1/2", "0-1"] as const;
+/** RN-03: the results of a game played, in the order the UI offers them. */
+export const PLAYED_RESULTS = ["1-0", "1/2-1/2", "0-1"] as const;
+
+/**
+ * FIDE's forfeits: a game not played because one side didn't show up (the
+ * other gets the point, 1F-0F / 0F-1F) or neither did (0F-0F, 0 to both).
+ * Worth their points, but unplayed for everything else: no opponent for
+ * the tiebreaks, no meeting for RN-02, no color, and no win, draw or loss
+ * in the statistics (docs/decisions/011-incomparecencias.md). A closed
+ * catalog, with no reason written: a free-text reason for not showing up
+ * invites health data (Ley 1581, art. 5).
+ */
+export const FORFEIT_RESULTS = ["1F-0F", "0F-1F", "0F-0F"] as const;
+
+/** RN-03: the results a person can record (RN-06), in the order the UI offers them. */
+export const GAME_RESULTS = [...PLAYED_RESULTS, ...FORFEIT_RESULTS] as const;
 export type GameResult = (typeof GAME_RESULTS)[number];
 
 /**
- * A game left without a result when its tournament closes on its own:
- * FIDE's double forfeit, worth 0 to both and treated as unplayed by the
- * tiebreaks (docs/decisions/010-cierre-automatico-por-fecha.md). Only the
- * automatic close records it.
+ * Neither side showed up. Also what a game left without a result gets when
+ * its tournament closes on its own (docs/decisions/010-cierre-automatico-por-fecha.md).
  */
 export const DOUBLE_FORFEIT = "0F-0F";
 
-/** Every stored result: the recordable ones plus "BYE" (pairing engine) and the double forfeit (automatic close). */
-export const STORED_RESULTS = [...GAME_RESULTS, "BYE", DOUBLE_FORFEIT] as const;
+/** Whether a stored result is a forfeit: a game that was never played. */
+export function isForfeit(value: string): boolean {
+  return (FORFEIT_RESULTS as readonly string[]).includes(value);
+}
+
+/** Every stored result: the recordable ones plus "BYE" (pairing engine). */
+export const STORED_RESULTS = [...GAME_RESULTS, "BYE"] as const;
 export type StoredResult = (typeof STORED_RESULTS)[number];
 
 // HU13's tiebreak criteria, labelled by each client in its own language.

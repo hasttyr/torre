@@ -414,3 +414,40 @@ describe("a player enrolling themselves", () => {
       .expect(404);
   });
 });
+
+// Decision 011: a forfeit is recorded like any result, but wasn't played.
+describe("a forfeit", () => {
+  it("gives the point to whoever showed up, and doesn't stop the two from meeting later (RN-02)", async () => {
+    const organizer = await createUser(prisma, "ORGANIZER");
+    const [ana, beto] = await Promise.all(["Ana", "Beto"].map((name) => createUser(prisma, "PLAYER", { name })));
+    const tournament = await createTournament(prisma, organizer, {
+      status: "REGISTRATION_CLOSED",
+      roundsCount: 2,
+      players: [ana!, beto!],
+    });
+    const rounds = `/api/tournaments/${tournament.id}/rounds`;
+    const round1 = (await request(app).post(rounds).set(bearer(organizer)).expect(201)).body;
+    await request(app).post(`/api/rounds/${round1.id}/publish`).set(bearer(organizer)).expect(200);
+    const [game] = round1.matches;
+    const showedUp = game.white.name;
+
+    await request(app)
+      .post(`/api/matches/${game.id}/result`)
+      .set(bearer(organizer))
+      .send({ value: "1F-0F" })
+      .expect(204);
+
+    const standings = (await request(app).get(`/api/tournaments/${tournament.id}/standings`).set(bearer(organizer)))
+      .body;
+    expect(
+      standings.rows.map((row: { name: string; score: number; buchholz: number }) => [row.name, row.score]),
+    ).toEqual([
+      [showedUp, 1],
+      [showedUp === "Ana" ? "Beto" : "Ana", 0],
+    ]);
+    expect(standings.rows.every((row: { buchholz: number }) => row.buchholz === 0)).toBe(true);
+    // Two players who never played can be paired again, instead of PAIRING_IMPOSSIBLE.
+    const round2 = await request(app).post(rounds).set(bearer(organizer));
+    expect(round2.status).toBe(201);
+  });
+});

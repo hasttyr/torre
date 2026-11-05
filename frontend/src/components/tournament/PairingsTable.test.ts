@@ -32,4 +32,17 @@ describe("PairingsTable", () => {
     // An aria-label on a role-less <span> is ignored by screen readers.
     expect(board.findAll("span[aria-label]")).toHaveLength(0);
   });
+
+  // Decision 011: a forfeit shows in FIDE notation, and says who didn't show up.
+  it("shows a forfeit with its notation, and explains it on hover", () => {
+    const forfeit = {
+      ...ROUND,
+      matches: [{ ...ROUND.matches[0]!, status: "FINISHED" as const, result: "0F-1F" as const }],
+    };
+    const wrapper = mount(PairingsTable, { props: { round: forfeit }, global: { plugins: [i18n] } });
+
+    const result = wrapper.get("[data-match='m-1']").find("span[title^='Sin jugar']");
+    expect(result.text()).toBe("0F – 1F");
+    expect(result.attributes("title")).toContain("las blancas no se presentaron");
+  });
 });

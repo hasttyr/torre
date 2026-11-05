@@ -41,17 +41,19 @@ export function formatNumber(value: number, locale: string, maxDecimals = 1): st
   return new Intl.NumberFormat(locale, { maximumFractionDigits: maxDecimals }).format(value);
 }
 
-// Chess notation for a result, with typographic dashes and ½. "0F – 0F" is
-// FIDE's double forfeit: a game left unplayed when its tournament closed
-// by date.
+// Chess notation for a result, with typographic dashes and ½. An "F" is
+// FIDE's forfeit (decision 011): a side that didn't show up, "0F – 0F" when
+// neither did or the game was left unplayed when its tournament closed by date.
 const RESULT_DISPLAY: Record<string, string> = {
   "1-0": "1 – 0",
   "0-1": "0 – 1",
   "1/2-1/2": "½ – ½",
+  "1F-0F": "1F – 0F",
+  "0F-1F": "0F – 1F",
   "0F-0F": "0F – 0F",
 };
 
-/** "1 – 0" / "½ – ½" / "0 – 1" / "0F – 0F" for a stored result value. */
+/** "1 – 0" / "½ – ½" / "0 – 1" / "1F – 0F"… for a stored result value. */
 export function formatResult(value: string): string {
   return RESULT_DISPLAY[value] ?? value;
 }

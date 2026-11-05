@@ -1,5 +1,8 @@
 import {
+  FORFEIT_RESULTS,
   GAME_RESULTS,
+  isForfeit,
+  PLAYED_RESULTS,
   type BoardResults as BoardResultsDto,
   type GameResult,
   type MatchDto,
@@ -15,7 +18,7 @@ import {
 import type { Serialized } from "../lib/serialized";
 import { api, path } from "./api";
 
-export { GAME_RESULTS, type GameResult, type RoundStatus };
+export { FORFEIT_RESULTS, GAME_RESULTS, isForfeit, PLAYED_RESULTS, type GameResult, type RoundStatus };
 export type Seat = Serialized<SeatDto>;
 export type Match = Serialized<MatchDto>;
 export type Round = Serialized<RoundDto>;

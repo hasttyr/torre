@@ -38,4 +38,27 @@ describe("candidatesFromHistory", () => {
     // The bye counts with the tournament's configured value (0.5 here).
     expect(b).toMatchObject({ score: 1, colors: ["W"], hadBye: true });
   });
+
+  // A forfeit was never played (FIDE): RN-02 doesn't stop the two from
+  // meeting later, and nobody had a color in it. The points still count.
+  it("counts a forfeit's points, but not as a game played: no opponent, no color", () => {
+    const games = [
+      { round: 1, whiteId: "a", blackId: "b", value: "1F-0F" },
+      { round: 2, whiteId: "c", blackId: "a", value: "0F-0F" },
+    ];
+
+    const [a, b] = candidatesFromHistory(
+      [
+        { id: "a", pairingNumber: 1 },
+        { id: "b", pairingNumber: 2 },
+      ],
+      games,
+      1,
+    );
+
+    expect(a).toMatchObject({ score: 1, colors: [], hadBye: false });
+    expect([...a.opponents]).toEqual([]);
+    expect(b).toMatchObject({ score: 0, colors: [] });
+    expect([...b.opponents]).toEqual([]);
+  });
 });

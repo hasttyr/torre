@@ -14,6 +14,7 @@ Por qué el sistema es como es. Cada archivo cuenta una decisión: el problema, 
 | 008 | [La cobertura solo sube](008-la-cobertura-solo-sube.md)                                               | sept. 2026 |
 | 009 | [Los datos del servidor viven en Pinia Colada](009-datos-del-servidor-en-pinia-colada.md)             | sept. 2026 |
 | 010 | [Un torneo se cierra solo al pasar su fecha de fin](010-cierre-automatico-por-fecha.md)               | nov. 2026  |
+| 011 | [Una incomparecencia suma sus puntos, pero no es una partida jugada](011-incomparecencias.md)         | nov. 2026  |
 
 ## Cómo agregar una
 

@@ -195,11 +195,15 @@ describe("closing a tournament past its end date (decision 010)", () => {
     expect(log.error).not.toHaveBeenCalled();
   });
 
-  it("the result catalog's CHECK constraint (RN-03) admits the double forfeit, and still nothing else", async () => {
+  it("the result catalog's CHECK constraint (RN-03) admits every forfeit (decision 011), and still nothing else", async () => {
     const { round2 } = await tournamentLeftUnfinished();
     const pending = await prisma.match.findFirstOrThrow({ where: { roundId: round2.id, result: { is: null } } });
+    const record = (value: string) => prisma.result.create({ data: { matchId: pending.id, value } });
 
-    await expect(prisma.result.create({ data: { matchId: pending.id, value: "0F-1F" } })).rejects.toThrow();
-    await expect(prisma.result.create({ data: { matchId: pending.id, value: "0F-0F" } })).resolves.toBeDefined();
+    await expect(record("1F-1F")).rejects.toThrow();
+    for (const forfeit of ["1F-0F", "0F-1F", "0F-0F"]) {
+      await expect(record(forfeit)).resolves.toBeDefined();
+      await prisma.result.delete({ where: { matchId: pending.id } });
+    }
   });
 });

@@ -668,10 +668,14 @@
   },
   "rounds": {
     "resultLabel": "Resultado",
+    "forfeitLabel": "Incomparecencia",
     "resultNames": {
       "whiteWins": "Ganan blancas",
       "draw": "Tablas",
-      "blackWins": "Ganan negras"
+      "blackWins": "Ganan negras",
+      "blackForfeits": "No se presentaron las negras",
+      "whiteForfeits": "No se presentaron las blancas",
+      "doubleForfeit": "No se presentó ninguno"
     },
     "board": "Mesa {board}",
     "byeLabel": "descansa esta ronda",
@@ -683,7 +687,11 @@
     "correctionReason": "Motivo de la corrección (opcional)",
     "correctionPlaceholder": "Ej.: planilla mal transcrita",
     "saveCorrection": "Guardar corrección",
-    "doubleForfeit": "Sin jugar: el torneo se cerró por fecha y ninguno de los dos suma (0F – 0F)."
+    "forfeitHint": {
+      "1F-0F": "Sin jugar: las negras no se presentaron y las blancas suman el punto (1F – 0F).",
+      "0F-1F": "Sin jugar: las blancas no se presentaron y las negras suman el punto (0F – 1F).",
+      "0F-0F": "Sin jugar: ninguno se presentó, o el torneo se cerró por fecha, y ninguno suma (0F – 0F)."
+    }
   },
   "standings": {
     "pending": "Clasificación provisional: faltan resultados de la ronda en juego.",

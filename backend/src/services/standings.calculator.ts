@@ -2,7 +2,7 @@
 // every recorded result (HU12) and by the seeder, and unit-tested without a
 // database.
 
-import { DEFAULT_TIEBREAKS, DOUBLE_FORFEIT, TIEBREAKS, type Tiebreak } from "../contracts/catalogs";
+import { DEFAULT_TIEBREAKS, DOUBLE_FORFEIT, isForfeit, TIEBREAKS, type Tiebreak } from "../contracts/catalogs";
 
 /** A recorded game as stored in `results.value` (RN-03 catalog). `blackId` is null for a bye. */
 export interface RecordedGame {
@@ -30,10 +30,12 @@ export { DEFAULT_TIEBREAKS, TIEBREAKS, type Tiebreak };
 export function pointsFor(game: RecordedGame, byePoints = 1): { white: number; black: number } {
   switch (game.value) {
     case "1-0":
+    case "1F-0F":
       return { white: 1, black: 0 };
     case "BYE":
       return { white: byePoints, black: 0 };
     case "0-1":
+    case "0F-1F":
       return { white: 0, black: 1 };
     case "1/2-1/2":
       return { white: 0.5, black: 0.5 };
@@ -56,9 +58,9 @@ interface Encounter {
  * @remarks
  * Byes add to the player's score but, having no opponent, contribute
  * nothing to their tiebreaks (the simplified rule, not FIDE's "virtual
- * opponent"). A double forfeit (0F-0F) was never played: it adds nothing to
- * either player, and like FIDE's forfeits it gives neither an opponent for
- * the tiebreaks. ARO needs ratings, which are out of this project's scope.
+ * opponent"). A forfeit was never played: its point goes to whoever showed
+ * up (1F-0F, 0F-1F; nobody in a double forfeit, 0F-0F), and like FIDE it
+ * gives neither player an opponent for the tiebreaks. ARO needs ratings, which are out of this project's scope.
  */
 export function computeStandings(games: RecordedGame[], byePoints = 1): StandingValues[] {
   const scores = new Map<string, number>();
@@ -73,7 +75,7 @@ export function computeStandings(games: RecordedGame[], byePoints = 1): Standing
     const points = pointsFor(game, byePoints);
     if (game.whiteId) addScore(game.whiteId, points.white);
     if (game.blackId) addScore(game.blackId, points.black);
-    if (game.whiteId && game.blackId && game.value !== DOUBLE_FORFEIT) {
+    if (game.whiteId && game.blackId && !isForfeit(game.value)) {
       encounters.get(game.whiteId)!.push({ opponentId: game.blackId, points: points.white });
       encounters.get(game.blackId)!.push({ opponentId: game.whiteId, points: points.black });
     }
@@ -110,12 +112,12 @@ const byDescending =
  * they scored in their games together. As FIDE applies it, only when every
  * one of them met every other: otherwise it doesn't resolve the tie. A
  * cycle (A beat B, B beat C, C beat A) leaves them level, so it doesn't
- * either. A double forfeit was never played (decision 010): not a meeting.
+ * either. A forfeit was never played (decision 011): not a meeting.
  */
 function directEncounter(games: RecordedGame[]): Splitter {
   const scoredAgainst = new Map<string, number>();
   for (const game of games) {
-    if (!game.whiteId || !game.blackId || game.value === DOUBLE_FORFEIT) continue;
+    if (!game.whiteId || !game.blackId || isForfeit(game.value)) continue;
     const points = pointsFor(game);
     const whiteKey = `${game.whiteId}>${game.blackId}`;
     const blackKey = `${game.blackId}>${game.whiteId}`;

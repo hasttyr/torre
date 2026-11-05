@@ -1,3 +1,4 @@
+import { isForfeit } from "../../contracts/catalogs";
 import { computeStandings, type RecordedGame } from "../standings.calculator";
 import type { Color, PairingCandidate } from "./swissPairing";
 
@@ -27,7 +28,8 @@ export function drawPairingNumbers(playerIds: string[], random: () => number = M
 /**
  * Builds the pairing engine's input for the active players from the games
  * already played (including those of withdrawn players, who still count as
- * past opponents).
+ * past opponents). A forfeit counts its points, but wasn't played (decision
+ * 011): the two can still meet (RN-02), and neither had a color.
  */
 export function candidatesFromHistory(
   players: { id: string; pairingNumber: number }[],
@@ -43,6 +45,7 @@ export function candidatesFromHistory(
     let hadBye = false;
 
     for (const game of chronological) {
+      if (isForfeit(game.value)) continue;
       if (game.whiteId === id && !game.blackId) hadBye = true;
       else if (game.whiteId === id && game.blackId) {
         opponents.add(game.blackId);

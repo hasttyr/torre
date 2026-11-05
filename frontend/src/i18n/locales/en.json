@@ -668,10 +668,14 @@
   },
   "rounds": {
     "resultLabel": "Result",
+    "forfeitLabel": "Forfeit",
     "resultNames": {
       "whiteWins": "White wins",
       "draw": "Draw",
-      "blackWins": "Black wins"
+      "blackWins": "Black wins",
+      "blackForfeits": "Black didn't show up",
+      "whiteForfeits": "White didn't show up",
+      "doubleForfeit": "Neither showed up"
     },
     "board": "Board {board}",
     "byeLabel": "sits out this round",
@@ -683,7 +687,11 @@
     "correctionReason": "Reason for the correction (optional)",
     "correctionPlaceholder": "E.g. score sheet copied wrong",
     "saveCorrection": "Save Correction",
-    "doubleForfeit": "Not played: the tournament closed by date, and neither player scores (0F – 0F)."
+    "forfeitHint": {
+      "1F-0F": "Not played: Black didn't show up, and White scores the point (1F – 0F).",
+      "0F-1F": "Not played: White didn't show up, and Black scores the point (0F – 1F).",
+      "0F-0F": "Not played: neither showed up, or the tournament closed by date, and neither scores (0F – 0F)."
+    }
   },
   "standings": {
     "pending": "Provisional standings: the round in play still has results missing.",

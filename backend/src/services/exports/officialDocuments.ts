@@ -13,7 +13,10 @@ const RESULT_TEXT: Record<string, string> = {
   "0-1": "0 – 1",
   "1/2-1/2": "½ – ½",
   BYE: "Bye",
-  // A game left unplayed when the tournament closed on its own (FIDE notation).
+  // Forfeits, in FIDE notation (decision 011): someone, or nobody, didn't
+  // show up, or the tournament closed on its own with the game unplayed.
+  "1F-0F": "1F – 0F",
+  "0F-1F": "0F – 1F",
   "0F-0F": "0F – 0F",
 };
 
