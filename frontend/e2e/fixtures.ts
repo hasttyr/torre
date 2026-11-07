@@ -49,3 +49,12 @@ export const test = base.extend<Fixtures>({
 });
 
 export { expect };
+
+/**
+ * Opens `path` and checks the page stayed there: a route the user's role
+ * can't see redirects elsewhere, and a test would check the wrong page.
+ */
+export async function visit(page: Page, path: string): Promise<void> {
+  await page.goto(path);
+  await expect(page).toHaveURL((url) => url.pathname === path);
+}
