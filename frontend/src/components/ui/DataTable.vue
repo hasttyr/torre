@@ -123,6 +123,19 @@ function ariaSort(isSorted: false | SortDirection, canSort: boolean): "ascending
   return isSorted ? ARIA_SORT[isSorted] : "none";
 }
 
+/**
+ * A column's name as plain text: the label a phone shows beside each cell.
+ * The project's headers are strings or `() => t(...)`, which read no context.
+ */
+function columnLabel(column: { columnDef: { header?: unknown } }): string {
+  const header = column.columnDef.header;
+  if (typeof header === "function") return String((header as () => unknown)() ?? "");
+  return typeof header === "string" ? header : "";
+}
+
+// On a phone the header row is only the sort controls: none, no row.
+const sortable = computed(() => table.getAllLeafColumns().some((column) => column.getCanSort()));
+
 const pageIndex = computed(() => pagination.value.pageIndex);
 const pageCount = computed(() => table.getPageCount());
 
@@ -150,14 +163,24 @@ const filterStatus = computed(() => {
       <p class="sr-only" role="status">{{ filterStatus }}</p>
     </div>
 
-    <div class="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:px-0">
-      <table class="w-full border-collapse">
-        <thead>
-          <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+    <!-- Below sm each row stacks into a short card and the header row turns
+         into the sort controls (style.css, .data-table). The explicit roles
+         keep it a table for screen readers once the CSS changes its display. -->
+    <div class="overflow-x-auto">
+      <table class="data-table w-full border-collapse" role="table">
+        <thead role="rowgroup" :class="{ 'max-sm:hidden': !sortable }">
+          <tr
+            v-for="headerGroup in table.getHeaderGroups()"
+            :key="headerGroup.id"
+            role="row"
+            :data-sort-label="t('dataTable.sortBy')"
+          >
             <th
               v-for="header in headerGroup.headers"
               :key="header.id"
-              class="border-b border-border-soft px-3 py-3 text-left pointer-coarse:py-0 text-caption font-semibold text-text-muted"
+              role="columnheader"
+              class="text-left text-caption font-semibold text-text-muted sm:border-b sm:border-border-soft sm:px-3 sm:py-3 sm:pointer-coarse:py-0"
+              :class="{ 'max-sm:hidden': !header.column.getCanSort() || !columnLabel(header.column) }"
               :aria-sort="ariaSort(header.column.getIsSorted(), header.column.getCanSort())"
             >
               <button
@@ -175,12 +198,19 @@ const filterStatus = computed(() => {
             </th>
           </tr>
         </thead>
-        <tbody>
-          <tr v-for="row in table.getRowModel().rows" :key="row.id" class="transition-colors hover:bg-text/3">
+        <tbody role="rowgroup">
+          <tr
+            v-for="row in table.getRowModel().rows"
+            :key="row.id"
+            role="row"
+            class="transition-colors hover:bg-text/3"
+          >
             <td
               v-for="cell in row.getAllCells()"
               :key="cell.id"
-              class="border-b border-border-soft/60 px-3 py-3.5 text-body-sm"
+              role="cell"
+              class="text-body-sm sm:border-b sm:border-border-soft/60 sm:px-3 sm:py-3.5"
+              :data-label="columnLabel(cell.column)"
             >
               <slot :name="`cell-${cell.column.id}`" :row="cell.row.original" :value="cell.getValue()">
                 <FlexRender :cell="cell" />

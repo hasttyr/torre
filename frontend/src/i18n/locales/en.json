@@ -39,7 +39,8 @@
     "resultCount": "No results | 1 result | {count} results",
     "previous": "Previous",
     "next": "Next",
-    "pageStatus": "Page {current} of {total}"
+    "pageStatus": "Page {current} of {total}",
+    "sortBy": "Sort by"
   },
   "authLayout": {
     "defaultQuote": "Chess does not forgive even the smallest mistake.",

@@ -622,4 +622,73 @@
   .figure {
     @apply font-display text-[clamp(2.75rem,2.1rem+1.8vw,3.75rem)] leading-none font-semibold tracking-[-0.045em] text-text tabular-nums;
   }
+
+  /* A DataTable on a phone. Five columns don't fit 390px: scrolled sideways
+     they cut the last one off mid-word. So each row stacks into a short
+     card (its first cell as the title, the others as "label  value" lines
+     from data-label) and the header row becomes a wrap of sort controls. */
+  @media (width < 40rem) {
+    .data-table,
+    .data-table > tbody,
+    .data-table > tbody > tr,
+    .data-table > tbody > tr > td {
+      display: block;
+    }
+
+    .data-table > thead > tr {
+      display: flex;
+      flex-wrap: wrap;
+      column-gap: 1rem;
+      align-items: center;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border-soft);
+    }
+
+    /* "Ordenar por": on a phone the header row is the sort controls, and says so. */
+    .data-table > thead > tr::before {
+      content: attr(data-sort-label);
+      color: var(--text-faint);
+      font-size: var(--text-caption);
+    }
+
+    .data-table > tbody > tr {
+      padding-block: 0.875rem;
+      border-bottom: 1px solid color-mix(in oklab, var(--border-soft) 60%, transparent);
+    }
+
+    .data-table > tbody > tr > td {
+      display: grid;
+      grid-template-columns: minmax(6.5rem, 36%) minmax(0, 1fr);
+      column-gap: 1rem;
+      align-items: baseline;
+      justify-items: start;
+      padding-block: 0.1875rem;
+      overflow-wrap: anywhere;
+    }
+
+    .data-table > tbody > tr > td::before {
+      content: attr(data-label);
+      color: var(--text-muted);
+      font-size: var(--text-caption);
+    }
+
+    /* The first cell names the row (a tournament, a player): it's the title. */
+    .data-table > tbody > tr > td:first-child {
+      display: block;
+      padding-bottom: 0.375rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .data-table > tbody > tr > td:first-child::before,
+    .data-table > tbody > tr > td[data-label=""]::before {
+      content: none;
+    }
+
+    /* A column with no name holds the row's actions: they sit under it. */
+    .data-table > tbody > tr > td[data-label=""] {
+      display: block;
+      padding-top: 0.625rem;
+    }
+  }
 }

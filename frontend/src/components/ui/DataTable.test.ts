@@ -56,6 +56,27 @@ describe("DataTable", () => {
     expect(wrapper.get("tbody td").text()).toBe("Player 0");
   });
 
+  it("labels each cell with its column, for the stacked rows a phone shows", () => {
+    const wrapper = mountTable(makeRows(1));
+
+    expect(wrapper.findAll("tbody td").map((cell) => cell.attributes("data-label"))).toEqual(["Name", "Age"]);
+    // The stacked layout changes the CSS display; the roles keep it a table.
+    expect(wrapper.get("table").attributes("role")).toBe("table");
+    expect(wrapper.findAll("tbody [role='cell']")).toHaveLength(2);
+    expect(wrapper.get("thead tr").attributes("data-sort-label")).toBe("Ordenar por");
+  });
+
+  it("leaves the header row out on a phone when no column can be sorted", () => {
+    const fixed = [
+      columnHelper.accessor("name", { header: () => "Name", enableSorting: false }),
+      columnHelper.display({ id: "actions", header: "", enableSorting: false }),
+    ];
+    const wrapper = mountTable(makeRows(1), { columns: fixed });
+
+    expect(wrapper.get("thead").classes()).toContain("max-sm:hidden");
+    expect(wrapper.findAll("tbody td").map((cell) => cell.attributes("data-label"))).toEqual(["Name", ""]);
+  });
+
   it("shows the empty-state message when there's no data", () => {
     const wrapper = mountTable([], { emptyMessage: "Nothing here" });
 

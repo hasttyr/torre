@@ -39,7 +39,8 @@
     "resultCount": "Sin resultados | 1 resultado | {count} resultados",
     "previous": "Anterior",
     "next": "Siguiente",
-    "pageStatus": "Página {current} de {total}"
+    "pageStatus": "Página {current} de {total}",
+    "sortBy": "Ordenar por"
   },
   "authLayout": {
     "defaultQuote": "El ajedrez no perdona ni la más pequeña falla.",
