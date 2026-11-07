@@ -143,7 +143,7 @@ async function onUnlink(player: { playerId: string; name: string; acceptedAt: st
               <RouterLink
                 v-if="hasTournamentRoom(tournament)"
                 :to="`/torneos/${tournament.id}/sala`"
-                class="self-start text-sm font-semibold text-accent"
+                class="tap self-start text-sm font-semibold text-accent"
               >
                 {{ tournament.status === "FINISHED" ? t("tournamentRoom.results") : t("tournamentRoom.follow") }}
               </RouterLink>

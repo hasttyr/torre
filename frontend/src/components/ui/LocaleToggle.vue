@@ -17,7 +17,7 @@ const action = computed(() => (locale.locale === "es" ? t("locale.switchToEnglis
          using voice control says what they see, "ES". -->
     <button
       type="button"
-      class="inline-flex h-9 min-w-9 shrink-0 items-center justify-center rounded-full bg-text/6 px-2 text-xs font-semibold text-text transition-[background-color,scale] hover:bg-text/12 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
+      class="inline-flex h-9 min-w-9 shrink-0 pointer-coarse:h-11 pointer-coarse:min-w-11 items-center justify-center rounded-full bg-text/6 px-2 text-xs font-semibold text-text transition-[background-color,scale] hover:bg-text/12 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-2"
       :aria-label="`${code}, ${action}`"
       :title="action"
       @click="locale.toggle()"

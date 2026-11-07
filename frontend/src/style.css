@@ -501,6 +501,43 @@
     @apply inline-flex h-9 w-9 items-center justify-center rounded-full bg-text/6 text-sm text-text transition-[scale,background-color] duration-200 hover:bg-text/12 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40;
   }
 
+  /* On a touch screen every control standing on its own is at least a
+     fingertip, 44x44px (WCAG 2.5.5, target size); with a mouse the compact
+     desktop sizes stay. .tap is for the text links and text buttons that
+     stand alone (a link inside a sentence is exempt, as WCAG allows). */
+  .tap {
+    @variant pointer-coarse {
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.75rem;
+    }
+  }
+
+  .icon-btn {
+    @variant pointer-coarse {
+      @apply h-11 w-11;
+    }
+  }
+
+  .select-compact {
+    @variant pointer-coarse {
+      @apply min-h-11;
+    }
+  }
+
+  /* The date picker's own "clear" cross (@vuepic/vue-datepicker). */
+  .dp--clear-btn {
+    @variant pointer-coarse {
+      @apply min-h-11 min-w-11;
+    }
+  }
+
+  /* A checkbox drawn by the browser, a little larger than its default 13px
+     and ticked in the accent, so it belongs to the page. */
+  .checkbox {
+    @apply mt-0 size-5 shrink-0 cursor-pointer accent-accent;
+  }
+
   .field {
     @apply flex flex-col gap-2;
   }
@@ -512,12 +549,12 @@
 
   /* A field is a filled well one tone off its card, with no outline until
      it's hovered or holds the focus. */
-  .field input,
+  .field input:not([type="checkbox"]),
   .field select {
     @apply min-h-12 rounded-2xl border border-transparent bg-surface-2 px-4 py-3 font-sans text-base text-text transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-text-faint hover:border-text/15 focus:border-accent focus:ring-4 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:text-body-sm;
   }
 
-  .field.has-error input,
+  .field.has-error input:not([type="checkbox"]),
   .field.has-error select {
     @apply border-error;
   }

@@ -216,7 +216,7 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
                   v-for="round in published"
                   :key="round.id"
                   :value="round.number"
-                  class="min-w-9 rounded-lg px-2.5 py-1 text-sm font-semibold tabular-nums transition-colors"
+                  class="min-w-9 rounded-lg px-2.5 py-1 text-sm pointer-coarse:min-h-11 pointer-coarse:min-w-11 font-semibold tabular-nums transition-colors"
                   :class="
                     round.number === selectedRound?.number
                       ? 'bg-accent text-on-accent'

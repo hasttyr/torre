@@ -54,7 +54,7 @@ function toggleInPlace(event: Event, toggle: () => void): void {
   <DropdownMenuRoot v-model:open="open">
     <DropdownMenuTrigger
       ref="trigger"
-      class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-on-accent transition-opacity hover:opacity-90"
+      class="inline-flex h-9 w-9 shrink-0 pointer-coarse:size-11 items-center justify-center rounded-full bg-accent text-sm font-semibold text-on-accent transition-opacity hover:opacity-90"
       :aria-label="t('userMenu.menuAria', { name: auth.user?.name ?? '', initials })"
     >
       {{ initials }}

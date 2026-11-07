@@ -75,7 +75,7 @@ watch(
     v-else-if="!correcting"
     ref="correctButton"
     type="button"
-    class="text-sm font-semibold text-accent hover:underline"
+    class="tap text-sm font-semibold text-accent hover:underline"
     @click="startCorrection"
   >
     {{ t("rounds.correct") }}

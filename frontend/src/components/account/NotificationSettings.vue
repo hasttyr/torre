@@ -50,11 +50,11 @@ async function onToggle(event: Event): Promise<void> {
       </p>
       <FormBanner v-if="saveError" kind="error" class="mb-4">{{ t("account.notifications.saveError") }}</FormBanner>
 
-      <label class="flex cursor-pointer items-start gap-2 text-sm font-normal">
+      <label class="flex cursor-pointer items-start gap-2.5 text-sm font-normal pointer-coarse:min-h-11">
         <input
           type="checkbox"
           name="roundPublished"
-          class="mt-0.5"
+          class="checkbox"
           :checked="settings.roundPublished"
           :disabled="saving"
           @change="onToggle"

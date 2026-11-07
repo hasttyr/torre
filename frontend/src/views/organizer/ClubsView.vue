@@ -247,7 +247,7 @@ async function onDelete(): Promise<void> {
             <li v-for="club in clubs" :key="club.id">
               <button
                 type="button"
-                class="w-full rounded-lg border px-3.5 py-2.5 text-left text-sm transition-colors"
+                class="min-h-11 w-full rounded-lg border px-3.5 py-2.5 text-left text-sm transition-colors"
                 :class="
                   club.id === selectedClubId
                     ? 'border-accent bg-accent/10 font-semibold'

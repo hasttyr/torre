@@ -188,29 +188,37 @@ const year = new Date().getFullYear();
       <div class="container">
         <div class="pane grid gap-10 rounded-[28px] p-8 sm:grid-cols-[1.6fr_1fr_1fr] sm:p-12">
           <p class="max-w-xs text-base">{{ t("home.footerText") }}</p>
-          <nav :aria-label="t('home.footerAccount')" class="flex flex-col gap-2.5 text-base">
+          <nav
+            :aria-label="t('home.footerAccount')"
+            class="flex flex-col items-start gap-2.5 text-base pointer-coarse:gap-0"
+          >
             <span class="font-semibold text-text">{{ t("home.footerAccount") }}</span>
-            <RouterLink to="/torneos-abiertos" class="text-text-muted no-underline hover:text-text">
+            <RouterLink to="/torneos-abiertos" class="tap text-text-muted no-underline hover:text-text">
               {{ t("header.openTournaments") }}
             </RouterLink>
-            <RouterLink to="/login" class="text-text-muted no-underline hover:text-text">
+            <RouterLink to="/login" class="tap text-text-muted no-underline hover:text-text">
               {{ t("header.login") }}
             </RouterLink>
-            <RouterLink to="/registro" class="text-text-muted no-underline hover:text-text">
+            <RouterLink to="/registro" class="tap text-text-muted no-underline hover:text-text">
               {{ t("header.createAccount") }}
             </RouterLink>
-            <RouterLink to="/politica-de-datos" class="text-text-muted no-underline hover:text-text">
+            <RouterLink to="/politica-de-datos" class="tap text-text-muted no-underline hover:text-text">
               {{ t("dataPolicy.title") }}
             </RouterLink>
           </nav>
-          <nav :aria-label="t('home.footerProject')" class="flex flex-col gap-2.5 text-base">
+          <nav
+            :aria-label="t('home.footerProject')"
+            class="flex flex-col items-start gap-2.5 text-base pointer-coarse:gap-0"
+          >
             <span class="font-semibold text-text">{{ t("home.footerProject") }}</span>
-            <a href="#funciona" class="text-text-muted no-underline hover:text-text">{{ t("home.ctaSecondary") }}</a>
+            <a href="#funciona" class="tap text-text-muted no-underline hover:text-text">{{
+              t("home.ctaSecondary")
+            }}</a>
             <a
               href="https://github.com/hasttyr/torre"
               target="_blank"
               rel="noopener"
-              class="text-text-muted no-underline hover:text-text"
+              class="tap text-text-muted no-underline hover:text-text"
             >
               {{ t("home.footerCode") }}
             </a>

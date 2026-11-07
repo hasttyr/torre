@@ -291,13 +291,13 @@ async function onSubmit(): Promise<void> {
       </FadeSlide>
 
       <div class="field" :class="{ 'has-error': errors.acceptDataPolicy }">
-        <label class="flex cursor-pointer items-start gap-2 text-sm font-normal">
+        <label class="flex cursor-pointer items-start gap-2.5 text-sm font-normal pointer-coarse:min-h-11">
           <input
             id="acceptDataPolicy"
             v-model="form.acceptDataPolicy"
             type="checkbox"
             name="acceptDataPolicy"
-            class="mt-0.5"
+            class="checkbox"
             v-bind="errorAttrs(errors, 'acceptDataPolicy')"
           />
           <span>{{ t("register.acceptDataPolicyLabel") }}</span>
@@ -308,7 +308,7 @@ async function onSubmit(): Promise<void> {
           to="/politica-de-datos"
           target="_blank"
           rel="noopener"
-          class="ml-6 text-sm font-semibold text-accent"
+          class="tap ml-7.5 self-start text-sm font-semibold text-accent"
           data-test="data-policy-link"
         >
           {{ t("dataPolicy.registerLink") }}

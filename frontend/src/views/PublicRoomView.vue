@@ -87,7 +87,7 @@ onBeforeUnmount(() => clearInterval(timer));
         <section v-if="earlier.length > 0" aria-labelledby="public-earlier-heading" class="flex flex-col gap-3">
           <h2 id="public-earlier-heading" class="text-lg">{{ t("publicRoom.earlier") }}</h2>
           <details v-for="round in earlier" :key="round.number" class="rounded-2xl border border-border-soft p-3">
-            <summary class="cursor-pointer font-semibold">
+            <summary class="cursor-pointer font-semibold pointer-coarse:py-2.5">
               {{ t("publicRoom.round", { number: round.number }) }}
             </summary>
             <div class="mt-3">

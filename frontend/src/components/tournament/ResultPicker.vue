@@ -42,7 +42,7 @@ const GROUPS = [
         v-for="value in group.values"
         :key="value"
         type="button"
-        class="border-l border-border font-semibold tabular-nums transition-colors first:border-l-0 hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
+        class="border-l border-border font-semibold tabular-nums pointer-coarse:min-h-11 pointer-coarse:min-w-11 transition-colors first:border-l-0 hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
         :class="[group.size, current === value ? 'bg-accent text-on-accent hover:bg-accent' : 'text-text']"
         :aria-label="`${formatResult(value)}, ${t(`rounds.resultNames.${NAME_KEYS[value]}`)}`"
         :aria-pressed="current === value"

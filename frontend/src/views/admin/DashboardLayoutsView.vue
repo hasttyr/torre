@@ -177,7 +177,7 @@ useUnsavedChangesGuard(() => anyDirty.value, "dashboardLayouts.leaveMessage");
             v-for="role in CONFIGURABLE_ROLES"
             :key="role"
             :value="role"
-            class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
+            class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors pointer-coarse:min-h-11"
             :class="activeRole === role ? 'bg-accent text-on-accent' : 'text-text-muted hover:bg-accent/10'"
           >
             {{ t(`roles.${role}`) }}

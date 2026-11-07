@@ -124,7 +124,7 @@ async function onSubmit(): Promise<void> {
         <span :id="errorId('password')" class="field-error">{{ errors.password }}</span>
       </div>
 
-      <RouterLink to="/olvide-password" class="-mt-2 self-end text-sm text-text-muted hover:text-accent">
+      <RouterLink to="/olvide-password" class="tap -mt-2 self-end text-sm text-text-muted hover:text-accent">
         {{ t("login.forgotPassword") }}
       </RouterLink>
 

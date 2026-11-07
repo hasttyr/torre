@@ -20,7 +20,7 @@ const selected = computed(() => selection.selectedId.value === props.playerId);
   <button
     v-if="selectable"
     type="button"
-    class="self-start text-left font-semibold underline decoration-border decoration-dotted underline-offset-4 hover:text-accent hover:decoration-accent"
+    class="tap self-start text-left font-semibold underline decoration-border decoration-dotted underline-offset-4 hover:text-accent hover:decoration-accent"
     :class="selected ? 'text-accent' : 'text-text'"
     :aria-pressed="selected"
     :title="t('widgets.viewPlayer', { name })"

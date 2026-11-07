@@ -157,13 +157,13 @@ const filterStatus = computed(() => {
             <th
               v-for="header in headerGroup.headers"
               :key="header.id"
-              class="border-b border-border-soft px-3 py-3 text-left text-caption font-semibold text-text-muted"
+              class="border-b border-border-soft px-3 py-3 text-left pointer-coarse:py-0 text-caption font-semibold text-text-muted"
               :aria-sort="ariaSort(header.column.getIsSorted(), header.column.getCanSort())"
             >
               <button
                 v-if="header.column.getCanSort()"
                 type="button"
-                class="inline-flex items-center gap-1 font-semibold hover:text-accent"
+                class="inline-flex items-center gap-1 font-semibold hover:text-accent pointer-coarse:min-h-11 pointer-coarse:min-w-11"
                 @click="header.column.getToggleSortingHandler()?.($event)"
               >
                 <FlexRender :header="header" />

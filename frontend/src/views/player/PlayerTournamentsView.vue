@@ -92,7 +92,7 @@ async function onWithdraw(tournamentId: string): Promise<void> {
                 <RouterLink
                   v-if="hasTournamentRoom(tournament)"
                   :to="`/torneos/${tournament.id}/sala`"
-                  class="mt-1 inline-block text-sm font-semibold text-accent"
+                  class="tap mt-1 inline-block text-sm font-semibold text-accent"
                 >
                   {{ tournament.status === "FINISHED" ? t("tournamentRoom.results") : t("tournamentRoom.follow") }}
                 </RouterLink>
