@@ -22,7 +22,17 @@ describe("ResultPicker", () => {
       .findAll("button")
       .map((button) => button.attributes("aria-label"));
 
-    expect(names).toEqual(["No se presentaron las negras", "No se presentaron las blancas", "No se presentó ninguno"]);
+    expect(names).toEqual([
+      "1F – 0F, No se presentaron las negras",
+      "0F – 1F, No se presentaron las blancas",
+      "0F – 0F, No se presentó ninguno",
+    ]);
+  });
+
+  it("starts each button's name with the score it shows, so voice control finds it (WCAG 2.5.3)", () => {
+    for (const button of mountPicker().findAll("button")) {
+      expect(button.attributes("aria-label")).toMatch(new RegExp(`^${button.text()}, `));
+    }
   });
 
   it("emits the value picked, and marks the current one", async () => {

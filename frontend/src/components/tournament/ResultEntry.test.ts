@@ -19,7 +19,9 @@ const mountEntry = (result: Match["result"]) =>
 
 const focused = () => document.activeElement as HTMLElement;
 const button = (wrapper: ReturnType<typeof mountEntry>, text: string) =>
-  wrapper.findAll("button").find((node) => node.text() === text || node.attributes("aria-label") === text)!;
+  wrapper
+    .findAll("button")
+    .find((node) => node.text() === text || node.attributes("aria-label") === `${node.text()}, ${text}`)!;
 
 describe("ResultEntry", () => {
   it("records a result straight from the picker when the game has none", async () => {
@@ -48,7 +50,7 @@ describe("ResultEntry", () => {
       await button(wrapper, "Corregir").trigger("click");
       await flushPromises();
 
-      expect(focused().getAttribute("aria-label")).toBe("Ganan blancas");
+      expect(focused().getAttribute("aria-label")).toBe("1 – 0, Ganan blancas");
       expect(focused().getAttribute("aria-pressed")).toBe("true");
     });
 

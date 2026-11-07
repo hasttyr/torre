@@ -188,7 +188,7 @@ describe("TournamentLiveView", () => {
     expect(wrapper.text()).toContain("Ana Torres");
     expect(wrapper.text()).toContain("descansa esta ronda");
     expect(wrapper.text()).toContain("Clasificación provisional");
-    expect(wrapper.find("[aria-label='Ganan blancas']").exists()).toBe(false);
+    expect(wrapper.find("[aria-label='1 – 0, Ganan blancas']").exists()).toBe(false);
     expect(wrapper.text()).not.toContain("Corregir");
   });
 
@@ -241,7 +241,7 @@ describe("TournamentLiveView", () => {
     vi.mocked(recordResult).mockResolvedValue();
 
     const wrapper = await mountRoom();
-    await wrapper.get("[data-match='m-1'] [aria-label='Tablas']").trigger("click");
+    await wrapper.get("[data-match='m-1'] [aria-label='½ – ½, Tablas']").trigger("click");
     await flushPromises();
 
     expect(recordResult).toHaveBeenCalledWith("m-1", "1/2-1/2");
@@ -257,7 +257,7 @@ describe("TournamentLiveView", () => {
       .findAll("button")
       .find((button) => button.text() === "Corregir")!
       .trigger("click");
-    await board().get("[aria-label='Ganan blancas']").trigger("click");
+    await board().get("[aria-label='1 – 0, Ganan blancas']").trigger("click");
     await board().get("input").setValue("Planilla mal transcrita");
     await board()
       .findAll("button")
@@ -274,7 +274,7 @@ describe("TournamentLiveView", () => {
 
     const wrapper = await mountRoom();
 
-    expect(wrapper.find("[aria-label='Tablas']").exists()).toBe(false);
+    expect(wrapper.find("[aria-label='½ – ½, Tablas']").exists()).toBe(false);
   });
 
   // The connection stays open in a finished room, but nothing in it can change.
@@ -331,7 +331,7 @@ describe("TournamentLiveView", () => {
     const wrapper = await mountRoom();
 
     expect(wrapper.find("a[href='/torneos/t-1']").exists()).toBe(true);
-    expect(wrapper.find("[data-match='m-1'] [aria-label='Tablas']").exists()).toBe(true);
+    expect(wrapper.find("[data-match='m-1'] [aria-label='½ – ½, Tablas']").exists()).toBe(true);
   });
 });
 

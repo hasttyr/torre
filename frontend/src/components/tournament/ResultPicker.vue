@@ -11,7 +11,9 @@ defineEmits<{ pick: [value: GameResult] }>();
 
 const { t } = useI18n();
 
-// Spoken names for screen readers ("1-0" alone reads poorly).
+// Spoken names for screen readers ("1-0" alone reads poorly). The button's
+// name starts with the score it shows, so voice control ("click 1-0") still
+// finds it (WCAG 2.5.3, label in name).
 const NAME_KEYS: Record<GameResult, string> = {
   "1-0": "whiteWins",
   "1/2-1/2": "draw",
@@ -42,7 +44,7 @@ const GROUPS = [
         type="button"
         class="border-l border-border font-semibold tabular-nums transition-colors first:border-l-0 hover:bg-accent/10 disabled:cursor-not-allowed disabled:opacity-50"
         :class="[group.size, current === value ? 'bg-accent text-on-accent hover:bg-accent' : 'text-text']"
-        :aria-label="t(`rounds.resultNames.${NAME_KEYS[value]}`)"
+        :aria-label="`${formatResult(value)}, ${t(`rounds.resultNames.${NAME_KEYS[value]}`)}`"
         :aria-pressed="current === value"
         :disabled="disabled"
         @click="$emit('pick', value)"
