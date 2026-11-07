@@ -2,6 +2,8 @@
 
 Lo que se entrega de Torre Central Hub al cierre de la Fase 4 (#115), cómo evaluarlo y qué queda pendiente fuera del código. A partir de esta entrega el código queda congelado: no se implementa nada más, y solo entran correcciones de fallos que bloqueen la aceptación (P35).
 
+El congelamiento rige desde el 7 de noviembre de 2026, sobre el commit `b897d88` (etiqueta `congelamiento`). Es lo entregado más la última pasada de interfaz: la auditoría de accesibilidad, diseño y rendimiento del frontend, con todas las compuertas del CI, el e2e y las suites de humo, usabilidad y seguridad en verde. Desde ahí, un cambio en `main` es una corrección P35 con su test que la reproduce, o no entra.
+
 ## Qué se entrega
 
 | Pieza           | Dónde                                                                                                                                                                                                                                                    |
