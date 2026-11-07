@@ -103,3 +103,19 @@ describe.each(Object.entries(SELECTORS))("%s theme text over the photograph", (t
     expect(contrast(tokens["accent-hover"]!, ground)).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe("reduce motion", () => {
+  const start = css.indexOf("@media (prefers-reduced-motion: reduce)");
+  const block = css.slice(start, css.indexOf("\n  }\n", start));
+
+  it("stops what moves: presses, looping pulses and rising entrances", () => {
+    expect(block).toContain("scale: none");
+    for (const loop of [".animate-live", ".animate-pulse", ".animate-skeleton"]) expect(block).toContain(loop);
+    expect(block).toMatch(/\.animate-rise-in \{\s*animation-name: appear/);
+  });
+
+  it("keeps fades and color changes, so a change of state is still seen", () => {
+    // A blanket zero duration would make a menu or a result snap in unseen.
+    expect(block).not.toMatch(/transition-duration/);
+  });
+});

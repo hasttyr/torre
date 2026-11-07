@@ -161,7 +161,7 @@ function onPointerMove(event: PointerEvent): void {
           :cx="point.cx"
           :cy="point.cy"
           :r="hovered === index ? 6 : 4.5"
-          class="fill-chart-1 stroke-surface transition-[r]"
+          class="fill-chart-1 stroke-surface transition-[r] motion-reduce:transition-none"
           stroke-width="2"
           role="img"
           :tabindex="index === tabStop ? 0 : -1"

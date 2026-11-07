@@ -46,7 +46,7 @@ const number = (value: number) => formatNumber(value, locale.value);
             <span class="block truncate" :class="{ 'font-semibold': index === 0 }">{{ row.name }}</span>
             <span class="mt-1.5 hidden h-1 w-full max-w-40 overflow-hidden rounded-full bg-border-soft sm:block">
               <span
-                class="block h-full w-(--fill) rounded-full bg-accent transition-[width] delay-300 duration-1000 ease-out group-data-[revealed=false]/render:w-0"
+                class="block h-full w-(--fill) rounded-full bg-accent transition-[width] motion-reduce:transition-none delay-300 duration-1000 ease-out group-data-[revealed=false]/render:w-0"
                 :style="{ '--fill': `${(row.points / ROUNDS_PLAYED) * 100}%` }"
               />
             </span>

@@ -6,9 +6,9 @@
 <template>
   <Transition
     enter-active-class="transition duration-180 ease-out"
-    enter-from-class="opacity-0 -translate-y-1.5"
+    enter-from-class="opacity-0 -translate-y-1.5 motion-reduce:translate-y-0"
     leave-active-class="transition duration-180 ease-in"
-    leave-to-class="opacity-0 -translate-y-1.5"
+    leave-to-class="opacity-0 -translate-y-1.5 motion-reduce:translate-y-0"
   >
     <slot />
   </Transition>

@@ -54,7 +54,7 @@ const revealed = useInView(useTemplateRef<HTMLElement>("render"), { rootMargin: 
       data-render
       aria-hidden="true"
       :data-revealed="revealed"
-      class="group/render mt-12 w-full transition duration-700 ease-out select-none data-[revealed=false]:translate-y-8 data-[revealed=false]:opacity-0 sm:mt-12"
+      class="group/render mt-12 w-full transition duration-700 ease-out select-none data-[revealed=false]:translate-y-8 motion-reduce:data-[revealed=false]:translate-y-0 data-[revealed=false]:opacity-0 sm:mt-12"
       :class="wide ? 'max-w-3xl' : 'max-w-md'"
     >
       <slot />

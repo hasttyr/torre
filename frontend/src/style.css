@@ -284,18 +284,30 @@
     outline: none;
   }
 
-  /* Honors the OS "reduce motion" setting: transitions and animations
-     (hover lifts, <Transition> slides, skeleton pulses, growing bars) jump
-     straight to their end state. Vue's <Transition> still receives its
-     transitionend, so enter/leave keep working. */
+  /* Honors the OS "reduce motion" setting with an alternative, not a blank:
+     what moves goes, what changes stays. Presses that shrink, the looping
+     pulses ("live" rings, skeleton bones) and smooth scrolling stop, and the
+     landing's rising entrances become plain fades; the slides and lifts drop
+     their offset with motion-reduce: variants where they're declared. A fade
+     or a color change keeps playing, so a menu opening or a result arriving
+     is still seen instead of snapping into place. */
   @media (prefers-reduced-motion: reduce) {
-    *,
-    ::before,
-    ::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
+    html {
+      scroll-behavior: auto;
+    }
+
+    :active {
+      scale: none !important;
+    }
+
+    .animate-live,
+    .animate-pulse,
+    .animate-skeleton {
+      animation: none !important;
+    }
+
+    .animate-rise-in {
+      animation-name: appear !important;
     }
   }
 

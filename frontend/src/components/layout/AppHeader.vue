@@ -125,11 +125,11 @@ function closeMobileFromKeyboard(): void {
         <!-- Mobile nav panel: opens below the header, hidden from lg upward. -->
         <Transition
           enter-active-class="transition duration-150 ease-out"
-          enter-from-class="opacity-0 -translate-y-1"
+          enter-from-class="opacity-0 -translate-y-1 motion-reduce:translate-y-0"
           enter-to-class="opacity-100 translate-y-0"
           leave-active-class="transition duration-100 ease-in"
           leave-from-class="opacity-100 translate-y-0"
-          leave-to-class="opacity-0 -translate-y-1"
+          leave-to-class="opacity-0 -translate-y-1 motion-reduce:translate-y-0"
         >
           <nav v-if="mobileOpen" class="lg:hidden">
             <div class="flex flex-col gap-1 px-3 pt-1 pb-4">
