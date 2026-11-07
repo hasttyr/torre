@@ -59,9 +59,13 @@ function prefetchNearingWidget(widget: WidgetSummary): void {
     <main class="container flex flex-col gap-8 pt-12 pb-20 sm:pt-16 sm:pb-28">
       <header class="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p class="text-body-sm font-semibold text-accent">{{ t(`roles.${role}`) }}</p>
-          <h1 class="mt-1 page-title">{{ t("panel.greeting", { name: firstName }) }}</h1>
-          <p class="mt-3">{{ t(`panel.subtitle.${role}`) }}</p>
+          <h1 class="page-title">{{ t("panel.greeting", { name: firstName }) }}</h1>
+          <!-- The role leads the line under the greeting rather than sitting
+               above it as a label: the greeting carries the page. -->
+          <p class="mt-3">
+            <span class="font-semibold text-text">{{ t(`roles.${role}`) }}</span> ·
+            {{ t(`panel.subtitle.${role}`) }}
+          </p>
         </div>
         <RouterLink v-if="role === 'ADMINISTRATOR'" to="/panel/configuracion" class="btn btn-ghost">
           {{ t("panel.configure") }}
