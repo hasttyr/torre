@@ -193,7 +193,9 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
         <!-- The winners, once the tournament is closed (by hand or by date). -->
         <TournamentPodium v-if="finished && standings && standings.rows.length > 0" :standings="standings" />
 
-        <div class="grid gap-5 lg:grid-cols-[1.25fr_1fr]">
+        <!-- items-start: a round's few boards keep their own height instead of
+             stretching an empty pane down beside standings and stats. -->
+        <div class="grid items-start gap-5 lg:grid-cols-[1.25fr_1fr]">
           <!-- reka-ui Tabs: arrow keys move between rounds, and screen readers
                read each round's boards as the panel of its tab. -->
           <TabsRoot
