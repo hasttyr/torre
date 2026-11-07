@@ -51,9 +51,9 @@ const total = computed(() => stages.value.reduce((sum, stage) => sum + stage.cou
           :key="stage.status"
           class="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2.5 rounded-[18px] bg-surface-2 px-4 py-3.5"
         >
-          <span class="text-[0.95rem] text-text">{{ t(`estados.${stage.status}`) }}</span>
+          <span class="text-body-sm text-text">{{ t(`estados.${stage.status}`) }}</span>
           <strong
-            class="font-display text-[1.5rem] leading-none font-semibold tracking-[-0.03em] tabular-nums"
+            class="font-display text-2xl leading-none font-semibold tracking-[-0.03em] tabular-nums"
             :class="stage.count === 0 ? 'text-text-faint' : 'text-text'"
           >
             {{ stage.count }}

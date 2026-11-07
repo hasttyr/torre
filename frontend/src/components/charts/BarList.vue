@@ -20,7 +20,7 @@ const max = computed(() => Math.max(1, ...props.items.map((item) => item.value))
     <li
       v-for="item in items"
       :key="item.key"
-      class="grid grid-cols-[minmax(6.5rem,11rem)_1fr] items-center gap-4 text-[0.95rem]"
+      class="grid grid-cols-[minmax(6.5rem,11rem)_1fr] items-center gap-4 text-body-sm"
     >
       <div class="min-w-0">
         <p class="truncate text-text">{{ item.label }}</p>

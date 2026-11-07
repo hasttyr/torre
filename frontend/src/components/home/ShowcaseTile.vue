@@ -43,7 +43,7 @@ const revealed = useInView(useTemplateRef<HTMLElement>("render"), { rootMargin: 
     <p
       class="mt-3 text-pretty"
       :class="[
-        wide ? 'max-w-xl text-[clamp(1.05rem,0.95rem+0.45vw,1.3rem)]' : 'max-w-md text-base sm:text-[1.0625rem]',
+        wide ? 'max-w-xl text-[clamp(1.05rem,0.95rem+0.45vw,1.3rem)]' : 'max-w-md text-base sm:text-body',
         { 'text-tile-ink-muted': surface === 'ink' },
       ]"
     >

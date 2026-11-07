@@ -135,7 +135,7 @@ const onCorrect = (matchId: string, value: GameResult, reason: string) =>
       <template v-else-if="tournament">
         <header class="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <p class="flex items-center gap-2 text-[0.95rem] font-semibold text-accent">
+            <p class="flex items-center gap-2 text-body-sm font-semibold text-accent">
               <span
                 class="h-2 w-2 rounded-full"
                 :class="connected && !finished ? 'animate-pulse bg-success' : 'bg-text-faint'"

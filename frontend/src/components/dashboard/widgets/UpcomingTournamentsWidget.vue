@@ -41,7 +41,7 @@ function dayParts(date: string): { day: string; month: string } {
           class="flex size-14 shrink-0 flex-col items-center justify-center gap-0.5 rounded-2xl bg-chart-1/15 leading-none"
           aria-hidden="true"
         >
-          <span class="font-display text-[1.375rem] font-semibold tracking-[-0.03em] text-text tabular-nums">{{
+          <span class="font-display text-title font-semibold tracking-[-0.03em] text-text tabular-nums">{{
             dayParts(tournament.startDate).day
           }}</span>
           <span class="text-xs font-semibold text-text-muted">
@@ -52,12 +52,12 @@ function dayParts(date: string): { day: string; month: string } {
           <RouterLink
             v-if="hasTournamentRoom(tournament)"
             :to="`/torneos/${tournament.id}/sala`"
-            class="block truncate text-[1.0625rem] font-semibold text-text no-underline after:absolute after:inset-0 hover:text-accent"
+            class="block truncate text-body font-semibold text-text no-underline after:absolute after:inset-0 hover:text-accent"
           >
             {{ tournament.name }}
           </RouterLink>
-          <p v-else class="truncate text-[1.0625rem] font-semibold text-text">{{ tournament.name }}</p>
-          <p class="mt-0.5 text-[0.84rem] tabular-nums">
+          <p v-else class="truncate text-body font-semibold text-text">{{ tournament.name }}</p>
+          <p class="mt-0.5 text-caption tabular-nums">
             {{ formatDate(tournament.startDate, locale.locale) }} —
             {{ formatDate(tournament.endDate, locale.locale) }} ·
             {{ t("widgets.UPCOMING_TOURNAMENTS.enrolled", { count: tournament.enrolled }, tournament.enrolled) }}

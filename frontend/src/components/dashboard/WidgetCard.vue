@@ -24,8 +24,8 @@ const { t } = useI18n();
   <section class="card flex h-full flex-col gap-6" :aria-busy="loading">
     <header class="flex items-start justify-between gap-3">
       <div>
-        <h2 class="text-[1.375rem] tracking-[-0.025em]">{{ t(`widgets.${widget}.title`) }}</h2>
-        <p class="mt-1 text-[0.95rem]">{{ t(`widgets.${widget}.description`) }}</p>
+        <h2 class="text-title">{{ t(`widgets.${widget}.title`) }}</h2>
+        <p class="mt-1 text-body-sm">{{ t(`widgets.${widget}.description`) }}</p>
       </div>
       <!-- The ellipsis needs a block inside the pill: on the flex pill itself
            a long name was cut mid-letter, with no sign it went on. -->

@@ -148,7 +148,7 @@ const year = new Date().getFullYear();
                 {{ step.n }}
               </span>
               <div>
-                <h3 class="text-[1.375rem] tracking-[-0.02em]">{{ t(`home.${step.titleKey}`) }}</h3>
+                <h3 class="text-title tracking-[-0.02em]">{{ t(`home.${step.titleKey}`) }}</h3>
                 <p class="mt-2 text-base">{{ t(`home.${step.textKey}`) }}</p>
               </div>
             </li>

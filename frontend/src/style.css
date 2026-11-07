@@ -55,6 +55,19 @@
     -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
 
+  /* The type ramp between Tailwind's steps: one name per role, so a table
+     cell or a card's title is the same size on every screen. Page titles and
+     the widgets' answer figures scale with the viewport (.page-title,
+     .figure below). */
+  --text-micro: 0.6875rem; /* 11px: chart axes, tab bar labels */
+  --text-caption: 0.8125rem; /* 13px: table headers, field errors, meta lines */
+  --text-body-sm: 0.9375rem; /* 15px: table cells, banners, buttons, a card's description */
+  --text-body: 1.0625rem; /* 17px: running text */
+  --text-title: 1.375rem; /* 22px: a card's or a widget's title */
+  --text-title--letter-spacing: -0.025em;
+  --text-figure-sm: 2rem; /* a secondary answer figure */
+  --text-figure: 2.5rem; /* a widget's main figure at a fixed size */
+
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-lg: 24px;
@@ -290,7 +303,7 @@
     @apply bg-bg text-text font-sans antialiased;
     /* The ground under the photograph (.backdrop), seen while it loads.
        Body text runs at 17px with Apple's slightly tightened tracking. */
-    font-size: 1.0625rem;
+    font-size: var(--text-body);
     line-height: 1.47;
     letter-spacing: -0.011em;
     min-height: 100dvh;
@@ -462,7 +475,7 @@
   /* Pill buttons that give a little when pressed. min-h-11 is the 44px
      touch target. No shadow at rest or on hover: the fill is the button. */
   .btn {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-transparent px-6 py-2.5 text-[0.9375rem] font-semibold tracking-[-0.01em] whitespace-nowrap no-underline transition-[scale,background-color,border-color,color] duration-300 ease-spring active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-transparent px-6 py-2.5 text-body-sm font-semibold tracking-[-0.01em] whitespace-nowrap no-underline transition-[scale,background-color,border-color,color] duration-300 ease-spring active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100;
   }
 
   .btn-primary {
@@ -501,7 +514,7 @@
      it's hovered or holds the focus. */
   .field input,
   .field select {
-    @apply min-h-12 rounded-2xl border border-transparent bg-surface-2 px-4 py-3 font-sans text-base text-text transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-text-faint hover:border-text/15 focus:border-accent focus:ring-4 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:text-[0.98rem];
+    @apply min-h-12 rounded-2xl border border-transparent bg-surface-2 px-4 py-3 font-sans text-base text-text transition-[border-color,box-shadow,background-color] duration-200 placeholder:text-text-faint hover:border-text/15 focus:border-accent focus:ring-4 focus:ring-accent/15 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:text-body-sm;
   }
 
   .field.has-error input,
@@ -510,7 +523,7 @@
   }
 
   .field-error {
-    @apply hidden items-center gap-1.5 text-[0.84rem] text-error;
+    @apply hidden items-center gap-1.5 text-caption text-error;
   }
 
   .field.has-error .field-error {
@@ -526,7 +539,7 @@
   }
 
   .banner {
-    @apply flex items-start gap-2.5 rounded-2xl px-4 py-3.5 text-[0.95rem];
+    @apply flex items-start gap-2.5 rounded-2xl px-4 py-3.5 text-body-sm;
   }
 
   .banner--success {

@@ -56,7 +56,7 @@ withDefaults(defineProps<{ title: string; subtitle?: string; quote?: string; quo
 
           <p
             v-if="$slots.footer"
-            class="mt-6 text-center text-[0.95rem] [&_a]:text-text-muted [&_a]:no-underline [&_a:hover]:text-text"
+            class="mt-6 text-center text-body-sm [&_a]:text-text-muted [&_a]:no-underline [&_a:hover]:text-text"
           >
             <slot name="footer" />
           </p>

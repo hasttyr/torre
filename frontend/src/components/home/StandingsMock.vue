@@ -19,7 +19,7 @@ const number = (value: number) => formatNumber(value, locale.value);
     <template #status>
       <LiveBadge :label="t('home.mock.live')" />
     </template>
-    <table class="w-full text-sm sm:text-[0.95rem]">
+    <table class="w-full text-sm sm:text-body-sm">
       <thead class="text-xs text-text-faint">
         <tr>
           <th class="py-2.5 pl-4 text-left font-normal sm:pl-5">#</th>

@@ -46,7 +46,7 @@ const DOT = "M12 9a3 3 0 1 1 0 6 3 3 0 0 1 0-6";
       <li v-for="item in items" :key="item.to" class="min-w-0 flex-1">
         <RouterLink
           :to="item.to"
-          class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-[22px] px-0.5 text-[0.6875rem] font-medium tracking-[-0.01em] text-text-muted no-underline transition-[background-color,color,scale] duration-200 active:scale-95 [&.router-link-active]:bg-surface [&.router-link-active]:text-text [&.router-link-active]:shadow-md"
+          class="flex min-h-14 flex-col items-center justify-center gap-1 rounded-[22px] px-0.5 text-micro font-medium tracking-[-0.01em] text-text-muted no-underline transition-[background-color,color,scale] duration-200 active:scale-95 [&.router-link-active]:bg-surface [&.router-link-active]:text-text [&.router-link-active]:shadow-md"
           @touchstart.passive="prefetchRoute(router, item.to)"
           @focus="prefetchRoute(router, item.to)"
         >

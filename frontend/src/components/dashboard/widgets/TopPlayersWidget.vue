@@ -55,11 +55,11 @@ const maxPoints = computed(() => Math.max(1, ...(data.value ?? []).map((player) 
           >
             {{ step.place }}
           </span>
-          <span class="w-full truncate text-center text-[0.95rem] [&>*]:max-w-full [&>*]:truncate">
+          <span class="w-full truncate text-center text-body-sm [&>*]:max-w-full [&>*]:truncate">
             <PlayerName :player-id="step.player.playerId" :name="step.player.name" />
           </span>
           <span
-            class="mt-1 font-display text-[1.375rem] leading-tight font-semibold tracking-[-0.03em] text-text tabular-nums"
+            class="mt-1 font-display text-title leading-tight font-semibold tracking-[-0.03em] text-text tabular-nums"
           >
             {{ points(step.player) }}
           </span>
@@ -81,7 +81,7 @@ const maxPoints = computed(() => Math.max(1, ...(data.value ?? []).map((player) 
         >
           <span class="text-center text-sm font-semibold text-text-faint tabular-nums">{{ index + 4 }}</span>
           <span class="flex min-w-0 flex-col gap-1.5">
-            <span class="flex min-w-0 flex-col text-[0.95rem] sm:flex-row sm:items-baseline sm:gap-2">
+            <span class="flex min-w-0 flex-col text-body-sm sm:flex-row sm:items-baseline sm:gap-2">
               <PlayerName :player-id="player.playerId" :name="player.name" />
               <span class="truncate text-xs text-text-faint">{{ detail(player) }}</span>
             </span>

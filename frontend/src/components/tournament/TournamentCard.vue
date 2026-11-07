@@ -36,8 +36,8 @@ const heading = computed(() => `h${props.headingLevel}`);
     "
   >
     <div class="flex flex-col gap-1">
-      <component :is="heading" class="text-xl tracking-[-0.02em] sm:text-[1.375rem]">{{ tournament.name }}</component>
-      <p class="text-[0.95rem] tabular-nums">
+      <component :is="heading" class="text-xl tracking-[-0.02em] sm:text-title">{{ tournament.name }}</component>
+      <p class="text-body-sm tabular-nums">
         {{ formatDate(tournament.startDate, locale.locale) }} —
         {{ formatDate(tournament.endDate, locale.locale) }}
       </p>

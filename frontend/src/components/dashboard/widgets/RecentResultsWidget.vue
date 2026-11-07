@@ -27,7 +27,7 @@ const { data, loading, error, reload } = useWidgetData<RecentResult[]>("RECENT_R
         :key="result.id"
         class="flex flex-col gap-1.5 rounded-2xl px-2 py-3 transition-colors hover:bg-text/4"
       >
-        <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-[0.95rem]">
+        <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-body-sm">
           <span
             class="truncate text-right"
             :class="result.value === '1-0' ? 'font-semibold text-text' : 'text-text-muted'"

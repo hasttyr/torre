@@ -21,7 +21,7 @@ const { t } = useI18n();
       <li
         v-for="pairing in SAMPLE_PAIRINGS"
         :key="pairing.board"
-        class="grid grid-cols-[1.25rem_1fr_auto_1fr] items-center gap-2.5 px-4 py-3 text-sm sm:grid-cols-[4rem_1fr_6.5rem_1fr] sm:gap-4 sm:px-5 sm:py-3.5 sm:text-[0.95rem]"
+        class="grid grid-cols-[1.25rem_1fr_auto_1fr] items-center gap-2.5 px-4 py-3 text-sm sm:grid-cols-[4rem_1fr_6.5rem_1fr] sm:gap-4 sm:px-5 sm:py-3.5 sm:text-body-sm"
       >
         <span class="text-xs text-text-faint tabular-nums">
           <span class="hidden sm:inline">{{ t("home.mock.board") }}</span> {{ pairing.board }}

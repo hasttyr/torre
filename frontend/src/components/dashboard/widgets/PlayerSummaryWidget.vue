@@ -68,7 +68,7 @@ const stats = computed(() => {
               {{ t("widgets.PLAYER_SUMMARY.scoreRate") }}
             </dt>
             <dd
-              class="m-0 font-display text-[2.5rem] leading-none font-semibold tracking-[-0.045em] text-text tabular-nums"
+              class="m-0 font-display text-figure leading-none font-semibold tracking-[-0.045em] text-text tabular-nums"
             >
               {{ formatPercent(data.scoreRate, locale.locale) }}
             </dd>
@@ -81,7 +81,7 @@ const stats = computed(() => {
           <div v-for="stat in stats" :key="stat.key" class="flex flex-col gap-1.5">
             <dt class="text-sm text-text-muted">{{ t(`widgets.PLAYER_SUMMARY.${stat.key}`) }}</dt>
             <dd
-              class="m-0 font-display text-[2rem] leading-none font-semibold tracking-[-0.035em] text-text tabular-nums"
+              class="m-0 font-display text-figure-sm leading-none font-semibold tracking-[-0.035em] text-text tabular-nums"
             >
               {{ stat.value }}
             </dd>

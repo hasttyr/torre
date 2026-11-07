@@ -128,7 +128,7 @@ function onPointerMove(event: PointerEvent): void {
           :y="y(grid)"
           text-anchor="end"
           dominant-baseline="middle"
-          class="fill-text-faint text-[11px] tabular-nums"
+          class="fill-text-faint text-micro tabular-nums"
         >
           {{ formatValue(grid) }}
         </text>
@@ -176,7 +176,7 @@ function onPointerMove(event: PointerEvent): void {
           :x="point.cx"
           :y="HEIGHT - 8"
           text-anchor="middle"
-          class="fill-text-faint text-[11px]"
+          class="fill-text-faint text-micro"
         >
           {{ point.label }}
         </text>

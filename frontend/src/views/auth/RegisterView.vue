@@ -178,7 +178,7 @@ async function onSubmit(): Promise<void> {
           <label
             v-for="role in SELF_ASSIGNABLE_ROLES"
             :key="role"
-            class="flex cursor-pointer flex-col items-center gap-1 rounded-lg border px-3 py-3 text-center text-[0.78rem] font-semibold transition-colors"
+            class="flex cursor-pointer flex-col items-center gap-1 rounded-lg border px-3 py-3 text-center text-caption font-semibold transition-colors"
             :class="
               form.role === role
                 ? 'border-accent bg-accent/15 text-text'
@@ -240,7 +240,7 @@ async function onSubmit(): Promise<void> {
           v-if="isPlayer"
           class="m-0 flex flex-col gap-4 rounded-xl border border-dashed border-border p-4 pt-4"
         >
-          <legend class="px-1.5 text-[0.8rem] font-semibold text-text-muted">
+          <legend class="px-1.5 text-caption font-semibold text-text-muted">
             {{ t("register.playerDataLegend") }}
           </legend>
 

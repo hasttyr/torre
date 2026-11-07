@@ -39,7 +39,7 @@ const hasGames = computed(() => COLORS.some((color) => data.value?.[color].score
           <p class="text-lg leading-none font-semibold text-text tabular-nums">
             {{ formatPercent(data[color].scoreRate, locale.locale) }}
           </p>
-          <p class="text-[0.7rem] text-text-faint">{{ t("widgets.PLAYER_RESULTS_BY_COLOR.rate") }}</p>
+          <p class="text-micro text-text-faint">{{ t("widgets.PLAYER_RESULTS_BY_COLOR.rate") }}</p>
         </div>
       </div>
     </div>

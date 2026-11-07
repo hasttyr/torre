@@ -37,8 +37,8 @@ const points = (score: number) => t("podium.points", { points: formatNumber(scor
 <template>
   <section class="card flex flex-col gap-8" :aria-label="t('podium.title')" data-test="podium">
     <div class="flex flex-wrap items-baseline justify-between gap-3">
-      <h2 class="text-[1.375rem] tracking-[-0.025em]">{{ t("podium.title") }}</h2>
-      <p v-if="viewer" class="text-[0.95rem] font-semibold text-text" data-test="podium-viewer">
+      <h2 class="text-title">{{ t("podium.title") }}</h2>
+      <p v-if="viewer" class="text-body-sm font-semibold text-text" data-test="podium-viewer">
         {{
           viewer.rank === 1
             ? t("podium.youWon")
@@ -58,13 +58,13 @@ const points = (score: number) => t("podium.points", { points: formatNumber(scor
         </span>
         <span class="text-xs font-semibold text-text-muted">{{ t(PLACE_NAMES[step.row.rank] ?? "") }}</span>
         <strong
-          class="mt-1 w-full truncate text-center text-[0.95rem] text-text sm:text-base"
+          class="mt-1 w-full truncate text-center text-body-sm text-text sm:text-base"
           :class="{ 'text-accent': step.row.playerId === standings.viewerPlayerId }"
         >
           {{ step.row.name }}
         </strong>
         <span
-          class="mt-1 mb-3 font-display text-[1.375rem] leading-tight font-semibold tracking-[-0.03em] text-text tabular-nums"
+          class="mt-1 mb-3 font-display text-title leading-tight font-semibold tracking-[-0.03em] text-text tabular-nums"
         >
           {{ points(step.row.score) }}
         </span>
