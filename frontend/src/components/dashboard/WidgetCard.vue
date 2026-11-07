@@ -27,7 +27,11 @@ const { t } = useI18n();
         <h2 class="text-[1.375rem] tracking-[-0.025em]">{{ t(`widgets.${widget}.title`) }}</h2>
         <p class="mt-1 text-[0.95rem]">{{ t(`widgets.${widget}.description`) }}</p>
       </div>
-      <span v-if="subjectName" class="pill max-w-[45%] truncate">{{ subjectName }}</span>
+      <!-- The ellipsis needs a block inside the pill: on the flex pill itself
+           a long name was cut mid-letter, with no sign it went on. -->
+      <span v-if="subjectName" class="pill max-w-[45%]" :title="subjectName">
+        <span class="truncate">{{ subjectName }}</span>
+      </span>
     </header>
 
     <div v-if="loading" class="flex flex-col gap-2.5" data-test="widget-loading">
