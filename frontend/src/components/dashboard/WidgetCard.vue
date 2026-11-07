@@ -2,6 +2,7 @@
 import { useI18n } from "vue-i18n";
 
 import type { WidgetKey } from "../../services/dashboard";
+import { WIDGET_MIN_HEIGHT } from "./widgetHeights";
 
 // The frame every dashboard widget renders in: title, description and the
 // loading / error / empty states, so each widget only writes its content.
@@ -21,7 +22,9 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <section class="card flex h-full flex-col gap-6" :aria-busy="loading">
+  <!-- While its data loads the card keeps the skeleton's height, so the
+       cards below don't move twice. -->
+  <section class="card flex h-full flex-col gap-6" :class="loading && WIDGET_MIN_HEIGHT[widget]" :aria-busy="loading">
     <header class="flex items-start justify-between gap-3">
       <div>
         <h2 class="text-title">{{ t(`widgets.${widget}.title`) }}</h2>
