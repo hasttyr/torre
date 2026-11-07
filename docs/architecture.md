@@ -79,5 +79,7 @@ Lo que sostiene el diseño:
 | Vistas por HTTP      | Páginas por el cliente HTTP real contra una API simulada (MSW)                                         | `frontend/src/views/overHttp.test.ts`                        |
 | Navegador (E2E)      | Flujos entre roles con Playwright, sobre el build de producción y la API real                          | `frontend/e2e/*.spec.ts`                                     |
 | Despliegue           | Caché, reescritura de `/api` y CSP de `vercel.json`                                                    | `frontend/src/deployment.test.ts`                            |
+| Tipos de sistema     | Humo, usabilidad (WCAG 2.1 AA), seguridad desde fuera, recuperación; Firefox, WebKit y teléfonos       | `frontend/e2e/{smoke,usability,security,recovery}/`          |
+| Servidor             | Carga, estrés, resistencia; caída del proceso y corte de la base; instalación desde una base vacía     | `backend/src/testing/{loadTest,recovery,installation}.ts`    |
 
-Los umbrales de cobertura de cada proyecto solo suben ([decisión 008](decisions/008-la-cobertura-solo-sube.md)). Cómo correr todo como el CI: [runbooks/validar-ci.md](runbooks/validar-ci.md).
+Los umbrales de cobertura de cada proyecto solo suben ([decisión 008](decisions/008-la-cobertura-solo-sube.md)). Cómo correr todo como el CI: [runbooks/validar-ci.md](runbooks/validar-ci.md). Todas las suites juntas, desde la raíz: `npm test` ([plan de pruebas, 8.5](plan-de-pruebas.md#85-todos-los-tipos-de-prueba-con-un-comando)).

@@ -34,6 +34,8 @@ npm run test:e2e             # la primera vez: npx playwright install chromium
 
 La suite de integración (`npm run test:integration`, y por tanto `test:coverage`) usa `TEST_DATABASE_URL` o, si no está, la base de `DATABASE_URL` de `backend/.env` con el sufijo `_test`. Le aplica las migraciones y la vacía antes de cada prueba; se niega a correr contra una base cuyo nombre no termine en `_test`. En este equipo hay un PostgreSQL local, así que corre en local.
 
+Lo anterior y además las suites que el CI no corre (usabilidad, seguridad, compatibilidad, instalación, rendimiento y recuperación), desde la raíz: `npm test`. Tras un cambio menor, `npm run test:sanity` corre solo las pruebas de lo que cambió, y el humo.
+
 Mientras se trabaja basta con lo cercano al cambio (`npx vitest run <archivo>`, en el backend con `--project unit` o `--project integration`). Lo completo, antes de decir que algo está listo.
 
 ## Fallos que no son del código

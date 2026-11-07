@@ -31,3 +31,6 @@ backend/prisma/migrations/.env
 
 # Claude Code: personal settings (the shared ones are .claude/settings.json)
 .claude/settings.local.json
+
+# Summary of the last full test run (npm test)
+reports/

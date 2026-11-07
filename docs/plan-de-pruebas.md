@@ -4,8 +4,8 @@ Sistema de gestión de torneos de ajedrez universitarios · Práctica de Ingenie
 
 | Campo   | Valor                        |
 | ------- | ---------------------------- |
-| Versión | 2.0                          |
-| Fecha   | 5 de noviembre de 2026       |
+| Versión | 2.1                          |
+| Fecha   | 6 de noviembre de 2026       |
 | Autor   | Nilson Aldair Molina Rengifo |
 | Estado  | Ejecutado, salvo la UAT P35  |
 
@@ -25,6 +25,7 @@ Sistema de gestión de torneos de ajedrez universitarios · Práctica de Ingenie
    - 8.2 [Pruebas de integración](#82-pruebas-de-integración)
    - 8.3 [Pruebas de sistema](#83-pruebas-de-sistema)
    - 8.4 [Pruebas de aceptación](#84-pruebas-de-aceptación)
+   - 8.5 [Todos los tipos de prueba, con un comando](#85-todos-los-tipos-de-prueba-con-un-comando)
 9. [Ejecución de casos de prueba](#9-ejecución-de-casos-de-prueba)
 10. [Criterios de aceptación](#10-criterios-de-aceptación)
 11. [Criterios de suspensión](#11-criterios-de-suspensión)
@@ -41,7 +42,7 @@ Sistema de gestión de torneos de ajedrez universitarios · Práctica de Ingenie
 
 Este documento define cómo se verifica y se valida Torre Central Hub. Para cada nivel (unitario, integración, sistema y aceptación) dice qué se prueba, con qué casos y con qué criterio se aprueba. También registra el resultado de la ejecución.
 
-Parte del plan textual del documento de sustentación (casos P01–P35, requerimientos RF01–RF23, reglas RN-01 a RN-11 y requerimientos no funcionales RNF01–RNF08). Cada caso apunta a la prueba automática o al procedimiento manual que lo comprueba, así que cualquier resultado de este documento se puede repetir con un comando.
+Parte del plan textual del documento de sustentación (casos P01–P35, requerimientos RF01–RF23, reglas RN-01 a RN-11 y requerimientos no funcionales RNF01–RNF08). Cada caso apunta a la prueba automática o al procedimiento manual que lo comprueba, así que cualquier resultado de este documento se puede repetir con un comando. Todas las suites automáticas, de todos los tipos, corren juntas con `npm test` desde la raíz del repositorio (sección 8.5).
 
 Documentos relacionados:
 
@@ -64,11 +65,15 @@ Documentos relacionados:
 
   A eso se suman las revisiones manuales del PDF contra la sala y del ambiente de producción.
 
+- **Y por tipo** (sección 8.5), con `npm test` desde la raíz: humo (6), usabilidad y accesibilidad WCAG 2.1 AA (19), seguridad desde fuera (27), compatibilidad en Firefox, WebKit, Android e iPhone (40), recuperación en el navegador (4) y, en el servidor, instalación desde cero, carga, estrés, resistencia y recuperación ante caídas de la API y de la base (29 comprobaciones).
+
 - **Resultado:** todo en verde. La cobertura del backend es 96,6 % de sentencias y 90,2 % de ramas; la del frontend, 94,2 % y 89,1 %. Los 31 casos funcionales P01–P33 dan el resultado esperado, y la regresión (P34) no encontró regresiones.
-- **Fallos encontrados por las pruebas de este plan:** tres, todos corregidos con su prueba:
+- **Rendimiento:** con 50 usuarios virtuales sin pausa, unas 1.100 peticiones por segundo con p95 de 79 ms y ningún error; la API deja de dar abasto hacia los 800 usuarios simultáneos y se recupera sola; 5 minutos de carga sostenida sin degradación ni crecimiento de memoria.
+- **Fallos encontrados por las pruebas de este plan:** cuatro, todos corregidos con su prueba:
   - la fecha de fin vacía al recargar la configuración;
   - una fecha de nacimiento del 1 de enero de 1900 rechazada en Colombia;
-  - la edad de un jugador sumaba un año el día antes de su cumpleaños.
+  - la edad de un jugador sumaba un año el día antes de su cumpleaños;
+  - el botón de idioma y el menú de usuario no se llamaban como lo que muestran (WCAG 2.5.3).
 
   Ver la sección 9.
 
@@ -76,12 +81,13 @@ Documentos relacionados:
 
 ## 3. Historial de versiones
 
-| Versión | Fecha                  | Cambio                                                                                                                          | Referencia                                 |
-| ------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| 1.0     | Agosto de 2026         | Plan textual P01–P35 y criterios de salida, en el documento de sustentación                                                     | `git show ffca031~1:docs/DOCUMENTACION.md` |
-| 1.1     | 22 de octubre de 2026  | Regresión P01–P33 con el resultado esperado ajustado a lo implementado y la prueba que comprueba cada caso                      | `docs/runbooks/regresion.md` (3c9c85d)     |
-| 1.2     | 5 de noviembre de 2026 | Ejecución de la regresión (#113), guion del ensayo de la UAT (#131) y acta P35 (#114)                                           | ad0e8ce, d4084c5, 84042c3                  |
-| 2.0     | 5 de noviembre de 2026 | Este documento: plan completo por niveles, casos de caja negra con su prueba, manual de usuario validado y ejecución con cifras | Este commit                                |
+| Versión | Fecha                  | Cambio                                                                                                                                                                                                       | Referencia                                 |
+| ------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
+| 1.0     | Agosto de 2026         | Plan textual P01–P35 y criterios de salida, en el documento de sustentación                                                                                                                                  | `git show ffca031~1:docs/DOCUMENTACION.md` |
+| 1.1     | 22 de octubre de 2026  | Regresión P01–P33 con el resultado esperado ajustado a lo implementado y la prueba que comprueba cada caso                                                                                                   | `docs/runbooks/regresion.md` (3c9c85d)     |
+| 1.2     | 5 de noviembre de 2026 | Ejecución de la regresión (#113), guion del ensayo de la UAT (#131) y acta P35 (#114)                                                                                                                        | ad0e8ce, d4084c5, 84042c3                  |
+| 2.0     | 5 de noviembre de 2026 | Este documento: plan completo por niveles, casos de caja negra con su prueba, manual de usuario validado y ejecución con cifras                                                                              | 7c2c5ad                                    |
+| 2.1     | 6 de noviembre de 2026 | Todos los tipos de prueba con su suite y un comando único (`npm test`): humo, cordura, usabilidad, seguridad, compatibilidad, instalación, carga, estrés, resistencia y recuperación; clasificación por caja | Este cambio                                |
 
 ## 4. Información del proyecto
 
@@ -111,18 +117,19 @@ Documentos relacionados:
   - revancha autorizada;
   - avisos de ronda por correo;
   - cierre automático por fecha.
-- Requerimientos no funcionales que se pueden verificar con una prueba: seguridad (RNF01), integridad transaccional (RNF02), disponibilidad para usuarios autorizados (RNF04), mantenibilidad (RNF05), usabilidad por rol (RNF07) y trazabilidad (RNF08).
+- Requerimientos no funcionales que se pueden verificar con una prueba: seguridad (RNF01), integridad transaccional (RNF02), rendimiento (RNF03), disponibilidad para usuarios autorizados (RNF04), mantenibilidad (RNF05), capacidad y estabilidad sostenida (RNF06), usabilidad por rol (RNF07) y trazabilidad (RNF08).
+- Recuperación ante caídas, compatibilidad con otros navegadores y teléfonos, e instalación desde cero (sección 8.5).
 - El ambiente de producción, además del local y del CI.
 
 **Fuera del alcance:**
 
-| Qué                                          | Por qué                                                                                                                                     |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cálculo de rating y desempate ARO            | Fuera del alcance del producto: ARO necesita ratings (README, "Decisiones de alcance")                                                      |
-| Conformidad completa con FIDE C.04.3         | El motor es un Dutch simplificado a propósito ([decisión 014](decisions/014-motor-suizo-simplificado.md)); se prueban sus reglas, no C.04.3 |
-| Pruebas de carga y estrés (RNF03, RNF06)     | El volumen de un torneo universitario (decenas de jugadores) no las justifica; se midieron tiempos de respuesta en producción (sección 9)   |
-| Envío real de correo en producción           | Producción no tiene proveedor de correo (#130); el envío se prueba con un transporte simulado                                               |
-| Navegadores distintos de Chromium en los e2e | Los e2e corren en Chromium; la aplicación usa solo estándares web                                                                           |
+| Qué                                             | Por qué                                                                                                                                     |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cálculo de rating y desempate ARO               | Fuera del alcance del producto: ARO necesita ratings (README, "Decisiones de alcance")                                                      |
+| Conformidad completa con FIDE C.04.3            | El motor es un Dutch simplificado a propósito ([decisión 014](decisions/014-motor-suizo-simplificado.md)); se prueban sus reglas, no C.04.3 |
+| Envío real de correo en producción              | Producción no tiene proveedor de correo (#130); el envío se prueba con un transporte simulado                                               |
+| Carga, estrés y resistencia en producción       | Se miden en local contra la API real (sección 8.5): sobre el plan gratuito de Render solo medirían ese plan, y lo saturarían para todos     |
+| Los flujos que cambian datos, en cada navegador | En Firefox, WebKit y los teléfonos corren el humo y los flujos de solo lectura; los que cambian datos, en Chromium (sección 8.5)            |
 
 ## 6. Elementos de las pruebas
 
@@ -375,6 +382,70 @@ La prueba de aceptación de usuario (UAT, caso P35) la hacen las personas que va
 
 **Regla de decisión:** se acepta si los criterios CA-01 a CA-11 pasan y no queda ningún hallazgo crítico ni alto que bloquee el flujo principal. CA-12 se puede omitir con su motivo mientras producción no tenga correo.
 
+**Alfa y beta.** El ensayo técnico automático (E2E-09, `npm run test:acceptance`) y el ensayo con incidentes en el entorno del equipo son la prueba **alfa**. La aceptación P35, en producción y con los actores reales del torneo, es la prueba **beta**. La beta no se automatiza: lo que mide es si las personas pueden usar el sistema.
+
+### 8.5 Todos los tipos de prueba, con un comando
+
+Desde la raíz del repositorio, `npm test` corre todas las suites automáticas, una tras otra, y sigue aunque una falle. Al final imprime un resumen, lo guarda en `reports/resumen-pruebas.md` y sale con código 1 si alguna falló. Necesita lo mismo que el CI: PostgreSQL y `backend/.env` ([`runbooks/validar-ci.md`](runbooks/validar-ci.md)). La primera vez, `npm run setup` instala las dependencias de los dos proyectos y el Chromium de Playwright.
+
+| Comando                      | Qué corre                                                                    |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| `npm test`                   | Todas las suites, salvo cordura y aceptación alfa (las dos ya están adentro) |
+| `npm test -- security load`  | Solo esas suites o grupos                                                    |
+| `npm run test:list`          | La lista de suites y grupos, con su nivel, tipo y caja                       |
+| `npm run test:<suite>`       | Una suite (`test:smoke`, `test:security`, `test:stress`…)                    |
+| `npm run test:regression`    | Regresión (P34): unitarias, integración, humo y sistema                      |
+| `npm run test:functional`    | Las funcionales                                                              |
+| `npm run test:nonfunctional` | Las no funcionales                                                           |
+| `npm run test:performance`   | Carga, estrés y resistencia                                                  |
+
+**1. Por nivel**, en el orden en que se ejecutan:
+
+| Nivel       | Suite (`npm run test:…`)                    | Dónde                                                   |
+| ----------- | ------------------------------------------- | ------------------------------------------------------- |
+| Unitario    | `unit`, `coverage`                          | `*.test.ts` de los dos proyectos (sección 8.1)          |
+| Integración | `integration`, `coverage`                   | `backend/src/**/*.int.test.ts` (sección 8.2)            |
+| Sistema     | `smoke`, `system` y las no funcionales      | `frontend/e2e/`, `backend/src/testing/` (sección 8.3)   |
+| Aceptación  | `acceptance` (alfa); P35 con usuarios, beta | `uatRehearsal.spec.ts`; `entrega/acta-uat-p35.md` (8.4) |
+
+**2. Por objetivo.** Las funcionales responden si el sistema hace lo que debe; las no funcionales, qué tan bien lo hace.
+
+| Tipo                       | Suite          | Qué comprueba                                                                                                                                                                                   | Archivo                                |
+| -------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Humo                       | `smoke`        | La API responde por el origen de la app; la portada carga sin errores en la consola; se inicia sesión; una contraseña errada se rechaza; una página privada pide sesión; la ruta inexistente    | `e2e/smoke/smoke.spec.ts`              |
+| Cordura                    | `sanity`       | Tras un cambio menor: solo las pruebas que dependen de los archivos cambiados (`vitest --changed`), y después el humo. Con `SANITY_BASE=main`, lo cambiado desde `main`                         | `scripts/test-all.mjs`                 |
+| Regresión                  | `regression`   | Que lo que funcionaba siga funcionando: toda la suite funcional automática (P34)                                                                                                                | `runbooks/regresion.md`                |
+| Interfaz y usabilidad      | `usability`    | WCAG 2.1 AA con axe en las pantallas públicas y en las de cada rol, en tema claro y oscuro; inicio de sesión solo con teclado; foco visible; sin desborde horizontal a 375 px; español e inglés | `e2e/usability/usability.spec.ts`      |
+| Extremo a extremo          | `system`       | Los flujos completos de cada rol en el navegador, contra la API y la base reales (E2E-01 a E2E-09)                                                                                              | `e2e/*.spec.ts`                        |
+| Rendimiento: carga         | `load`         | 50 usuarios virtuales sin pausa durante 30 s: todo 2xx, p95 ≤ 500 ms, p99 ≤ 1,5 s, al menos 50 peticiones por segundo                                                                           | `backend/src/testing/loadTest.ts`      |
+| Rendimiento: estrés        | `stress`       | De 25 a 800 usuarios, 10 s por escalón: dónde deja de dar abasto (p95 > 1 s o más de 1 % de errores), que aguante al menos 100 y que se recupere sola al bajar la carga                         | `backend/src/testing/loadTest.ts`      |
+| Rendimiento: resistencia   | `endurance`    | 30 usuarios durante 5 minutos (`ENDURANCE_MINUTES`): ningún error, el p95 final no pasa del doble del inicial y el montículo de memoria no crece más de 50 MB                                   | `backend/src/testing/loadTest.ts`      |
+| Seguridad                  | `security`     | Ver NF-10                                                                                                                                                                                       | `e2e/security/security.spec.ts`        |
+| Compatibilidad             | `compat`       | El humo, la sesión y las páginas públicas en Firefox, WebKit (el motor de Safari), un Android (Pixel 7) y un iPhone 14                                                                          | `playwright.config.ts`                 |
+| Instalación/desinstalación | `installation` | En una base vacía: las 20 migraciones desde la primera, `bootstrap` con el primer administrador, la API arranca y se trabaja; redesplegar no cambia nada; desinstalar no deja rastro            | `backend/src/testing/installation.ts`  |
+| Recuperación               | `recovery`     | Ver NF-14                                                                                                                                                                                       | `testing/recovery.ts`, `e2e/recovery/` |
+
+Los usuarios virtuales de rendimiento piden una cosa tras otra, sin pausa: 50 de ellos son mucho más tráfico que 50 personas mirando la sala. Cada petición llega con una dirección propia (`X-Forwarded-For`, como detrás de Vercel), para medir la API y no los límites por dirección, que prueba la suite de seguridad.
+
+**Los requerimientos no funcionales que agregan estas suites**, a continuación de NF-01 a NF-09 (sección 8.3):
+
+| ID    | RNF          | Qué se verifica                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NF-10 | RNF01        | Desde fuera, como lo intentaría un atacante: cabeceras (CSP sin scripts en línea, marcos, `nosniff`, HSTS); CORS; cada ruta privada sin sesión, 401; cookie falsificada o alterada, 401; CSRF desde otro sitio, 403; mismo mensaje para cuenta inexistente y contraseña errada; 429 al intento 11; un jugador no llega a lo del organizador ni del administrador; asignación masiva en el perfil; inyección SQL; ids que no son UUID; cuerpos de 2 MB; XSS guardado en el nombre de un torneo; ningún correo ajeno en lo que descarga una página pública o la de un jugador |
+| NF-11 | RNF03        | Carga y estrés (ver arriba)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| NF-12 | RNF06        | Resistencia (ver arriba)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| NF-13 | RNF07        | Usabilidad y accesibilidad (ver arriba)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| NF-14 | RNF02, RNF04 | Recuperación: la API muerta de golpe (sin apagado ordenado) vuelve en menos de 30 s, sin perder lo guardado y con las sesiones vigentes; si la base se cae, responde error y no datos falsos, el proceso sigue vivo y se reconecta sola cuando la base vuelve; en el navegador, la API caída o con 503 se muestra como fallo con "Reintentar", y una conexión que se corta no cierra la sesión                                                                                                                                                                              |
+| NF-15 | RNF04        | Compatibilidad e instalación (ver arriba)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+
+**3. Por acceso al código:**
+
+| Caja   | Qué sabe la prueba del interior                               | Suites                                                                                                                                                                                 |
+| ------ | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Blanca | La lógica y la estructura del código                          | `unit` (servicios con Prisma simulado, motor suizo, cálculo de clasificación) y `coverage`, que mide qué sentencias y ramas recorren las pruebas; `static` (lint y tipos)              |
+| Negra  | Solo los requisitos: entradas y salidas                       | `validators/blackBox.test.ts` (sección 8.1.1), `smoke`, `system`, `usability`, `compat`, `acceptance`                                                                                  |
+| Gris   | Una parte del interior: la base, los límites, los middlewares | `integration` (consulta la base después de cada acción), `security` (conoce el umbral de intentos y el anti-CSRF), `load`, `stress`, `endurance`, `recovery`, `installation`, `sanity` |
+
 ## 9. Ejecución casos de prueba
 
 **Ejecución del 5 de noviembre de 2026**, sobre el commit `c789f1f` de `main` más los archivos de este plan, que solo agregan pruebas y documentación.
@@ -412,15 +483,58 @@ La prueba de aceptación de usuario (UAT, caso P35) la hacen las personas que va
 
 En el plan gratuito de Render la API se duerme sin tráfico: la primera petición tarda cerca de un minuto. No cuenta en la muestra de NF-05.
 
+**Ejecución por tipo (sección 8.5), del 6 de noviembre de 2026**, con `npm test` desde la raíz, en el equipo de desarrollo (Windows 11, Node 26, PostgreSQL local), sobre `7c2c5ad` más este cambio. Las 14 suites, en 12 min 54 s:
+
+| Suite          | Tipo                         | Pruebas o comprobaciones                           | Resultado           |
+| -------------- | ---------------------------- | -------------------------------------------------- | ------------------- |
+| `static`       | Análisis estático            | Lint, tipos, formato y build de los dos            | Aprobado            |
+| `unit`         | Unitarias                    | 635 + 815                                          | Aprobado            |
+| `integration`  | Integración                  | 109                                                | Aprobado            |
+| `coverage`     | Cobertura (caja blanca)      | 744, sobre los umbrales                            | Aprobado            |
+| `smoke`        | Humo                         | 6                                                  | Aprobado            |
+| `system`       | Sistema / E2E (y alfa)       | 13                                                 | Aprobado            |
+| `usability`    | Interfaz y usabilidad        | 19 (21 pantallas con axe, en claro y oscuro)       | Aprobado            |
+| `security`     | Seguridad                    | 27, más `npm audit` de los dos                     | Aprobado            |
+| `compat`       | Compatibilidad               | 40 (10 en cada uno de 4 navegadores)               | Aprobado            |
+| `installation` | Instalación y desinstalación | 10 comprobaciones                                  | Aprobado            |
+| `load`         | Carga                        | 4 comprobaciones                                   | Aprobado            |
+| `stress`       | Estrés                       | 3 comprobaciones                                   | Aprobado            |
+| `endurance`    | Resistencia                  | 3 comprobaciones                                   | Aprobado tras OB-01 |
+| `recovery`     | Recuperación                 | 9 comprobaciones en el servidor, 4 en el navegador | Aprobado            |
+
+**Cifras de rendimiento** (la API real en un proceso propio, contra la base del seed):
+
+| Prueba             | Usuarios virtuales | Peticiones por segundo | p50    | p95        | p99      | Errores                        |
+| ------------------ | ------------------ | ---------------------- | ------ | ---------- | -------- | ------------------------------ |
+| Carga, 30 s        | 50                 | 1.065                  | 45 ms  | 79 ms      | 87 ms    | 0                              |
+| Estrés             | 100                | 1.007                  | 95 ms  | 167 ms     | 200 ms   | 0                              |
+| Estrés             | 400                | 1.065                  | 324 ms | 621 ms     | 630 ms   | 0                              |
+| Estrés             | 800                | 1.069                  | 651 ms | 1.273 ms   | 1.286 ms | 66 (0,6 %): deja de dar abasto |
+| Tras estrés        | 10                 | 1.169                  | 8 ms   | 14 ms      | 16 ms    | 0: se recupera sola            |
+| Resistencia, 5 min | 30                 | 1.004 → 1.127          | 25 ms  | 50 → 44 ms | 48 ms    | 0; memoria 42 → 42 MB          |
+
+El techo de unas 1.100 peticiones por segundo es el de un solo proceso de Node: con más usuarios no sube el caudal, sube la espera. Para un torneo universitario, de decenas de personas que refrescan una página, hay margen de sobra.
+
+**Recuperación:** la API muerta de golpe vuelve en 0,56 s, sin perder lo guardado y con las sesiones vigentes; sin base de datos responde 500 sin que el proceso caiga, y se reconecta en 32 ms cuando la base vuelve.
+
+**Observaciones** (no son defectos del sistema):
+
+| ID    | Encontrado por | Observación                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ----- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OB-01 | Resistencia    | En la primera corrida el montículo creció de 50 a 122 MB en 5 minutos. La prueba mandaba cada petición desde una dirección nueva (330.000), y los límites de peticiones guardan en memoria un contador por dirección durante su ventana de 15 minutos. Con un campus de 4.000 direcciones, la memoria queda plana. Detrás de Vercel la dirección no se puede inventar, así que la memoria crece con los clientes reales y se libera al cerrar la ventana |
+| OB-02 | Compatibilidad | WebKit en Windows no implementa `SameSite` y reporta todas las cookies como `None`. Ahí la prueba se apoya en la cabecera `Set-Cookie`, que en los cuatro navegadores pide `SameSite=Lax`                                                                                                                                                                                                                                                                |
+| OB-03 | Usabilidad     | axe marcaba falta de contraste en la tarjeta animada de la portada: la medía a mitad de su animación de entrada. Se mide con movimiento reducido, es decir, en reposo                                                                                                                                                                                                                                                                                    |
+
 **Defectos encontrados durante la ejecución:**
 
-| ID    | Encontrado por                      | Defecto                                                                 | Severidad | Causa                                                                                                    | Corrección          |
-| ----- | ----------------------------------- | ----------------------------------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------- | ------------------- |
-| DF-01 | E2E-09 (ensayo técnico de la UAT)   | La fecha de fin aparecía vacía al recargar la configuración del torneo  | Alta      | La API envía la fecha con hora, y el campo solo acepta el día                                            | 9a83ae9, con prueba |
-| DF-02 | CB-18 (caja negra, valor límite)    | Una fecha de nacimiento del 1 de enero de 1900 se rechazaba en Colombia | Baja      | El año se leía en la zona horaria del servidor: en UTC-5 esa fecha cae en 1899                           | 977c9ee, con prueba |
-| DF-03 | Revisión del mismo patrón que DF-02 | La edad de un jugador sumaba un año el día antes de su cumpleaños       | Media     | La fecha de nacimiento y "hoy" se leían en la zona del servidor, no como días del calendario de Colombia | c789f1f, con prueba |
+| ID    | Encontrado por                      | Defecto                                                                                                                                                                                      | Severidad | Causa                                                                                                    | Corrección          |
+| ----- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------------- | ------------------- |
+| DF-01 | E2E-09 (ensayo técnico de la UAT)   | La fecha de fin aparecía vacía al recargar la configuración del torneo                                                                                                                       | Alta      | La API envía la fecha con hora, y el campo solo acepta el día                                            | 9a83ae9, con prueba |
+| DF-02 | CB-18 (caja negra, valor límite)    | Una fecha de nacimiento del 1 de enero de 1900 se rechazaba en Colombia                                                                                                                      | Baja      | El año se leía en la zona horaria del servidor: en UTC-5 esa fecha cae en 1899                           | 977c9ee, con prueba |
+| DF-03 | Revisión del mismo patrón que DF-02 | La edad de un jugador sumaba un año el día antes de su cumpleaños                                                                                                                            | Media     | La fecha de nacimiento y "hoy" se leían en la zona del servidor, no como días del calendario de Colombia | c789f1f, con prueba |
+| DF-04 | Usabilidad (axe, WCAG 2.5.3)        | El botón de idioma se anunciaba "Switch to English" aunque muestra "ES", y el menú de usuario "Menú de …" aunque muestra las iniciales: quien maneja la voz dice lo que ve y no lo encuentra | Media     | El nombre accesible no contenía el texto visible                                                         | 2417d4f, con prueba |
 
-Los tres quedaron corregidos, cada uno con una prueba que falló antes de la corrección y pasa después. Ningún defecto queda abierto.
+Los cuatro quedaron corregidos, cada uno con una prueba que falló antes de la corrección y pasa después. Ningún defecto queda abierto.
 
 **Conclusión de la ejecución:** se cumplen los criterios de salida 1, 2, 4, 5 y 6 de la sección 10. Falta el 3 (la UAT P35).
 
@@ -480,17 +594,19 @@ Las pruebas se reanudan cuando:
 
 ### 13.2 Herramientas de pruebas
 
-| Herramienta                  | Versión         | Uso                                                                             |
-| ---------------------------- | --------------- | ------------------------------------------------------------------------------- |
-| Vitest                       | 5.0.5           | Pruebas unitarias y de integración, con cobertura (`@vitest/coverage-v8` 5.0.5) |
-| Supertest                    | 7.2             | Peticiones HTTP a la API en las pruebas de rutas e integración                  |
-| Vue Test Utils               | 2.5             | Montaje de componentes y vistas                                                 |
-| Playwright                   | 1.63.0          | Pruebas de sistema en navegador (e2e)                                           |
-| Prisma                       | 7.10.0          | Migraciones de la base de prueba                                                |
-| ESLint, Prettier, TypeScript | 10.11, 3.9, 6.0 | Análisis estático, formato y tipos                                              |
-| `npm audit`                  | —               | Vulnerabilidades de dependencias                                                |
-| GitHub Actions               | —               | Ejecución de todas las compuertas en cada commit                                |
-| curl                         | —               | Verificación del ambiente de producción y muestra de tiempos de respuesta       |
+| Herramienta                       | Versión         | Uso                                                                             |
+| --------------------------------- | --------------- | ------------------------------------------------------------------------------- |
+| Vitest                            | 5.0.5           | Pruebas unitarias y de integración, con cobertura (`@vitest/coverage-v8` 5.0.5) |
+| Supertest                         | 7.2             | Peticiones HTTP a la API en las pruebas de rutas e integración                  |
+| Vue Test Utils                    | 2.5             | Montaje de componentes y vistas                                                 |
+| Playwright                        | 1.63.0          | Pruebas de sistema en navegador: Chromium, Firefox, WebKit y teléfonos emulados |
+| axe-core (`@axe-core/playwright`) | 4.14            | Revisión automática de accesibilidad WCAG 2.1 AA                                |
+| `fetch` de Node, `node:net`       | Node 22         | Generador de carga y proxy TCP para cortar la base (sin dependencias nuevas)    |
+| Prisma                            | 7.10.0          | Migraciones de la base de prueba                                                |
+| ESLint, Prettier, TypeScript      | 10.11, 3.9, 6.0 | Análisis estático, formato y tipos                                              |
+| `npm audit`                       | —               | Vulnerabilidades de dependencias                                                |
+| GitHub Actions                    | —               | Ejecución de todas las compuertas en cada commit                                |
+| curl                              | —               | Verificación del ambiente de producción y muestra de tiempos de respuesta       |
 
 Las versiones exactas de las demás dependencias están en `package-lock.json` de cada proyecto.
 
@@ -538,14 +654,15 @@ En la ejecución de la sección 9 pasó con todos los textos y rutas del manual.
 **Análisis**
 
 - **Trazabilidad completa.** Cada requerimiento (RF01–RF23) y cada regla (RN-01 a RN-11) llevan a uno o más casos de prueba (sección 7), y cada caso a una prueba automática que se puede correr con un comando. Las desviaciones del documento de sustentación no se esconden en el resultado esperado: están en `runbooks/regresion.md` con su porqué. Son ARO, la visibilidad de las estadísticas, el consentimiento para el entrenador, los retiros en los desempates, el motor simplificado y la política de datos.
-- **Las pruebas encontraron defectos reales.** El ensayo técnico de la UAT encontró la fecha de fin vacía (DF-01), y los valores límite de caja negra, la fecha de 1900 en la zona horaria de Colombia (DF-02). Revisar el mismo patrón llevó a la edad mal calculada (DF-03). DF-02 solo aparecía en la máquina local y no en el CI, que corre en UTC. Desde esta ejecución, las pruebas unitarias corren en la hora de Colombia en cualquier máquina.
+- **Las pruebas encontraron defectos reales.** El ensayo técnico de la UAT encontró la fecha de fin vacía (DF-01), y los valores límite de caja negra, la fecha de 1900 en la zona horaria de Colombia (DF-02). Revisar el mismo patrón llevó a la edad mal calculada (DF-03). DF-02 solo aparecía en la máquina local y no en el CI, que corre en UTC. Desde esta ejecución, las pruebas unitarias corren en la hora de Colombia en cualquier máquina. La revisión de accesibilidad con axe encontró que dos botones no se llamaban como lo que muestran (DF-04).
 - **Lo que solo la base puede probar, se prueba contra la base.** Las carreras entre peticiones, las restricciones `CHECK` y la privacidad se prueban contra PostgreSQL real, no con simulaciones. Esas pruebas sostienen la regla de que todo cambio a un torneo pasa bajo bloqueo ([decisión 004](decisions/004-cambios-a-un-torneo-bajo-bloqueo.md)).
 - **Cobertura alta y que no baja.** 96,6 % de sentencias en el backend y 94,2 % en el frontend, con umbrales que el CI exige y que solo se pueden subir.
-- **Límites conocidos.** No hay pruebas de carga: para el volumen de un torneo universitario se midieron tiempos de respuesta en producción, por debajo de un segundo con la API despierta. Los e2e corren solo en Chromium. El envío real de correo no se puede probar en producción mientras no haya proveedor.
+- **Todos los tipos, con un comando.** Funcionales y no funcionales, de caja blanca, negra y gris, corren con `npm test` desde la raíz y dejan su resumen en `reports/resumen-pruebas.md` (sección 8.5). El CI corre en cada commit las que no dependen de la velocidad de la máquina: humo, usabilidad, seguridad, recuperación, instalación y carga.
+- **Límites conocidos.** Carga, estrés y resistencia se miden en local, no en el plan gratuito de Render, que solo mediría ese plan. En Firefox, WebKit y los teléfonos corren el humo y los flujos de solo lectura; los que cambian datos, en Chromium. La revisión automática de accesibilidad encuentra cerca de la mitad de los problemas: el resto es de la UAT. El envío real de correo no se puede probar en producción mientras no haya proveedor.
 
 **Conclusiones**
 
 1. El sistema cumple los criterios de salida que dependen del equipo: los casos funcionales, la regresión sin fallos, cero defectos críticos abiertos, trazabilidad completa y verificación en producción.
 2. La aceptación P35 es el único criterio pendiente. Necesita al organizador, al árbitro y a los estudiantes. El acta, el guion del ensayo, el manual y las cuentas de demostración están listos.
-3. Las pruebas automáticas son la red de seguridad del código congelado: cualquier corrección que bloquee la aceptación tiene que pasar las mismas 1.572 pruebas antes de llegar a producción.
+3. Las pruebas automáticas son la red de seguridad del código congelado: cualquier corrección que bloquee la aceptación tiene que pasar las mismas suites (`npm test`) antes de llegar a producción.
 4. Recomendación para la sesión de aceptación: hacer antes el ensayo (#131), configurar el correo en Render (#130) para poder evaluar CA-12, y anunciar en las bases del torneo el motor suizo simplificado.

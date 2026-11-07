@@ -1,0 +1,34 @@
+{
+  "name": "torre-central-hub",
+  "private": true,
+  "description": "Torre Central Hub: the scripts that drive both projects (backend/, frontend/) at once.",
+  "scripts": {
+    "setup": "npm ci --prefix backend && npm ci --prefix frontend && cd frontend && npx playwright install chromium",
+    "test": "node scripts/test-all.mjs",
+    "test:list": "node scripts/test-all.mjs --list",
+    "test:static": "node scripts/test-all.mjs static",
+    "test:unit": "node scripts/test-all.mjs unit",
+    "test:integration": "node scripts/test-all.mjs integration",
+    "test:coverage": "node scripts/test-all.mjs coverage",
+    "test:sanity": "node scripts/test-all.mjs sanity",
+    "test:smoke": "node scripts/test-all.mjs smoke",
+    "test:system": "node scripts/test-all.mjs system",
+    "test:e2e": "node scripts/test-all.mjs system",
+    "test:acceptance": "node scripts/test-all.mjs acceptance",
+    "test:regression": "node scripts/test-all.mjs regression",
+    "test:functional": "node scripts/test-all.mjs functional",
+    "test:usability": "node scripts/test-all.mjs usability",
+    "test:security": "node scripts/test-all.mjs security",
+    "test:compat": "node scripts/test-all.mjs compat",
+    "test:installation": "node scripts/test-all.mjs installation",
+    "test:performance": "node scripts/test-all.mjs performance",
+    "test:load": "node scripts/test-all.mjs load",
+    "test:stress": "node scripts/test-all.mjs stress",
+    "test:endurance": "node scripts/test-all.mjs endurance",
+    "test:recovery": "node scripts/test-all.mjs recovery",
+    "test:nonfunctional": "node scripts/test-all.mjs nonfunctional"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

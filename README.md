@@ -192,7 +192,20 @@ Agregar un control nuevo requiere tres pasos, sin tocar rutas ni controladores: 
 
 ## Pruebas y calidad
 
-Cada proyecto se prueba y se revisa por separado, desde su carpeta:
+Todo el plan de pruebas, desde la raíz y con un solo comando (necesita PostgreSQL y `backend/.env`):
+
+```bash
+npm run setup          # la primera vez: dependencias de los dos proyectos y Chromium
+npm test               # todas las suites: estática, unitarias, integración, humo, sistema,
+                       # usabilidad, seguridad, compatibilidad, instalación, carga, estrés,
+                       # resistencia y recuperación; resumen en reports/resumen-pruebas.md
+npm test -- smoke security   # solo algunas
+npm run test:list      # qué hay, por nivel, tipo y caja
+```
+
+Qué prueba cada suite y con qué criterio: [`docs/plan-de-pruebas.md`](./docs/plan-de-pruebas.md#85-todos-los-tipos-de-prueba-con-un-comando).
+
+Cada proyecto se prueba y se revisa también por separado, desde su carpeta:
 
 ```bash
 npm test               # pruebas (Vitest)
