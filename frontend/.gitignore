@@ -8,3 +8,4 @@ playwright-report/
 
 # Local design references (style analyses used while restyling), not part of the app.
 DESIGN*.md
+.impeccable/

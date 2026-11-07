@@ -160,7 +160,7 @@ const year = new Date().getFullYear();
         class="defer-render pane-ink relative mx-3 overflow-hidden rounded-[28px] py-24 [--defer-height:32rem] text-center sm:mx-4 sm:py-32 lg:py-40"
       >
         <span
-          class="pointer-events-none absolute -right-10 -bottom-24 font-display text-[20rem] leading-none text-tile-ink-accent/10 select-none sm:-bottom-32 sm:text-[30rem] lg:right-[5%]"
+          class="pointer-events-none absolute -right-10 -bottom-24 font-display text-[clamp(20rem,50vw,30rem)] leading-none text-tile-ink-accent/10 select-none sm:-bottom-32 lg:right-[5%]"
           aria-hidden="true"
         >
           ♜

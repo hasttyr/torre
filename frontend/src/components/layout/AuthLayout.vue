@@ -30,7 +30,7 @@ withDefaults(defineProps<{ title: string; subtitle?: string; quote?: string; quo
           aria-hidden="true"
         >
           <span
-            class="pointer-events-none absolute top-10 right-10 font-display text-[12rem] leading-none text-tile-ink-accent select-none lg:top-12 lg:right-12 lg:text-[14rem]"
+            class="pointer-events-none absolute top-10 right-10 font-display text-[clamp(12rem,18vw,14rem)] leading-none text-tile-ink-accent select-none lg:top-12 lg:right-12"
             >♞</span
           >
           <blockquote

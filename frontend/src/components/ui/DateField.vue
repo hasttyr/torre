@@ -49,8 +49,8 @@ const props = withDefaults(
 .dp--main.dp--theme-light,
 .dp--main.dp--theme-dark {
   --dp-font-family: var(--font-sans);
-  --dp-border-radius: 8px;
-  --dp-cell-border-radius: 8px;
+  --dp-border-radius: 10px;
+  --dp-cell-border-radius: 10px;
 
   --dp-background-color: var(--surface-2);
   --dp-text-color: var(--text);
@@ -78,7 +78,7 @@ const props = withDefaults(
   color: var(--text);
   background: var(--surface-2);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 0.7rem 0.85rem 0.7rem 2.4rem;
 }
 
