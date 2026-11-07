@@ -46,7 +46,8 @@ describe("LazyUserMenu", () => {
   it("shows the avatar at once, and loads the real menu only once the browser is idle", async () => {
     await mountLazyMenu();
     expect(avatar().textContent?.trim()).toBe("AT");
-    expect(avatar().getAttribute("aria-label")).toContain("Ana Torres");
+    // Named by the initials it shows first (WCAG 2.5.3), like the real menu.
+    expect(avatar().getAttribute("aria-label")).toBe("AT, menú de Ana Torres");
     await settle();
     expect(realMenuLoaded()).toBe(false);
 

@@ -48,6 +48,14 @@ describe("UserMenu", () => {
     vi.clearAllMocks();
   });
 
+  // WCAG 2.5.3 (label in name): the avatar shows the initials, so its name starts with them.
+  it("is named starting with the initials it shows", async () => {
+    const { trigger } = await mountMenu();
+
+    expect(trigger.text()).toBe("AT");
+    expect(trigger.attributes("aria-label")).toBe("AT, menú de Ana Torres");
+  });
+
   it("signs out for good: the server ends the session and the app starts over from the home page", async () => {
     const { trigger } = await mountMenu();
     await trigger.trigger("click");

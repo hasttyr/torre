@@ -95,7 +95,7 @@
     "sections": "Secciones"
   },
   "userMenu": {
-    "menuAria": "Menú de {name}",
+    "menuAria": "{initials}, menú de {name}",
     "theme": "Tema",
     "light": "Claro",
     "dark": "Oscuro",

@@ -11,6 +11,14 @@ describe("LocaleToggle", () => {
     setActivePinia(createPinia());
   });
 
+  // WCAG 2.5.3 (label in name): someone using voice control says what they see.
+  it("is named starting with the code it shows, then what it does", () => {
+    const button = mount(LocaleToggle, { global: { plugins: [i18n] } }).get("button");
+
+    expect(button.text()).toBe("ES");
+    expect(button.attributes("aria-label")).toBe("ES, Switch to English");
+  });
+
   it("tells the user when the language couldn't be switched", async () => {
     const wrapper = mount(LocaleToggle, { global: { plugins: [i18n] } });
     expect(wrapper.find("[role='alert']").exists()).toBe(false);

@@ -18,7 +18,7 @@ test("the session is a cookie the page's scripts can't read", async ({ signInAs 
 
   // A reload keeps the user signed in: the browser still has the cookie.
   await page.reload();
-  await expect(page.getByRole("button", { name: /^Menú de / })).toBeVisible();
+  await expect(page.getByRole("button", { name: /, menú de / })).toBeVisible();
 });
 
 test("signing out ends the session on the server, not just in this browser", async ({ signInAs }) => {
@@ -26,7 +26,7 @@ test("signing out ends the session on the server, not just in this browser", asy
   const context = page.context();
   const session = (await context.cookies()).find((cookie) => cookie.name === SESSION_COOKIE)!;
 
-  await page.getByRole("button", { name: /^Menú de / }).click();
+  await page.getByRole("button", { name: /, menú de / }).click();
   await page.getByRole("menuitem", { name: "Cerrar sesión" }).click();
   await page.waitForURL((url) => url.pathname === "/");
 
