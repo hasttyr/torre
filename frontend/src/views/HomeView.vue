@@ -97,7 +97,7 @@ const year = new Date().getFullYear();
         </ul>
       </section>
 
-      <section id="funciona">
+      <section id="funciona" class="defer-render [--defer-height:200rem] sm:[--defer-height:150rem]">
         <div class="container pt-8 pb-14 text-center sm:pt-16 sm:pb-20">
           <h2 class="mx-auto max-w-4xl text-[clamp(2.25rem,1.3rem+3.6vw,4.5rem)] leading-[1.02] tracking-[-0.04em]">
             {{ t("home.featuresTitle") }}
@@ -131,7 +131,7 @@ const year = new Date().getFullYear();
         </div>
       </section>
 
-      <section class="py-20 sm:py-32">
+      <section class="defer-render py-20 [--defer-height:75rem] sm:py-32 lg:[--defer-height:40rem]">
         <div class="container">
           <h2 class="max-w-3xl text-[clamp(2.25rem,1.3rem+3.6vw,4.5rem)] leading-[1.02] tracking-[-0.04em]">
             {{ t("home.stepsTitle") }}
@@ -157,7 +157,7 @@ const year = new Date().getFullYear();
       </section>
 
       <section
-        class="pane-ink relative mx-3 overflow-hidden rounded-[28px] py-24 text-center sm:mx-4 sm:py-32 lg:py-40"
+        class="defer-render pane-ink relative mx-3 overflow-hidden rounded-[28px] py-24 [--defer-height:32rem] text-center sm:mx-4 sm:py-32 lg:py-40"
       >
         <span
           class="pointer-events-none absolute -right-10 -bottom-24 font-display text-[20rem] leading-none text-tile-ink-accent/10 select-none sm:-bottom-32 sm:text-[30rem] lg:right-[5%]"
@@ -184,7 +184,9 @@ const year = new Date().getFullYear();
       </section>
     </main>
 
-    <footer class="mt-auto overflow-hidden pt-16 pb-8 sm:pt-24">
+    <footer
+      class="defer-render mt-auto overflow-hidden pt-16 pb-8 [--defer-height:40rem] sm:pt-24 sm:[--defer-height:24rem]"
+    >
       <div class="container">
         <div class="pane grid gap-10 rounded-[28px] p-8 sm:grid-cols-[1.6fr_1fr_1fr] sm:p-12">
           <p class="max-w-xs text-base">{{ t("home.footerText") }}</p>

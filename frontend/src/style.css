@@ -635,6 +635,15 @@
     @apply font-display text-[clamp(2.75rem,2.1rem+1.8vw,3.75rem)] leading-none font-semibold tracking-[-0.045em] text-text tabular-nums;
   }
 
+  /* A long page's sections far below the fold: the browser skips their
+     style, layout and paint until the reader nears them. The landing spent
+     a 330ms task (CPU at a quarter speed) laying out all of it on load. The
+     size is a placeholder until the first render, then remembered (auto). */
+  .defer-render {
+    content-visibility: auto;
+    contain-intrinsic-size: auto var(--defer-height, 60rem);
+  }
+
   /* A DataTable on a phone. Five columns don't fit 390px: scrolled sideways
      they cut the last one off mid-word. So each row stacks into a short
      card (its first cell as the title, the others as "label  value" lines
