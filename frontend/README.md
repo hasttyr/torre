@@ -108,7 +108,10 @@ Al agregar una dependencia pesada, conviene importarla de forma dinámica en la 
 
 - **Textos.** Todo texto visible sale de `i18n/locales/es.json` y `en.json` con `t("…")`, y cada clave debe existir en los dos (`i18n/locales.test.ts` lo exige). El español es el idioma por defecto.
 - **Tema e idioma.** Se guardan en `localStorage` (`torre.theme`, `torre.locale`). El tema se aplica en `index.html` antes del primer render, para que no parpadee.
-- **Estilos.** Tailwind con los tokens de color de [`style.css`](src/style.css) (`bg-bg`, `text-text-muted`, `bg-surface`, `text-accent`…), que cambian solos con el tema.
+- **Estilos.** Tailwind con los tokens de color de [`style.css`](src/style.css) (`bg-bg`, `text-text-muted`, `bg-surface`, `text-accent`…), que cambian solos con el tema, y su escala de texto con nombre (`text-micro`, `text-caption`, `text-body-sm`, `text-body`, `text-title`, `.page-title`, `.figure`): nada de tamaños `text-[…]` sueltos.
+- **Táctil y movimiento.** Con el dedo, todo control aislado mide al menos 44 px: `.tap` para enlaces y botones de texto, `pointer-coarse:` para el resto. Con "reducir movimiento" se quita lo que se desplaza (variantes `motion-reduce:`) y se conservan los fundidos.
+- **Tablas en el celular.** `DataTable` apila cada fila como una tarjeta debajo de `sm`, solo con CSS (`.data-table`), así que no hay que hacer nada por vista; la etiqueta de cada celda sale de la cabecera de su columna.
+- **Sin saltos.** El esqueleto de un widget reserva su alto real ([`widgetHeights.ts`](src/components/dashboard/widgetHeights.ts)): un widget nuevo, o uno que cambia mucho de alto, actualiza ahí su mínimo.
 - **Estado en la URL.** La pestaña, la ronda, el jugador o el club seleccionados viven en la URL con `useQueryParam`, así que sobreviven a una recarga y un enlace copiado abre la página igual.
 - **Cargas y errores.** Toda carga que falla muestra `LoadError` con un botón para reintentar, y lo que llega o cambia se anuncia a los lectores de pantalla.
 - **Acciones con consecuencias.** Se confirman con `useConfirm()` (un diálogo accesible, no `window.confirm`). Los formularios con cambios sin guardar avisan antes de salir (`useUnsavedChangesGuard`).

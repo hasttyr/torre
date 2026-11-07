@@ -2,7 +2,7 @@
 
 Cómo se usa Torre Central Hub, por rol. Los textos entre comillas angulares son los que aparecen en pantalla, tal cual. Un test (`frontend/src/manual.test.ts`) comprueba que cada uno existe en la aplicación y que cada ruta citada existe, así que si la interfaz cambia, este manual se actualiza con ella.
 
-- **Aplicación:** `https://torre-roan.vercel.app`. Funciona en el computador y en el celular.
+- **Aplicación:** `https://torre-roan.vercel.app`. Funciona en el computador y en el celular. En el celular, las tablas se muestran como tarjetas, una por fila, y sus columnas se ordenan con «Ordenar por».
 - **Cuentas de demostración** (contraseña `Test1234`): `admin@test.com`, `organizer@test.com`, `arbiter@test.com`, `coach@test.com` y `player@test.com`.
 - La primera visita del día puede tardar cerca de un minuto: el servidor gratuito se duerme sin tráfico.
 
@@ -126,7 +126,7 @@ Si ningún emparejamiento evita repetir un enfrentamiento, la pantalla lo dice. 
 ## 6. Árbitro
 
 1. «En juego» (`/en-juego`), y en el torneo «Seguir en vivo →».
-2. En «Emparejamientos», en cada mesa, el resultado: «Ganan blancas», «Tablas» o «Ganan negras». Si alguien no llegó, en «Incomparecencia»: «No se presentaron las negras», «No se presentaron las blancas» o «No se presentó ninguno». Una incomparecencia suma el punto, pero no cuenta como partida jugada.
+2. En «Emparejamientos», en cada mesa, el botón del resultado: `1 – 0` («Ganan blancas»), `½ – ½` («Tablas») o `0 – 1` («Ganan negras»). Si alguien no llegó, en el grupo de incomparecencias: `1F – 0F` («No se presentaron las negras»), `0F – 1F` («No se presentaron las blancas») o `0F – 0F` («No se presentó ninguno»). Una incomparecencia suma el punto, pero no cuenta como partida jugada.
 3. La clasificación se recalcula sola, y todos los que tienen la sala abierta la ven al instante.
 4. Para cambiar un resultado ya registrado: «Corregir», el resultado correcto, el «Motivo de la corrección (opcional)» y «Guardar corrección». La corrección queda en la bitácora.
 5. Los PDF están en la misma sala: «Clasificación (PDF)» y los de cada ronda.

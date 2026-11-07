@@ -58,9 +58,9 @@ Documentos relacionados:
 ## 2. Resumen ejecutivo
 
 - **Qué se probó:** las 23 funcionalidades del documento de sustentación, más las que se agregaron en la Fase 5 (sala pública, avisos de ronda, autoinscripción, incomparecencias, reapertura de inscripciones), en cuatro niveles.
-- **Cómo:** 1.572 pruebas automáticas en cada commit:
+- **Cómo:** 1.579 pruebas automáticas en cada commit:
   - backend: 635 unitarias y 109 de integración contra PostgreSQL real;
-  - frontend: 815 de componentes, vistas y contratos;
+  - frontend: 822 de componentes, vistas y contratos;
   - e2e: 13 escenarios de navegador contra la API real.
 
   A eso se suman las revisiones manuales del PDF contra la sala y del ambiente de producción.
@@ -535,6 +535,15 @@ El techo de unas 1.100 peticiones por segundo es el de un solo proceso de Node: 
 | DF-04 | Usabilidad (axe, WCAG 2.5.3)        | El botón de idioma se anunciaba "Switch to English" aunque muestra "ES", y el menú de usuario "Menú de …" aunque muestra las iniciales: quien maneja la voz dice lo que ve y no lo encuentra | Media     | El nombre accesible no contenía el texto visible                                                         | 2417d4f, con prueba |
 
 Los cuatro quedaron corregidos, cada uno con una prueba que falló antes de la corrección y pasa después. Ningún defecto queda abierto.
+
+**Auditoría de interfaz del 7 de noviembre de 2026**, antes del congelamiento (`b897d88`). Una pasada de accesibilidad, diseño y rendimiento sobre el frontend: axe (WCAG 2.2 AA) en 28 pantallas de los cinco roles y del visitante, en claro y oscuro, a 1440, 640 y 390 px (640 px equivale a 1280 px con el texto al 200 %); medida de cada control táctil; y Core Web Vitals de laboratorio en un celular emulado con la CPU 4 veces más lenta, sobre el build de producción. Encontró dos defectos:
+
+| ID    | Encontrado por                           | Defecto                                                                                                                                    | Severidad | Causa                                                                                          | Corrección                            |
+| ----- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------- | ---------------------------------------------------------------------------------------------- | ------------------------------------- |
+| DF-05 | Auditoría de interfaz (axe, WCAG 2.5.3)  | Los botones de resultado de la sala muestran "1 – 0" pero se llamaban "Ganan blancas": quien registra resultados por voz no los encontraba | Media     | El nombre accesible no contenía el texto visible (el mismo patrón que DF-04, en otra pantalla) | `65bc749`, con prueba                 |
+| DF-06 | Auditoría de interfaz (rendimiento, CLS) | En el celular, el panel del jugador saltaba al cargar: CLS 0,296, en el rango "malo" (más de 0,25)                                         | Media     | El esqueleto del resumen medía 208 px y el widget cargado unos 700 px                          | `daf5a02`, verificado midiendo: CLS 0 |
+
+DF-05 tiene su prueba en `ResultPicker.test.ts`. DF-06 se verificó volviendo a medir (CLS 0 en el panel de los cinco roles) y no tiene una prueba automática: el CLS depende del navegador real y de la red, y las suites no lo miden. La misma pasada dejó mejoras que no son defectos: los nombres de una mesa pasan a la segunda línea en lugar de cortarse, las tablas se apilan en el celular, todo control aislado mide 44 px con el dedo, "reducir movimiento" conserva los fundidos y la portada bloquea el hilo principal 173 ms en lugar de 241 ms. Después de la pasada pasaron todas las compuertas del CI de los dos proyectos (744 y 822 pruebas), el e2e (13), el humo (6), la usabilidad (19) y la seguridad (27).
 
 **Conclusión de la ejecución:** se cumplen los criterios de salida 1, 2, 4, 5 y 6 de la sección 10. Falta el 3 (la UAT P35).
 
